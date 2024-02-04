@@ -52,7 +52,7 @@
 
 
 /* Translation unit. */
-#include "asserter.h"
+#include <ecu/asserter.h>
 
 
 /**
