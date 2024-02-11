@@ -78,7 +78,7 @@ struct circular_sll_iterator
  * 
  * @param list List to construct. This cannot be NULL - memory must be allocated
  * for list beforehand since dynamic memory allocation is not used. This cannot be 
- * a list that is currently active and has nodes in it. Call destructer then this 
+ * a list that is currently active and has nodes in it. Call destructor then this 
  * constructor if the list needs to be reconstructed.
  */
 extern void circular_sll_ctor(struct circular_sll *list);
