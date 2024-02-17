@@ -1,0 +1,26 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 20,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "tests",
+        "displayName": "Unit Test",
+        "generator": "Unix Makefiles",
+        "binaryDir": "${sourceDir}/build/tests",
+        "cacheVariables": {
+          "ECU_ENABLE_TESTING": true
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "tests",
+        "displayName": "Unit Test",
+        "configurePreset": "tests"
+      }
+    ]
+  }

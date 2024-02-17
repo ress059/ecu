@@ -46,7 +46,7 @@ static inline enum link_status get_link_status(const struct circular_sll_node *n
  * 
  * @param node Function returns node previous to this one.
  */
-static struct circular_sll_node *circular_sll_get_prev_node(const struct circular_sll_node *node);
+static struct circular_sll_node *circular_sll_get_prev_node(struct circular_sll_node *node);
 
 
 /**
@@ -82,7 +82,7 @@ static inline enum link_status get_link_status(const struct circular_sll_node *n
 }
 
 
-static struct circular_sll_node *circular_sll_get_prev_node(const struct circular_sll_node *node)
+static struct circular_sll_node *circular_sll_get_prev_node(struct circular_sll_node *node)
 {
     RUNTIME_ASSERT( (node) );
     RUNTIME_ASSERT( (get_link_status(node) != LINK_NULL) );

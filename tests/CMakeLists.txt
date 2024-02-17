@@ -1,12 +1,9 @@
 add_executable(test 
     src/main.c)
 
-target_include_directories(test
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc
-)
+cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH CMAKE_PREFIX_PATH)
 
-target_link_libraries(test
-    PRIVATE
-        ECU
-)
+find_package(ECU REQUIRED)
+target_link_libraries(test PRIVATE ECU::ECU)
+
+#TODO Set compiler options -Wall, etc.

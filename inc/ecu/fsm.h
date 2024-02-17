@@ -115,6 +115,10 @@ enum fsm_status
 };
 
 
+/* Forward declaration to define fsm_func_ptr. */
+struct fsm;
+
+
 /**
  * @brief Prototype of all fsm state handler functions.
  */
