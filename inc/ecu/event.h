@@ -74,11 +74,11 @@
  */
 enum reserved_event_signals
 {
-    ENTRY_EVENT             = -3,   /**< DO NOT USE. Reserved. Run ENTRY_EVENT of state that was entered. */
-    EXIT_EVENT              = -2,   /**< DO NOT USE. Reserved. Run EXIT_EVENT of state that was exited. */
+    ENTRY_EVENT             = -3,   /**< -3. DO NOT USE. Reserved. Run ENTRY_EVENT of state that was entered. */
+    EXIT_EVENT              = -2,   /**< -2. DO NOT USE. Reserved. Run EXIT_EVENT of state that was exited. */
     /****************************/
-    IDLE_EVENT              = -1,   /**< First signal available to users. Background processing event. */
-    USER_EVENT_BEGIN        = 0     /**< Start of user-defined signals. */
+    IDLE_EVENT              = -1,   /**< -1. First signal available to users. Background processing event. */
+    USER_EVENT_BEGIN        = 0     /**< 0. Start of user-defined signals. */
 };
 
 
