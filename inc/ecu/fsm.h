@@ -85,7 +85,7 @@
 #define FSM_H_
 
 
-#include <stdbool.h>
+/* STDLib. */
 #include <stdint.h>
 
 /* Runtime asserts. */
@@ -134,16 +134,17 @@ typedef enum fsm_status (*fsm_func_ptr)(struct fsm *, const struct event *);
 struct fsm
 {
     /**
-     * @details PRIVATE. Current state the fsm is in.
+     * @brief PRIVATE. Current state the fsm is in.
      */
     fsm_func_ptr state;
 
     /**
-     * @details PRIVATE. Maximum number of consecutive state transitions 
+     * @brief PRIVATE. Maximum number of consecutive state transitions 
      * fsm can take before an assertion fires.
      * 
-     * Used to prevent deadlock scenarios where fsm was set up incorrectly 
-     * and two states indefinitely transition between each other.
+     * @details Used to prevent deadlock scenarios where fsm was set 
+     * up incorrectly and two states indefinitely transition between 
+     * each other.
      */
     uint8_t max_state_transitions;
 };
@@ -155,6 +156,10 @@ struct fsm
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /**
+ * @name Constructors
+ */
+/**@{*/
+/**
  * @brief Constructor.
  * 
  * @param fsm FSM to construct. This cannot be NULL - memory must be allocated
@@ -165,13 +170,19 @@ struct fsm
  */
 extern void fsm_ctor(struct fsm *fsm, fsm_func_ptr init_state_0, 
                      uint8_t max_state_transitions_0);
+/**@}*/ /* Constructors */
 
 
+/**
+ * @name FSM Behavior
+ */
+/**@{*/
 /**
  * @brief Dispatch event to fsm.
  * 
  * @details Handles state transitions by automatically executing appropriate 
- * @ref EXIT_EVENT and @ref ENTRY_EVENT cases. Verifies valid fsm behavior.
+ * @ref EXIT_EVENT and @ref ENTRY_EVENT cases of user's fsm. Verifies valid 
+ * fsm behavior.
  * 
  * @param fsm Dispatch event to this fsm. This cannot be NULL. This must 
  * have been previously constructed via successful constructor call before 
@@ -190,7 +201,7 @@ extern void fsm_dispatch(struct fsm *fsm, const struct event *event);
  * state transition. This function should always be used - fsm 
  * state should never be changed manually.
  * 
- * @warning This cannot be called in the EXIT_EVENT case of your
+ * @warning This cannot be called in the @ref EXIT_EVENT case of your
  * state.
  * 
  * @param fsm Change state of this fsm. This cannot be NULL. This 
@@ -208,6 +219,7 @@ static inline enum fsm_status fsm_change_state(struct fsm *fsm, fsm_func_ptr new
     fsm->state = new_state;
     return FSM_EVENT_TRANSITION;
 }
+/**@}*/ /* FSM Behavior */
 
 
 #endif /* FSM_H_ */

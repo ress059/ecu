@@ -1,53 +1,10 @@
+#warning "TODO: Update file description when run-time asserter is made"
 /**
- * @file asserter.h
+ * @file
+ * @brief Compile-time and run-time assert macros.
+ * @details Compile-time assert macros uses static_assert variants or symbol redeclaration to produce
+ * compilation errors depending on which C/C++ standard is used when compiling.
  * @author Ian Ress
- * @brief General Asserter for compile-time and run-time asserts. One of the following Toolchains MUST be used in order
- * to use this module:
- * 
- * - GCC v2.5 and up, OR
- * - C++11 and up, OR
- * - C11 and up.
- * 
- * Compile-time asserter uses static_assert variants or symbol redeclaration to produce compilation errors depending on
- * the target toolchain. Run-time asserter calls an assert handler callback function via My_Assert_Handler function 
- * pointer. Therefore the Application MUST assign a function to this pointer if this module is used. For example:
- * 
- * /----------------------------------- user_file.h ---------------------------/
- * #include "asserter.h"
- * 
- * void error_handler(void) ATTRIBUTE_NORETURN_;
- * 
- * (void)(*My_Assert_Handler)(void) ATTRIBUTE_NORETURN_ = &error_handler;
- * 
- * void error_handler(void)
- * {
- *      // User-defined runtime assert handler.
- * }
- * 
- * General Guidelines for Assertions:
- * 1) Always use assertions for bugs. I.e. NULL pointer dereference, out-of-bounds access, invalid 
- * function parameters.
- * 
- * 2) Never use assertions for undesired run-time behavior that can occur. I.e. out-of-range temperature
- * reading, communication loss, emergency message received from other device.
- * 
- * 3) Always keep assertions in production builds. Preprocessor define can be used to differentiate
- * between debug and production assert handler definitions.
- * 
- * 4) Thouroughly test assert handler definition under multiple failure conditions since this is the
- * last line of defence if your program fails (fault injection). I.e. Stack Overflow, misaligned access, 
- * preemption.
- * 
- * 5) Assert handler definition should handle BOTH hardware (NMI faults) and software bugs. An example 
- * definition could be resetting the Stack Pointer, performing Application-specific shutdown behavior, 
- * and resetting the CPU. For Unit Tests this function definition could be a Mock where it is verified 
- * this is called under the appropriate conditions (fault injection testing).
- *
- * @version 0.1
- * @date 2023-09-12
- * 
- * @copyright Copyright (c) 2023
- * 
  */
 
 
@@ -57,115 +14,158 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------------- ASSERT MACROS ----------------------------------------------------*/
+/*---------------------------------------------------- COMPILE-TIME ASSERT --------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-#if defined(__cplusplus) && (__cplusplus >= 201103L)
+/**
+ * @name Compile-time Assert
+ * 
+ * Macro expands to different variants depending on which C/C++ standard is used
+ * when compiling. Serves as a common interface that the Application can use to
+ * remain backwards compatible with various standards. Example calls:
+ * 
+ *     COMPILETIME_ASSERT(true, "test"); // Passes
+ *     COMPILETIME_ASSERT(5==5, "test"); // Passes
+ * 
+ *     COMPILETIME_ASSERT(false, "test"); // Fails
+ *     COMPILETIME_ASSERT(sizeof(int) >= 2, "test"); // Passes
+ */
+/**@{*/
+#if defined(ECU_DOXYGEN_)
 
     /**
-     * @brief Expands to C++11 and greater static_assert() macro which is natively 
-     * supported in this standard. Do not use this for run-time asserts.
+     * @brief Produce compilation error if assert fails.
      * 
-     * @param check_ Assertion to check. If this is True the assertion passes. If this 
-     * is False the assertion fails and triggers a compilation error. This expression must
-     * be a constant expression that can be evaluated at compile-time.
-     */
-    #define COMPILETIME_ASSERT(check_)              static_assert((check_), "COMPILETIME_ASSERT macro fired!")
-#elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
-    #include <assert.h>
-
-    /**
-     * @brief Expands to C11 and greater _Static_assert() macro which is defined in
-     * the assert.h header file in this standard. Do not use this for run-time asserts.
+     * @details Macro expands to different variants depending on which C/C++ standard is 
+     * used when compiling. Serves as a common interface that the Application can use to
+     * remain backwards compatible with various standards.
      * 
-     * @param check_ Assertion to check. If this is True the assertion passes. If this 
-     * is False the assertion fails and triggers a compilation error. This expression must
-     * be a constant expression that can be evaluated at compile-time.
-     */
-    #define COMPILETIME_ASSERT(check_)              _Static_assert((check_), "COMPILETIME_ASSERT macro fired!")
-
-#elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
-
-    /**
-     * @brief Expands to C23 and greater static_assert() macro which is natively
-     * supported in this standard. Do not use this for run-time asserts.
+     * 1. Expands to this when compiling with C++11 and greater. Uses static_assert()
+     * natively supported by this version.
      * 
-     * @param check_ Assertion to check. If this is True the assertion passes. If this 
-     * is False the assertion fails and triggers a compilation error. This expression must
-     * be a constant expression that can be evaluated at compile-time.
+     *     #define COMPILETIME_ASSERT(check_, text_)    static_assert((check_), text_)
+     * 
+     * 2. Expands to this when compiling with C11 and greater. Uses _Static_assert() 
+     * which is defined in the assert.h header file. Therefore assert.h is also 
+     * included in this case.
+     * 
+     *     #include <assert.h>
+     *     #define COMPILETIME_ASSERT(check_, text_)    _Static_assert((check_), text_)
+     * 
+     * 3. Expands to this when compiling with C23 and greater. Uses static_assert() 
+     * which is natively supported in this standard.
+     * 
+     *     #define COMPILETIME_ASSERT(check_, text_)    static_assert((check_), text_)
+     * 
+     * 4. Expands to this when when using C/C++ standard that does not support
+     * static assertions. Macro redeclares symbol to extern char compiletime_assert_[2]
+     * if the assertion fails, causing a symbol redeclaration error. This allows the
+     * assertion to also be used outisde of functions. Note for this case that text_
+     * parameter is unused however must still be included in order to remain backwards 
+     * compatible with other macro variants.
+     * 
+     *     extern char compiletime_assert_[1];
+     *     #define COMPILETIME_ASSERT(check_, text_)    extern char compiletime_assert_[((check_) ? 1 : 2)]
+     * 
+     * @param check_ Condition to check. If this is true the assertion passes.
+     * If this is false the assertion fails and triggers a compilation error.
+     * This must be a literal expression that can be evaluated at compile-time.
+     * @param text_ Message to print to console if assert fires. Must be a 
+     * string literal.
+     * 
      */
-    #define COMPILETIME_ASSERT(check_)              static_assert((check_), "COMPILETIME_ASSERT macro fired!")
+    #define COMPILETIME_ASSERT(check_, text_)
+// /**@}*/ /* Compile-time Assert */
 #else
-    extern char compiletime_assert[1];
+    #if defined(__cplusplus) && (__cplusplus >= 201103L)
+        /**
+         * @brief Produce compilation error if assert fails. C++11 and greater
+         * static_assert() which is natively supported.
+         * 
+         * @param check_ Condition to check. If this is true the assertion passes.
+         * If this is false the assertion fails and triggers a compilation error.
+         * This must be a literal expression that can be evaluated at compile-time.
+         * @param text_ Message to print to console if assert fires. Must be a 
+         * string literal.
+         */
+        #define COMPILETIME_ASSERT(check_, text_)       static_assert((check_), text_)
+    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
+        #include <assert.h>
 
-    /**
-     * @brief Using C or C++ standard that does not support static_assert or any of
-     * its variants. Produces a compilation error by triggering a symbol redeclaration
-     * error if the Assertion fires. I.e. extern char compiletime_assert[1] and
-     * extern char compiletime_assert[2] will both be declared, causing a compilation error.
-     * Do not use this for run-time asserts.
-     * 
-     * @param check_ Assertion to check. If this is True the assertion passes. If this
-     * if False the assertion fails and triggers a compilation error. This expression must 
-     * be able to be evaluated at compile-time.
-     */
-    #define COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
-#endif
+        /**
+         * @brief Produce compilation error if assert fails. C11 and greater
+         * _Static_assert(). Includes assert.h header.
+         * 
+         * @param check_ Condition to check. If this is true the assertion passes.
+         * If this is false the assertion fails and triggers a compilation error.
+         * This must be a literal expression that can be evaluated at compile-time.
+         * @param text_ Message to print to console if assert fires. Must be a 
+         * string literal.
+         */
+        #define COMPILETIME_ASSERT(check_, text_)       _Static_assert((check_), text_)
+    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
 
+        /**
+         * @brief Produce compilation error if assert fails. C23 and greater
+         * static_assert() which is natively supported.
+         * 
+         * @param check_ Condition to check. If this is true the assertion passes.
+         * If this is false the assertion fails and triggers a compilation error.
+         * This must be a literal expression that can be evaluated at compile-time.
+         * @param text_ Message to print to console if assert fires. Must be a 
+         * string literal.
+         */
+        #define COMPILETIME_ASSERT(check_)              static_assert((check_), "COMPILETIME_ASSERT macro fired!")
+    #else
+        extern char compiletime_assert[1];
+
+        /**
+         * @brief Produce compilation error if assert fails. Using C/++ standard that
+         * does not support static assertions. Macro redeclares symbol to 
+         * extern char compiletime_assert_[2] if the assertion fails, causing a symbol 
+         * redeclaration error. Allows macro to still be used outside of functions.
+         * 
+         * @param check_ Condition to check. If this is true the assertion passes.
+         * If this is false the assertion fails and triggers a compilation error.
+         * This must be a literal expression that can be evaluated at compile-time.
+         * @param text_ Message to print to console if assert fires. Must be a 
+         * string literal.
+         */
+        #define COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
+    #endif
+#endif /* ECU_DOXYGEN_ */
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------- RUNTIME ASSERT ----------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
+ * @name Runtime Assert
+ */
+/**@{*/
+/**
  * @brief Executes a user-defined assert handler callback function if the assert
- * fires. This callback function should be overwritten by the Application if this
+ * fires. 
+ * 
+ * @details This callback function should be overwritten by the Application if this
  * module is used. Otherwise the default definition is used which is an infinite
  * while loop. Do not use this for compile-time asserts.
  * 
- * @param check_ Assertion to check. This must be a run-time expression. If this 
- * is True the assertion passes. If this is False the assertion fails and the 
- * user-defined assert handler executes.
+ * @param check_ Condition to check. If this is true the assertion passes.
+ * If this is false the assertion fails and triggers a compilation error.
+ * This must be a literal expression that can be evaluated at compile-time.
  */
 #define RUNTIME_ASSERT(check_)                      ((check_) ? ((void)0) : (*My_Assert_Handler)())
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------ COMPILER-SPECIFIC ATTRIBUTES APPLIED TO ASSERT HANDLER FUNCTION ----------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-#if defined(__cplusplus) && (__cplusplus >= 201103L)
-
-    /**
-     * @brief Assigned to Assert Handler so the Compiler knows this function never returns.
-     * Using C++11 and greater so expands to [[noreturn]] attribute which is natively supported
-     * in this Standard.
-     */
-    #define ATTRIBUTE_NORETURN_                 [[noreturn]]
-
-#elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
-
-    /**
-     * @brief Assigned to Assert Handler so the Compiler knows this function never returns.
-     * Using C23 and greater so expands to [[noreturn]] attribute which is natively supported
-     * in this Standard.
-     */
-    #define ATTRIBUTE_NORETURN_                 [[noreturn]]
-
-#elif defined(__GNUC__) && ( (__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 5) )
-
-    /**
-     * @brief Assigned to Assert Handler so the Compiler knows this function never returns. 
-     * Using GCC v2.5 and up so expands to GCC noreturn attribute.
-     */
-    #define ATTRIBUTE_NORETURN_                 __attribute__((noreturn))
-#else
-    #error "Noreturn and weak function attributes not defined. Currently support GCC v2.5 and greater."
-#endif
 
 
 /**
  * @brief User MUST assign this pointer to a function. See file description for more details. 
  * Points to user-defined assert handler function that executes if RUNTIME_ASSERT() macro fires.
  */
-extern void (*My_Assert_Handler)(void) ATTRIBUTE_NORETURN_;
+extern void (*My_Assert_Handler)(void);
+/**@}*/ /* Run-time Assert */
 
 
 #endif /* ASSERTER_H_ */

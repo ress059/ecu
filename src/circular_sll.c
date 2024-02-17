@@ -1,19 +1,18 @@
 /**
- * @file circular_sll.c
- * @author Ian Ress
+ * @file
  * @brief Circular singly linked list implementation without dynamic memory allocation.
  * All class members are meant to be private but they are exposed to the Application so 
  * memory can easily be allocated at compile-time. I.e. don't have to use memory pool.
- * @version 0.1
- * @date 2023-12-25
- * 
- * @copyright Copyright (c) 2023
+ * @author Ian Ress
  * 
  */
 
 
 /* Translation unit. */
 #include <ecu/circular_sll.h>
+
+/* STDLib. */
+#include <stdbool.h>
 
 /* Runtime asserts. */
 #include <ecu/asserter.h>
@@ -151,13 +150,11 @@ void circular_sll_push_back(struct circular_sll *list, struct circular_sll_node 
     struct circular_sll_node *tail = circular_sll_get_prev_node(&list->terminal_node);
     RUNTIME_ASSERT( (tail) );
 
-    /**
-     * struct circular_sll *list is not declared as pointer to const in function prototype since 
-     * it is possible to edit list->terminal_node here if this is the first node added to the list.
-     * In other words:
-     * tail = &list->terminal_node
-     * We are editing list->terminal_node now.
-     */
+    /* struct circular_sll *list is not declared as pointer to const in function prototype since
+    it is possible to edit list->terminal_node here if this is the first node added to the list.
+    In other words:
+    tail = &list->terminal_node
+    We are editing list->terminal_node now. */
     tail->next = node;
     node->next = &list->terminal_node;
 }
