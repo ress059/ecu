@@ -115,6 +115,10 @@ enum fsm_status
 };
 
 
+/* Forward declaration to define fsm_func_ptr. */
+struct fsm;
+
+
 /**
  * @brief Prototype of all fsm state handler functions.
  */
@@ -155,6 +159,14 @@ struct fsm
 /*------------------------------------------------------ PUBLIC FUNCTIONS --------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @name Constructors
+ */
+/**@{*/
 /**
  * @name Constructors
  */
@@ -221,5 +233,8 @@ static inline enum fsm_status fsm_change_state(struct fsm *fsm, fsm_func_ptr new
 }
 /**@}*/ /* FSM Behavior */
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FSM_H_ */
