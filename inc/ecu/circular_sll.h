@@ -198,5 +198,4 @@ extern struct circular_sll_node *circular_sll_iterator_next(struct circular_sll_
 }
 #endif
 
-
 #endif /* CIRCULAR_SLL_H_ */
