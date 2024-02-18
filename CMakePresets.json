@@ -7,20 +7,45 @@
     },
     "configurePresets": [
       {
-        "name": "tests",
-        "displayName": "Unit Test",
-        "generator": "Unix Makefiles",
-        "binaryDir": "${sourceDir}/build/tests",
+        "name": "Linux-GCC",
+        "hidden": true,
         "cacheVariables": {
-          "ECU_ENABLE_TESTING": true
+          "CMAKE_C_COMPILER": "/usr/bin/gcc",
+          "CMAKE_CXX_COMPILER": "/usr/bin/g++"
+        }
+      },
+      {
+        "name": "ecu_build_test_linux_gcc",
+        "displayName": "ECU Library Build Tests",
+        "description": "Compile only ECU with Linux GCC in C11.",
+        "inherits": "Linux-GCC",
+        "generator": "Unix Makefiles",
+        "binaryDir": "${sourceDir}/tests/build-tests",
+        "cacheVariables": {
+          "ECU_ENABLE_BUILD_TESTING": true
+        }
+      },
+      {
+        "name": "ecu_unit_test_linux_gcc",
+        "displayName": "ECU Library Unit Tests",
+        "inherits": "Linux-GCC",
+        "generator": "Unix Makefiles",
+        "binaryDir": "${sourceDir}/tests/unit-tests",
+        "cacheVariables": {
+          "ECU_ENABLE_UNIT_TESTING": true
         }
       }
     ],
     "buildPresets": [
       {
-        "name": "tests",
-        "displayName": "Unit Test",
-        "configurePreset": "tests"
+        "name": "ecu_build_test_linux_gcc",
+        "displayName": "ECU Library Build Tests",
+        "configurePreset": "ecu_build_test_linux_gcc"
+      },
+      {
+        "name": "ecu_unit_test_linux_gcc",
+        "displayName": "ECU Library Unit Tests",
+        "configurePreset": "ecu_unit_test_linux_gcc"
       }
     ]
   }

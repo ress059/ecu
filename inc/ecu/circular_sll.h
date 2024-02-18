@@ -68,6 +68,10 @@ struct circular_sll_iterator
 /*-------------------------------------------------- PUBLIC METHODS: LIST ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @name Constructors
  */
@@ -189,6 +193,10 @@ extern struct circular_sll_node *circular_sll_iterator_end(struct circular_sll_i
  */
 extern struct circular_sll_node *circular_sll_iterator_next(struct circular_sll_iterator *iterator);
 /**@}*/ /* Iterators */
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* CIRCULAR_SLL_H_ */
