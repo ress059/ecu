@@ -6,7 +6,8 @@ if(ECU_ENABLE_UNIT_TESTING)
     # GoogleTest requires at least C++14
     set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+    set(CMAKE_CXX_FLAGS "-g -O0")
+    set(CMAKE_C_FLAGS "-g -O0")
 
     enable_testing()
     add_subdirectory(tests)
