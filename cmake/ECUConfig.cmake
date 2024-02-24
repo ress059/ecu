@@ -14,7 +14,7 @@ target_include_directories(ECU::ECU
 target_sources(ECU::ECU 
     INTERFACE 
         "${ECU_ROOT}/src/asserter.c"
-        "${ECU_ROOT}/src/circular_sll.c"
+        "${ECU_ROOT}/src/circular_dll.c"
         "${ECU_ROOT}/src/fsm.c"
 )
 
