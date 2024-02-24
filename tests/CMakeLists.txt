@@ -3,7 +3,7 @@ find_package(ECU REQUIRED)
 
 if(ECU_ENABLE_UNIT_TESTING)
     add_executable(ECU_unit_test
-        src/test_circular_sll.cpp
+        src/test_circular_dll.cpp
     )
 
     include(FetchContent)

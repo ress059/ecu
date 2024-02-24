@@ -168,10 +168,6 @@ extern "C" {
  */
 /**@{*/
 /**
- * @name Constructors
- */
-/**@{*/
-/**
  * @brief Constructor.
  * 
  * @param fsm FSM to construct. This cannot be NULL - memory must be allocated
