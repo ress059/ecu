@@ -25,3 +25,22 @@ static void default_assert_handler(void)
 }
 
 void (*My_Assert_Handler)(void) = &default_assert_handler;
+
+
+
+
+
+
+
+
+
+void assert_handler(struct assert_functor *object, const char *file_name, uint32_t line)
+{
+    if (object)
+    {
+        if (object->handler)
+        {
+            (*object->handler)(object, file_name, line);
+        }
+    }
+}
