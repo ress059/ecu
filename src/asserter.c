@@ -1,4 +1,5 @@
-#warning "TODO: Update file description when run-time asserter is made"
+#warning "TODO: Update file description in asserter.h and asserter.c when run-time asserter is made"
+#warning "TODO: Set up linker in Linux-GNU.cmake. Have to comment out for now since link command doesn't work."
 /**
  * @file
  * @brief Compile-time and run-time assert macros.
