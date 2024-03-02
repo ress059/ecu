@@ -1,4 +1,3 @@
-#warning "TODO: Update file description when run-time asserter is made"
 /**
  * @file
  * @brief Compile-time and run-time assert macros.
@@ -126,7 +125,7 @@
         extern char compiletime_assert[1];
 
         /**
-         * @brief Produce compilation error if assert fails. Using C/++ standard that
+         * @brief Produce compilation error if assert fails. Using C/C++ standard that
          * does not support static assertions. Macro redeclares symbol to 
          * extern char compiletime_assert_[2] if the assertion fails, causing a symbol 
          * redeclaration error. Allows macro to still be used outside of functions.

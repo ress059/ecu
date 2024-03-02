@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "Linux-GNU",
+            "includePath": [],
+            "defines": [],
+            "compileCommands": "${workspaceFolder}/tests/build-test/build/compile_commands.json"
+        }
+    ],
+    "version": 4
+}

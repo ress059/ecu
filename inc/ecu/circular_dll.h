@@ -195,7 +195,7 @@ extern void ecu_circular_dll_remove_node(struct ecu_circular_dll *list,
  * 
  * @return Number of nodes in the list.
  */
-extern uint32_t ecu_circular_dll_get_size(struct circular_dll *list);
+extern uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *list);
 /**@}*/ /* List Addition and Removal */
 
 

@@ -1,51 +1,61 @@
 {
-    "version": 2,
+    "version": 3,
     "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 20,
-      "patch": 0
-    },
+		"major": 3,
+		"minor": 21,
+		"patch": 0
+	},
     "configurePresets": [
-      {
-        "name": "Linux-GCC",
-        "hidden": true,
-        "cacheVariables": {
-          "CMAKE_C_COMPILER": "/usr/bin/gcc",
-          "CMAKE_CXX_COMPILER": "/usr/bin/g++"
-        }
-      },
-      {
-        "name": "ecu_build_test_linux_gcc",
-        "displayName": "ECU Library Build Tests",
-        "description": "Compile only ECU with Linux GCC in C11.",
-        "inherits": "Linux-GCC",
-        "generator": "Unix Makefiles",
-        "binaryDir": "${sourceDir}/tests/build-tests",
-        "cacheVariables": {
-          "ECU_ENABLE_BUILD_TESTING": true
-        }
-      },
-      {
-        "name": "ecu_unit_test_linux_gcc",
-        "displayName": "ECU Library Unit Tests",
-        "inherits": "Linux-GCC",
-        "generator": "Unix Makefiles",
-        "binaryDir": "${sourceDir}/tests/unit-tests",
-        "cacheVariables": {
-          "ECU_ENABLE_UNIT_TESTING": true
-        }
-      }
+		{
+			"name": "build-test",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/tests/build-test/build",
+			"cacheVariables": 
+			{
+				"ECU_ENABLE_TESTING": true,
+				"ECU_ENABLE_BUILD_TESTING": true,
+				"CMAKE_EXPORT_COMPILE_COMMANDS": true
+			}
+		},
+		{
+			"name": "unit-test",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/tests/unit-test/build",
+			"cacheVariables": 
+			{
+				"ECU_ENABLE_TESTING": true,
+				"ECU_ENABLE_UNIT_TESTING": true,
+				"CMAKE_EXPORT_COMPILE_COMMANDS": true
+			}
+		},
+		{
+			"name": "linux-gnu-build",
+			"inherits": "build-test",
+			"displayName": "Linux-GNU-Build",
+			"description": "Compile ECU library on Linux host with GNU toolchain.",
+			"toolchainFile": "${sourceDir}/tests/cmake/Linux-GNU.cmake"
+		},
+		{
+			"name": "linux-gnu-unit-test",
+			"displayName": "Linux-GNU-Unit-Test",
+			"description": "Compile and run ECU library unit tests on Linux host with GNU toolchain. Uses GTest.",
+			"inherits": "unit-test",
+			"toolchainFile": "${sourceDir}/tests/cmake/Linux-GNU.cmake"
+		}
     ],
-    "buildPresets": [
-      {
-        "name": "ecu_build_test_linux_gcc",
-        "displayName": "ECU Library Build Tests",
-        "configurePreset": "ecu_build_test_linux_gcc"
-      },
-      {
-        "name": "ecu_unit_test_linux_gcc",
-        "displayName": "ECU Library Unit Tests",
-        "configurePreset": "ecu_unit_test_linux_gcc"
-      }
-    ]
-  }
+	"buildPresets": [
+		{
+			"name": "linux-gnu-build",
+			"displayName": "Linux-GNU-Build",
+			"description": "Compile ECU library on Linux host with GNU toolchain.",
+			"configurePreset": "linux-gnu-build",
+			"verbose": true
+		},
+		{
+			"name": "linux-gnu-unit-test",
+			"displayName": "Linux-GNU-Unit-Test",
+			"description": "Compile and run ECU library unit tests on Linux host with GNU toolchain. Uses GTest.",
+			"configurePreset": "linux-gnu-unit-test"
+		}
+	]
+}
