@@ -28,11 +28,11 @@ extern void ecu_public_function(void);
 static void private_function(void);
 ```
 
-3. Source code file names in all lowercase with underscores (snake case). Do not prefix file names with "ecu_" as public headers are required to prefix <ecu/> into their include paths. See Include Paths section.
+3. Source code file names in all lowercase with underscores (snake case). Do not prefix file names with "ecu_" as public headers are required to prefix ecu into their include paths. See Include Paths section.
 
 
 # Include Paths
-1. Include paths for publicly-exposed headers will always begin with <ecu/> in order to for larger apps to have scope for include files. For example <ecu/asserter.h>, <ecu/fsm.h>
+1. Include paths for publicly-exposed headers will always begin with ecu in order for larger apps to have scope for include files. For example <ecu/asserter.h>, <ecu/fsm.h>, etc.
 
 
 # Other
