@@ -8,7 +8,7 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 if(CMAKE_HOST_LINUX OR CMAKE_HOST_UNIX)
     include(GNUInstallDirs)
     message(STATUS "Detected host system is Linux. Searching default install"
-				 	"directories usr/bin and usr/local/bin for GNU toolchain..")
+				 	" directories usr/bin and usr/local/bin for GNU toolchain..")
 
 	find_program(LINKER              	NAMES ld        	HINTS ${CMAKE_INSTALL_BINDIR} REQUIRED)
 	find_program(CMAKE_C_COMPILER		NAMES gcc			HINTS ${CMAKE_INSTALL_BINDIR} REQUIRED)

@@ -55,11 +55,11 @@ void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
     status = (*fsm->state)(fsm, event);
 
     /* Handle State Transitions. */
-    for (uint8_t i = 0; (status == ECU_FSM_EVENT_TRANSITION && fsm->state && i < fsm->max_state_transitions); i++)
+    for (uint8_t i = 0; (status == ECU_FSM_STATE_TRANSITION && fsm->state && i < fsm->max_state_transitions); i++)
     {
         /* Run ECU_EXIT_EVENT of current state. Reject user from peforming state transition in ECU_EXIT_EVENT. */
         status = (*prev_state)(fsm, &exit_evt);
-        ECU_RUNTIME_ASSERT( ((status != ECU_FSM_EVENT_TRANSITION) && (status != ECU_FSM_ERROR)) );
+        ECU_RUNTIME_ASSERT( ((status != ECU_FSM_STATE_TRANSITION) && (status != ECU_FSM_ERROR)) );
 
         /* Run ECU_ENTRY_EVENT of new state. */
         prev_state = fsm->state;
@@ -67,5 +67,5 @@ void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
     }
 
     /* status != FSM_EVENT_TRANSITION verifies max state transitions were not exceeded. */
-    ECU_RUNTIME_ASSERT( ((fsm->state) && (status != ECU_FSM_EVENT_TRANSITION) && (status != ECU_FSM_ERROR)) );
+    ECU_RUNTIME_ASSERT( ((fsm->state) && (status != ECU_FSM_STATE_TRANSITION) && (status != ECU_FSM_ERROR)) );
 }

@@ -116,7 +116,7 @@
  */
 enum ecu_fsm_status
 {
-    ECU_FSM_EVENT_TRANSITION,  /**< DO NOT USE. Reserved. Dispatched event caused state transition. */
+    ECU_FSM_STATE_TRANSITION,  /**< DO NOT USE. Reserved. Dispatched event caused state transition. */
     ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
     ECU_FSM_EVENT_IGNORED,     /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
     ECU_FSM_ERROR              /**< Dispatched event or fsm behavior is invalid. Dispatcher will assert. */
@@ -235,7 +235,7 @@ static inline enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *fsm,
 {
     ECU_RUNTIME_ASSERT( (fsm && new_state) );
     fsm->state = new_state;
-    return ECU_FSM_EVENT_TRANSITION;
+    return ECU_FSM_STATE_TRANSITION;
 }
 /**@}*/ /* FSM Behavior */
 

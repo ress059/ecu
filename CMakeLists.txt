@@ -19,5 +19,9 @@ target_include_directories(ecu_library
 )
 
 if(ECU_ENABLE_TESTING)
+    # CTest and enable_testing has to be in the root CMakeLists.txt. 
+    # Tests will not be discovered if this is in tests/CMakeLists.txt....
+    include(CTest)
+    enable_testing()
     add_subdirectory(tests)
 endif()

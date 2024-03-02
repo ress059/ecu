@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file
  * @author Ian Ress
  * @brief Dummy main.c to test if ECU library compiles. Calls and uses common API functions.
  * @version 0.1
@@ -109,8 +109,7 @@ static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct a
             fsm->counter++;
             if(fsm->counter > 10)
             {
-                ecu_fsm_change_state((struct ecu_fsm *)&app_fsm, 
-                                     (enum ecu_fsm_status(*)(struct ecu_fsm *, const struct ecu_event *))&app_state_handler);
+                ecu_fsm_change_state((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler);
             }
             break;
         }
@@ -139,9 +138,7 @@ int main(void)
     /* Call some API functions */
     ECU_RUNTIME_ASSERT( (3 == 3) );
     ecu_circular_dll_ctor(&app_list);
-    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, 
-                 (enum ecu_fsm_status(*)(struct ecu_fsm *, const struct ecu_event *))&app_state_handler, 
-                 1);
+    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler, 1);
     
     ecu_circular_dll_push_back(&app_list, &app_node1.node);
     ecu_circular_dll_push_back(&app_list, &app_node2.node);
