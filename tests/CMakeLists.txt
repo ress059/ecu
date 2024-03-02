@@ -1,11 +1,17 @@
-cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH CMAKE_PREFIX_PATH) # TODO Update.
-find_package(ECU REQUIRED)
-
-if(ECU_ENABLE_UNIT_TESTING)
-    add_executable(ECU_unit_test
-        src/test_circular_dll.cpp
+if(ECU_ENABLE_BUILD_TESTING)
+    add_executable(ecu_build_test 
+        ${CMAKE_CURRENT_LIST_DIR}/build-test/main.c
     )
 
+    target_link_libraries(ecu_build_test
+        PRIVATE 
+            ecu_library        
+    )
+endif()
+##################################################################################
+
+
+if(ECU_ENABLE_UNIT_TESTING)
     include(FetchContent)
     FetchContent_Declare(
         googletest
@@ -15,20 +21,18 @@ if(ECU_ENABLE_UNIT_TESTING)
 
     FetchContent_MakeAvailable(googletest)
 
-    target_link_libraries(ECU_unit_test
+    add_executable(ecu_unit_test 
+        ${CMAKE_CURRENT_LIST_DIR}/unit-test/test_circular_dll.cpp
+    )
+
+    target_link_libraries(ecu_unit_test
         PRIVATE 
-            ECU::ECU
+            ecu_library
             GTest::gtest_main
             GTest::gmock_main
     )
 
     include(GoogleTest)
-    gtest_discover_tests(ECU_unit_test)
-
-elseif(ECU_ENABLE_BUILD_TESTING)
-    add_library(ECU_build STATIC)
-    target_link_libraries(ECU_build
-        PRIVATE 
-            ECU::ECU 
-    )
+    gtest_discover_tests(ecu_unit_test)
 endif()
+##################################################################################

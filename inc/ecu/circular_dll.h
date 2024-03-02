@@ -5,12 +5,12 @@
  * to be private but they are exposed to the Application so memory can easily be allocated 
  * at compile-time. I.e. don't have to use memory pool. Example use:
  * @code{.c}
- * #include "circular_dll.h"
+ * #include <ecu/circular_dll.h>
  * 
  * struct user_data
  * {
  *     int x;
- *     struct circular_dll_node me;
+ *     struct ecu_circular_dll_node me;
  *     int y;
  * };
  * 
@@ -18,21 +18,21 @@
  * struct user_data data2;
  * struct user_data data3;
  * 
- * struct circular_dll list;
+ * struct ecu_circular_dll list;
  * 
  * // Constructing and adding nodes to list.
- * circular_dll_ctor(&list);
- * circular_dll_push_back(&list, &data1.me);
- * circular_dll_push_back(&list, &data3.me);
- * circular_dll_push_back(&list, &data2.me);
+ * ecu_circular_dll_ctor(&list);
+ * ecu_circular_dll_push_back(&list, &data1.me);
+ * ecu_circular_dll_push_back(&list, &data3.me);
+ * ecu_circular_dll_push_back(&list, &data2.me);
  * 
  * // Iterating through a list.
- * struct circular_dll_iterator iterator;
- * for (struct circular_dll_node *node = circular_dll_iterator_begin(&list, &iterator);
- *      node != circular_dll_iterator_end(&iterator); 
- *      node = circular_dll_iterator_next(&iterator))
+ * struct ecu_circular_dll_iterator iterator;
+ * for (struct ecu_circular_dll_node *node = ecu_circular_dll_iterator_begin(&list, &iterator);
+ *      node != ecu_circular_dll_iterator_end(&iterator); 
+ *      node = ecu_circular_dll_iterator_next(&iterator))
  * {
- *      struct user_data *element = CIRCULAR_DLL_GET_ENTRY(node, struct user_data, me);
+ *      struct user_data *element = ECU_CIRCULAR_DLL_GET_ENTRY(node, struct user_data, me);
  *      element->x = 10;
  *      element->y = 10;
  * }
@@ -42,8 +42,8 @@
  */
 
 
-#ifndef CIRCULAR_DLL_H_
-#define CIRCULAR_DLL_H_
+#ifndef ECU_CIRCULAR_DLL_H_
+#define ECU_CIRCULAR_DLL_H_
 
 
 #include <stddef.h> /* offsetof() */
@@ -57,16 +57,16 @@
 
 /**
  * @brief Return entry containing user data that was stored in the linked 
- * list. This will be a pointer to whatever user-defined type was used to 
+ * list. This will return a pointer to whatever user-defined type was used to 
  * store the node. See @ref circular_dll.h description for an example using 
  * this macro.
  * 
- * @param ptr Address of linked list node. This will be of type (struct circular_dll_node *).
+ * @param ptr Address of linked list node. This will be of type (struct ecu_circular_dll_node *).
  * @param type User-defined type of elements in the list. I.e. (struct user_defined_type).
  * @param member Name of linked list node member within user-defined type. This will
- * be of type (struct circular_dll_node).
+ * be of type (struct ecu_circular_dll_node).
  */
-#define CIRCULAR_DLL_GET_ENTRY(ptr, type, member)   ((type *)((char *)(ptr) - offsetof(type, member)))
+#define ECU_CIRCULAR_DLL_GET_ENTRY(ptr, type, member)   ((type *)((char *)(ptr) - offsetof(type, member)))
 
 
 
@@ -77,30 +77,30 @@
 /**
  * @brief Single node within list. 
  */
-struct circular_dll_node
+struct ecu_circular_dll_node
 {
     /**
-     * @brief PRIVATE. Next node.
+     * @brief PRIVATE. Next node in list.
      */
-    struct circular_dll_node *next;
+    struct ecu_circular_dll_node *next;
 
     /**
-     * @brief PRIVATE. Previous node.
+     * @brief PRIVATE. Previous node in list.
      */
-    struct circular_dll_node *prev;
+    struct ecu_circular_dll_node *prev;
 };
 
 
 /**
  * @brief Circular doubly linked list.
  */
-struct circular_dll
+struct ecu_circular_dll
 {
     /**
      * @brief PRIVATE. Represents HEAD and TAIL node of the list. 
      * @details Dummy node used as delimeter - not apart of user's list.
      */
-    struct circular_dll_node terminal_node;
+    struct ecu_circular_dll_node terminal_node;
 };
 
 
@@ -108,23 +108,23 @@ struct circular_dll
  * @brief List iterator. Allows users to construct multiple iterators
  * that operate indepenently of one another.
  */
-struct circular_dll_iterator
+struct ecu_circular_dll_iterator
 {
     /**
      * @brief PRIVATE. List that is being iterated.
      */
-    struct circular_dll *list;
+    struct ecu_circular_dll *list;
 
     /**
      * @brief PRIVATE. Current position in list.
      */
-    struct circular_dll_node *current;
+    struct ecu_circular_dll_node *current;
 };
 
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------- PUBLIC METHODS: LIST ---------------------------------------------------*/
+/*------------------------------------------------------ PUBLIC METHODS: LIST -----------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -143,7 +143,7 @@ extern "C" {
  * not be a list that is currently active and has nodes in it since the list's 
  * next and prev pointers are reset in this constructor.
  */
-extern void circular_dll_ctor(struct circular_dll *list);
+extern void ecu_circular_dll_ctor(struct ecu_circular_dll *list);
 
 
 /**
@@ -153,7 +153,7 @@ extern void circular_dll_ctor(struct circular_dll *list);
  * @param list List to destroy. This cannot be NULL. This must be a list that
  * was previously constructed via constructor call.
  */
-extern void circular_dll_destroy(struct circular_dll *list);
+extern void ecu_circular_dll_destroy(struct ecu_circular_dll *list);
 /**@}*/ /* Constructors */
 
 
@@ -170,7 +170,8 @@ extern void circular_dll_destroy(struct circular_dll *list);
  * node beforehand since dynamic memory allocation is not used. Node cannot already
  * be within the supplied list.
  */
-extern void circular_dll_push_back(struct circular_dll *list, struct circular_dll_node *node);
+extern void ecu_circular_dll_push_back(struct ecu_circular_dll *list, 
+                                       struct ecu_circular_dll_node *node);
 
 
 /**
@@ -182,7 +183,8 @@ extern void circular_dll_push_back(struct circular_dll *list, struct circular_dl
  * @param node Node to remove. This cannot be NULL. This node must be 
  * within the supplied list.
  */
-extern void circular_dll_remove_node(struct circular_dll *list, struct circular_dll_node *node);
+extern void ecu_circular_dll_remove_node(struct ecu_circular_dll *list, 
+                                         struct ecu_circular_dll_node *node);
 
 
 /**
@@ -193,13 +195,13 @@ extern void circular_dll_remove_node(struct circular_dll *list, struct circular_
  * 
  * @return Number of nodes in the list.
  */
-extern uint32_t circular_dll_get_size(struct circular_dll *list);
+extern uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *list);
 /**@}*/ /* List Addition and Removal */
 
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------- PUBLIC METHODS: ITERATORS -------------------------------------------*/
+/*---------------------------------------------------- PUBLIC METHODS: ITERATORS --------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
@@ -208,7 +210,6 @@ extern uint32_t circular_dll_get_size(struct circular_dll *list);
 /**@{*/
 /**
  * @brief Returns first node in the list. 
- * 
  * @details If the list has nodes this is the first user-defined node. If 
  * the list is empty this returns the terminal node which is a dummy delimeter 
  * that represents HEAD and TAIL of the list.
@@ -220,33 +221,32 @@ extern uint32_t circular_dll_get_size(struct circular_dll *list);
  * memory must be allocated for iterator beforehand since dynamic memory 
  * allocation is not used.
  */
-extern struct circular_dll_node *circular_dll_iterator_begin(struct circular_dll *list,
-                                                             struct circular_dll_iterator *iterator);
+extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_circular_dll *list,
+                                                                     struct ecu_circular_dll_iterator *iterator);
 
 
 /**
  * @brief Returns terminal node in the list. 
- * 
  * @details This is a dummy delimeter that represents HEAD and TAIL of 
  * the list.
  * 
  * @param iterator Iterator object. This cannot be NULL. This must have
- * been created beforehand via call to the begin function.
+ * been created beforehand via call to @ref ecu_circular_dll_iterator_begin().
  */
-extern struct circular_dll_node *circular_dll_iterator_end(struct circular_dll_iterator *iterator);
+extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_end(struct ecu_circular_dll_iterator *iterator);
 
 
 /**
  * @brief Returns the next node in the iteration.
  * 
  * @param iterator Iterator object. This cannot be NULL. This must have
- * been created beforehand via call to the begin function.
+ * been created beforehand via call to @ref ecu_circular_dll_iterator_begin().
  */
-extern struct circular_dll_node *circular_dll_iterator_next(struct circular_dll_iterator *iterator);
+extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_next(struct ecu_circular_dll_iterator *iterator);
 /**@}*/ /* Iterators */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CIRCULAR_DLL_H_ */
+#endif /* ECU_CIRCULAR_DLL_H_ */

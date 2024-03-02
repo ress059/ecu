@@ -1,4 +1,3 @@
-#warning "TODO: Update file description when run-time asserter is made"
 /**
  * @file
  * @brief Compile-time and run-time assert macros.
@@ -32,18 +31,18 @@
  * remain backwards compatible with various standards. Example calls:
  * 
  * @code{.c}
- * COMPILETIME_ASSERT(true); // Passes
- * COMPILETIME_ASSERT(5==5); // Passes
+ * ECU_COMPILETIME_ASSERT(true); // Passes
+ * ECU_COMPILETIME_ASSERT(5==5); // Passes
  * 
- * COMPILETIME_ASSERT(false); // Fails
- * COMPILETIME_ASSERT(sizeof(int) >= 2); // Passes
+ * ECU_COMPILETIME_ASSERT(false); // Fails
+ * ECU_COMPILETIME_ASSERT(sizeof(int) >= 2); // Passes
  * @endcode
  * 
  * A message is not passed to this macro in case the implementation allocated
  * memory for it.
  */
 /**@{*/
-#if defined(ECU_DOXYGEN_)
+#if defined(ECU_DOXYGEN)
 
     /**
      * @brief Produce compilation error if assert fails.
@@ -56,7 +55,7 @@
      * natively supported by this version.
      * 
      * @code{.c}
-     * #define COMPILETIME_ASSERT(check)               static_assert((check_))
+     * #define ECU_COMPILETIME_ASSERT(check)               static_assert((check_))
      * @endcode
      * 
      * 2. Expands to this when compiling with C11 and greater. Uses _Static_assert() 
@@ -65,14 +64,14 @@
      * 
      * @code{.c}
      * #include <assert.h>
-     * #define COMPILETIME_ASSERT(check_)              _Static_assert((check_))
+     * #define ECU_COMPILETIME_ASSERT(check_)              _Static_assert((check_))
      * @endcode
      * 
      * 3. Expands to this when compiling with C23 and greater. Uses static_assert() 
      * which is natively supported in this standard.
      * 
      * @code{.c}
-     * #define COMPILETIME_ASSERT(check_)              static_assert((check_))
+     * #define ECU_COMPILETIME_ASSERT(check_)              static_assert((check_))
      * @endcode
      * 
      * 4. Expands to this when when using C/C++ standard that does not support
@@ -82,14 +81,14 @@
      * 
      * @code{.c}
      * extern char compiletime_assert_[1];
-     * #define COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
+     * #define ECU_COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
      * @endcode
      * 
      * @param check_ Condition to check. If this is true the assertion passes.
      * If this is false the assertion fails and triggers a compilation error.
      * This must be a literal expression that can be evaluated at compile-time.
      */
-    #define COMPILETIME_ASSERT(check_)
+    #define ECU_COMPILETIME_ASSERT(check_)
 // /**@}*/ /* Compile-time Assert */
 #else
     #if defined(__cplusplus) && (__cplusplus >= 201103L)
@@ -101,7 +100,7 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define COMPILETIME_ASSERT(check)               static_assert((check_))
+        #define ECU_COMPILETIME_ASSERT(check)               static_assert((check_))
     #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
         #include <assert.h>
 
@@ -113,7 +112,7 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define COMPILETIME_ASSERT(check_)              _Static_assert((check_))
+        #define ECU_COMPILETIME_ASSERT(check_)              _Static_assert((check_))
     #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
 
         /**
@@ -124,7 +123,7 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define COMPILETIME_ASSERT(check_)              static_assert((check_))
+        #define ECU_COMPILETIME_ASSERT(check_)              static_assert((check_))
     #else
         extern char compiletime_assert[1];
 
@@ -138,9 +137,9 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
+        #define ECU_COMPILETIME_ASSERT(check_)              extern char compiletime_assert[((check_) ? 1 : 2)]
     #endif
-#endif /* ECU_DOXYGEN_ */
+#endif /* ECU_DOXYGEN */
 
 
 
@@ -171,7 +170,7 @@ struct assert_functor
  * This must be a literal expression that can be evaluated at compile-time.
  */
 // #if defined(ECU_RUNTIME_ASSERT)
-#define RUNTIME_ASSERT(check_)                      ((check_) ? ((void)0) : (*My_Assert_Handler)())
+#define ECU_RUNTIME_ASSERT(check_)                      ((check_) ? ((void)0) : (*My_Assert_Handler)())
 
 // #else
 // #define RUNTIME_ASSERT(check_) ((void)0)

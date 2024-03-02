@@ -1,22 +1,23 @@
-cmake_minimum_required(VERSION 3.20)
-project(ecu VERSION 0.1.0)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+cmake_minimum_required(VERSION 3.21)
 
-if(ECU_ENABLE_UNIT_TESTING)
-    # GoogleTest requires at least C++14
-    set(CMAKE_CXX_STANDARD 14)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_FLAGS "-g -O0")
-    set(CMAKE_C_FLAGS "-g -O0")
+# Interface library since this is meant to be compiled with the target 
+# application's toolchain.
+add_library(ecu_library INTERFACE)
 
-    enable_testing()
-    add_subdirectory(tests)
-elseif(ECU_ENABLE_BUILD_TESTING)
-    set(CMAKE_C_STANDARD 11)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
+target_sources(ecu_library
+    INTERFACE 
+        ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
+        ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c 
+        ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
+)
 
-    set(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wpointer-arith -Wstrict-prototypes")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wcast-qual -Wswitch-default -Wconversion -Wunreachable-code -pedantic")
+# Example include in the Application would be #include <ecu/fsm.h> 
+# in order to give larger apps some scope when including files.
+target_include_directories(ecu_library
+    INTERFACE 
+        ${CMAKE_CURRENT_LIST_DIR}/inc 
+)
 
+if(ECU_ENABLE_TESTING)
     add_subdirectory(tests)
 endif()
