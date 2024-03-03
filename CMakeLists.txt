@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
+option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
 
 # Interface library since this is meant to be compiled with the target 
 # application's toolchain.
@@ -17,6 +18,18 @@ target_include_directories(ecu_library
     INTERFACE 
         ${CMAKE_CURRENT_LIST_DIR}/inc 
 )
+
+if(ECU_DISABLE_RUNTIME_ASSERTS)
+    message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts"
+                    " are being disabled. Unused function/parameter warnings will"
+                    " occur when compiling since run-time assert macro calls no"
+                    " longer use any of the parameters passed to it.")
+
+    target_compile_definitions(ecu_library 
+        INTERFACE 
+            ECU_DISABLE_RUNTIME_ASSERTS 
+    )
+endif()
 
 if(ECU_ENABLE_TESTING)
     # CTest and enable_testing has to be in the root CMakeLists.txt. 

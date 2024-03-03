@@ -91,10 +91,11 @@ void ecu_circular_dll_push_back(struct ecu_circular_dll *list,
                                 struct ecu_circular_dll_node *node)
 {
     ECU_RUNTIME_ASSERT( (list && node) );
-    ECU_RUNTIME_ASSERT( (list->terminal_node.prev) );
-    ECU_RUNTIME_ASSERT( (!node_in_list(list, node)) );
+    ECU_RUNTIME_ASSERT( (!node_in_list(list, node)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     struct ecu_circular_dll_node *tail = list->terminal_node.prev;
+    ECU_RUNTIME_ASSERT( (tail) );
+
     tail->next = node;
     node->prev = tail;
     node->next = &list->terminal_node;
@@ -106,12 +107,14 @@ void ecu_circular_dll_remove_node(struct ecu_circular_dll *list,
                                   struct ecu_circular_dll_node *node)
 {
     ECU_RUNTIME_ASSERT( (list && node) );
-    ECU_RUNTIME_ASSERT( (list->terminal_node.next && list->terminal_node.prev) );
-    ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+
     /* Empty list? */
+    ECU_RUNTIME_ASSERT( (list->terminal_node.next && list->terminal_node.prev) );
     ECU_RUNTIME_ASSERT( ((list->terminal_node.next != &list->terminal_node) && \
                          (list->terminal_node.prev != &list->terminal_node)) );
-    ECU_RUNTIME_ASSERT( (node_in_list(list, node)) );
+
+    ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+    ECU_RUNTIME_ASSERT( (node_in_list(list, node)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     node->prev->next = node->next;
     node->next->prev = node->prev;

@@ -1,11 +1,13 @@
-#warning "TODO: Update file description in asserter.h and asserter.c when run-time asserter is made"
 #warning "TODO: Set up linker in Linux-GNU.cmake. Have to comment out for now since link command doesn't work."
 /**
- * @file
- * @brief Compile-time and run-time assert macros.
- * @details Compile-time assert macros uses static_assert variants or symbol redeclaration to produce
- * compilation errors depending on which C/C++ standard is used when compiling.
+ * @file 
  * @author Ian Ress
+ * @brief See @ref asserter.h
+ * @version 0.1
+ * @date 2024-03-02
+ * 
+ * @copyright Copyright (c) 2024
+ * 
  */
 
 
@@ -13,35 +15,61 @@
 #include <ecu/asserter.h>
 
 
-/**
- * @brief Default assert handler that is assigned if user does not specify one.
- * Executes when a runtime assert fires.
- */
-static void default_assert_handler(void)
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------- FILE-SCOPE VARIABLES ------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+static void(*user_handler)(const char *, int) = (void(*)(const char *, int))0;
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+static void default_assert_handler(const char *file, int line);
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------- STATIC FUNCTION DEFINITIONS -------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+static void default_assert_handler(const char *file, int line)
 {
-    while(1)
+    (void)file;
+    (void)line;
+
+#if !defined(NDEBUG)
+    while (1)
     {
         /* Permanently hang to inspect call stack. */
     }
+#endif
 }
 
-void (*My_Assert_Handler)(void) = &default_assert_handler;
 
 
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------- PUBLIC FUNCTIONS --------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 
-
-
-
-
-
-
-void assert_handler(struct assert_functor *object, const char *file_name, uint32_t line)
+void ecu_assert_do_not_use(const char *file, int line)
 {
-    if (object)
+    if (user_handler) /* user-defined handler. */
     {
-        if (object->handler)
-        {
-            (*object->handler)(object, file_name, line);
-        }
+        (*user_handler)(file, line);
     }
+    else /* default handler. */
+    {
+        default_assert_handler(file, line);
+    }
+}
+
+
+void ecu_asserter_set_handler(void (*handler)(const char *file_name, int line))
+{
+    /* NULL handler means the default assert handler will now run. */
+    user_handler = handler;
 }
