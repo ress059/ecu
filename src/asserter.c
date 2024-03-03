@@ -68,7 +68,7 @@ void ecu_assert_do_not_use(const char *file, int line)
 }
 
 
-void ecu_asserter_set_handler(void (*handler)(const char *file_name, int line))
+void ecu_asserter_set_handler(void (*handler)(const char *file, int line))
 {
     /* NULL handler means the default assert handler will now run. */
     user_handler = handler;
