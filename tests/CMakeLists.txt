@@ -12,27 +12,41 @@ endif()
 
 
 if(ECU_ENABLE_UNIT_TESTING)
-    include(GoogleTest)
     include(FetchContent)
     
     FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        f8d7d77c06936315286eb55f8de22cd23c188571 # release-1.14.0
+        CppUTest
+        GIT_REPOSITORY https://github.com/cpputest/cpputest.git
+        GIT_TAG        67d2dfd41e13f09ff218aa08e2d35f1c32f032a1 # release v4.0
     )
-    FetchContent_MakeAvailable(googletest)
+    # Set this to ON if you want to have the CppUTests in your project as well.
+    set(TESTS OFF CACHE BOOL "Switch off CppUTest Test build")
+    FetchContent_MakeAvailable(CppUTest)
 
     add_executable(ecu_unit_test 
-        ${CMAKE_CURRENT_LIST_DIR}/unit-test/src/test_circular_dll.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/AllTests.cpp 
     )
 
+    target_sources(ecu_unit_test 
+        PRIVATE 
+            # Mocks
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/mocks/mock_asserter.cpp
+            # Tests
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
+    )
+
+    target_include_directories(ecu_unit_test 
+        PRIVATE 
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test
+    )
+
+    # cpputest_normalize_test_output_location(ecu_unit_test)
     target_link_libraries(ecu_unit_test
         PRIVATE 
             ecu_library
-            GTest::gtest_main
-            GTest::gmock_main
+            CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
+            CppUTestExt     # Using namespace doesn't work. I.e. CppUTestExt::CppUTestExt
     )
-
-    gtest_discover_tests(ecu_unit_test)
+    # cpputest_buildtime_discover_tests(ecu_unit_test)
 endif()
 ##################################################################################

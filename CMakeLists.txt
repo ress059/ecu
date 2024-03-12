@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
+project(ECU VERSION 0.1)
 option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
 
 # Interface library since this is meant to be compiled with the target 

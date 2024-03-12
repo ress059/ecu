@@ -263,7 +263,7 @@ extern "C" {
  * external linkage so @ref ECU_RUNTIME_ASSERT() macro can see 
  * and call it.
  */
-void ecu_assert_do_not_use(const char *file, int line);
+extern void ecu_assert_do_not_use(const char *file, int line);
 
 
 /**
