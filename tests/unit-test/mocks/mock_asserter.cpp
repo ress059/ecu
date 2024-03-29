@@ -16,66 +16,49 @@
 /* Files under test. */
 #include <ecu/asserter.h>
 
+/* STDLib. */
+#include <string>
+
 /* CppUTest */
 #include <CppUTestExt/MockSupport.h>
 
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
+/*----------------------------------------------------- STATIC FUNCTION DEFINITIONS -----------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static void mock_asserter_default_handler(const char *file, int line);
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------- ECUMOCKASSERTER CLASS MEMBER DEFINITIONS ------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-uint8_t ECUMockAsserter::num_instances = 0;
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------- STATIC FUNCTION DEFINITIONS -------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static void mock_asserter_default_handler(const char *file, int line)
+template<typename T>
+requires std::is_same_v<std::remove_cvref<T>, std::string>
+static std::string& ECUMockAsserterObject::extract_base_file_name(T&& file)
 {
+    size_t last_slash = file.find_last_of("/\\"); /* '/' or '\' to remain OS-agnostic. */
+
+    if (last_slash != std::string::npos) 
+    {
+        return file.substr(last_slash + 1);
+    }
+
+    /* Base file name already supplied. */
+    return file;
+}
+
+
+
+void ecu_assert_do_not_use(const char *file, int line)
+{
+    static ECUMockAsserterObject obj;
+    obj = ECUMockAsserterObject(file);
+
+    mock()
+        .actualCall(ECU_ASSERT_HANDLER_NAME)
+        .withParameterOfType("ECUMockAsserterObject", "base_file_name_", &obj); /* Do not pass in line parameter since it is much more prone to false test failures. */
+
     /* Throw an exception so we immediately return to the caller (the unit test) when an
     assert fires. This prevents source code from running under an assert condition. */
-    mock().actualCall("mock_asserter_default_handler");
-    throw ECUMockAsserterException(file, line);
-}
+    throw ECUMockAsserterException(obj.base_file_name_, line);
 
 
 
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------- ECUMOCKASSERTER CLASS METHOD DEFINITIONS -----------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-void ECUMockAsserter::teardown()
-{
-    mock().clear();
-}
-
-
-ECUMockAsserter::ECUMockAsserter()
-{
-    if (ECUMockAsserter::num_instances == 0)
-    {
-        ecu_asserter_set_handler(&mock_asserter_default_handler);
-    }
-    
-    ECUMockAsserter::num_instances++;
-}
-
-
-ECUMockAsserter::~ECUMockAsserter()
-{
-    if (--ECUMockAsserter::num_instances == 0)
-    {
-        ecu_asserter_set_handler((void (*)(const char *file, int line))0);
-    }
+    // can i construct a class in here? and use that as a virtual interface?
 }

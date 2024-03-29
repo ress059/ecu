@@ -164,7 +164,7 @@ struct ecu_fsm
 
 
 /*--------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ PUBLIC FUNCTIONS --------------------------------------------------*/
+/*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -187,7 +187,7 @@ extern "C" {
  */
 extern void ecu_fsm_ctor(struct ecu_fsm *fsm, ecu_fsm_func_ptr init_state_0, 
                          uint8_t max_state_transitions_0);
-/**@}*/ /* Constructors */
+/**@}*/
 
 
 /**
@@ -233,11 +233,28 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
 static inline enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *fsm, 
                                                        ecu_fsm_func_ptr new_state)
 {
-    ECU_RUNTIME_ASSERT( (fsm && new_state) );
+    ECU_RUNTIME_ASSERT( (fsm && new_state), ECU_NO_FUNCTOR );
     fsm->state = new_state;
     return ECU_FSM_STATE_TRANSITION;
 }
-/**@}*/ /* FSM Behavior */
+/**@}*/
+
+
+/**
+ * @name FSM Assert Handler
+ */
+/**@{*/
+/**
+ * @brief Set a functor to execute if an assert fires within this module. 
+ * @details This is optional - if no functor is set a default one will be 
+ * used. The default functor hangs in a permanent while loop if NDEBUG is 
+ * not defined so users are able to inspect the call stack.
+ * 
+ * @param functor User-supplied functor. If a NULL value is supplied
+ * the default functor will be used. 
+ */
+extern void ecu_fsm_set_assert_functor(struct ecu_assert_functor *functor);
+/**@}*/
 
 #ifdef __cplusplus
 }

@@ -8,10 +8,18 @@ add_library(ecu_library INTERFACE)
 
 target_sources(ecu_library
     INTERFACE 
-        ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
         ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c 
         ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
 )
+
+# Asserter is mocked for Unit Tests so only compiler asserter.c if we
+# are not running unit tests.
+if(NOT ECU_ENABLE_UNIT_TESTING)
+    target_sources(ecu_library 
+        INTERFACE 
+            ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
+    )
+endif()
 
 # Example include in the Application would be #include <ecu/fsm.h> 
 # in order to give larger apps some scope when including files.

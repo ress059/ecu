@@ -47,26 +47,24 @@
 
 /* STDLib. */
 #include <string>
-
-/* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppuTest/TestHarness.h>
+#include <type_traits>
 
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------- MACROS -----------------------------------------------------*/
+/*------------------------------------------------------------- DEFINES -----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief Helper macro to verify assert fired. This macro should be used 
- * within the unit tests in case the mock name passed to mock.expectNCalls() 
- * needs to be changed. The change point would be limited to this macro
- * as opposed to all tests.
- * 
- * @param n Number of function calls to expect. 
+ * @brief Unit tests should pass this parameter to mock().expectCall() 
+ * and similar function variants to verify an assert handler executed.
+ * This makes the change point limited to this variable as opposed to
+ * all tests if the name ever changes.
  */
-#define ECU_MOCK_ASSERTER_EXPECT_NCALLS(n)           mock().expectNCalls((n), "mock_asserter_default_handler")
+inline constexpr char ECU_MOCK_ASSERTER_HANDLER_NAME[] = "ecu_assert_do_not_use";
+
+
+inline constexpr char ECU_MOCK_ASSERTER_TYPE_NAME[] = "ECUMockAsserterObject";
 
 
 
@@ -86,19 +84,19 @@ public:
      * assigned to @ref ECU_RUNTIME_ASSERT(). Interfaces with C library 
      * so converts c-style string into std::string for file name.
      */
-    ECUMockAsserterException(const char *cfile, int line) : file_(cfile), line_(line)
+    ECUMockAsserterException(const std::string& file, int line) : file_(file), line_(line)
     {
     }
 
     ~ECUMockAsserterException() = default;
-    ECUMockAsserterException(ECUMockAsserterException& other) = default;
-    ECUMockAsserterException& operator=(ECUMockAsserterException& other) = default;
-    ECUMockAsserterException(ECUMockAsserterException&& other) = default;
-    ECUMockAsserterException& operator=(ECUMockAsserterException&& other) = default;
+    ECUMockAsserterException(const ECUMockAsserterException& other) = default;
+    ECUMockAsserterException& operator=(const ECUMockAsserterException& other) = default;
+    ECUMockAsserterException(const ECUMockAsserterException&& other) = default;
+    ECUMockAsserterException& operator=(const ECUMockAsserterException&& other) = default;
 
     /**
-     * @brief Returns name of file (with full path) where @ref ECU_ASSERT()
-     * fired. E.g. "path/to/ecu/fsm.c"
+     * @brief Returns base file name where @ref ECU_ASSERT()
+     * fired. E.g. "fsm.c"
      */
     const std::string& what() const noexcept 
     {
@@ -120,48 +118,70 @@ private:
 
 
 
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------- MOCK ASSERTER BASE CLASS --------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-/**
- * @brief Use this class in a unit test whenever asserts need to be handled
- * or mocked. See @ref mock_asserter.hpp description.
- */
-class ECUMockAsserter : public Utest
+class ECUMockAsserterObject final
 {
 public:
-    /**
-     * @brief Clears the mock test condition.
-     */
-    virtual void teardown() final override;
+    ECUAsserterMockObject(const char *file = "")
+    {
+        base_file_name_ = extract_base_file_name(std::string(file));
+    }
 
-protected:
-    /**
-     * @brief Set assert handler if this is the first class instance being constructed.
-     * @details If this is the first class instance being constructed our mock assert
-     * handler is assigned to @ref ECU_ASSERT() by calling @ref ecu_asserter_set_handler() 
-     * library function. If there are already existing class instances this does not 
-     * have to be done since the assigned handler will always be the same.
-     */
-    ECUMockAsserter();
+    ~ECUAsserterMockObject() = default;
 
-    /**
-     * @brief Clear assert handler if this is the last class instance being destroyed.
-     * @details If this is the last class instance being destroyed (num_instances == 0)
-     * then the assert handler ran in @ref ECU_ASSERT() is reset back to the default
-     * by passing in NULL pointer to @ref ecu_asserter_set_handler() library function. This
-     * approach allows multiple ECUMockAsserter class instances to be constructed/destroyed
-     * independently of one another, while maintaining automatic cleanup functionality.
-     */
-    virtual ~ECUMockAsserter();
-    ECUMockAsserter(ECUMockAsserter& other) = default;
-    ECUMockAsserter& operator=(ECUMockAsserter& other) = default;
-    ECUMockAsserter(ECUMockAsserter&& other) = default;
-    ECUMockAsserter& operator=(ECUMockAsserter&& other) = default;
+    ECUAsserterMockObject& operator=(const ECUAsserterMockObject& other)
+    {
+        this->base_file_name_ = other.base_file_name_; /* std::string copy assignment. */
+    }
+
+    ECUAsserterMockObject(const ECUAsserterMockObject& other) = delete;
+    ECUAsserterMockObject(const ECUAsserterMockObject&& other) = delete;
+    ECUAsserterMockObject& operator=(const ECUAsserterMockObject&& other) = delete;
+
+    std::string base_file_name_;
 
 private:
-    static uint8_t num_instances;
+    /**
+     * @brief Returns the base file name from the supplied string.
+     * 
+     * @param file Base type must be std::string. If this is already
+     * a base file name a copy of this will be returned.
+     */
+    template<typename T>
+    requires std::is_same_v<std::remove_cvref<T>, std::string>
+    static std::string& extract_base_file_name(T&& file);
+};
+
+
+
+class ECUMockAsserterComparator final : public MockNamedValueComparator
+{
+public:
+    virtual bool isEqual(const void* object1, const void* object2)
+    {
+        bool is_equal = false;
+
+        if (object1 && object2)
+        {
+            const ECUMockAsserterObject *obj1 = static_cast<const ECUMockAsserterObject *>(object1);
+            const ECUMockAsserterObject *obj2 = static_cast<const ECUMockAsserterObject *>(object2);
+            is_equal = !(obj1->base_file_name_.compare(obj2->base_file_name_)); /* 0 = equal. */
+        }
+        
+        return is_equal;
+    }
+
+    virtual SimpleString valueToString(const void* object)
+    {
+        static const SimpleString invalidparams("ECUMockAsserterComparator::valueToString() failed to produce error message! NULL object supplied as parameter.");
+
+        if (object)
+        {
+            const ECUMockAsserterObject *obj = static_cast<const ECUMockAsserterObject *>(object);
+            return SimpleString(obj->base_file_name_.c_str()); /* SimpleString(const char *value = ""); */
+        }
+
+        return invalidparams;
+    }
 };
 
 

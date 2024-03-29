@@ -1,4 +1,3 @@
-#warning "TODO: Set up linker in Linux-GNU.cmake. Have to comment out for now since link command doesn't work."
 /**
  * @file 
  * @author Ian Ress
@@ -17,18 +16,10 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------- FILE-SCOPE VARIABLES ------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static void (*user_handler)(const char *, int) = (void (*)(const char *, int))0;
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static void default_assert_handler(const char *file, int line);
+static void default_assert_handler(void);
 
 
 
@@ -36,11 +27,8 @@ static void default_assert_handler(const char *file, int line);
 /*--------------------------------------------------- STATIC FUNCTION DEFINITIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static void default_assert_handler(const char *file, int line)
+static void default_assert_handler(void)
 {
-    (void)file;
-    (void)line;
-
 #if !defined(NDEBUG)
     while (1)
     {
@@ -52,24 +40,24 @@ static void default_assert_handler(const char *file, int line)
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- PUBLIC FUNCTIONS --------------------------------------------------*/
+/*------------------------------------------------------- PRIVATE FUNCTIONS -------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_assert_do_not_use(const char *file, int line)
+void ecu_assert_do_not_use(struct ecu_assert_functor *me, const char *file, int line)
 {
-    if (user_handler) /* user-defined handler. */
+    if (me)
     {
-        (*user_handler)(file, line);
+        if (me->handler)
+        {
+            (*me->handler)(me, file, line); /* user-defined handler. */
+        }
+        else
+        {
+            default_assert_handler();
+        }
     }
-    else /* default handler. */
+    else
     {
-        default_assert_handler(file, line);
+        default_assert_handler();
     }
-}
-
-
-void ecu_asserter_set_handler(void (*handler)(const char *file, int line))
-{
-    /* NULL handler means the default assert handler will now run. */
-    user_handler = handler;
 }

@@ -33,6 +33,7 @@ if(ECU_ENABLE_UNIT_TESTING)
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/mocks/mock_asserter.cpp
             # Tests
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_circular_dll.cpp
     )
 
     target_include_directories(ecu_unit_test 

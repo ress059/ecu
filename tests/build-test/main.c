@@ -136,7 +136,7 @@ int main(void)
     app_event.data = 5;
 
     /* Call some API functions */
-    ECU_RUNTIME_ASSERT( (3 == 3) );
+    ECU_RUNTIME_ASSERT( (3 == 3), ECU_NO_FUNCTOR );
     ecu_circular_dll_ctor(&app_list);
     ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler, 1);
     
