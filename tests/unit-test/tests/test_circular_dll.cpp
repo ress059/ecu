@@ -11,10 +11,8 @@
 
 
 /* Files under test. */
+#include <ecu/asserter.h>
 #include <ecu/circular_dll.h>
-
-/* Mocks. */
-#include <mocks/mock_asserter.hpp>
 
 /* CppUTest. */
 #include <CppUTestExt/MockSupport.h>
@@ -36,104 +34,323 @@ struct user_data
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------- STUBS AND MOCKS -------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+class AssertException
+{
+};
+
+
+/**
+ * @brief Use when ECU library function calls within the unit test could 
+ * cause assert to fire but you wish to ignore it. This throws an exception
+ * so control immediately returns to the caller (the unit test). This 
+ * prevents library code from running under an assert condition, leading to
+ * undefined behavior.
+ */
+struct AssertCallOk : public ecu_assert_functor 
+{
+    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
+    {
+        (void)me;
+        (void)file;
+        (void)line;
+        throw AssertException();
+    }
+};
+
+
+/**
+ * @brief Use when ECU library function calls within the unit test should
+ * never fire an assert. Calls a mock which will cause the test to fail
+ * due to an unexpected call. Also throws an exception so control immediately
+ * returns to the caller (the unit test). This prevents library code from 
+ * running under an assert condition, leading to undefined behavior.
+ */
+struct AssertCallFail : public ecu_assert_functor 
+{
+    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
+    {
+        (void)me;
+        (void)file;
+        (void)line;
+        mock()
+            .actualCall("AssertMock::assert_handler");
+        throw AssertException();
+    }
+};
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 TEST_GROUP(CircularDLL)
 {
+    virtual void setup() override 
+    {
+        assert_call_ok_.handler = &AssertCallOk::assert_handler;
+        assert_call_fail_.handler = &AssertCallFail::assert_handler;
+        ecu_circular_dll_ctor(&list_);
+    }
+
+    virtual void teardown() override 
+    {
+        ecu_circular_dll_set_assert_functor(ECU_DEFAULT_FUNCTOR);
+        mock().checkExpectations();
+        mock().clear();
+    }
+
+    AssertCallOk assert_call_ok_;
+    AssertCallFail assert_call_fail_;
+    ecu_circular_dll list_;
+    ecu_circular_dll_iterator iterator_;
+    user_data node1_;
+    user_data node2_;
+    user_data node3_;
 };
 
 
-#error "TODO: Just hard-code assert within test. Stop trying to make external function to be perfectly modular. just get it done"
+
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------- TESTS - CircularDLLBaseGroup Group ------------------------------------*/
+/*---------------------------------------------------------------- TESTS ----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-/**
- * @brief Add and remove nodes from the list. Verify returned
- * size is correct.
- */
-TEST(CircularDLL, TestGetSize)
+// TEST(CircularDLL, DestructorRemovesAllNodesAndNodesCanBeAddedToAnotherList) // failing due to assert. step through with debugger
+// {
+//     ecu_circular_dll extra_list;
+
+//     try 
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_circular_dll_ctor(&extra_list);
+//         ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_fail_));
+//         ecu_circular_dll_push_back(&list_, &node1_.node);
+//         ecu_circular_dll_push_back(&list_, &node2_.node);
+//         ecu_circular_dll_push_back(&list_, &node3_.node);
+//         CHECK_EQUAL(0, ecu_circular_dll_get_size(&extra_list));
+//         CHECK_EQUAL(3, ecu_circular_dll_get_size(&list_));
+
+//         /* Steps 2 and 3: Action and assert. */
+//         ecu_circular_dll_destroy(&list_);
+//         CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
+
+//         ecu_circular_dll_push_back(&extra_list, &node1_.node);
+//         ecu_circular_dll_push_back(&extra_list, &node2_.node);
+//         ecu_circular_dll_push_back(&extra_list, &node3_.node);
+//         CHECK_EQUAL(3, ecu_circular_dll_get_size(&extra_list));
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
+
+TEST(CircularDLL, NodeAdditionAndRemoval)
 {
-    /* STEP 1: Arrange. */
-    struct ecu_circular_dll list;
-    struct user_data data1;
-    struct user_data data2;
-    struct user_data data3;
-    ecu_circular_dll_ctor(&list);
-    
-    /* STEPS 2 and 3: Action and assert. */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 0);
-
-    ecu_circular_dll_push_back(&list, &data1.node); /* [1] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 1);
-
-    ecu_circular_dll_push_back(&list, &data2.node); /* [1, 2] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 2);
-
-    ecu_circular_dll_push_back(&list, &data3.node); /* [1, 2, 3] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 3);
-
-    ecu_circular_dll_remove_node(&list, &data2.node); /* [1, 3] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 2);
-
-    ecu_circular_dll_remove_node(&list, &data1.node); /* [3] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 1);
-    
-    ecu_circular_dll_remove_node(&list, &data3.node); /* [] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 0);
-
-    ecu_circular_dll_push_back(&list, &data2.node); /* [2] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 1);
-
-    ecu_circular_dll_remove_node(&list, &data2.node); /* [] */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list), 0);
-}
-
-
-// Normal node addition and removal.
-
-
-
-
-// removing nodes
-// have 2 lists - list A and list B. ecu_circular_dll_remove_node(&listA, nodeinListB); Verify this does nothing.
-TEST(CircularDLL, TestInvalidNodeRemoval)
-{
-    /* STEP 1: Arrange. */
-    struct ecu_circular_dll list1;
-    struct ecu_circular_dll list2;
-    struct ecu_circular_dll_node node_in_list1;
-    struct ecu_circular_dll_node node_in_list2;
-
-    ecu_circular_dll_ctor(&list1);
-    ecu_circular_dll_ctor(&list2);
-    ecu_circular_dll_push_back(&list1, &node_in_list1);
-    ecu_circular_dll_push_back(&list2, &node_in_list2);
-
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list1), 1);
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list2), 1);
-
-    mock().expectCall()
-
-    /* STEP 2: Action. */
     try 
     {
-        ecu_circular_dll_remove_node(&list1, &node_in_list2);
+        /* Step 1: Arrange. */
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_fail_));
+        (void)ecu_circular_dll_iterator_begin(&list_, &iterator_); /* Initialize iterator at beginning so any iterator call can be safely used. */
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_begin(&list_, &iterator_));
+
+        /* [1] */
+        ecu_circular_dll_push_back(&list_, &node1_.node);
+        POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [1, 2] */
+        ecu_circular_dll_push_back(&list_, &node2_.node);
+        POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [1, 2, 3] */
+        ecu_circular_dll_push_back(&list_, &node3_.node);
+        POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
+        POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_next(&iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [1, 3] */
+        ecu_circular_dll_remove_node(&list_, &node2_.node);
+        POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_next(&iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [3] */
+        ecu_circular_dll_remove_node(&list_, &node1_.node);
+        POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+        
+        /* [] */
+        ecu_circular_dll_remove_node(&list_, &node3_.node);
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [2] */
+        ecu_circular_dll_push_back(&list_, &node2_.node);
+        POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* [] */
+        ecu_circular_dll_remove_node(&list_, &node2_.node);
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
     }
-    catch (const ECUMockAsserterException& e)
+    catch (AssertException& e)
     {
         (void)e;
+        /* FAIL */
+    }
+}
+
+
+TEST(CircularDLL, CorrectSizeReturned)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_fail_));
+        
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_push_back(&list_, &node1_.node); /* [1] */
+        CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_push_back(&list_, &node2_.node); /* [1, 2] */
+        CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_push_back(&list_, &node3_.node); /* [1, 2, 3] */
+        CHECK_EQUAL(3, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_remove_node(&list_, &node2_.node); /* [1, 3] */
+        CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_remove_node(&list_, &node1_.node); /* [3] */
+        CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
+        
+        ecu_circular_dll_remove_node(&list_, &node3_.node); /* [] */
+        CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_push_back(&list_, &node2_.node); /* [2] */
+        CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
+
+        ecu_circular_dll_remove_node(&list_, &node2_.node); /* [] */
+        CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
+
+/**
+ * @brief Node should be removed from first list and
+ * added to second list.
+ */
+TEST(CircularDLL, AddingNodeFromAnotherList)
+{
+    struct ecu_circular_dll extra_list;
+
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_circular_dll_ctor(&extra_list);
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_fail_));
+        ecu_circular_dll_push_back(&list_, &node1_.node);
+        ecu_circular_dll_push_back(&list_, &node2_.node);
+        ecu_circular_dll_push_back(&extra_list, &node3_.node);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_circular_dll_push_back(&extra_list, &node1_.node);
+
+        /* list_ = [2] */
+        CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
+        POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+
+        /* extra_list = [1, 3] */
+        CHECK_EQUAL(2, ecu_circular_dll_get_size(&extra_list));
+        POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&extra_list, &iterator_));
+        POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_begin(&extra_list, &iterator_));
+        POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL. */
     }
 
-    /* STEP 3: Assert. */
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list1), 1);
-    CHECK_EQUAL(ecu_circular_dll_get_size(&list2), 1);
+    /* Step 3: Assert. */
+    CHECK_EQUAL(0, ecu_circular_dll_get_size(&extra_list));
+}
+
+
+TEST(CircularDLL, CannotAddNodeAlreadyInList)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_ok_));
+        ecu_circular_dll_push_back(&list_, &node1_.node);
+        ecu_circular_dll_push_back(&list_, &node2_.node);
+
+        /* Step 2: Action. */
+        ecu_circular_dll_push_back(&list_, &node2_.node);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* OK. */
+    }
+
+    /* Step 3: Assert. */
+    CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
+    POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+    POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
+    POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
+}
+
+
+TEST(CircularDLL, CannotRemoveNodeNotInList)
+{
+    struct ecu_circular_dll extra_list;
+
+    try 
+    {
+        /* Step 1: Arrange. */    
+        ecu_circular_dll_ctor(&extra_list);
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_ok_));
+        ecu_circular_dll_push_back(&list_, &node1_.node);
+
+        /* Step 2: Action. */
+        ecu_circular_dll_remove_node(&extra_list, &node1_.node);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* OK. */
+    }
+
+    /* Step 3: Assert. */
+    CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
+    POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&list_, &iterator_));
+    POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
 }
 
 
 
 
+// iterator removal. add 5 nodes to list. iterate over and remove 2 nodes. verify 3 nodes are correctly left.
+// iterator addition?
 
 // TEST_F(CircularDLLTest, CircularDLLIterator)
 // {

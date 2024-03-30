@@ -71,10 +71,10 @@
  *     ECU_RUNTIME_ASSERT(ptr, &my_functor);
  * 
  *     // If you don't want the hassle of using your own functor and handler 
- *     // you can supply ECU_NO_FUNCTOR instead. A default handler will execute 
+ *     // you can supply ECU_DEFAULT_FUNCTOR instead. A default handler will execute 
  *     // instead. The default handler hangs in a permanent while loop if NDEBUG 
  *     // is not defined so users are able to inspect the call stack.
- *     ECU_RUNTIME_ASSERT(ptr, ECU_NO_FUNCTOR);
+ *     ECU_RUNTIME_ASSERT(ptr, ECU_DEFAULT_FUNCTOR);
  * }
  * @endcode
  * 
@@ -88,7 +88,7 @@
  * Run-time assert macro should be used when the system is still in control. I.e. no hard 
  * faults, stack overflows, any other NMI faults, etc. A unique, user-defined functor can
  * be supplied to each @ref ECU_RUNTIME_ASSERT() call. If the assert fires, your custom 
- * functor will execute. If you do not wish to create your own functor, @ref ECU_NO_FUNCTOR 
+ * functor will execute. If you do not wish to create your own functor, @ref ECU_DEFAULT_FUNCTOR 
  * can instead be supplied to @ref ECU_RUNTIME_ASSERT() macro. If an assert fires then a 
  * default functor will execute instead. The default functor hangs in a permanent while loop 
  * if NDEBUG is not defined so users are able to inspect the call stack. See code example
@@ -262,14 +262,14 @@ struct ecu_assert_functor
  * to use a custom functor. Example call:
  * 
  * @code{.c}
- * ECU_RUNTIME_ASSERT(false, ECU_NO_FUNCTOR);
+ * ECU_RUNTIME_ASSERT(false, ECU_DEFAULT_FUNCTOR);
  * @endcode
  * 
  * Default assert handler will execute if this is used. The default
  * handler hangs in a permanent while loop if NDEBUG is not defined
  * so users are able to inspect the call stack.
  */
-#define ECU_NO_FUNCTOR                          ((struct ecu_assert_functor *)0)
+#define ECU_DEFAULT_FUNCTOR                          ((struct ecu_assert_functor *)0)
 
 
 
@@ -302,7 +302,7 @@ struct ecu_assert_functor
      * @param check_ Condition to check. If this is true nothing happens. 
      * If this is false the assert fires and executes a user-supplied functor.
      * @param functor_ User-defined functor that executes if assert fires. 
-     * If unused this should be @ref ECU_NO_FUNCTOR.
+     * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
      */
     #define ECU_RUNTIME_ASSERT(check_, functor_)
 #else
@@ -319,7 +319,7 @@ struct ecu_assert_functor
          * @param check_ Condition to check. If this is true nothing happens. 
          * If this is false the assert fires and executes a user-supplied functor.
          * @param functor_ User-defined functor that executes if assert fires. 
-         * If unused this should be @ref ECU_NO_FUNCTOR.
+         * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
          */
         #define ECU_RUNTIME_ASSERT(check_, functor_)        ((check_) ? ((void)0) : ecu_assert_do_not_use((functor_), &ecu_file_name_[0], __LINE__))
     #else

@@ -28,9 +28,7 @@ if(ECU_ENABLE_UNIT_TESTING)
     )
 
     target_sources(ecu_unit_test 
-        PRIVATE 
-            # Mocks
-            ${CMAKE_CURRENT_LIST_DIR}/unit-test/mocks/mock_asserter.cpp
+        PRIVATE
             # Tests
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_circular_dll.cpp

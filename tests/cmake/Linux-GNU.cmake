@@ -41,7 +41,11 @@ set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -fdiagnostics-color=always")
 set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wall")
 set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Wall")
 
-if(NOT ECU_ENABLE_UNIT_TESTING)
+if(ECU_ENABLE_UNIT_TESTING)
+	# Store symbols for debugger.
+	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -g")
+	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -g")
+else()
 	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wcast-align")
 	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wstrict-prototypes") # All compiler flags are the same for C and C++ besides this one.
 	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return -Wcast-qual")

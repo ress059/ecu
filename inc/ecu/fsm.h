@@ -233,7 +233,7 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
 static inline enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *fsm, 
                                                        ecu_fsm_func_ptr new_state)
 {
-    ECU_RUNTIME_ASSERT( (fsm && new_state), ECU_NO_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (fsm && new_state), ECU_DEFAULT_FUNCTOR );
     fsm->state = new_state;
     return ECU_FSM_STATE_TRANSITION;
 }

@@ -6,13 +6,13 @@
     "configurations": [
         {
             "name": "ECU Unit Test Debug - Linux GCC",
-            "cwd": "${workspaceFolder}/tests/unit-tests/tests",
-            "program": "${workspaceFolder}/tests/unit-tests/tests/ECU_unit_test",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/tests/unit-test/build/tests/ecu_unit_test",
             "type": "cppdbg",
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
             "request": "launch",
-            "stopAtEntry": true,
+            "stopAtEntry": true
         }
     ]
 }
