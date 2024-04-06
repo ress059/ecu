@@ -109,7 +109,6 @@
 
 /**
  * @brief Each fsm state handler function must return this type. 
- * 
  * @details @ref ecu_fsm_dispatch() function uses this information 
  * to know which state transitions to execute and verify your fsm's 
  * behavior is valid.
@@ -140,7 +139,6 @@ typedef enum ecu_fsm_status (*ecu_fsm_func_ptr)(struct ecu_fsm *, const struct e
 
 /**
  * @brief Base fsm class. 
- * 
  * @details State is represented by a function. See @ref fsm.h for details.
  */
 struct ecu_fsm
@@ -153,7 +151,6 @@ struct ecu_fsm
     /**
      * @brief PRIVATE. Maximum number of consecutive state transitions 
      * fsm can take before an assertion fires.
-     * 
      * @details Used to prevent deadlock scenarios where fsm was set 
      * up incorrectly and two states indefinitely transition between 
      * each other.
@@ -196,7 +193,6 @@ extern void ecu_fsm_ctor(struct ecu_fsm *fsm, ecu_fsm_func_ptr init_state_0,
 /**@{*/
 /**
  * @brief Dispatch event to fsm.
- * 
  * @details Handles state transitions by automatically executing appropriate 
  * @ref ECU_EXIT_EVENT and @ref ECU_ENTRY_EVENT cases of user's fsm. Verifies 
  * valid fsm behavior.
@@ -212,7 +208,6 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
 
 /**
  * @brief Transition fsm to a new state.
- * 
  * @details Application calls this inside their user-defined state
  * handler functions to signal that the dispatched event caused a
  * state transition. This function should always be used - fsm 

@@ -123,7 +123,6 @@
 #if defined(ECU_DOXYGEN)
     /**
      * @brief Produce compilation error if assert fires.
-     * 
      * @details Macro expands to different variants depending on which C/C++ standard is 
      * used when compiling. Serves as a common interface that the Application can use to
      * remain backwards compatible with various standards.

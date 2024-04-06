@@ -63,7 +63,6 @@
 /**
  * @brief Template that users should follow to define their own event 
  * signals.
- * 
  * @details Event signals identify the type of event that was dispatched.
  * This template ensures there is no conflict between reserved and 
  * user-defined event signals. Values less than @ref ECU_IDLE_EVENT are 
@@ -91,7 +90,6 @@ enum ecu_reserved_event_signals
 
 /**
  * @brief Event signal. Identifies the type of event that was dispatched. 
- * 
  * @details This is a generic type that the library can use to implicitly
  * typecast between this value, @ref ecu_reserved_event_signals enumeration, 
  * and user-defined event signal enumerations. This must be a signed integer 
@@ -108,7 +106,6 @@ typedef int16_t ecu_event_signal;
 
 /**
  * @brief Base event class. 
- * 
  * @details Serves as an interface that users inherit from to 
  * define their own events that will be dispatched to library functions. 
  * See @ref event.h for details.
