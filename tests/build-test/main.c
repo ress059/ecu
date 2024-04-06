@@ -138,11 +138,14 @@ int main(void)
     /* Call some API functions */
     ECU_RUNTIME_ASSERT( (3 == 3), ECU_DEFAULT_FUNCTOR );
     ecu_circular_dll_ctor(&app_list);
+    ecu_circular_dll_node_ctor(&app_node1.node, 0, 0);
+    ecu_circular_dll_node_ctor(&app_node2.node, 0, 0);
+
     ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler, 1);
     
     ecu_circular_dll_push_back(&app_list, &app_node1.node);
     ecu_circular_dll_push_back(&app_list, &app_node2.node);
-    ecu_circular_dll_remove_node(&app_list, &app_node2.node);
+    ecu_circular_dll_remove_node(&app_node2.node);
 
     ecu_fsm_dispatch((struct ecu_fsm *)&app_fsm, (const struct ecu_event *)&app_event);
 

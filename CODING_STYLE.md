@@ -34,6 +34,15 @@ static void private_function(void);
 # Include Paths
 1. Include paths for publicly-exposed headers will always begin with ecu in order for larger apps to have scope for include files. For example <ecu/asserter.h>, <ecu/fsm.h>, etc.
 
+# Doxygen Style commends
+1. @brief and @details directives never separated by a line. Example:
+```C
+/**
+ * @brief These should never be separated by a line.
+ * @details
+ */
+```
+
 
 # Other
 1. Same typedef rules as linux kernel. Essentially no typedefs unless absolutely necessary.
