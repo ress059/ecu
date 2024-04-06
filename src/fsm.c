@@ -25,7 +25,7 @@ static const struct ecu_event exit_evt =
     .signal = ECU_EXIT_EVENT
 };
 
-static struct ecu_assert_functor *assert_functor = (struct ecu_assert_functor *)0;
+static struct ecu_assert_functor *assert_functor = ECU_DEFAULT_FUNCTOR;
 
 
 

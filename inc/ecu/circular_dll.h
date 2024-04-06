@@ -73,6 +73,22 @@
  */
 #define ECU_CIRCULAR_DLL_GET_ENTRY(ptr, type, member)   ((type *)((char *)(ptr) - offsetof(type, member)))
 
+// #error "Get rid of these macros"
+// /**
+//  * @brief Use to initialize node at compile-time.
+//  * 
+//  * @param node This must be of type (struct ecu_circular_dll_node)
+//  */
+// #define ECU_CIRCULAR_DLL_NODE_CTOR_COMPILETIME(node)    { .next = &(node), .prev = &(node) }
+
+
+// /**
+//  * @brief Use to initialize list at compile-time.
+//  * 
+//  * @param list This must be of type (struct ecu_circular_dll)
+//  */
+// #define ECU_CIRCULAR_DLL_LIST_CTOR_COMPILETIME(list)    { .terminal_node = { .next = &(list).terminal_node, .prev = &(list).terminal_node } }
+
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -141,12 +157,23 @@ extern "C" {
  */
 /**@{*/
 /**
- * @brief Constructor.
+ * @brief Node constructor.
  * 
- * @param list List to construct. This cannot be NULL - memory must be allocated
- * for list beforehand since dynamic memory allocation is not used. This should
- * not be a list that is currently active and has nodes in it since the list's 
- * next and prev pointers are reset in this constructor.
+ * @warning The node being constructed cannot be active and within a list,
+ * otherwise behavior is undefined.
+ * 
+ * @param node Node to construct. This cannot be NULL.
+ */
+extern void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *node);
+
+
+/**
+ * @brief List constructor.
+ * 
+ * @warning The list being constructed cannot be active and have nodes in it,
+ * otherwise behavior is undefined.
+ * 
+ * @param list List to construct. This cannot be NULL.
  */
 extern void ecu_circular_dll_ctor(struct ecu_circular_dll *list);
 
@@ -155,8 +182,8 @@ extern void ecu_circular_dll_ctor(struct ecu_circular_dll *list);
  * @brief Destructor. Removes all nodes from the list. Resets all nodes by
  * having their next and prev pointers point to the nodes themsevles.
  * 
- * @param list List to destroy. This cannot be NULL. This must be a list that
- * was previously constructed via constructor call.
+ * @param list List to destroy. This cannot be NULL. Must have been previously
+ * constructed via constructor call.
  */
 extern void ecu_circular_dll_destroy(struct ecu_circular_dll *list);
 /**@}*/
@@ -171,9 +198,10 @@ extern void ecu_circular_dll_destroy(struct ecu_circular_dll *list);
  * 
  * @param list List to add to. This cannot be NULL. Constructor must have been 
  * called on this list beforehand.
- * @param node Node to add. This cannot be NULL - memory must be allocated for 
- * node beforehand since dynamic memory allocation is not used. Node cannot already
- * be within the supplied list.
+ * @param node Node to add. This cannot be NULL. Constructor must have been
+ * called on this node beforehand. Node cannot already be within the supplied 
+ * list. Node cannot be apart of another list - it must be explicitly removed 
+ * via @ref ecu_circular_dll_remove_node() first.
  */
 extern void ecu_circular_dll_push_back(struct ecu_circular_dll *list, 
                                        struct ecu_circular_dll_node *node);
@@ -183,13 +211,10 @@ extern void ecu_circular_dll_push_back(struct ecu_circular_dll *list,
  * @brief Remove node from list. Previous and next nodes in list are 
  * automatically adjusted.
  * 
- * @param list List to remove from. This cannot be NULL. Constructor 
- * must have been called on this list beforehand.
  * @param node Node to remove. This cannot be NULL. This node must be 
- * within the supplied list.
+ * within a list.
  */
-extern void ecu_circular_dll_remove_node(struct ecu_circular_dll *list, 
-                                         struct ecu_circular_dll_node *node);
+extern void ecu_circular_dll_remove_node(struct ecu_circular_dll_node *node);
 
 
 /**
@@ -199,6 +224,8 @@ extern void ecu_circular_dll_remove_node(struct ecu_circular_dll *list,
  * have been called on this list beforehand.
  * 
  * @return Number of nodes in the list.
+ * 
+ * @note This iterates over the entire list so this is a longer function.
  */
 extern uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *list);
 /**@}*/
@@ -220,20 +247,16 @@ extern uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *list);
  * that represents HEAD and TAIL of the list.
  * 
  * @param list List to iterate through. This cannot be NULL. Constructor
- * must have been called on this list beforehand and it must have valid
- * next and prev pointers.
- * @param iterator Iterator object to construct. This cannot be NULL - 
- * memory must be allocated for iterator beforehand since dynamic memory 
- * allocation is not used.
+ * must have been called on this list beforehand.
+ * @param iterator Iterator object to construct. This cannot be NULL.
  */
 extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_circular_dll *list,
                                                                      struct ecu_circular_dll_iterator *iterator);
 
 
 /**
- * @brief Returns terminal node in the list. 
- * @details This is a dummy delimeter that represents HEAD and TAIL of 
- * the list.
+ * @brief Returns terminal node in the list. This is a dummy delimeter that 
+ * represents HEAD and TAIL of the list and should never be used directly.
  * 
  * @param iterator Iterator object. This cannot be NULL. This must have
  * been created beforehand via call to @ref ecu_circular_dll_iterator_begin().
@@ -262,12 +285,12 @@ extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_next(struct ecu_c
 /**@{*/
 /**
  * @brief Set a functor to execute if an assert fires within this module. 
- * @details This is optional - if no functor is set a default one will be 
- * used. The default functor hangs in a permanent while loop if NDEBUG is 
+ * This is optional - if no functor is set a default one will be used. 
+ * The default functor hangs in a permanent while loop if NDEBUG is 
  * not defined so users are able to inspect the call stack.
  * 
  * @param functor User-supplied functor. If a NULL value is supplied
- * the default functor will be used. 
+ * the default functor will be used.
  */
 extern void ecu_circular_dll_set_assert_functor(struct ecu_assert_functor *functor);
 /**@}*/
