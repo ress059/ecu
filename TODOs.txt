@@ -1,0 +1,12 @@
+Completed.
+1. event.h/.c and object_id.hs/.c done. Documentation for these also done.
+
+
+dll:
+1. Have iterator store copy of current->next so we can safely remove from list. See Linux implementation.
+2. Update documentation.
+3. Update ecu_circular_dll_node_ctor() calls in tests since order changed. Explicitly call out destroy pointer via
+void (*)(struct ecu_circular_dll_node *)0 instead of just 0.
+
+fsm:
+1. Update documentation with new event.h/.c naming convention.

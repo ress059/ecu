@@ -6,18 +6,18 @@
  * @details The event ID scheme allows the library to define reserved event IDs and
  * users to define their own event IDs without conflicts. Event IDs the library
  * reserves will be negative and event IDs the user defines will start at 0 which
- * is always @ref ECU_VALID_EVENT_BEGIN. Example of user defining their own event IDs:
+ * is always @ref ECU_USER_EVENT_ID_BEGIN. Example of user defining their own event IDs:
  * @code{.c}
  * enum user_event_ids
  * {
- *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_BEGIN,
+ *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_ID_BEGIN,
  *     TIMEOUT_EVENT,
  *     ERROR_EVENT
  * };
  * @endcode
  * 
  * This scheme also allows library functions to know when an invalid event
- * was used via @ref ECU_VALID_EVENT_BEGIN enumeration.
+ * was used via @ref ECU_VALID_EVENT_ID_BEGIN enumeration.
  * 
  * The event ID is contained within a base event class. This class serves as an
  * interface that users inherit from to add any supplemental event data. For example:
@@ -45,7 +45,7 @@
  * my_event.event.id = TIMEOUT_EVENT; // ecu_event_id type
  * my_event.index = 5;
  * 
- * // Pass user-defined event to library function.
+ * // Pass user-defined event to library function by upcasting.
  * ecu_foo((const struct ecu_event *)&my_event);
  * @endcode
  * @version 0.1
@@ -62,6 +62,9 @@
 
 #include <stdint.h>
 
+/* Runtime asserts. */
+#include <ecu/asserter.h>
+
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -72,35 +75,36 @@
  * @brief Scheme that allows the library to define reserved event IDs and
  * users to define their own event IDs without conflicts. Event IDs the library
  * defines will be negative and event IDs the user defines will start at 0 which
- * is always @ref ECU_VALID_EVENT_BEGIN. Example of user defining their own events:
+ * is always @ref ECU_USER_EVENT_ID_BEGIN. Example of user defining their own events:
  * @code{.c}
  * enum user_events
  * {
- *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_BEGIN,
+ *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_ID_BEGIN,
  *     TIMEOUT_EVENT,
  *     ERROR_EVENT
  * };
  * @endcode
  * 
  * This scheme also allows library functions to know when an invalid event
- * was used via @ref ECU_VALID_EVENT_BEGIN enumeration.
+ * was used via @ref ECU_VALID_EVENT_ID_BEGIN enumeration.
  */
 enum ecu_reserved_event_ids
 {
-    /*--------------------------------------------------------------*/
-    /*------------------ RESERVED EVENT IDS SECTION. ---------------*/
-    /*-------- LAST MEMBER MUST EQUAL ECU_VALID_EVENT_BEGIN --------*/
-    /*--------------------------------------------------------------*/
+    /*------------------------------------------------------------------*/
+    /*--------------------- RESERVED EVENT IDS SECTION -----------------*/
+    /*--------- LAST MEMBER MUST EQUAL ECU_VALID_EVENT_ID_BEGIN --------*/
+    /*------------------------------------------------------------------*/
     /* ADD FUTURE RESERVED EVENTS HERE */
-    ECU_ENTRY_EVENT             = -2,   /**< -2. FOR LIBRARY USE ONLY. Run ECU_ENTRY_EVENT of state that was entered. */
-    ECU_EXIT_EVENT              = -1,   /**< -1. FOR LIBRARY USE ONLY. Run ECU_EXIT_EVENT of state that was exited. */
-    ECU_VALID_EVENT_BEGIN       = 0,    /**< 0. FOR LIBRARY USE ONLY. Must be last member in this section. Represents end of reserved event IDs. */
+    ECU_ENTRY_EVENT             = -2,   /**< Events not allowed to directly dispatch this. ECU_ENTRY_EVENT case of state that was entered. */
+    ECU_EXIT_EVENT              = -1,   /**< Events not allowed to directly dispatch this. ECU_EXIT_EVENT case of state that was exited. */
+    /*******************************/
+    ECU_VALID_EVENT_ID_BEGIN    = 0,    /**< PRIVATE. FOR LIBRARY USE ONLY. Represents start of event IDs users can pass to library functions. */
 
-    /*--------------------------------------------------------------*/
-    /*------------------ AVAILABLE EVENT IDS SECTION. --------------*/
-    /*-------- FIRST MEMBER MUST EQUAL ECU_VALID_EVENT_BEGIN -------*/
-    /*--------------------------------------------------------------*/   
-    ECU_USER_EVENT_BEGIN        = ECU_VALID_EVENT_BEGIN     /**< 0. Start of user-defined event IDs. Must always be 0 for future compatibility. */
+    /*------------------------------------------------------------------*/
+    /*--------------------- AVAILABLE EVENT IDS SECTION ----------------*/
+    /*--------- FIRST MEMBER MUST EQUAL ECU_VALID_EVENT_ID_BEGIN -------*/
+    /*------------------------------------------------------------------*/
+    ECU_USER_EVENT_ID_BEGIN     = ECU_VALID_EVENT_ID_BEGIN     /**< 0. Start of user-defined event IDs. Must always be 0 for future compatibility. */
 };
 
 
@@ -119,7 +123,7 @@ typedef int16_t ecu_event_id;
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- BASE EVENT STRUCTURE ----------------------------------------------*/
+/*--------------------------------------------------------- BASE EVENT CLASS ------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
@@ -133,11 +137,38 @@ struct ecu_event
     /**
      * @brief Identifies the type of event that was dispatched.
      * 
-     * @warning Must be greater than or equal to @ref ECU_VALID_EVENT_BEGIN.
-     * Must follow same mechanism described in @ref ecu_reserved_event_ids
+     * @warning Must be greater than or equal to @ref ECU_VALID_EVENT_ID_BEGIN.
+     * Must follow same mechanism explained in description of @ref ecu_reserved_event_ids
+     * enumeration.
      */
     ecu_event_id id;
 };
+
+
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * @pre Memory already allocated for @p me
+ * @brief Initialize event with an event ID.
+ * 
+ * @warning @p id_0 must be greater than or equal to @ref ECU_VALID_EVENT_ID_BEGIN.
+ * User must define this event ID in a separate enumeration following the same
+ * mechanism explained in description of @ref ecu_reserved_event_ids
+ * 
+ * @param me Event to initialize. This cannot be NULL. Users can pass their
+ * own events by upcasting to the base event class. See description of @ref event.h
+ * for more details.
+ * @param id_0 User-defined event ID.
+ */
+static inline void ecu_event_ctor(struct ecu_event *me, ecu_event_id id_0)
+{
+    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_EVENT_ID_BEGIN)), 
+                        ECU_DEFAULT_FUNCTOR );
+    me->id = id_0;
+}
 
 
 #endif /* ECU_EVENT_H_ */

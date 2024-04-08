@@ -15,15 +15,6 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- STATIC ASSERTS ----------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-/* Produce compilation error if ecu_event_signal is an unsigned type. */
-ECU_STATIC_ASSERT( (((ecu_dll_node_id)(-1)) < ((ecu_dll_node_id)(0))) );
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------- FILE-SCOPE VARIABLES ------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
@@ -109,6 +100,7 @@ static bool list_valid(const struct ecu_circular_dll *list)
 
 static void list_head_destroy_callback(struct ecu_circular_dll_node *me)
 {
+    (void)me;
     ECU_RUNTIME_ASSERT( (false), DLL_ASSERT_FUNCTOR );
 }
 
@@ -118,11 +110,11 @@ static void list_head_destroy_callback(struct ecu_circular_dll_node *me)
 /*------------------------------------------------------ PUBLIC FUNCTIONS: LIST ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, ecu_dll_node_id id_0,
-                                void (*destroy_0)(struct ecu_circular_dll_node *me))
+void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me,
+                                void (*destroy_0)(struct ecu_circular_dll_node *me),
+                                ecu_object_id id_0)
 {
-    ECU_RUNTIME_ASSERT( (id_0 >= ))
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), DLL_ASSERT_FUNCTOR );
     /* Do NOT do ECU_RUNTIME_ASSERT( (!node_in_list(me)), DLL_ASSERT_FUNCTOR ); 
     since it is valid for next and prev pointers to be initialized to non-NULL 
     garbage values before a constructor call. Otherwise me->next->prev and 
@@ -132,8 +124,8 @@ void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, ecu_dll_node_i
 
     me->next    = me;
     me->prev    = me;
-    me->id      = id_0;      /* Optional. */
     me->destroy = destroy_0; /* Optional callback so do not NULL assert. */
+    me->id      = id_0;      /* Optional. */
 }
 
 
@@ -149,8 +141,8 @@ void ecu_circular_dll_ctor(struct ecu_circular_dll *me)
 
     me->head.next       = &me->head;
     me->head.prev       = &me->head;
-    me->head.id         = reservedval;
     me->head.destroy    = &list_head_destroy_callback;
+    me->head.id         = ECU_OBJECT_ID_RESERVED;
 }
 
 

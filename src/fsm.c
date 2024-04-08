@@ -17,12 +17,12 @@
 
 static const struct ecu_event entry_evt = 
 {
-    .signal = ECU_ENTRY_EVENT
+    .id = ECU_ENTRY_EVENT
 };
 
 static const struct ecu_event exit_evt = 
 {
-    .signal = ECU_EXIT_EVENT
+    .id = ECU_EXIT_EVENT
 };
 
 static struct ecu_assert_functor *assert_functor = ECU_DEFAULT_FUNCTOR;
@@ -50,7 +50,7 @@ void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
     /* NULL assertions. Also reject user from dispatching reserved event. */
     ECU_RUNTIME_ASSERT( (fsm && event), assert_functor );
     ECU_RUNTIME_ASSERT( ((fsm->max_state_transitions) && (fsm->state) && \
-                         (event->signal >= ECU_USER_EVENT_BEGIN)), assert_functor );
+                         (event->id >= ECU_VALID_EVENT_ID_BEGIN)), assert_functor );
 
     /* Dispatch event to state. */
     prev_state = fsm->state;

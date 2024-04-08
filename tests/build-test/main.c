@@ -16,6 +16,7 @@
 /* ECU library. Call some common API functions. */
 #include <ecu/asserter.h>
 #include <ecu/circular_dll.h>
+#include <ecu/event.h>
 #include <ecu/fsm.h>
 
 
@@ -34,7 +35,7 @@ ECU_STATIC_ASSERT( (2==2) );
 
 enum app_event_signals
 {
-    TIMER_EXPIRED_EVENT = ECU_USER_EVENT_BEGIN
+    TIMER_EXPIRED_EVENT = ECU_USER_EVENT_ID_BEGIN
 };
 
 
@@ -91,7 +92,7 @@ static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct a
 {
     enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
 
-    switch(e->super.signal)
+    switch(e->super.id)
     {
         case ECU_ENTRY_EVENT:
         {
@@ -132,14 +133,14 @@ static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct a
 int main(void)
 {
     /* Setup. */
-    app_event.super.signal = TIMER_EXPIRED_EVENT;
+    ecu_event_ctor((struct ecu_event *)&app_event, TIMER_EXPIRED_EVENT);
     app_event.data = 5;
 
     /* Call some API functions */
     ECU_RUNTIME_ASSERT( (3 == 3), ECU_DEFAULT_FUNCTOR );
     ecu_circular_dll_ctor(&app_list);
-    ecu_circular_dll_node_ctor(&app_node1.node, 0, 0);
-    ecu_circular_dll_node_ctor(&app_node2.node, 0, 0);
+    ecu_circular_dll_node_ctor(&app_node1.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+    ecu_circular_dll_node_ctor(&app_node2.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
 
     ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler, 1);
     
