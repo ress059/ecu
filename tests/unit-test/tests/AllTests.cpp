@@ -1,5 +1,5 @@
 /**
- * @file AllTests.cpp
+ * @file
  * @author Ian Ress
  * @brief Run all unit tests.
  * @version 0.1

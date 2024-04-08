@@ -23,9 +23,9 @@
  * 
  * // Constructing list and nodes. Not using node id or destroy callbacks in this example.
  * ecu_circular_dll_ctor(&list);
- * ecu_circular_dll_node_ctor(&data1.node, 0, 0);
- * ecu_circular_dll_node_ctor(&data2.node, 0, 0);
- * ecu_circular_dll_node_ctor(&data3.node, 0, 0);
+ * ecu_circular_dll_node_ctor(&data1.node, ECU_DLL_NODE_ID_UNUSED, 0);
+ * ecu_circular_dll_node_ctor(&data2.node, ECU_DLL_NODE_ID_UNUSED, 0);
+ * ecu_circular_dll_node_ctor(&data3.node, ECU_DLL_NODE_ID_UNUSED, 0);
  * 
  * // Adding nodes to list.
  * ecu_circular_dll_push_back(&list, &data1.node);
@@ -87,6 +87,54 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------- DLL NODE IDS --------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * @private 
+ * @brief PRIVATE. Template that users should follow to define their own node IDs
+ * in @ref ecu_circular_dll_node.id. This is an optional ID users can 
+ * assign to each node to identify different types stored in the same list.
+ * @details Values less than @ref ECU_DLL_NODE_ID_UNUSED are 
+ * reserved for internal use by the library. The first user-definable 
+ * signal starts at @ref ECU_USER_DLL_NODE_ID_BEGIN. An example node ID
+ * declaration would be:
+ * @code{.c}
+ * enum user_dll_node_ids
+ * {
+ *     MY_DATA_TYPE1 = ECU_USER_DLL_NODE_ID_BEGIN,
+ *     MY_DATA_TYPE2,
+ *     MY_DATA_TYPE3
+ * };
+ * @endcode
+ */
+enum ecu_reserved_dll_node_ids
+{
+    /* ADD FUTURE RESERVED IDS HERE SO OTHER ENUM VALUES REMAIN THE EXACT SAME. */
+    /* ANY_NEW_RESERVED_IDS         = -2 or whatever value we're currently on. */
+    ECU_DLL_NODE_ID_RESERVED        = -1,   /**< FOR LIBRARY USE ONLY. */
+    ECU_DLL_VALID_NODE_IDS_START,           /**< FOR LIBRARY USE ONLY. MUST BE LAST MEMBER IN THIS SECTION. */
+    /****************************************************************************/
+    ECU_DLL_NODE_ID_UNUSED          = ECU_DLL_VALID_NODE_IDS_START,    /**< First ID available to users. MUST BE FIRST MEMBER IN THIS SECTION. Node ID mechanism is unused. */
+    ECU_USER_DLL_NODE_ID_BEGIN                                         /**< Start of user-defined IDs. MUST BE LAST MEMBER IN THIS SECTION. */
+};
+
+
+/**
+ * @private 
+ * @brief PRIVATE. This is a generic type that the library can use to implicitly
+ * typecast between this value, @ref ecu_reserved_dll_node_ids enumeration, 
+ * and user-defined node ID enumerations. 
+ * 
+ * @warning This must be a signed integer type in order to 
+ * handle @ref ecu_reserved_dll_node_ids enumerations less than 0. 
+ * A compilation error will occur if this is declared as an unsigned type.
+ */
+typedef int16_t ecu_dll_node_id;
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------- CIRCULAR DOUBLY LINKED LIST -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
@@ -112,7 +160,7 @@ struct ecu_circular_dll_node
      * @brief PRIVATE. Optional ID user can assign to each node
      * to identify different types stored in the same list.
      */
-    uint8_t id;
+    ecu_dll_node_id id;
 
     /**
      * @private
@@ -192,12 +240,14 @@ extern "C" {
  * 
  * @param me Node to construct. This cannot be NULL.
  * @param id_0 Optional ID user can assign to each node to identify different 
- * types stored in the same list.
+ * types stored in the same list. See @ref ecu_reserved_dll_node_ids for more 
+ * details. Set to @ref ECU_DLL_NODE_ID_UNUSED if unused. This value must be 
+ * greater than or equal to @ref ECU_DLL_NODE_ID_UNUSED
  * @param destroy_0 Optional user-defined callback that defines additional
  * cleanup for node's destructor. Called when @ref ecu_circular_dll_destroy() 
  * is called and node is apart of the destroyed list.
  */
-extern void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, uint8_t id_0,
+extern void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, ecu_dll_node_id id_0,
                                        void (*destroy_0)(struct ecu_circular_dll_node *me));
 
 

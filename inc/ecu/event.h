@@ -1,11 +1,26 @@
 /**
  * @file
- * @brief Base event class. Serves as an interface that users 
- * inherit from to define their own events that will be dispatched 
- * to library functions.
- * @details Users can define their own events with application-specific
- * data by inheriting this base event struct. For example:
+ * @author Ian Ress
+ * @brief Provides a scheme that allows users to define their own event IDs and
+ * event objects.
+ * @details The event ID scheme allows the library to define reserved event IDs and
+ * users to define their own event IDs without conflicts. Event IDs the library
+ * reserves will be negative and event IDs the user defines will start at 0 which
+ * is always @ref ECU_VALID_EVENT_BEGIN. Example of user defining their own event IDs:
+ * @code{.c}
+ * enum user_event_ids
+ * {
+ *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_BEGIN,
+ *     TIMEOUT_EVENT,
+ *     ERROR_EVENT
+ * };
+ * @endcode
  * 
+ * This scheme also allows library functions to know when an invalid event
+ * was used via @ref ECU_VALID_EVENT_BEGIN enumeration.
+ * 
+ * The event ID is contained within a base event class. This class serves as an
+ * interface that users inherit from to add any supplemental event data. For example:
  * @code{.c}
  * struct user_event
  * {
@@ -18,32 +33,25 @@
  * };
  * @endcode
  * 
- * Library functions only use this base event class so users
- * can upcast back to this base class when calling them. 
- * Using the user_event struct defined earlier as an example:
- * 
+ * Library functions only use this base event class so users can upcast back to 
+ * this base class when calling them. Using the user_event struct and user_event_ids
+ * enumeration defined earlier as an example:
  * @code{.c}
- * void ecu_foo(const struct ecu_event *event); // Library function prototype.
+ * // Library function prototype.
+ * void ecu_foo(const struct ecu_event *event);
  * 
- * struct user_event my_event; 
+ * // Initialize your custom event.
+ * struct user_event my_event;
+ * my_event.event.id = TIMEOUT_EVENT; // ecu_event_id type
+ * my_event.index = 5;
  * 
+ * // Pass user-defined event to library function.
  * ecu_foo((const struct ecu_event *)&my_event);
  * @endcode
+ * @version 0.1
+ * @date 2024-04-07
  * 
- * This approach also makes it easier for any event struct to be
- * copied over to an asynchronous queue by value. Separating out
- * the event signal from the data would make this more difficult.
- * I.e.
- * 
- * @code{.c}
- * foo(ecu_event_signal sig, const void *data);
- * 
- * // vs.
- * struct user_event event;
- * foo((const void *)&event);
- * @endcode
- * 
- * @author Ian Ress
+ * @copyright Copyright (c) 2024
  * 
  */
 
@@ -57,46 +65,56 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------- EVENT SIGNALS --------------------------------------------------*/
+/*------------------------------------------------------------ EVENT IDS ----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief Template that users should follow to define their own event 
- * signals.
- * @details Event signals identify the type of event that was dispatched.
- * This template ensures there is no conflict between reserved and 
- * user-defined event signals. Values less than @ref ECU_IDLE_EVENT are 
- * reserved for internal use by the library. The first user-definable 
- * signal starts at @ref ECU_USER_EVENT_BEGIN. An example user event 
- * declaration would be:
+ * @brief Scheme that allows the library to define reserved event IDs and
+ * users to define their own event IDs without conflicts. Event IDs the library
+ * defines will be negative and event IDs the user defines will start at 0 which
+ * is always @ref ECU_VALID_EVENT_BEGIN. Example of user defining their own events:
  * @code{.c}
- * enum user_event_signals
+ * enum user_events
  * {
  *     BUTTON_PRESS_EVENT = ECU_USER_EVENT_BEGIN,
  *     TIMEOUT_EVENT,
  *     ERROR_EVENT
  * };
  * @endcode
+ * 
+ * This scheme also allows library functions to know when an invalid event
+ * was used via @ref ECU_VALID_EVENT_BEGIN enumeration.
  */
-enum ecu_reserved_event_signals
+enum ecu_reserved_event_ids
 {
-    ECU_ENTRY_EVENT             = -3,   /**< -3. DO NOT USE. Reserved. Run ECU_ENTRY_EVENT of state that was entered. */
-    ECU_EXIT_EVENT              = -2,   /**< -2. DO NOT USE. Reserved. Run ECU_EXIT_EVENT of state that was exited. */
-    /****************************/
-    ECU_IDLE_EVENT              = -1,   /**< -1. First signal available to users. Background processing event. */
-    ECU_USER_EVENT_BEGIN        = 0     /**< 0. Start of user-defined signals. */
+    /*--------------------------------------------------------------*/
+    /*------------------ RESERVED EVENT IDS SECTION. ---------------*/
+    /*-------- LAST MEMBER MUST EQUAL ECU_VALID_EVENT_BEGIN --------*/
+    /*--------------------------------------------------------------*/
+    /* ADD FUTURE RESERVED EVENTS HERE */
+    ECU_ENTRY_EVENT             = -2,   /**< -2. FOR LIBRARY USE ONLY. Run ECU_ENTRY_EVENT of state that was entered. */
+    ECU_EXIT_EVENT              = -1,   /**< -1. FOR LIBRARY USE ONLY. Run ECU_EXIT_EVENT of state that was exited. */
+    ECU_VALID_EVENT_BEGIN       = 0,    /**< 0. FOR LIBRARY USE ONLY. Must be last member in this section. Represents end of reserved event IDs. */
+
+    /*--------------------------------------------------------------*/
+    /*------------------ AVAILABLE EVENT IDS SECTION. --------------*/
+    /*-------- FIRST MEMBER MUST EQUAL ECU_VALID_EVENT_BEGIN -------*/
+    /*--------------------------------------------------------------*/   
+    ECU_USER_EVENT_BEGIN        = ECU_VALID_EVENT_BEGIN     /**< 0. Start of user-defined event IDs. Must always be 0 for future compatibility. */
 };
 
 
 /**
- * @brief Event signal. Identifies the type of event that was dispatched. 
- * @details This is a generic type that the library can use to implicitly
- * typecast between this value, @ref ecu_reserved_event_signals enumeration, 
- * and user-defined event signal enumerations. This must be a signed integer 
- * type in order to handle @ref ecu_reserved_event_signals enumerations less 
- * than 0.
+ * @private 
+ * @brief PRIVATE. Generic type that represents an event ID. Used so the library
+ * can implicitly typecast between this value, @ref ecu_reserved_event_ids 
+ * enumerations, and user-defined event ID enumerations.
+ * 
+ * @warning This must be a signed integer type in order to 
+ * handle @ref ecu_reserved_event_ids enumerations less than 0. A compilation 
+ * error will occur if this is declared as an unsigned type.
  */
-typedef int16_t ecu_event_signal;
+typedef int16_t ecu_event_id;
 
 
 
@@ -105,18 +123,20 @@ typedef int16_t ecu_event_signal;
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief Base event class. 
- * @details Serves as an interface that users inherit from to 
- * define their own events that will be dispatched to library functions. 
- * See @ref event.h for details.
+ * @brief Base event class. Only contains the minimum event information 
+ * required which is the event ID. Serves as an interface that users 
+ * inherit from to add any supplemental event data. See @ref event.h 
+ * for details.
  */
 struct ecu_event
 {
     /**
      * @brief Identifies the type of event that was dispatched.
-     * Must be greater than or equal to @ref ECU_IDLE_EVENT
+     * 
+     * @warning Must be greater than or equal to @ref ECU_VALID_EVENT_BEGIN.
+     * Must follow same mechanism described in @ref ecu_reserved_event_ids
      */
-    ecu_event_signal signal;
+    ecu_event_id id;
 };
 
 

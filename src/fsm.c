@@ -50,7 +50,7 @@ void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
     /* NULL assertions. Also reject user from dispatching reserved event. */
     ECU_RUNTIME_ASSERT( (fsm && event), assert_functor );
     ECU_RUNTIME_ASSERT( ((fsm->max_state_transitions) && (fsm->state) && \
-                         (event->signal >= ECU_IDLE_EVENT)), assert_functor );
+                         (event->signal >= ECU_USER_EVENT_BEGIN)), assert_functor );
 
     /* Dispatch event to state. */
     prev_state = fsm->state;

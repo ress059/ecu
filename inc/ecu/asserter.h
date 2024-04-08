@@ -1,5 +1,5 @@
 /**
- * @file asserter.h
+ * @file
  * @author Ian Ress
  * @brief Compile-time and run-time assert macros. Compile-time assert macro is always enabled.
  * Run-time asserts are enabled by default. They can be disabled by defining 

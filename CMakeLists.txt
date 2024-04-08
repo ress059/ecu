@@ -9,8 +9,10 @@ add_library(ecu_library INTERFACE)
 target_sources(ecu_library
     INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
-        ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c 
+        ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c
+        ${CMAKE_CURRENT_LIST_DIR}/src/event.c
         ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
+        ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
 )
 
 # Example include in the Application would be #include <ecu/fsm.h> 

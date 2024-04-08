@@ -15,6 +15,15 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------- STATIC ASSERTS ----------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+/* Produce compilation error if ecu_event_signal is an unsigned type. */
+ECU_STATIC_ASSERT( (((ecu_dll_node_id)(-1)) < ((ecu_dll_node_id)(0))) );
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------- FILE-SCOPE VARIABLES ------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
@@ -23,7 +32,7 @@ static struct ecu_assert_functor *DLL_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------ STATIC FUNCTION DECLARATIONS ---------------------------------------------*/
+/*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
@@ -40,6 +49,15 @@ static bool list_valid(const struct ecu_circular_dll *list);
  * @brief Returns true if node is in a list. False otherwise.
  */
 static bool node_in_list(const struct ecu_circular_dll_node *node);
+
+
+/**
+ * @brief Callback assigned to @ref ecu_circular_dll.head.destroy in 
+ * @ref ecu_circular_dll_ctor(). This head node is solely used 
+ * as a dummy delimeter that should never be destroyed. Therefore we
+ * simply assert if this callback runs.
+ */
+static void list_head_destroy_callback(struct ecu_circular_dll_node *me);
 
 
 
@@ -89,14 +107,21 @@ static bool list_valid(const struct ecu_circular_dll *list)
 }
 
 
+static void list_head_destroy_callback(struct ecu_circular_dll_node *me)
+{
+    ECU_RUNTIME_ASSERT( (false), DLL_ASSERT_FUNCTOR );
+}
+
+
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: LIST ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, uint8_t id_0,
+void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me, ecu_dll_node_id id_0,
                                 void (*destroy_0)(struct ecu_circular_dll_node *me))
 {
+    ECU_RUNTIME_ASSERT( (id_0 >= ))
     ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
     /* Do NOT do ECU_RUNTIME_ASSERT( (!node_in_list(me)), DLL_ASSERT_FUNCTOR ); 
     since it is valid for next and prev pointers to be initialized to non-NULL 
@@ -122,8 +147,10 @@ void ecu_circular_dll_ctor(struct ecu_circular_dll *me)
     that has nodes in it, which is clearly outlined in the warning directive of 
     this function description. */
 
-    me->head.next = &me->head;
-    me->head.prev = &me->head;
+    me->head.next       = &me->head;
+    me->head.prev       = &me->head;
+    me->head.id         = reservedval;
+    me->head.destroy    = &list_head_destroy_callback;
 }
 
 
