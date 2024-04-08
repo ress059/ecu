@@ -23,14 +23,14 @@
  * 
  * // Constructing list and nodes. Not using node id or destroy callbacks in this example.
  * ecu_circular_dll_ctor(&list);
- * ecu_circular_dll_node_ctor(&data1.node, ECU_OBJECT_ID_UNUSED, 0);
- * ecu_circular_dll_node_ctor(&data2.node, ECU_OBJECT_ID_UNUSED, 0);
- * ecu_circular_dll_node_ctor(&data3.node, ECU_OBJECT_ID_UNUSED, 0);
+ * ecu_circular_dll_node_ctor(&data1.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+ * ecu_circular_dll_node_ctor(&data2.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+ * ecu_circular_dll_node_ctor(&data3.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
  * 
  * // Adding nodes to list.
  * ecu_circular_dll_push_back(&list, &data1.node);
- * ecu_circular_dll_push_back(&list, &data3.node);
  * ecu_circular_dll_push_back(&list, &data2.node);
+ * ecu_circular_dll_push_back(&list, &data3.node);
  * 
  * // Iterating through a list.
  * struct ecu_circular_dll_iterator iterator;
@@ -155,8 +155,8 @@ struct ecu_circular_dll_iterator
      * @private
      * @brief PRIVATE. List that is being iterated.
      * 
-     * @note This is not declared as a pointer to const since iterator functions
-     * can return non-const @ref ecu_circular_dll.head
+     * @note This is not declared as a pointer to const since iterator 
+     * functions return pointers to non-const @ref ecu_circular_dll.head
      */
     struct ecu_circular_dll *list;
 
@@ -165,9 +165,19 @@ struct ecu_circular_dll_iterator
      * @brief PRIVATE. Current position in list.
      * 
      * @note This is not declared as a pointer to const since iterator 
-     * returns non-const nodes.
+     * functions return pointers to non-const nodes.
      */
     struct ecu_circular_dll_node *current;
+
+    /**
+     * @private 
+     * @brief PRIVATE. Next position in the list. This member allows
+     * user to safely remove nodes from list while iterating through it.
+     * 
+     * @note This is not declared as a pointer to const since iterator 
+     * functions return pointers to non-const nodes.
+     */
+    struct ecu_circular_dll_node *next;
 };
 
 
@@ -246,6 +256,9 @@ extern void ecu_circular_dll_destroy(struct ecu_circular_dll *me);
  * @param me List to add to.
  * @param node Node to add. Node cannot already be within the supplied 
  * list or apart of another active list.
+ * 
+ * @note If this function is called in the middle of an iteration, the
+ * iterator WILL iterate through the newly added nodes.
  */
 extern void ecu_circular_dll_push_back(struct ecu_circular_dll *me, 
                                        struct ecu_circular_dll_node *node);
@@ -290,6 +303,9 @@ extern bool ecu_circular_dll_is_empty(const struct ecu_circular_dll *me);
 
 /**
  * @name Iterators
+ * You can safely add and remove nodes in the middle of an iteration.
+ * If nodes are added via @ref ecu_circular_dll_push_back() the iterator
+ * WILL iterate through the newly added nodes.
  */
 /**@{*/
 /**
@@ -309,7 +325,7 @@ extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_
 
 
 /**
- * @pre @p me previously initialized via call to ecu_circular_dll_iterator_begin()
+ * @pre @p me previously initialized via call to @ref ecu_circular_dll_iterator_begin()
  * @brief Returns terminal node in the list which is a dummy delimeter that 
  * represents HEAD and TAIL of the list. Returned node should never be used 
  * directly.
@@ -320,7 +336,7 @@ extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_end(struct ecu_ci
 
 
 /**
- * @pre @p me previously initialized via call to ecu_circular_dll_iterator_begin()
+ * @pre @p me previously initialized via call to @ref ecu_circular_dll_iterator_begin()
  * @brief Returns the next node in the iteration.
  * 
  * @param me Iterator object.

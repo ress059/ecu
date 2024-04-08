@@ -150,6 +150,10 @@ struct ecu_event
 /*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @pre Memory already allocated for @p me
  * @brief Initialize event with an event ID.
@@ -170,5 +174,8 @@ static inline void ecu_event_ctor(struct ecu_event *me, ecu_event_id id_0)
     me->id = id_0;
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ECU_EVENT_H_ */
