@@ -2,11 +2,11 @@ Completed.
 1. event.h/.c and object_id.hs/.c done. Documentation for these also done.
 2. DLL iterator fixed so we can safely remove from list while in the middle of an iteration.
 3. DLL tests completed.
+4. DLL documentation completed.
 
 
-dll:
-1. Update documentation.
-2. Add test where you have some node destroy callbacks and other NULL node destroy callbacks. Verify destructor works.
+timer:
+1. Complete source code.
 
 fsm:
 1. Update documentation with new event.h/.c naming convention.
