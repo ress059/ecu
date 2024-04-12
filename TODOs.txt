@@ -10,3 +10,4 @@ timer:
 
 fsm:
 1. Update documentation with new event.h/.c naming convention.
+2. Possible create an on_entry and on_exit function in a state struct for safer entry and exit events.
