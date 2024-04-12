@@ -14,7 +14,8 @@
 			{
 				"ECU_ENABLE_TESTING": true,
 				"ECU_ENABLE_BUILD_TESTING": true,
-				"CMAKE_EXPORT_COMPILE_COMMANDS": true
+				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
+				"CMAKE_BUILD_TYPE": "Debug"
 			}
 		},
 		{
@@ -25,7 +26,8 @@
 			{
 				"ECU_ENABLE_TESTING": true,
 				"ECU_ENABLE_UNIT_TESTING": true,
-				"CMAKE_EXPORT_COMPILE_COMMANDS": true
+				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
+				"CMAKE_BUILD_TYPE": "Debug"
 			}
 		},
 		{

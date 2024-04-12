@@ -31,10 +31,10 @@ static struct ecu_assert_functor *ASSERT_FUNCTOR = (struct ecu_assert_functor *)
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 void i_ecu_timer_ctor(struct i_ecu_timer *me, size_t tick_width_0,
-                      max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me))
+                      ecu_max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me))
 {
     ECU_RUNTIME_ASSERT( (me && get_ticks_0), ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (tick_width_0 > 0 && tick_width_0 <= sizeof(max_tick_size_t)),
+    ECU_RUNTIME_ASSERT( (tick_width_0 > 0 && tick_width_0 <= sizeof(ecu_max_tick_size_t)),
                         ASSERT_FUNCTOR );
 
     me->tick_width = tick_width_0;

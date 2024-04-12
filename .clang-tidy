@@ -1,0 +1,13 @@
+---
+Checks: '-*,bugprone-*,clang-analyzer-*,misc-*,readability-*'
+HeaderFileExtensions:         ['h']
+ImplementationFileExtensions: ['c']
+HeaderFilterRegex:   ''
+FormatStyle:         none
+InheritParentConfig: false
+UseColor:            true
+User:                false
+WarningsAsErrors:                         
+...
+
+-p path/to/compile_commands.json???

@@ -21,13 +21,16 @@
 /* Linked list of timers. */
 #include <ecu/circular_dll.h>
 
+/* Clock tick interface provided by user. */
+#include <ecu/interface/itimer.h>
+
 
 
 /*--------------------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------- TIMER ---------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-typedef uint32_t max_tick_size_t; // in case we need to expand to uint64_t in the future. MUST BE UNSIGNED.
+typedef uint32_t ecu_max_tick_size_t; // in case we need to expand to uint64_t in the future. MUST BE UNSIGNED.
 
 struct ecu_timer
 {
@@ -41,8 +44,8 @@ struct ecu_timer
     // uint32_t since these avlues must always be greater than sizeof(user_target's_tick_width);
     // In all cases the tick width supplied by user will always be less than or equal to this value
     // We can mask the corresponding bits to handle overflow.
-    max_tick_size_t timeout_ticks; // number of ms that have to elapse until timeout.
-    max_tick_size_t starting_ticks;
+    ecu_max_tick_size_t timeout_ticks; // number of ms that have to elapse until timeout.
+    ecu_max_tick_size_t starting_ticks;
 };
 
 
@@ -53,10 +56,10 @@ struct ecu_timer
 
 struct ecu_timer_collection
 {
-    struct ecu_circular_dll_list list;
+    struct ecu_circular_dll list;
     struct ecu_circular_dll_iterator iterator;
     const struct i_ecu_timer *driver; // TODO: May do something differently.
-    max_tick_size_t overflow_mask;
+    ecu_max_tick_size_t overflow_mask;
     // max elements?
 };
 
@@ -76,9 +79,11 @@ extern void ecu_timer_ctor(struct ecu_timer *me, void *object_0,
 extern void ecu_timer_collection_ctor(struct ecu_timer_collection *me,
                                       const struct i_ecu_timer *driver_0);
 
+extern void ecu_timer_collection_destroy(struct ecu_timer_collection *me);
+
 
 extern void ecu_timer_collection_arm(struct ecu_timer_collection *me, struct ecu_timer *timer, 
-                                     bool periodic, max_tick_size_t timeout_ticks);
+                                     bool periodic, ecu_max_tick_size_t timeout_ticks);
 
 
 extern void ecu_timer_collection_disarm(struct ecu_timer_collection *me, 

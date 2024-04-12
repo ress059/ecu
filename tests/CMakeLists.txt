@@ -5,7 +5,7 @@ if(ECU_ENABLE_BUILD_TESTING)
 
     target_link_libraries(ecu_build_test
         PRIVATE 
-            ecu_library        
+            ecu        
     )
 endif()
 ##################################################################################
@@ -42,7 +42,7 @@ if(ECU_ENABLE_UNIT_TESTING)
     # cpputest_normalize_test_output_location(ecu_unit_test)
     target_link_libraries(ecu_unit_test
         PRIVATE 
-            ecu_library
+            ecu
             CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
             CppUTestExt     # Using namespace doesn't work. I.e. CppUTestExt::CppUTestExt
     )

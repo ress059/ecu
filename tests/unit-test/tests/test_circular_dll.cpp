@@ -221,11 +221,43 @@ TEST(CircularDLL, AllNodeDestructorCallbacksCalled)
     }
 }
 
-// TODO: NULL destroy callbacks.
-// TEST(CircularDLL, NodeDestroyNullCallbacks)
-// {
 
-// }
+/**
+ * @brief Some nodes have destroy callbacks and other nodes have NULL node 
+ * destroy callbacks.
+ */
+TEST(CircularDLL, NodeDestroyNullCallbacks)
+{
+    struct NodeDestroyMock dnode2_;
+
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("NodeDestroyMock::destroy")
+              .onObject(static_cast<struct ecu_circular_dll_node *>(&dnode2_));
+
+        ecu_circular_dll_set_assert_functor(static_cast<ecu_assert_functor *>(&assert_call_fail_));
+
+        ecu_circular_dll_node_ctor(&node1_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+        ecu_circular_dll_node_ctor(static_cast<struct ecu_circular_dll_node *>(&dnode2_), 
+                                   &NodeDestroyMock::destroy,
+                                   ECU_OBJECT_ID_UNUSED);
+        ecu_circular_dll_node_ctor(&node3_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+
+        ecu_circular_dll_push_back(&list_, &node1_.node);
+        ecu_circular_dll_push_back(&list_, static_cast<struct ecu_circular_dll_node *>(&dnode2_));
+        ecu_circular_dll_push_back(&list_, &node3_.node);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_circular_dll_destroy(&list_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
 
 /**
  * @brief Verify nodes are in correct order by directly comparing 

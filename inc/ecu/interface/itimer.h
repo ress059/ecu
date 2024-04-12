@@ -14,7 +14,7 @@
 #define INTERFACE_ECU_TIMER_H_
 
 
-/* max_tick_size_t */
+/* ecu_max_tick_size_t */
 #include <ecu/timer.h>
 
 
@@ -25,8 +25,8 @@
 
 struct i_ecu_timer
 {
-    size_t tick_width;
-    max_tick_size_t (*get_ticks)(struct i_ecu_timer *me);
+    size_t tick_width_bytes;
+    ecu_max_tick_size_t (*get_ticks)(struct i_ecu_timer *me);
 };
 
 
@@ -39,8 +39,8 @@ struct i_ecu_timer
 extern "C" {
 #endif
 
-extern void i_ecu_timer_ctor(struct i_ecu_timer *me, size_t tick_width_0,
-                                     max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me));
+extern void i_ecu_timer_ctor(struct i_ecu_timer *me, size_t tick_width_bytes_0,
+                                     ecu_max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me));
 
 
 extern void i_ecu_timer_set_assert_functor(struct ecu_assert_functor *functor);

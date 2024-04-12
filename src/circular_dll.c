@@ -142,6 +142,8 @@ void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me,
                                 ecu_object_id id_0)
 {
     ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (destroy_0 != (void (*)(struct ecu_circular_dll_node *))&ecu_circular_dll_destroy),
+                         DLL_ASSERT_FUNCTOR );
     /* Do NOT do ECU_RUNTIME_ASSERT( (!node_in_list(me)), DLL_ASSERT_FUNCTOR );
     or ECU_RUNTIME_ASSERT( (node_is_valid(me)), DLL_ASSERT_FUNCTOR);
     since it is valid for next and prev pointers to be initialized to non-NULL 
@@ -185,13 +187,14 @@ void ecu_circular_dll_destroy(struct ecu_circular_dll *me)
          node != ecu_circular_dll_iterator_end(&iterator); 
          node = ecu_circular_dll_iterator_next(&iterator))
     {
-        ecu_circular_dll_remove_node(node);
+        ecu_circular_dll_remove_node(node); /* Set next and prev to itself. */
 
         /* Do not reset node->id so user is able to identify their data type 
         in their destructor callback. */
         if (node->destroy)
         {
             (*node->destroy)(node);
+            node->destroy = (void (*)(struct ecu_circular_dll_node *))0;
         }
     }
 

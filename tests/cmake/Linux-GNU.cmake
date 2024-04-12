@@ -35,25 +35,3 @@ endif()
 # set(CMAKE_MODULE_LINKER_FLAGS_INIT	"${CMAKE_MODULE_LINKER_FLAGS_INIT} ${LINKER}") 	# Linker command when linking to static libraries.
 # set(CMAKE_SHARED_LINKER_FLAGS_INIT	"${CMAKE_SHARED_LINKER_FLAGS_INIT} ${LINKER}") 	# Linker command whne linking to dynamic libraries.
 ###########################################################################################################################
-
-# Compiler flags. Still deciding on -Werror
-set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -fdiagnostics-color=always")
-set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wall")
-set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Wall")
-
-if(ECU_ENABLE_UNIT_TESTING)
-	# Store symbols for debugger.
-	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -g")
-	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -g")
-else()
-	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wcast-align")
-	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wstrict-prototypes") # All compiler flags are the same for C and C++ besides this one.
-	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return -Wcast-qual")
-	set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion")
-
-	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -fdiagnostics-color=always")
-	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wcast-align")
-	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return -Wcast-qual")
-	set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion")
-endif()
-###########################################################################################################################

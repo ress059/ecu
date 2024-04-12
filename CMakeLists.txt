@@ -1,42 +1,65 @@
 cmake_minimum_required(VERSION 3.21)
-project(ECU VERSION 0.1)
+project(ECU_LIBRARY VERSION 0.1)
+set(ECU_SUPPORTED_COMPILERS "GNU")
 option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
 
-# Interface library since this is meant to be compiled with the target 
-# application's toolchain.
-add_library(ecu_library INTERFACE)
+if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
+    message(FATAL_ERROR "Using unsupported compiler. See entries in ECU_DISABLE_RUNTIME_ASSERTS "
+                        "for a list of supported compilers.")
+endif()
 
-target_sources(ecu_library
-    INTERFACE
-        ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
-        ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c
-        ${CMAKE_CURRENT_LIST_DIR}/src/event.c
-        ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
-        ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
+# Note this library is meant to be compiled with the target application's toolchain.
+add_library(ecu STATIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/event.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
+
+    ${CMAKE_CURRENT_LIST_DIR}/src/interface/itimer.c
 )
 
 # Example include in the Application would be #include <ecu/fsm.h> 
 # in order to give larger apps some scope when including files.
-target_include_directories(ecu_library
-    INTERFACE 
+target_include_directories(ecu
+    PUBLIC 
         ${CMAKE_CURRENT_LIST_DIR}/inc 
 )
 
-if(ECU_DISABLE_RUNTIME_ASSERTS)
-    message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts"
-                    " are being disabled. Unused function/parameter warnings will"
-                    " occur when compiling since run-time assert macro calls no"
-                    " longer use any of the parameters passed to it.")
+# Enable all warnings for our internal testing. Do not propogate
+# these warnings or any other compiler flags to the Application. 
+# For unit tests make sure compiler is saving debug symbols.
+target_compile_options(ecu 
+    PRIVATE
+        $<$<C_COMPILER_ID:GNU,Clang>:-fdiagnostics-color=always>
+        $<$<C_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef>
+        $<$<C_COMPILER_ID:GNU,Clang>:-Wcast-align -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
+        $<$<C_COMPILER_ID:GNU,Clang>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
+)
+if(ECU_ENABLE_UNIT_TESTING)
+    target_compile_options(ecu 
+        PRIVATE
+            $<$<C_COMPILER_ID:GNU,Clang>:-g>
+    )
+endif()
 
-    target_compile_definitions(ecu_library 
-        INTERFACE 
+# Warn the user that run-time asserts are being disabled. It is
+# not recommended to disable run-time asserts but we have this
+# as an option to decrease overhead of the library.
+if(ECU_DISABLE_RUNTIME_ASSERTS)
+    message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts "
+                    "will not fire in this library. Are you sure you wish to disable asserts??")
+
+    target_compile_definitions(ecu 
+        PUBLIC 
             ECU_DISABLE_RUNTIME_ASSERTS 
     )
 endif()
 
+# CTest and enable_testing has to be in the root CMakeLists.txt. 
+# Tests will not be discovered if this is in tests/CMakeLists.txt....
 if(ECU_ENABLE_TESTING)
-    # CTest and enable_testing has to be in the root CMakeLists.txt. 
-    # Tests will not be discovered if this is in tests/CMakeLists.txt....
     include(CTest)
     enable_testing()
     add_subdirectory(tests)
