@@ -5,6 +5,9 @@ Completed.
 since we are already doing that with tests that use extra_list; Documentation done.
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
 
+All:
+1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
+
 fsm:
 1. Update documentation with new event.h/.c naming convention.
 2. Possible create an on_entry and on_exit function in a state struct for safer entry and exit events.
