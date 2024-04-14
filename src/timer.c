@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Ian Ress
  * @brief See @ref timer.h description. Explanation of @ref ecu_timer_collection.overflow_mask usage is explained
  * below: 
  * The overflow mask is a property of the user's hardware timer byte-width. It allows tick counter wraparound to 
@@ -31,11 +30,11 @@
  * elapsed_ticks = 0x0001 = 1;
  * 
  * This logic is exactly the same for any hardware timers of higher byte widths.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-04
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

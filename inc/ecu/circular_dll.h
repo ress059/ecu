@@ -1,10 +1,9 @@
 /**
  * @file
- * @author Ian Ress
- * @brief Circular doubly linked list without dynamic memory allocation.
- * @details Provides list addition, removal, status, and iterators. Private class members
- * denoted by 'PRIVATE' in descriptions are exposed to the Application so memory can easily 
- * be allocated at compile-time. Example use:
+ * @brief Circular doubly linked list without dynamic memory allocation. Provides list addition, 
+ * removal, status, and iterators. Private class members denoted by 'PRIVATE' in descriptions 
+ * are exposed to the Application so memory can easily be allocated at compile-time. Example use:
+ * 
  * @code{.c}
  * #include <ecu/circular_dll.h>
  * 
@@ -44,11 +43,11 @@
  *      element->y = 10;
  * }
  * @endcode
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-05
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

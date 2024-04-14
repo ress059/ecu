@@ -2,7 +2,7 @@
  * @file
  * @brief Base finite state machine class. State is represented by a user-defined function.
  * Serves as an interface that users inherit from to define their application-specific fsms.
- * @details Users can define their own application-specific fsms by inheriting this base class.
+ * Users can define their own application-specific fsms by inheriting this base class.
  * For example:
  * 
  * @code{.c}
@@ -84,7 +84,9 @@
  * @endcode
  * 
  * @author Ian Ress
- * 
+ * @version 0.1
+ * @date 2024-04-14
+ * @copyright Copyright (c) 2024
  */
 
 

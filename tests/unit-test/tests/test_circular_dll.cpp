@@ -1,12 +1,11 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Unit tests for public API functions in @ref circular_dll.h
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-02
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 
@@ -224,7 +223,7 @@ TEST(CircularDLL, AllNodeDestructorCallbacksCalled)
 
 /**
  * @brief Some nodes have destroy callbacks and other nodes have NULL node 
- * destroy callbacks.
+ * destroy callbacks. Verify this is OK.
  */
 TEST(CircularDLL, NodeDestroyNullCallbacks)
 {
@@ -680,6 +679,3 @@ TEST(CircularDLL, AddNodesInIteratorPushBack)
         /* FAIL. */
     }
 }
-
-
-#warning "TODO: Two nodes in the same struct that are apart of separate lists. (Should work)"

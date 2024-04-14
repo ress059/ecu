@@ -1,82 +1,15 @@
 /**
  * @file
- * @author Ian Ress
- * @brief Hardware-agnostic timer module driven by a single function, @ref ecu_timer_collection_tick() 
- * which must be called by the application periodically. On timeout, each timer calls a user-defined 
- * callback. 
- * @details To remain hardware-agnostic, this module takes in a pointer to a user-defined hardware 
- * timer which is only responsible for returning the raw number of clock ticks.
- * @image html timer-user-timer.png "User-defined Timer"
+ * @brief Allows users to create linked lists (collections) of independent timers that have unique 
+ * timeout periods and properties.
  * 
- * This timer module automatically handles wraparounds and is compatible with hardware timers
- * of almost any byte-width under two conditions:
- * 1. User's tick counter is an unsigned type.
- * 2. User's hardware timer has a width (in bytes) less than or equal to @ref ecu_max_tick_size_t.
- * I.e. @ref i_ecu_timer.tick_width_bytes <= sizeof(ecu_max_tick_size_t)
+ * @image html timer-structure.png "Timer List Structure"
  * 
- * Clock ticks are the units used by this module so the target application can use timers with
- * any precision (microseconds, milliseconds, etc). The application is responsible for converting 
- * ticks into appropriate units of time since this is a property of the target hardware. A 
- * bare-bones example of a user-defined driver is shown below. In this example the user's hardware
- * target uses a 32-bit systick. A tick for this target application represents 1 milisecond. So
- * this application calling @ref ecu_timer_arm(.., 50); creates a 50ms timer, 
- * @ref ecu_timer_arm(.., 100); creates a 100ms timer, etc.
- * 
- * @code{.c}
- * #include <ecu/interface/itimer.h>
- * 
- * /------------------------------------------------------------/
- * /-------------------- File-scope variables ------------------/
- * /------------------------------------------------------------/
- * 
- * static volatile uint32_t ticks = 0;
- * static struct i_ecu_timer user_driver;
- * 
- * 
- * /------------------------------------------------------------/
- * /---------------- Static function declarations --------------/
- * /------------------------------------------------------------/
- * 
- * // Systick interrupt that increments tick counter. Fires every 1ms.
- * static void systick_isr(void);
- * 
- * // User-defined function that returns number of ticks. Must have this prototype.
- * static ecu_max_tick_size_t user_get_ticks(struct i_ecu_timer *me);
- * 
- * 
- * /------------------------------------------------------------/
- * /----------------- Static function definitions --------------/
- * /------------------------------------------------------------/
- * 
- * static void systick_isr(void)
- * {
- *     ticks++;
- * }
- * 
- * static ecu_max_tick_size_t user_get_ticks(struct i_ecu_timer *me)
- * {
- *     (void)me;
- *     ecu_max_tick_size_t ticks_copy = 0;
- *     
- *     disable_interrupts();
- *     ticks_copy = (ecu_max_tick_size_t)ticks;
- *     enable_interrupts();
- *     return ticks_copy;
- * }
- * 
- * 
- * /------------------------------------------------------------/
- * /----------------- Pseudocode. Initialize driver ------------/
- * /------------------ and feed into timer module --------------/
- * /------------------------------------------------------------/
- * 
- * i_ecu_timer_ctor(&user_driver, sizeof(ticks), &user_get_ticks); // Width of user's tick counter = 4 bytes.
- * ecu_timer_collection_ctor(&some_timer_collection, &user_driver); // This is the only thing this timer module needs.
- * @endcode
- * 
- * A bare-bones example using this timer module is shown below. This example assumes a driver
- * has been supplied by the user (see code snippet above). It adds two one-shot timers and 
- * one periodic timer to a timer collection.
+ * All timers within each list are updated by a single function, @ref ecu_timer_collection_tick() 
+ * which must be called periodically by the application. For each timer, a unique user-defined callback
+ * is called on timeout. A bare-bones example using this timer module is shown below. This example 
+ * assumes a driver has been supplied by the user (explained later in the next code snippet below). 
+ * This example adds two one-shot timers and one periodic timer to a timer collection and runs them.
  * 
  * @code{.c}
  * #include <ecu/timer.h>
@@ -142,11 +75,87 @@
  *     ecu_timer_collection_tick(&collection);
  * }
  * @endcode
+ * 
+ * You'll notice in the example above that @ref ecu_timer_collection_ctor() takes in
+ * a pointer to a user-defined timer driver. 
+ * 
+ * @image html timer-user-timer.png "User-defined Timer Driver"
+ * 
+ * This allows the module to remain harware-agnostic. An interface for @ref i_ecu_timer 
+ * struct is provided in @ref itimer.h. The user is pretty much only responsible for defining
+ * @ref i_ecu_timer.get_ticks which is a function that returns the raw number of clock
+ * ticks. The user does not have to worry about tick counter wraparound - this timer
+ * module will handle this automatically and is compatible with hardware timers/tick
+ * counters of any byte-width under two conditions:
+ * 1. User's tick counter is an unsigned type.
+ * 2. User's timer/tick counter has a width (in bytes) less than or equal to @ref ecu_max_tick_size_t.
+ * I.e. @ref i_ecu_timer.tick_width_bytes <= sizeof(ecu_max_tick_size_t)
+ * 
+ * 
+ * Clock ticks are the units used by this module so the target application 
+ * can use a timer with any precision of their choosing (microseconds, milliseconds, etc). 
+ * The application is responsible for converting ticks into appropriate units of time since 
+ * this is a property of the target hardware. A bare-bones example of a user-defined driver 
+ * is shown below. In this example the user's hardware target uses a 32-bit systick. A tick 
+ * for this target application represents 1 milisecond. So this application calling @ref ecu_timer_arm(.., 50) 
+ * creates a 50ms timer. Calling @ref ecu_timer_arm(.., 100) creates a 100ms timer, etc.
+ * 
+ * @code{.c}
+ * #include <ecu/interface/itimer.h>
+ * 
+ * /------------------------------------------------------------/
+ * /-------------------- File-scope variables ------------------/
+ * /------------------------------------------------------------/
+ * 
+ * static volatile uint32_t ticks = 0;
+ * static struct i_ecu_timer user_driver;
+ * 
+ * 
+ * /------------------------------------------------------------/
+ * /---------------- Static function declarations --------------/
+ * /------------------------------------------------------------/
+ * 
+ * // Systick interrupt that increments tick counter. Fires every 1ms.
+ * static void systick_isr(void);
+ * 
+ * // User-defined function that returns number of ticks. Must have this prototype.
+ * static ecu_max_tick_size_t user_get_ticks(struct i_ecu_timer *me);
+ * 
+ * 
+ * /------------------------------------------------------------/
+ * /----------------- Static function definitions --------------/
+ * /------------------------------------------------------------/
+ * 
+ * static void systick_isr(void)
+ * {
+ *     ticks++;
+ * }
+ * 
+ * static ecu_max_tick_size_t user_get_ticks(struct i_ecu_timer *me)
+ * {
+ *     (void)me;
+ *     ecu_max_tick_size_t ticks_copy = 0;
+ *     
+ *     disable_interrupts();
+ *     ticks_copy = (ecu_max_tick_size_t)ticks;
+ *     enable_interrupts();
+ *     return ticks_copy;
+ * }
+ * 
+ * 
+ * /------------------------------------------------------------/
+ * /----------------- Pseudocode. Initialize driver ------------/
+ * /------------------ and feed into timer module --------------/
+ * /------------------------------------------------------------/
+ * 
+ * i_ecu_timer_ctor(&user_driver, sizeof(ticks), &user_get_ticks);  // Width of user's tick counter = 4 bytes.
+ * ecu_timer_collection_ctor(&some_timer_collection, &user_driver); // Feed driver you just created into timer collection. This is the only thing this timer module needs.
+ * @endcode
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-04
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

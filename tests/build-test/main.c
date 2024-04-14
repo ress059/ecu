@@ -1,12 +1,11 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Dummy main.c to test if ECU library compiles. Calls and uses common API functions.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-01
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

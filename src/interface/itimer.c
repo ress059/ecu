@@ -1,12 +1,11 @@
 /**
  * @file
- * @author Ian Ress
  * @brief See @ref itimer.h and @ref timer.h descriptions.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-04
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

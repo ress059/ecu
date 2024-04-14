@@ -1,10 +1,8 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Compile-time and run-time assert macros. Compile-time assert macro is always enabled.
  * Run-time asserts are enabled by default. They can be disabled by defining 
  * ECU_DISABLE_RUNTIME_ASSERTS. I.e. -DECU_DISABLE_RUNTIME_ASSERTS. Example usage:
- * 
  * 
  * @code{.c}
  * /----------------------------- Compile-time assert example: ------------------------/
@@ -78,7 +76,7 @@
  * }
  * @endcode
  * 
- * @details Compile-time assert macro expands to static_assert variants or negative array 
+ * Compile-time assert macro expands to static_assert variants or negative array 
  * indexing to produce compilation errors depending on which C/C++ standard is used when 
  * compiling. Serves as a common interface that the Application can use to remain backwards 
  * compatible with various standards. Text is not passed into this macro in case the 
@@ -96,15 +94,12 @@
  * 
  * @warning Disabling run-time asserts will decrease overhead of this library. However checks 
  * (null pointer checks, invalid function parameters, etc) will obviously no longer be done in 
- * library API functions or in your Application. Also note that unused function/parameter 
- * warnings will occur when compiling since @ref ECU_RUNTIME_ASSERT() calls no longer use any of 
- * the parameters passed to it.
+ * library API functions or in your Application.
  * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-02
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

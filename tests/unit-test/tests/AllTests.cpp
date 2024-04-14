@@ -1,12 +1,11 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Run all unit tests.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-11
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

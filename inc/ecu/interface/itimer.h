@@ -1,14 +1,13 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Timer interface that must be defined by the user to use @ref timer.h. This file encapsulates
  * all hardware dependencies/implementation details so @ref timer.h can remain hardware-agnostic.
  * See @ref timer.h description for a bare-bones example of defining this interface.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-04
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

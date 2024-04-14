@@ -1,12 +1,11 @@
 /**
  * @file 
- * @author Ian Ress
  * @brief See @ref asserter.h
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-02
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

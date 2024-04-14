@@ -1,16 +1,9 @@
 Completed.
 1. asserter.h/.c done. Documentation done. Tests done.
 2. event.h/.c and object_id.hs/.c done. Documentation done.
-3. circular_dll.h/.c done. Tests done (besides one listed below). Documentation done.
-4. itimer.h/.c and timer.h/.c done.
-
-DLL:
-1. Add test with 2 nodes in the same struct that are apart of separate lists. See warning
-directive in test_circular_dll.cpp
-
-timer:
-1. Complete tests.
-2. First pass of documentation complete. Review it.
+3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
+since we are already doing that with tests that use extra_list; Documentation done.
+4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
 
 fsm:
 1. Update documentation with new event.h/.c naming convention.

@@ -1,13 +1,12 @@
 /**
  * @file
- * @author Ian Ress
  * @brief Unit tests for public API functions in @ref asserter.h. ECU_DISABLE_RUNTIME_ASSERTS
  * must NOT be defined.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-03-02
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

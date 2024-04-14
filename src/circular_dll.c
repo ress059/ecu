@@ -1,8 +1,11 @@
 /**
  * @file
  * @brief See @ref circular_dll.h
- * @author Ian Ress
  * 
+ * @author Ian Ress 
+ * @version 0.1
+ * @date 2024-04-14
+ * @copyright Copyright (c) 2024
  */
 
 

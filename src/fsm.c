@@ -1,8 +1,11 @@
 /**
  * @file
- * @brief @see fsm.h
- * @author Ian Ress
+ * @brief See @ref fsm.h 
  * 
+ * @author Ian Ress
+ * @version 0.1
+ * @date 2024-04-14
+ * @copyright Copyright (c) 2024
  */
 
 

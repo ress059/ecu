@@ -1,13 +1,12 @@
 /**
  * @file
- * @author Ian Ress
  * @brief See @ref event.h. This file is only used for static assertions of
  * code within @ref event.h.
+ * 
+ * @author Ian Ress
  * @version 0.1
  * @date 2024-04-07
- * 
  * @copyright Copyright (c) 2024
- * 
  */
 
 

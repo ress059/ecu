@@ -43,6 +43,20 @@ static void private_function(void);
  */
 ```
 
+2. File comments follow this exact syntax. No extra line breaks, doxygen commands, etc. Only other doxygen commands
+allowed are @warning and @code
+```C
+/**
+ * @file
+ * @brief Notice @details directive is never used.
+ * 
+ * @author Your Name
+ * @version 0.1
+ * @date 2024-04-07
+ * @copyright Copyright (c) 2024
+ */
+```
+
 
 # Other
 1. Same typedef rules as linux kernel. Essentially no typedefs unless absolutely necessary.
