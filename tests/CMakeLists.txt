@@ -27,11 +27,18 @@ if(ECU_ENABLE_UNIT_TESTING)
         ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/AllTests.cpp 
     )
 
+    # Need C++20 concepts
+    target_compile_features(ecu_unit_test
+        PRIVATE 
+            cxx_std_20
+    )
+
     target_sources(ecu_unit_test 
         PRIVATE
             # Tests
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_circular_dll.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_timer.cpp
     )
 
     target_include_directories(ecu_unit_test 

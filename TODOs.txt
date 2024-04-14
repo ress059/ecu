@@ -1,13 +1,28 @@
 Completed.
-1. event.h/.c and object_id.hs/.c done. Documentation for these also done.
-2. DLL iterator fixed so we can safely remove from list while in the middle of an iteration.
-3. DLL tests completed.
-4. DLL documentation completed.
+1. asserter.h/.c done. Documentation done. Tests done.
+2. event.h/.c and object_id.hs/.c done. Documentation done.
+3. circular_dll.h/.c done. Tests done (besides one listed below). Documentation done.
+4. itimer.h/.c and timer.h/.c done.
 
+DLL:
+1. Add test with 2 nodes in the same struct that are apart of separate lists. See warning
+directive in test_circular_dll.cpp
 
 timer:
-1. Complete source code.
+1. Complete tests.
+2. First pass of documentation complete. Review it.
 
 fsm:
 1. Update documentation with new event.h/.c naming convention.
 2. Possible create an on_entry and on_exit function in a state struct for safer entry and exit events.
+3. Update documentation to include @private for private members and @pre for preconditions.
+4. In fsm.c change to FSM_ASSERT_FUNCTOR
+5. Pictures in fsm documentation.
+
+CI Pipeline Steps:
+If any step fails do not move on.
+1. format check. clang-format.
+2. Compile. cmake and cmake --build
+3. static analysis. clang-tidy
+4. run unit tests.
+5. generate documentation. doxygen

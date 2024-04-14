@@ -680,3 +680,6 @@ TEST(CircularDLL, AddNodesInIteratorPushBack)
         /* FAIL. */
     }
 }
+
+
+#warning "TODO: Two nodes in the same struct that are apart of separate lists. (Should work)"

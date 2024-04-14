@@ -56,6 +56,11 @@
 #define ECU_CIRCULAR_DLL_H_
 
 
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------ INCLUDES ----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
 /* STDLib. */
 #include <stdbool.h>
 #include <stddef.h> /* offsetof() */
@@ -198,11 +203,12 @@ extern "C" {
  * @pre Memory already allocated for @p me.
  * @brief Node constructor.
  * 
- * @warning If @p destroy_0 callback is supplied, do not call @ref ecu_circular_dll_destroy()
- * or directly edit any members of @ref ecu_circular_dll_node in your callback. Users 
- * should only define any additional cleanup necessary for their data type. Cleanup of the 
- * actual @ref ecu_circular_dll_node type is done automatically in this module.
- * 
+ * @warning @p me cannot be an active node apart of an existing list. Otherwise the list 
+ * will become corrupted and behavior is undefined.
+ * @warning If @p destroy_0 callback is supplied, do not call @ref ecu_circular_dll_destroy(),
+ * @ref ecu_circular_dll_remove_node(), or directly edit any members of @ref ecu_circular_dll_node 
+ * in your callback. Users should only define any additional cleanup necessary for their data type. 
+ * Cleanup of the actual @ref ecu_circular_dll_node type is done automatically in this module.
  * @warning Read description of @ref object_id.h before supplying @p id_0 parameter.
  * 
  * @param me Node to construct. This cannot be NULL.
@@ -223,9 +229,8 @@ extern void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me,
  * @pre Memory already allocated for @p me.
  * @brief List constructor.
  * 
- * @warning An active list that has nodes in it cannot be supplied, otherwise
- * list will detach itself from all its nodes. Remaining behavior is undefined 
- * for this case.
+ * @warning @p me cannot be an active list that has nodes in it. Otherwise the
+ * list will detach itself from all its nodes and behavior is undefined.
  * 
  * @param me List to construct. This cannot be NULL. 
  */
