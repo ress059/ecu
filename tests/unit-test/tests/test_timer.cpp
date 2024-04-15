@@ -101,7 +101,6 @@ private:
 
     static ecu_max_tick_size_t get_time(struct i_ecu_timer *me)
     {
-        /* Return current time then increment afterwards. */
         TimerDriverStub *instance = static_cast<TimerDriverStub *>(me);
         return static_cast<ecu_max_tick_size_t>(instance->ticks_);
     }
