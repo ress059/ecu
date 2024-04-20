@@ -122,21 +122,29 @@
  */
 enum ecu_fsm_status
 {
-    ECU_FSM_STATE_TRANSITION,  /**< DO NOT USE. Reserved. Dispatched event caused state transition. */
+    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event cause state transition. Only use via call to @ref ecu_fsm_change_state() */
     ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
     ECU_FSM_EVENT_IGNORED,     /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
-    ECU_FSM_ERROR              /**< Dispatched event or fsm behavior is invalid. Dispatcher will assert. */
 };
 
+// use and have these typedefs to make it easier for the user to explicitly typecast
+// their handlers if using inherited fsms/events. I.e. enum ecu_fsm_status handler(struct app_fsm *me, const struct app_event *event);
+//.... ecu_fsm_state_ctor(,... (ecu_fsm_state_handler)(&handler));
+// These are not void pointers to make it obvious you are supposed to inherit fsm and event.
+typedef enum ecu_fsm_status (*ecu_fsm_on_entry_handler)(struct ecu_fsm *me);
+// void prevents signaling state transition in exit event.
+typedef void (*ecu_fsm_on_exit_handler)(struct ecu_fsm *me);
+typedef enum ecu_fsm_status (*ecu_fsm_state_handler)(struct ecu_fsm *me, const struct ecu_event *event);
 
-/* Forward declaration to define ecu_fsm_func_ptr. */
-struct ecu_fsm;
 
+struct ecu_fsm_state
+{
+    ecu_fsm_on_entry_handler on_entry;
 
-/**
- * @brief Prototype of all fsm state handler functions.
- */
-typedef enum ecu_fsm_status (*ecu_fsm_func_ptr)(struct ecu_fsm *, const struct ecu_event *);
+    // warning do not call ecu_fsm_change_state() in this function.
+    ecu_fsm_on_exit_handler on_exit;
+    ecu_fsm_state_handler handler;
+};
 
 
 
@@ -153,7 +161,7 @@ struct ecu_fsm
     /**
      * @brief PRIVATE. Current state the fsm is in.
      */
-    ecu_fsm_func_ptr state;
+    const struct ecu_fsm_state *state;
 
     /**
      * @brief PRIVATE. Maximum number of consecutive state transitions 
@@ -162,7 +170,7 @@ struct ecu_fsm
      * up incorrectly and two states indefinitely transition between 
      * each other.
      */
-    uint8_t max_state_transitions;
+    uint_fast8_t max_state_transitions;
 };
 
 
@@ -179,6 +187,13 @@ extern "C" {
  * @name Constructors
  */
 /**@{*/
+
+// explicitly typecast if your handlers, entry, and exit events use inherited fsm.
+extern void ecu_fsm_state_ctor(struct ecu_fsm_state *me, 
+                               ecu_fsm_on_entry_handler on_entry_0,
+                               ecu_fsm_on_exit_handler on_exit_0,
+                               ecu_fsm_state_handler handler_0);
+
 /**
  * @brief Constructor.
  * 
@@ -189,13 +204,14 @@ extern "C" {
  * @param max_state_transitions_0 Maximum number of consecutive state transitions
  * the fsm is allowed to take before assert fires. This must be greater than 0.
  */
-extern void ecu_fsm_ctor(struct ecu_fsm *fsm, ecu_fsm_func_ptr init_state_0, 
-                         uint8_t max_state_transitions_0);
+extern void ecu_fsm_ctor(struct ecu_fsm *me, 
+                         const struct ecu_fsm_state *state_0, 
+                         uint_fast8_t max_state_transitions_0);
 /**@}*/
 
 
 /**
- * @name FSM Behavior
+ * @name External Application Interaction with FSM
  */
 /**@{*/
 /**
@@ -210,9 +226,15 @@ extern void ecu_fsm_ctor(struct ecu_fsm *fsm, ecu_fsm_func_ptr init_state_0,
  * @param event User-defined event to dispatch. This cannot be NULL. 
  * See @ref event.h
  */
-extern void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event);
+extern void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event);
+/**@}*/
 
 
+
+/**
+ * @name Functions Called Only In Your State Handlers
+ */
+/**@{*/
 /**
  * @brief Transition fsm to a new state.
  * @details Application calls this inside their user-defined state
@@ -232,18 +254,19 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
  * @return The return value is used internally so the dispatcher knows
  * a state transition occurred.
  */
-static inline enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *fsm, 
-                                                       ecu_fsm_func_ptr new_state)
-{
-    ECU_RUNTIME_ASSERT( (fsm && new_state), ECU_DEFAULT_FUNCTOR );
-    fsm->state = new_state;
-    return ECU_FSM_STATE_TRANSITION;
-}
+
+// do not call this outside your state handler.
+// we intentionally do not run exit and entry if this happens.
+// exit and entry will only run if you call this properly in your state handler.
+// if you call this multiple times in your state handler we just take the
+// most recent one.
+extern enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *me, 
+                                                const struct ecu_fsm_state *state);
 /**@}*/
 
 
 /**
- * @name FSM Assert Handler
+ * @name Asserts In This Module
  */
 /**@{*/
 /**

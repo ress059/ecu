@@ -8,7 +8,8 @@ if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
                     "for a list of supported and tested compilers.")
 endif()
 
-# Note this library is meant to be compiled with the target application's toolchain.
+# Note this library is meant to be compiled with the target 
+# application's toolchain.
 add_library(ecu STATIC
     # Library source code.
     ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
@@ -28,6 +29,21 @@ target_include_directories(ecu
     PUBLIC 
         ${CMAKE_CURRENT_LIST_DIR}/inc 
 )
+
+# Target Endianness.
+if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+    target_compile_definitions(ecu 
+        PUBLIC 
+            ECU_LITTLE_ENDIAN 
+    )
+elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+    target_compile_definitions(ecu 
+        PUBLIC 
+            ECU_BIG_ENDIAN 
+    )
+else()
+    message(WARNING "Unable to detect target endianness. endian.h cannot be used.")
+endif()
 
 # Enable all warnings for our internal testing. Do not propogate
 # these warnings or any other compiler flags to the Application. 
