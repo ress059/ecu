@@ -378,7 +378,7 @@ extern void ecu_timer_arm(struct ecu_timer_collection *me, struct ecu_timer *tim
  * @pre @p me previously constructed via call to @ref ecu_timer_ctor()
  * @brief Stops the timer and removes it from the collection.
  * 
- * @param timer Timer to disarm. This must be currently armed/active.
+ * @param me Timer to disarm. This must be currently armed/active.
  */
 extern void ecu_timer_disarm(struct ecu_timer *me);
 

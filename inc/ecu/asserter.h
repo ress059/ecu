@@ -249,7 +249,7 @@ struct ecu_assert_functor
 
     /**
      * @brief Custom data that can be passed to user-defined @ref handler.
-     * @ref ecu_assert_handler struct can also be used as a base class
+     * @ref ecu_assert_functor struct can also be used as a base class
      * instead of using this parameter.
      */
     void *data;

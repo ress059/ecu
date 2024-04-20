@@ -1,61 +1,55 @@
 /**
  * @file
  * @brief Byte swapping and endianness macros compatible with any
- * C or C++ standard that supports fixed-width types. Example usage:
+ * C or C++ standard that supports fixed-width types. Endianness
+ * macros are meant to be used when sending/receiving data byte
+ * by byte and allows the Application code to remain the same
+ * even if endianness of the target changes. Example usage for 
+ * sending data across a bus in a specific endianness:
  * 
  * @code{.c}
+ * /------------------------------------------------------------/
+ * /-------- SEND DATA ACROSS BUS IN SPECIFIC ENDIANNESS -------/
+ * /------------------------------------------------------------/
  * #include <ecu/endian.h>
  * 
- * /---------------------------------------------------------------------------/
- * /-------- SEND DATA ACROSS BUS IN SPECIFIC ENDIANNESS (COMPILE TIME) -------/
- * /---------------------------------------------------------------------------/
+ * const uint16_t val = ECU_CPU_TO_LE16_COMPILETIME(0x1234);
+ * send(&val);
+ * @endcode
+ * @image html cpu-to-endian.png "CPU to Endian"
  * 
- * // val1 = 0x1234 if compiling on Little Endian CPU. Macro does nothing.
- * // val1 = 0x3412 if compiling on Big Endian CPU. Macro swaps bytes.
- * uint16_t val1 = ECU_CPU_TO_LE16_COMPILETIME(0x1234);
- * send(val1);
+ * Example usage for reading from a bus that encodes data in
+ * a specific endianness. For this example assume the bus follows
+ * a Big Endian protocol and we read 0x1234:
  * 
+ * @code{.c}
+ * /------------------------------------------------------------/
+ * /----- READ DATA FROM BUS THAT IS IN SPECIFIC ENDIANNESS ----/
+ * /------------------------------------------------------------/
+ * #include <ecu/endian.h>
  * 
- * /---------------------------------------------------------------------------/
- * /---------- SEND DATA ACROSS BUS IN SPECIFIC ENDIANNESS (RUN TIME) ---------/
- * /---------------------------------------------------------------------------/
- * 
- * static inline uint32_t foo(uint32_t val)
- * {
- *     return ECU_CPU_TO_BE32_RUNTIME(val);
- * }
- * 
- * // send(0x78563412); if compiling on Little Endian CPU. Macro swaps bytes.
- * // send(0x12345678); if compiling on Little Endian CPU. Macro does nothing.
- * send(foo(0x12345678));
- * 
- * 
- * /---------------------------------------------------------------------------/
- * /--------- READ DATA FROM BUS THATS IN SPECIFIC ENDIANNESS (RUN TIME) ------/
- * /---------------------------------------------------------------------------/
- * 
- * // Assume bus is Little Endian in this example. Read some data directly from bus.
- * // Assume le16_data is 0x1234 stored in Little Endian format.
- * uint16_t le16_data = read_from_le_bus();
+ * // Assume bus is Big Endian and is sending 0x1234.
+ * uint16_t be16_data;
+ * read_from_be_bus(&be16_data); // memcpy
  * 
  * // Convert it to CPU endianness so CPU can interpret the value correctly.
- * // val2 = 0x1234 if compiling on Little Endian CPU. Macro does nothing.
- * // val2 = 0x1234 if compiling on Big Endian CPU. Macro swaps bytes.
- * uint16_t val2 = ECU_LE16_TO_CPU_RUNTIME(le16_data);
+ * uint16_t val = ECU_BE16_TO_CPU_RUNTIME(be16_data);
  * @endcode
+ * @image html endian-to-cpu.png "Endian to CPU"
  * 
- * Endianness of the target is automatically determined by the CMake build 
- * system using CMAKE_C_BYTE_ORDER variable. -DECU_LITTLE_ENDIAN is passed
- * to the compiler for Little Endian targets and -DECU_BIG_ENDIAN is passed
- * for Big Endian targets. This allows appropriate expansion of endianness
- * macros.
+ * Endianness of the target is automatically determined by this project's 
+ * CMake build system by using the CMAKE_C_BYTE_ORDER variable. 
+ * -DECU_LITTLE_ENDIAN is passed to the compiler for Little Endian targets 
+ * and -DECU_BIG_ENDIAN is passed for Big Endian targets. This allows 
+ * appropriate expansion of endianness macros. The Application is also free
+ * to use these preprocessor defines for other needs.
  * 
- * Also note that type punning via pointer casts or unions are purposefully 
- * NOT done to swap bytes since this is undefined behavior (violates strict 
- * aliasing). Instead bytes are swapped using appropriate casting and shifting. 
- * Castings done for compile-time swapping macros ensure sufficient storage. 
- * Castings done for run-time swapping functions are for potentially faster 
- * operations while also ensuring sufficient storage.
+ * It is important to note that type punning via pointer casts or unions are 
+ * purposefully NOT done to swap bytes since this is undefined behavior 
+ * (violates strict aliasing). Instead bytes are swapped using appropriate 
+ * casting and shifting. Castings done for compile-time swapping macros 
+ * ensure sufficient storage. Castings done for run-time swapping functions 
+ * are for potentially faster operations while also ensuring sufficient storage.
  * 
  * @author Ian Ress
  * @version 0.1
@@ -203,109 +197,207 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 
 #if defined(ECU_DOXYGEN)
 /**
- * @name Little Endian Data to CPU
- * Compile time and runtime macros that let CPU read 
- * Little Endian encoded data.
+ * @anchor LEtoCPU
+ * @name Store Little Endian Data into CPU
+ * Compile time and runtime macros that let CPU read Little Endian 
+ * encoded data, regardless of CPU's endianness.
  * 
  * Example macro expansion if compiling on Little Endian CPU:
  * @code{.c}
- * #define ECU_LE16_TO_CPU_COMPILETIME(x)   (x)
- * #define ECU_LE16_TO_CPU_RUNTIME(x)       (x)
+ * #define ECU_LE<..>_TO_CPU_COMPILETIME(x)   (x) // <..> = 16, 32, or 64
+ * #define ECU_LE<..>_TO_CPU_RUNTIME(x)       (x) // <..> = 16, 32, or 64
  * @endcode
  * 
  * Example macro expansion if compiling on Big Endian CPU:
  * @code{.c}
- * #define ECU_LE16_TO_CPU_COMPILETIME(x)   ECU_SWAP16_COMPILETIME(x)
- * #define ECU_LE16_TO_CPU_RUNTIME(x)       ecu_swap16_runtime(x)
+ * #define ECU_LE<..>_TO_CPU_COMPILETIME(x)   ECU_SWAP<..>_COMPILETIME(x) // <..> = 16, 32, or 64
+ * #define ECU_LE<..>_TO_CPU_RUNTIME(x)       ecu_swap<..>_runtime(x)     // <..> = 16, 32, or 64
  * @endcode
  */
 /**@{*/
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE16_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE16_TO_CPU_RUNTIME(x)
+
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE32_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE32_TO_CPU_RUNTIME(x)
+
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE64_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref LEtoCPU "Store Little Endian Data into CPU section description"
+ */
 #define ECU_LE64_TO_CPU_RUNTIME(x)
 /**@}*/
 
 
 /**
- * @name Big Endian Data to CPU
- * Compile time and runtime macros that let CPU read 
- * Big Endian encoded data.
+ * @anchor BEtoCPU
+ * @name Store Big Endian Data into CPU
+ * Compile time and runtime macros that let CPU read Big Endian 
+ * encoded data, regardless of CPU's endianness.
  * 
  * Example macro expansion if compiling on Little Endian CPU:
  * @code{.c}
- * #define ECU_BE16_TO_CPU_COMPILETIME(x)   ECU_SWAP16_COMPILETIME(x)
- * #define ECU_BE16_TO_CPU_RUNTIME(x)       ecu_swap16_runtime(x)
+ * #define ECU_BE<..>_TO_CPU_COMPILETIME(x)   ECU_SWAP<..>_COMPILETIME(x) // <..> = 16, 32, or 64
+ * #define ECU_BE<..>_TO_CPU_RUNTIME(x)       ecu_swap<..>_runtime(x)     // <..> = 16, 32, or 64
  * @endcode
  * 
  * Example macro expansion if compiling on Big Endian CPU:
  * @code{.c}
- * #define ECU_BE16_TO_CPU_COMPILETIME(x)   (x)
- * #define ECU_BE16_TO_CPU_RUNTIME(x)       (x)
+ * #define ECU_BE<..>_TO_CPU_COMPILETIME(x)   (x) // <..> = 16, 32, or 64
+ * #define ECU_BE<..>_TO_CPU_RUNTIME(x)       (x) // <..> = 16, 32, or 64
  * @endcode
  */
 /**@{*/
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE16_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE16_TO_CPU_RUNTIME(x)
+
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE32_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE32_TO_CPU_RUNTIME(x)
+
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE64_TO_CPU_COMPILETIME(x)
+
+/**
+ * @brief See @ref BEtoCPU "Store Big Endian Data into CPU section description"
+ */
 #define ECU_BE64_TO_CPU_RUNTIME(x)
 /**@}*/
 
 
 /**
- * @name CPU Data To Little Endian
- * Compile time and runtime macros that convert data 
- * stored in CPU into Little Endian encoded format.
+ * @anchor CPUtoLE
+ * @name CPU Data to Little Endian Format
+ * Compile time and runtime macros that convert data stored
+ * in CPU into Little Endian encoded format, regardless of
+ * CPU's endianness.
  * 
  * Example macro expansion if compiling on Little Endian CPU:
  * @code{.c}
- * #define ECU_CPU_TO_LE16_COMPILETIME(x)   (x)
- * #define ECU_CPU_TO_LE16_RUNTIME(x)       (x)
+ * #define ECU_CPU_TO_LE<..>_COMPILETIME(x)   (x) // <..> = 16, 32, or 64
+ * #define ECU_CPU_TO_LE<..>_RUNTIME(x)       (x) // <..> = 16, 32, or 64
  * @endcode
  * 
  * Example macro expansion if compiling on Big Endian CPU:
  * @code{.c}
- * #define ECU_CPU_TO_LE16_COMPILETIME(x)   ECU_SWAP16_COMPILETIME(x)
- * #define ECU_CPU_TO_LE16_RUNTIME(x)       ecu_swap16_runtime(x)
+ * #define ECU_CPU_TO_LE<..>_COMPILETIME(x)   ECU_SWAP<..>_COMPILETIME(x) // <..> = 16, 32, or 64
+ * #define ECU_CPU_TO_LE<..>_RUNTIME(x)       ecu_swap<..>_runtime(x)     // <..> = 16, 32, or 64
  * @endcode
  */
 /**@{*/
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE16_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE16_RUNTIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE32_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE32_RUNTIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE64_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Little Endian Format section description"
+ */
 #define ECU_CPU_TO_LE64_RUNTIME(x)
 /**@}*/
 
 
 /**
- * @name CPU Data To Big Endian
- * Compile time and runtime macros that convert data 
- * stored in CPU into Big Endian encoded format.
+ * @anchor CPUtoBE
+ * @name CPU Data to Big Endian Format
+ * Compile time and runtime macros that convert data stored
+ * in CPU into Big Endian encoded format, regardless of
+ * CPU's endianness.
  * 
  * Example macro expansion if compiling on Little Endian CPU:
  * @code{.c}
- * #define ECU_CPU_TO_BE16_COMPILETIME(x)   ECU_SWAP16_COMPILETIME(x)
- * #define ECU_CPU_TO_BE16_RUNTIME(x)       ecu_swap16_runtime(x)
+ * #define ECU_CPU_TO_BE<..>_COMPILETIME(x)   ECU_SWAP<..>_COMPILETIME(x) // <..> = 16, 32, or 64
+ * #define ECU_CPU_TO_BE<..>_RUNTIME(x)       ecu_swap<..>_runtime(x)     // <..> = 16, 32, or 64
  * @endcode
  * 
  * Example macro expansion if compiling on Big Endian CPU:
  * @code{.c}
- * #define ECU_CPU_TO_LE16_COMPILETIME(x)   (x)
- * #define ECU_CPU_TO_LE16_RUNTIME(x)       (x)
+ * #define ECU_CPU_TO_BE<..>_COMPILETIME(x)   (x) // <..> = 16, 32, or 64
+ * #define ECU_CPU_TO_BE<..>_RUNTIME(x)       (x) // <..> = 16, 32, or 64
  * @endcode
  */
 /**@{*/
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE16_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE16_RUNTIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE32_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE32_RUNTIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE64_COMPILETIME(x)
+
+/**
+ * @brief See @ref CPUtoLE "CPU Data to Big Endian Format section description"
+ */
 #define ECU_CPU_TO_BE64_RUNTIME(x)
 /**@}*/
 #else
@@ -369,8 +461,6 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 #       error "CMake build system unable to detect target endianness. "
               "Looking at CMake variable CMAKE_C_BYTE_ORDER"
 #   endif
-#endif
-
-
+#endif /* ECU_DOXYGEN */
 
 #endif /* ECU_ENDIAN_H_ */
