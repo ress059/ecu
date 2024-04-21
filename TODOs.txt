@@ -4,10 +4,8 @@ Completed.
 3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
 since we are already doing that with tests that use extra_list; Documentation done.
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
+5. endian.h. Tests done. Documentation done.
 
-Endian:
-1. Proofread documentation and test in doxygen.
-2. Finish unit tests.
 
 Timer:
 1. Use forward declaration/pointers to implementation to avoid itimer.h including timer.h and timer.h 

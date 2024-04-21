@@ -15,7 +15,6 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* STDLib. */
-#include <bit>
 #include <cstdint>
 
 /* Files under test. */
@@ -32,14 +31,14 @@
 /*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST_GROUP(EndianMacros)
+TEST_GROUP(Endian)
 {
-    uint16_t u16_runtime_swap;
-    uint32_t u32_runtime_swap;
-    uint64_t u64_runtime_swap;
-    static constexpr uint16_t U16_COMPILETIME_SWAP = ECU_SWAP16_COMPILETIME(0x1234);
-    static constexpr uint32_t U32_COMPILETIME_SWAP = ECU_SWAP32_COMPILETIME(0x12345678);
-    static constexpr uint64_t U64_COMPILETIME_SWAP = ECU_SWAP64_COMPILETIME(0x123456789ABCDEF0);
+    uint16_t u16_runtime_swap_;
+    uint32_t u32_runtime_swap_;
+    uint64_t u64_runtime_swap_;
+    static constexpr uint16_t U16_COMPILETIME_SWAP_ = ECU_SWAP16_COMPILETIME(0x1234);
+    static constexpr uint32_t U32_COMPILETIME_SWAP_ = ECU_SWAP32_COMPILETIME(0x12345678);
+    static constexpr uint64_t U64_COMPILETIME_SWAP_ = ECU_SWAP64_COMPILETIME(0x123456789ABCDEF0);
 };
 
 
@@ -48,20 +47,30 @@ TEST_GROUP(EndianMacros)
 /*------------------------------------------------------------- TESTS -------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST(EndianMacros, CompileTimeSwappingMacros)
+TEST(Endian, SwappingMacros)
 {
-    /* Step 1: Arrange. Already done. */
-    /* Step 2: */
-    static_cast<char *>
+    /* Step 1: Arrange. */
+    u16_runtime_swap_ = 0x1234;
+    u32_runtime_swap_ = 0x12345678;
+    u64_runtime_swap_ = 0x123456789ABCDEF0;
+
+    u16_runtime_swap_ = ecu_swap16_runtime(u16_runtime_swap_);
+    u32_runtime_swap_ = ecu_swap32_runtime(u32_runtime_swap_);
+    u64_runtime_swap_ = ecu_swap64_runtime(u64_runtime_swap_);
+
+    /* Steps 2 and 3: Action and assert. */
+    LONGS_EQUAL(0x3412, U16_COMPILETIME_SWAP_);
+    LONGS_EQUAL(0x3412, u16_runtime_swap_);
+    UNSIGNED_LONGS_EQUAL(0x3412, U16_COMPILETIME_SWAP_);
+    UNSIGNED_LONGS_EQUAL(0x3412, u16_runtime_swap_);
+
+    LONGS_EQUAL(0x78563412, U32_COMPILETIME_SWAP_);
+    LONGS_EQUAL(0x78563412, u32_runtime_swap_);
+    UNSIGNED_LONGS_EQUAL(0x78563412, U32_COMPILETIME_SWAP_);
+    UNSIGNED_LONGS_EQUAL(0x78563412, u32_runtime_swap_);
+
+    LONGSLONGS_EQUAL(0xF0DEBC9A78563412, U64_COMPILETIME_SWAP_);
+    LONGSLONGS_EQUAL(0xF0DEBC9A78563412, u64_runtime_swap_);
+    UNSIGNED_LONGLONGS_EQUAL(0xF0DEBC9A78563412, U64_COMPILETIME_SWAP_);
+    UNSIGNED_LONGLONGS_EQUAL(0xF0DEBC9A78563412, u64_runtime_swap_);
 }
-
-
-
-
-// test COMPILETIME16 SWAP
-// test COMPILETIME32 SWAP
-// test COMPILETIME64 SWAP
-// test runtime16 swap
-// test runtime32 swap
-// test runtime64 swap
-

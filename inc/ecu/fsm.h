@@ -114,15 +114,18 @@
 /*----------------------------------------------------------- FSM STATE ----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+/* Forward declaration for state function typedefs. */
+struct ecu_fsm;
+
+
 /**
- * @brief Each fsm state handler function must return this type. 
- * @details @ref ecu_fsm_dispatch() function uses this information 
- * to know which state transitions to execute and verify your fsm's 
- * behavior is valid.
+ * @brief User's @ref ecu_fsm_state.handler must return one of these
+ * values. This allows @ref ecu_fsm_dispatch() to take proper state
+ * transitions and verify fsm behavior.
  */
 enum ecu_fsm_status
 {
-    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event cause state transition. Only use via call to @ref ecu_fsm_change_state() */
+    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event cause state transition. Never return directly. Only return via call to ecu_fsm_change_state() */
     ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
     ECU_FSM_EVENT_IGNORED,     /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
 };
@@ -133,15 +136,13 @@ enum ecu_fsm_status
 // These are not void pointers to make it obvious you are supposed to inherit fsm and event.
 typedef enum ecu_fsm_status (*ecu_fsm_on_entry_handler)(struct ecu_fsm *me);
 // void prevents signaling state transition in exit event.
-typedef void (*ecu_fsm_on_exit_handler)(struct ecu_fsm *me);
+typedef void (*ecu_fsm_on_exit_handler)(struct ecu_fsm *me); // warning do not call ecu_fsm_change_state() in this function.
 typedef enum ecu_fsm_status (*ecu_fsm_state_handler)(struct ecu_fsm *me, const struct ecu_event *event);
 
 
 struct ecu_fsm_state
 {
     ecu_fsm_on_entry_handler on_entry;
-
-    // warning do not call ecu_fsm_change_state() in this function.
     ecu_fsm_on_exit_handler on_exit;
     ecu_fsm_state_handler handler;
 };
@@ -165,10 +166,9 @@ struct ecu_fsm
 
     /**
      * @brief PRIVATE. Maximum number of consecutive state transitions 
-     * fsm can take before an assertion fires.
-     * @details Used to prevent deadlock scenarios where fsm was set 
-     * up incorrectly and two states indefinitely transition between 
-     * each other.
+     * fsm can take before an assertion fires. Used to prevent deadlock 
+     * scenarios where fsm was set up incorrectly and two states 
+     * indefinitely transition between each other.
      */
     uint_fast8_t max_state_transitions;
 };
