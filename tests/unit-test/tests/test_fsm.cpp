@@ -17,6 +17,8 @@
 
 /* STDLib */
 #include <concepts>
+#include <memory>
+#include <type_traits>
 
 /* Files under test. */
 #include <ecu/asserter.h>
@@ -35,32 +37,55 @@
 
 enum EventTestSignals
 {
-    TEST_STATE_TRANSITION = ECU_USER_EVENT_ID_BEGIN
+    INIT_EVENT = ECU_USER_EVENT_ID_BEGIN,
+    TEST_STATE_TRANSITION
 };
 
 
 enum class StateIDs : unsigned int
 {
-    STATE_ENTRY_IDS_START = 0,
-    /*****************/
+    STATE_HANDLER_IDS_START = 0,
+    /*************************/
+    STATE1_HANDLER,
+    STATE2_HANDLER,
+    STATE3_HANDLER,
+    /*************************/
+    STATE_HANDLER_IDS_END,
+
+    STATE_ENTRY_IDS_START,
+    /*************************/
     STATE1_ENTRY,
     STATE2_ENTRY,
     STATE3_ENTRY,
-    /*****************/
+    /*************************/
     STATE_ENTRY_IDS_END,
 
     STATE_EXIT_IDS_START,
-    /*****************/
+    /*************************/
     STATE1_EXIT,
     STATE2_EXIT,
     STATE3_EXIT,
-    /*****************/
-    STATE_EXIT_IDS_END
+    /*************************/
+    STATE_EXIT_IDS_END,
+
+    STATE_TRANSITION_IDS_START,
+    /*************************/
+    TO_STATE1,
+    TO_STATE2,
+    TO_STATE3,
+    /*************************/
+    STATE_TRANSITION_IDS_END
 };
 
 
 struct EventTestBase : public ecu_event 
 {
+    EventTestBase()
+    {
+        ecu_event_ctor(static_cast<struct ecu_event *>(this), INIT_EVENT);
+        event_data_ = 0;
+    }
+
     /* Dummy additional data. */
     int event_data_;
 };
@@ -72,26 +97,37 @@ struct EventTestBase : public ecu_event
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 template<class T>
-struct is_ecu_fsm_state_pointer
+struct is_fsm_state_pointer
 {
     static constexpr bool value = false;
 };
 
 
 template<>
-struct is_ecu_fsm_state_pointer<ecu_fsm_state *>
+struct is_fsm_state_pointer<struct ecu_fsm_state *>
 {
     static constexpr bool value = true;
 };
 
 
 template<const StateIDs ID>
+concept is_state_handler_id = ((ID > StateIDs::STATE_HANDLER_IDS_START) && \
+                               (ID < StateIDs::STATE_HANDLER_IDS_END));
+
+
+template<const StateIDs ID>
 concept is_state_entry_id = ((ID > StateIDs::STATE_ENTRY_IDS_START) && \
                              (ID < StateIDs::STATE_ENTRY_IDS_END));
+
 
 template<const StateIDs ID>
 concept is_state_exit_id = ((ID > StateIDs::STATE_EXIT_IDS_START) && \
                             (ID < StateIDs::STATE_EXIT_IDS_END));
+
+
+template<const StateIDs ID>
+concept is_state_transition_id = ((ID > StateIDs::STATE_TRANSITION_IDS_START) && \
+                                  (ID < StateIDs::STATE_TRANSITION_IDS_END));
 
 
 
@@ -145,22 +181,16 @@ public:
 };
 
 
+/**
+ * @brief The actual FSM under test. For safe casting the fsm
+ * module requires we inherit ecu_fsm. For this reason, our actual
+ * test group FsmTestGroupBase contains this class and does not
+ * inherit it since it must inherit UTest class. This approach is
+ * cleaner than trying to multiply inherit ecu_fsm and UTest.
+ */
 struct FsmTestBase : public ecu_fsm
 {
 public:
-    void setup() 
-    {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-    }
-
-    void teardown()
-    {
-        ecu_fsm_set_assert_functor(ECU_DEFAULT_FUNCTOR);
-        mock().checkExpectations();
-        mock().clear();
-    }
-
     AssertCallOk assert_call_ok_;
     AssertCallFail assert_call_fail_;
 
@@ -185,15 +215,30 @@ public:
         return ECU_FSM_EVENT_HANDLED;
     }
 
-    template<class T*, const StateIDs ID>
-    requires is_ecu_fsm_state_pointer<T>::value && is_state_entry_id<ID>
+    template<const StateIDs NEWSTATE, const StateIDs ID>
+    requires is_state_transition_id<NEWSTATE> && is_state_entry_id<ID>
     static enum ecu_fsm_status STATE_ON_ENTRY_TRANSITION_MOCK(FsmTestBase *me)
     {
+        enum ecu_fsm_status status;
+
         mock().actualCall("FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK")
               .withParameter("Fsm", me)
               .withParameter("State", static_cast<unsigned int>(ID));
 
-        return ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), T);
+        if constexpr(NEWSTATE == StateIDs::TO_STATE1)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+        }
+
+        return status;
     }
 
     static enum ecu_fsm_status STATE_ON_ENTRY_STUB(FsmTestBase *me)
@@ -202,11 +247,26 @@ public:
         return ECU_FSM_EVENT_HANDLED;
     }
 
-    template<class T*>
-    requires is_ecu_fsm_state_pointer<T>::value
+    template<const StateIDs NEWSTATE>
+    requires is_state_transition_id<NEWSTATE>
     static enum ecu_fsm_status STATE_ON_ENTRY_TRANSITION_STUB(FsmTestBase *me)
     {
-        return ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), T);
+        enum ecu_fsm_status status;
+
+        if constexpr(NEWSTATE == StateIDs::TO_STATE1)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+        }
+
+        return status;
     }
 };
 
@@ -216,28 +276,67 @@ struct FsmStateExitMockStub
 public:
     template<const StateIDs ID>
     requires is_state_exit_id<ID>
-    static void STATE_ON_EXIT_MOCK(struct FsmTestBase *me)
+    static void STATE_ON_EXIT_MOCK(FsmTestBase *me)
     {
         mock().actualCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
               .withParameter("Fsm", me)
               .withParameter("State", static_cast<unsigned int>(ID));
     }
 
-    static void STATE_ON_EXIT_STUB(struct FsmTestBase *me)
+    static void STATE_ON_EXIT_STUB(FsmTestBase *me)
     {
         (void)me;
     }
 };
 
 
-struct FsmStateHandlerStub
+struct FsmStateHandlerMockStub
 {
 public:
-    static enum ecu_fsm_status STATE_HANDLER_STUB(FsmTestBase *me, const struct EventTestBase *event)
+    static enum ecu_fsm_status STATE_HANDLER_STUB(FsmTestBase *me, const EventTestBase *event)
     {
         (void)me;
         (void)event;
         return ECU_FSM_EVENT_HANDLED;
+    }
+
+    template<const StateIDs ID>
+    requires is_state_handler_id<ID>
+    static enum ecu_fsm_status STATE_HANDLER_MOCK(FsmTestBase *me, const EventTestBase *event)
+    {
+        mock().actualCall("FsmStateHandlerMockStub::STATE_HANDLER_MOCK")
+              .withParameter("Fsm", me)
+              .withParameter("Event", event)
+              .withParameter("State", static_cast<unsigned int>(ID));
+
+        return ECU_FSM_EVENT_HANDLED;
+    }
+
+    template<const StateIDs NEWSTATE, const StateIDs ID>
+    requires is_state_transition_id<NEWSTATE> && is_state_handler_id<ID>
+    static enum ecu_fsm_status STATE_HANDLER_TRANSITION_MOCK(FsmTestBase *me, const EventTestBase *event)
+    {
+        enum ecu_fsm_status status;
+
+        mock().actualCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
+              .withParameter("Fsm", me)
+              .withParameter("Event", event)
+              .withParameter("State", static_cast<unsigned int>(ID));
+
+        if constexpr(NEWSTATE == StateIDs::TO_STATE1)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
+        {
+            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+        }
+
+        return status;
     }
 };
 
@@ -247,57 +346,103 @@ public:
 /*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-
-TEST_GROUP_BASE(FsmState1ToState2Transition, FsmTestBase)
+TEST_GROUP(FsmTestGroupBase)
 {
-    static enum ecu_fsm_status STATE1_HANDLER(FsmTestBase *me, const struct EventTestBase *event)
+    void setup()
     {
-        enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
-
-        switch (static_cast<const struct ecu_event *>(event)->id)
-        {
-            case TEST_STATE_TRANSITION:
-            {
-                status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
-                break;
-            }
-
-            default:
-            {
-                break;
-            }
-        }
-        return status;
+        me_.assert_call_ok_.handler = &AssertCallOk::assert_handler;
+        me_.assert_call_fail_.handler = &AssertCallFail::assert_handler;
     }
+
+    void teardown()
+    {
+        ecu_fsm_set_assert_functor(ECU_DEFAULT_FUNCTOR);
+        mock().checkExpectations();
+        mock().clear();
+    }
+
+    FsmTestBase me_;
 };
 
 
-#error "TODO: Stopped here. Need to use TEST_BASE() macro on FsmTestBase class"
-#define TEST_GROUP_BASE(testGroup, baseclass) \
-  extern int externTestGroup##testGroup; \
-  int externTestGroup##testGroup = 0; \
-  struct TEST_GROUP_##CppUTestGroup##testGroup : public baseclass
+// TEST_GROUP_BASE(FsmState1ToState2Transition, FsmTestGroupBase)
+// {
+//     static enum ecu_fsm_status STATE1_HANDLER(FsmTestBase *me, const EventTestBase *event)
+//     {
+//         enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
 
-#define TEST_BASE(testBaseClass) \
-  struct testBaseClass : public Utest
+//         switch (static_cast<const struct ecu_event *>(event)->id)
+//         {
+//             case TEST_STATE_TRANSITION:
+//             {
+//                 status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+//                 break;
+//             }
 
-#define TEST_GROUP(testGroup) \
-  TEST_GROUP_BASE(testGroup, Utest)
+//             default:
+//             {
+//                 break;
+//             }
+//         }
+//         return status;
+//     }
+// };
+
+
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------- TESTS ------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST(FsmState1ToState2Transition, SingleStateTransition)
+/**
+ * @brief State 1 Handler -> State 1 Exit -> State 2 Entry.
+ */
+TEST(FsmTestGroupBase, State1ToState2Transition)
 {
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        ecu_fsm_state_ctor(&STATE1_, 
+        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
+        mock().strictOrder(); // !!!! TODO Test out of order to verify this is working !!!!
+
+        /* State 1 handler. */
+        mock().expectOneCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
+              .withParameter("Fsm", &me_)
+              .withParameter("Event", &me_.event_)
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_HANDLER));
+
+        /* State 1 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
+              .withParameter("Fsm", &me_)
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_EXIT));        
+
+        /* State 2 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
+              .withParameter("Fsm", &me_)
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE2_ENTRY));
+
+        /* Set up fsm. */
+        ecu_fsm_state_ctor(&me_.STATE1_, 
                            (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE1_ENTRY>,
                            (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE1_EXIT>,
-                           (ecu_fsm_state_handler)&STATE1_HANDLER);
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK<StateIDs::TO_STATE2, StateIDs::STATE1_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE2_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE2_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE2_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE2_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE3_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE3_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE3_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
+
+        ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
+                     &me_.STATE1_,
+                     3);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
     }
     catch (AssertException& e)
     {
