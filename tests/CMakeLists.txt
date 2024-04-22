@@ -38,6 +38,8 @@ if(ECU_ENABLE_UNIT_TESTING)
             # Tests
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_circular_dll.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_endian.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_fsm.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_timer.cpp
     )
 

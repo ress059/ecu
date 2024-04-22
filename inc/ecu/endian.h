@@ -142,7 +142,7 @@ static inline uint16_t ecu_swap16_runtime(uint_fast16_t val)
     is defined in both C and C++. Compiler will implicitly typecast if 
     uint_fast16_t has higher precedence over int. Otherwise int promotion 
     happens no matter what. */
-    ( ((val & 0xFF00) >> 8) | ((val & 0x00FF) << 8) );
+    return ( ((val & 0xFF00) >> 8) | ((val & 0x00FF) << 8) );
 }
 
 

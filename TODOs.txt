@@ -6,6 +6,8 @@ since we are already doing that with tests that use extra_list; Documentation do
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
 5. endian.h. Tests done. Documentation done.
 
+CMake:
+1. Tabbing in Linux-GNU.cmake
 
 Timer:
 1. Use forward declaration/pointers to implementation to avoid itimer.h including timer.h and timer.h 
