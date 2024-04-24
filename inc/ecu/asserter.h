@@ -13,7 +13,7 @@
  * ECU_STATIC_ASSERT( (false) ); // Fails
  * ECU_STATIC_ASSERT( (sizeof(int) >= 2) ); // Passes
  * @endcode
- * 
+ * \n
  * 
  * @code{.c}
  * /-------------------------------- Run-time assert example: -------------------------/
@@ -75,6 +75,7 @@
  *     ECU_RUNTIME_ASSERT(ptr, ECU_DEFAULT_FUNCTOR);
  * }
  * @endcode
+ * \n
  * 
  * Compile-time assert macro expands to static_assert variants or negative array 
  * indexing to produce compilation errors depending on which C/C++ standard is used when 

@@ -4,8 +4,9 @@
  * event objects. The event ID scheme allows the library to define reserved event IDs and
  * users to define their own event IDs without conflicts. Event IDs the library
  * reserves will be negative and event IDs the user defines will start at 0 which
- * is always @ref ECU_USER_EVENT_ID_BEGIN. Example of user defining their own event IDs:
- * 
+ * is always @ref ECU_USER_EVENT_ID_BEGIN. This scheme also allows library functions 
+ * to know when an invalid event was used via @ref ECU_VALID_EVENT_ID_BEGIN enumeration.
+ * Example of user defining their own event IDs:
  * @code{.c}
  * enum user_event_ids
  * {
@@ -14,9 +15,7 @@
  *     ERROR_EVENT
  * };
  * @endcode
- * 
- * This scheme also allows library functions to know when an invalid event
- * was used via @ref ECU_VALID_EVENT_ID_BEGIN enumeration.
+ * \n
  * 
  * The event ID is contained within a base event class. This class serves as an
  * interface that users inherit from to add any supplemental event data. For example:
@@ -31,11 +30,11 @@
  *     uint16_t index;
  * };
  * @endcode
+ * \n 
  * 
  * Library functions only use this base event class so users can upcast back to 
  * this base class when calling them. Using the user_event struct and user_event_ids
  * enumeration defined earlier as an example:
- * 
  * @code{.c}
  * // Library function prototype.
  * void ecu_foo(const struct ecu_event *event);

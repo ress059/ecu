@@ -2,15 +2,14 @@
  * @file
  * @brief Allows users to create linked lists (collections) of independent timers that have unique 
  * timeout periods and properties.
- * 
  * @image html timer-structure.png "Timer List Structure"
+ * \n 
  * 
- * All timers within each list are updated by a single function, @ref ecu_timer_collection_tick() 
+ * All timers within each list are updated by a single function, @ref ecu_timer_collection_tick(),
  * which must be called periodically by the application. For each timer, a unique user-defined callback
  * is called on timeout. A bare-bones example using this timer module is shown below. This example 
  * assumes a driver has been supplied by the user (explained later in the next code snippet below). 
  * This example adds two one-shot timers and one periodic timer to a timer collection and runs them.
- * 
  * @code{.c}
  * #include <ecu/timer.h>
  * 
@@ -75,11 +74,12 @@
  *     ecu_timer_collection_tick(&collection);
  * }
  * @endcode
+ * \n 
  * 
  * You'll notice in the example above that @ref ecu_timer_collection_ctor() takes in
  * a pointer to a user-defined timer driver. 
- * 
  * @image html timer-user-timer.png "User-defined Timer Driver"
+ * \n 
  * 
  * This allows the module to remain harware-agnostic. An interface for @ref i_ecu_timer 
  * struct is provided in @ref itimer.h. The user is pretty much only responsible for defining
@@ -90,7 +90,7 @@
  * 1. User's tick counter is an unsigned type.
  * 2. User's timer/tick counter has a width (in bytes) less than or equal to @ref ecu_max_tick_size_t.
  * I.e. @ref i_ecu_timer.tick_width_bytes <= sizeof(ecu_max_tick_size_t)
- * 
+ * \n 
  * 
  * Clock ticks are the units used by this module so the target application 
  * can use a timer with any precision of their choosing (microseconds, milliseconds, etc). 
@@ -99,7 +99,6 @@
  * is shown below. In this example the user's hardware target uses a 32-bit systick. A tick 
  * for this target application represents 1 milisecond. So this application calling @ref ecu_timer_arm(.., 50) 
  * creates a 50ms timer. Calling @ref ecu_timer_arm(.., 100) creates a 100ms timer, etc.
- * 
  * @code{.c}
  * #include <ecu/interface/itimer.h>
  * 

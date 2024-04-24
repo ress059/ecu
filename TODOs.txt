@@ -8,7 +8,7 @@ since we are already doing that with tests that use extra_list; Documentation do
 6. fsm.h/.c. Tests done. Documentation done.
 
 CMake:
-1. Tabbing in Linux-GNU.cmake
+1. Verify tabbing in Linux-GNU.cmake is fixed.
 
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
@@ -20,13 +20,8 @@ void set_assert_functor(functor)
     ....
 }
 
-Timer:
-1. Use forward declaration/pointers to implementation to avoid itimer.h including timer.h and timer.h 
-including itimer.h and having a circular dependency.
-
 All:
-1. Add \n for all file comments. fsm done currently have to look at others.
-2. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
+1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
 
 CI Pipeline Steps:
 If any step fails do not move on.

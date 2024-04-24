@@ -16,12 +16,13 @@
  * const uint16_t val = ECU_CPU_TO_LE16_COMPILETIME(0x1234);
  * send(&val);
  * @endcode
+ * \n 
  * @image html cpu-to-endian.png "CPU to Endian"
+ * \n 
  * 
  * Example usage for reading from a bus that encodes data in
  * a specific endianness. For this example assume the bus follows
  * a Big Endian protocol and we read 0x1234:
- * 
  * @code{.c}
  * /------------------------------------------------------------/
  * /----- READ DATA FROM BUS THAT IS IN SPECIFIC ENDIANNESS ----/
@@ -35,7 +36,9 @@
  * // Convert it to CPU endianness so CPU can interpret the value correctly.
  * uint16_t val = ECU_BE16_TO_CPU_RUNTIME(be16_data);
  * @endcode
+ * \n
  * @image html endian-to-cpu.png "Endian to CPU"
+ * \n
  * 
  * Endianness of the target is automatically determined by this project's 
  * CMake build system by using the CMAKE_C_BYTE_ORDER variable. 
