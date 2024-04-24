@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ECU Unit Test Debug - Linux GCC",
+            "name": "ECU Unit Test Debug - Linux GDB",
             "cwd": "${workspaceFolder}",
             "program": "${workspaceFolder}/tests/unit-test/build/tests/ecu_unit_test",
             "type": "cppdbg",

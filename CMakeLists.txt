@@ -46,8 +46,9 @@ else()
 endif()
 
 # Enable all warnings for our internal testing. Do not propogate
-# these warnings or any other compiler flags to the Application. 
-# For unit tests make sure compiler is saving debug symbols.
+# these warnings or any other compiler flags to the Application.
+# If CMAKE_BUILD_TYPE is "debug" then -g compiler flag will
+# automatically be set which saves debug symbols.
 target_compile_options(ecu 
     PRIVATE
         $<$<C_COMPILER_ID:GNU,Clang>:-fdiagnostics-color=always>
@@ -55,12 +56,6 @@ target_compile_options(ecu
         $<$<C_COMPILER_ID:GNU,Clang>:-Wcast-align -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
         $<$<C_COMPILER_ID:GNU,Clang>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
 )
-if(ECU_ENABLE_UNIT_TESTING)
-    target_compile_options(ecu 
-        PRIVATE
-            $<$<C_COMPILER_ID:GNU,Clang>:-g>
-    )
-endif()
 
 # Warn the user that run-time asserts are being disabled. It is
 # not recommended to disable run-time asserts but we have this

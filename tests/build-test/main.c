@@ -143,7 +143,7 @@ int main(void)
     ecu_circular_dll_node_ctor(&app_node1.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
     ecu_circular_dll_node_ctor(&app_node2.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
 
-    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, &app_fsm_state, 1);
+    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, &app_fsm_state);
     
     ecu_circular_dll_push_back(&app_list, &app_node1.node);
     ecu_circular_dll_push_back(&app_list, &app_node2.node);

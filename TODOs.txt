@@ -5,23 +5,28 @@ Completed.
 since we are already doing that with tests that use extra_list; Documentation done.
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
 5. endian.h. Tests done. Documentation done.
+6. fsm.h/.c. Tests done. Documentation done.
 
 CMake:
 1. Tabbing in Linux-GNU.cmake
+
+Asserter:
+1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
+void set_assert_functor(functor)
+{
+    ecu_timer_set_assert_functor(functor);
+    ecu_fsm_set_assert_functor(functor);
+    ecu_circular_dll_set_assert_functor(functor);
+    ....
+}
 
 Timer:
 1. Use forward declaration/pointers to implementation to avoid itimer.h including timer.h and timer.h 
 including itimer.h and having a circular dependency.
 
 All:
-1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
-
-fsm:
-1. Update documentation with new event.h/.c naming convention.
-2. Possible create an on_entry and on_exit function in a state struct for safer entry and exit events.
-3. Update documentation to include @private for private members and @pre for preconditions.
-4. In fsm.c change to FSM_ASSERT_FUNCTOR
-5. Pictures in fsm documentation.
+1. Add \n for all file comments. fsm done currently have to look at others.
+2. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
 
 CI Pipeline Steps:
 If any step fails do not move on.

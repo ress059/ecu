@@ -209,7 +209,7 @@ public:
     static enum ecu_fsm_status STATE_ON_ENTRY_MOCK(FsmTestBase *me)
     {
         mock().actualCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
-              .withParameter("Fsm", me)
+              .withParameter("Fsm", static_cast<void *>(me))
               .withParameter("State", static_cast<unsigned int>(ID));
 
         return ECU_FSM_EVENT_HANDLED;
@@ -222,7 +222,7 @@ public:
         enum ecu_fsm_status status;
 
         mock().actualCall("FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK")
-              .withParameter("Fsm", me)
+              .withParameter("Fsm", static_cast<void *>(me))
               .withParameter("State", static_cast<unsigned int>(ID));
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
@@ -279,13 +279,53 @@ public:
     static void STATE_ON_EXIT_MOCK(FsmTestBase *me)
     {
         mock().actualCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
-              .withParameter("Fsm", me)
+              .withParameter("Fsm", static_cast<void *>(me))
               .withParameter("State", static_cast<unsigned int>(ID));
+    }
+
+    template<const StateIDs NEWSTATE, const StateIDs ID>
+    requires is_state_transition_id<NEWSTATE> && is_state_exit_id<ID>
+    static void STATE_ON_EXIT_TRANSITION_MOCK(FsmTestBase *me)
+    {
+        mock().actualCall("FsmStateExitMockStub::STATE_ON_EXIT_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(me))
+              .withParameter("State", static_cast<unsigned int>(ID));
+
+        if constexpr(NEWSTATE == StateIDs::TO_STATE1)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+        }
     }
 
     static void STATE_ON_EXIT_STUB(FsmTestBase *me)
     {
         (void)me;
+    }
+
+    template<const StateIDs NEWSTATE>
+    requires is_state_transition_id<NEWSTATE>
+    static void STATE_ON_EXIT_TRANSITION_STUB(FsmTestBase *me)
+    {
+        if constexpr(NEWSTATE == StateIDs::TO_STATE1)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+        }
+        else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
+        {
+            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+        }
     }
 };
 
@@ -305,8 +345,8 @@ public:
     static enum ecu_fsm_status STATE_HANDLER_MOCK(FsmTestBase *me, const EventTestBase *event)
     {
         mock().actualCall("FsmStateHandlerMockStub::STATE_HANDLER_MOCK")
-              .withParameter("Fsm", me)
-              .withParameter("Event", event)
+              .withParameter("Fsm", static_cast<void *>(me))
+              .withParameter("Event", static_cast<const void *>(event))
               .withParameter("State", static_cast<unsigned int>(ID));
 
         return ECU_FSM_EVENT_HANDLED;
@@ -319,8 +359,8 @@ public:
         enum ecu_fsm_status status;
 
         mock().actualCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
-              .withParameter("Fsm", me)
-              .withParameter("Event", event)
+              .withParameter("Fsm", static_cast<void *>(me))
+              .withParameter("Event", static_cast<const void *>(event))
               .withParameter("State", static_cast<unsigned int>(ID));
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
@@ -365,60 +405,37 @@ TEST_GROUP(FsmTestGroupBase)
 };
 
 
-// TEST_GROUP_BASE(FsmState1ToState2Transition, FsmTestGroupBase)
-// {
-//     static enum ecu_fsm_status STATE1_HANDLER(FsmTestBase *me, const EventTestBase *event)
-//     {
-//         enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
-
-//         switch (static_cast<const struct ecu_event *>(event)->id)
-//         {
-//             case TEST_STATE_TRANSITION:
-//             {
-//                 status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
-//                 break;
-//             }
-
-//             default:
-//             {
-//                 break;
-//             }
-//         }
-//         return status;
-//     }
-// };
-
-
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------- TESTS ------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief State 1 Handler -> State 1 Exit -> State 2 Entry.
+ * @brief Transition into State 2 from State 1's handler. Path
+ * should be: State 1 Handler -> State 1 Exit -> State 2 Entry.
  */
-TEST(FsmTestGroupBase, State1ToState2Transition)
+TEST(FsmTestGroupBase, SingleStateTransition)
 {
     try 
     {
         /* Step 1: Arrange. */
         ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
-        mock().strictOrder(); // !!!! TODO Test out of order to verify this is working !!!!
+        mock().strictOrder();
 
         /* State 1 handler. */
         mock().expectOneCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
-              .withParameter("Fsm", &me_)
-              .withParameter("Event", &me_.event_)
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("Event", static_cast<const void *>(&me_.event_))
               .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_HANDLER));
 
         /* State 1 exit. */
         mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
-              .withParameter("Fsm", &me_)
+              .withParameter("Fsm", static_cast<void *>(&me_))
               .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_EXIT));        
 
         /* State 2 entry. */
         mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
-              .withParameter("Fsm", &me_)
+              .withParameter("Fsm", static_cast<void *>(&me_))
               .withParameter("State", static_cast<unsigned int>(StateIDs::STATE2_ENTRY));
 
         /* Set up fsm. */
@@ -438,8 +455,7 @@ TEST(FsmTestGroupBase, State1ToState2Transition)
                            (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
 
         ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
-                     &me_.STATE1_,
-                     3);
+                     &me_.STATE1_);
 
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
@@ -452,20 +468,249 @@ TEST(FsmTestGroupBase, State1ToState2Transition)
 }
 
 
-// normal fsm behavior. verify state transitions via mocks.
+/**
+ * @brief Transition into State 2 from State 1's handler. Transition into
+ * State 3 from State 2's entry handler. Transition into State 1 from
+ * State 3's entry handler. Path should be: State 1 Handler -> 
+ * State 1 Exit -> State 2 Entry -> State 2 Exit -> State 3 Entry ->
+ * State 3 Exit -> State 1 Entry.
+ */
+TEST(FsmTestGroupBase, ConsecutiveStateTransitions)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
+        mock().strictOrder();
+
+        /* State 1 handler. */
+        mock().expectOneCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("Event", static_cast<const void *>(&me_.event_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_HANDLER));
+
+        /* State 1 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_EXIT));        
+
+        /* State 2 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE2_ENTRY));
+
+        /* State 2 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE2_EXIT));
+
+        /* State 3 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE3_ENTRY));
+
+        /* State 3 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE3_EXIT));
+
+        /* State 1 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_ENTRY));
+
+        /* Set up fsm. */
+        ecu_fsm_state_ctor(&me_.STATE1_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE1_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE1_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK<StateIDs::TO_STATE2, StateIDs::STATE1_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE2_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK<StateIDs::TO_STATE3, StateIDs::STATE2_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE2_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE2_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE3_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_TRANSITION_MOCK<StateIDs::TO_STATE1, StateIDs::STATE3_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE3_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
+
+        ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
+                     &me_.STATE1_);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
+/**
+ * @brief Self transition back into State 1. Path should be:
+ * State 1 Handler -> State 1 Exit -> State 1 Entry.
+ */
+TEST(FsmTestGroupBase, SelfStateTransition)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
+        mock().strictOrder();
 
-// dispatch invalid event to fsm. Verify fsm state handler doesn't run.
+        /* State 1 handler. */
+        mock().expectOneCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("Event", static_cast<const void *>(&me_.event_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_HANDLER));
 
-// 1. Call ecu_fsm_change_state() outside of state handler. Verify entry and exit events don't run.
-// 2. Call ecu_fsm_change_state() multiple times in state handler. Verify only most recent state (and its entry and exit event) is taken
-    // and we ignore the past calls.
+        /* State 1 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_EXIT));        
 
-// 2b. Call ecu_fsm_change_state() multiple times in entry event and also verify above behavior.
+        /* State 1 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_ENTRY));
 
-// 3. Call ecu_fsm_change_state() in (*on_exit). Verify behavior is invalid. how? state will already be changed.
+        /* Set up fsm. */
+        ecu_fsm_state_ctor(&me_.STATE1_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE1_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE1_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK<StateIDs::TO_STATE1, StateIDs::STATE1_HANDLER>);
 
-// 6. Verify max state transitions. Make valid states. State1->State2->State3 but max transitions = 2. Verify
-//    State3.on_entry and State2.on_exit were NOT called to verify this.
+        ecu_fsm_state_ctor(&me_.STATE2_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE2_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE2_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE2_HANDLER>);
 
+        ecu_fsm_state_ctor(&me_.STATE3_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE3_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE3_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
+
+        ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
+                     &me_.STATE1_);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
+
+/**
+ * @brief Transition into State 2 from State 1's handler. Transition
+ * into State 3 from State 1's exit handler. Path should be: 
+ * State 1 Handler -> State 1 exit -> State 3 entry.
+ * 
+ * @note Library strongly discourages changing state in exit handler
+ * since you already transitioning into another state at that point.
+ * However it is still supported.
+ */
+TEST(FsmTestGroupBase, StateChangeInExitHandler)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
+        mock().strictOrder();
+
+        /* State 1 handler. */
+        mock().expectOneCall("FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("Event", static_cast<const void *>(&me_.event_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_HANDLER));
+
+        /* State 1 exit. */
+        mock().expectOneCall("FsmStateExitMockStub::STATE_ON_EXIT_TRANSITION_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE1_EXIT));     
+
+        /* State 3 entry. */
+        mock().expectOneCall("FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK")
+              .withParameter("Fsm", static_cast<void *>(&me_))
+              .withParameter("State", static_cast<unsigned int>(StateIDs::STATE3_ENTRY));
+
+        /* Set up fsm. */
+        /* State 1 Handler transitions to State 2. */
+        /* State 1 exit transitions to State 3. */
+        ecu_fsm_state_ctor(&me_.STATE1_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE1_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_TRANSITION_MOCK<StateIDs::TO_STATE3, StateIDs::STATE1_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_TRANSITION_MOCK<StateIDs::TO_STATE2, StateIDs::STATE1_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE2_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE2_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE2_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE2_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE3_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE3_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE3_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
+
+        ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
+                     &me_.STATE1_);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
+
+/**
+ * @brief FSM should not run and reject the invalid event ID.
+ */
+TEST(FsmTestGroupBase, InvalidEventIdDispatched)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_ok_));
+
+        /* Set up fsm. */
+        ecu_fsm_state_ctor(&me_.STATE1_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE1_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE1_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE1_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE2_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE2_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE2_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE2_HANDLER>);
+
+        ecu_fsm_state_ctor(&me_.STATE3_, 
+                           (ecu_fsm_on_entry_handler)&FsmStateEntryMockStub::STATE_ON_ENTRY_MOCK<StateIDs::STATE3_ENTRY>,
+                           (ecu_fsm_on_exit_handler)&FsmStateExitMockStub::STATE_ON_EXIT_MOCK<StateIDs::STATE3_EXIT>,
+                           (ecu_fsm_state_handler)&FsmStateHandlerMockStub::STATE_HANDLER_MOCK<StateIDs::STATE3_HANDLER>);
+
+        ecu_fsm_ctor(static_cast<struct ecu_fsm *>(&me_),
+                     &me_.STATE1_);
+
+        /* Create invalid (reserved) event ID. */
+        me_.event_.id = ECU_VALID_EVENT_ID_BEGIN - 1;
+
+        /* Steps 2 and 3: Action and assert. */
+        /* Verify fsm does not run. States are all mocks so mock will go off if it does, thus failing the test. */
+        ecu_fsm_dispatch(&me_, &me_.event_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* OK */
+    }
+}

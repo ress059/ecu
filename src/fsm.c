@@ -44,13 +44,11 @@ void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
 
 
 void ecu_fsm_ctor(struct ecu_fsm *me, 
-                  const struct ecu_fsm_state *state_0, 
-                  uint_fast8_t max_state_transitions_0)
+                  const struct ecu_fsm_state *state_0)
 {
-    ECU_RUNTIME_ASSERT( ((me) && (state_0) && (max_state_transitions_0 > 0)), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me && state_0), FSM_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (state_0->handler), FSM_ASSERT_FUNCTOR );
-    me->state                   = state_0;
-    me->max_state_transitions   = max_state_transitions_0;
+    me->state = state_0;
 }
 
 
@@ -68,9 +66,7 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event)
     status = (*me->state->handler)(me, event);
 
     /* Handle State Transitions. */
-    for (uint_fast8_t i = 0; 
-         (status == ECU_FSM_STATE_TRANSITION && i < me->max_state_transitions); 
-         ++i)
+    while (status == ECU_FSM_STATE_TRANSITION)
     {
         /* State can only be changed when user signals a transition so only assert here. */
         ECU_RUNTIME_ASSERT( (me->state), FSM_ASSERT_FUNCTOR );
@@ -79,10 +75,7 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event)
         /* Exit old state. */
         if (prev_state->on_exit)
         {
-            /* Calling ecu_fsm_change_state() in exit handler is not allowed. */
-            const struct ecu_fsm_state *current_state = me->state;
             (*prev_state->on_exit)(me);
-            ECU_RUNTIME_ASSERT( (current_state == me->state), FSM_ASSERT_FUNCTOR );
         }
 
         /* Enter new state. */
@@ -90,11 +83,13 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event)
         if (me->state->on_entry)
         {
             status = (*me->state->on_entry)(me);
+
+            /* Reject user from self-transitioning into current state 
+            within entry handler. Pointless and causes infinite loop. */
+            ECU_RUNTIME_ASSERT( ((status != ECU_FSM_STATE_TRANSITION) || \
+                                 (prev_state != me->state)), FSM_ASSERT_FUNCTOR );
         }
     }
-
-    /* Verifies max state transitions were not exceeded. */
-    ECU_RUNTIME_ASSERT((status != ECU_FSM_STATE_TRANSITION), FSM_ASSERT_FUNCTOR );
 }
 
 
@@ -113,6 +108,3 @@ void ecu_fsm_set_assert_functor(struct ecu_assert_functor *functor)
     /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
     FSM_ASSERT_FUNCTOR = functor;
 }
-
-
-#warning "TODO: Update descriptions of fsm.h/.c"
