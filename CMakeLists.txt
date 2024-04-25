@@ -18,6 +18,7 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
     ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
     ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
 
     # Interfaces.
     ${CMAKE_CURRENT_LIST_DIR}/src/interface/itimer.c
