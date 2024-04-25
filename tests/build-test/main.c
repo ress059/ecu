@@ -1,6 +1,7 @@
 /**
  * @file
- * @brief Dummy main.c to test if ECU library compiles. Calls and uses common API functions.
+ * @brief Dummy main.c to test compilation and linkage of ECU library. 
+ * Calls and uses common API functions.
  * 
  * @author Ian Ress
  * @version 0.1
@@ -68,6 +69,7 @@ struct app_dll_node
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 static struct app_fsm app_fsm;
+static struct ecu_fsm_state app_fsm_state;
 static struct app_event app_event;
 static struct app_dll_node app_node1;
 static struct app_dll_node app_node2;
@@ -79,7 +81,8 @@ static struct ecu_circular_dll app_list;
 /*------------------------------------------------ STATIC FUNCTION DECLARATIONS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct app_event *e);
+static enum ecu_fsm_status INIT_STATE_ENTRY(struct app_fsm *fsm);
+static enum ecu_fsm_status INIT_STATE(struct app_fsm *fsm, const struct app_event *e);
 
 
 
@@ -87,35 +90,32 @@ static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct a
 /*------------------------------------------------- STATIC FUNCTION DEFINITIONS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct app_event *e)
+static enum ecu_fsm_status INIT_STATE_ENTRY(struct app_fsm *fsm)
+{
+    fsm->counter = 0;
+}
+
+
+static enum ecu_fsm_status INIT_STATE(struct app_fsm *fsm, const struct app_event *e)
 {
     enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
 
     switch(e->super.id)
     {
-        case ECU_ENTRY_EVENT:
-        {
-            fsm->counter = 0;
-            break;
-        }
-
-        case ECU_EXIT_EVENT:
-        {
-            break;
-        }
-
         case TIMER_EXPIRED_EVENT:
         {
             fsm->counter++;
             if(fsm->counter > 10)
             {
-                ecu_fsm_change_state((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler);
+                /* Self-state transition. */
+                status = ecu_fsm_change_state((struct ecu_fsm *)&app_fsm, &app_fsm_state);
             }
             break;
         }
 
         default:
         {
+            status = ECU_FSM_EVENT_IGNORED;
             break;
         }
     }
@@ -132,6 +132,8 @@ static enum ecu_fsm_status app_state_handler(struct app_fsm *fsm, const struct a
 int main(void)
 {
     /* Setup. */
+    ecu_fsm_state_ctor(&app_fsm_state, (ecu_fsm_on_entry_handler)&INIT_STATE_ENTRY, 
+                       (ecu_fsm_on_exit_handler)0, (ecu_fsm_state_handler)&INIT_STATE);
     ecu_event_ctor((struct ecu_event *)&app_event, TIMER_EXPIRED_EVENT);
     app_event.data = 5;
 
@@ -141,7 +143,7 @@ int main(void)
     ecu_circular_dll_node_ctor(&app_node1.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
     ecu_circular_dll_node_ctor(&app_node2.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
 
-    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, (ecu_fsm_func_ptr)&app_state_handler, 1);
+    ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, &app_fsm_state);
     
     ecu_circular_dll_push_back(&app_list, &app_node1.node);
     ecu_circular_dll_push_back(&app_list, &app_node2.node);

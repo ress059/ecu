@@ -3,8 +3,9 @@
  * @brief Provides a scheme that allows the library to define reserved object IDs and
  * users to define their own object IDs without conflicts. Object IDs the library
  * reserves will be negative and object IDs the user defines will start at 0 which
- * is always @ref ECU_USER_OBJECT_ID_BEGIN. Example of user defining their own IDs:
- * 
+ * is always @ref ECU_USER_OBJECT_ID_BEGIN. This scheme also allows library functions 
+ * to know when an invalid ID was used via @ref ECU_VALID_OBJECT_ID_BEGIN enumeration.
+ * Example of user defining their own IDs:
  * @code{.c}
  * enum user_ids
  * {
@@ -13,9 +14,6 @@
  *     OBJECT3_ID
  * };
  * @endcode
- * 
- * This scheme also allows library functions to know when an invalid ID
- * was used via @ref ECU_VALID_OBJECT_ID_BEGIN enumeration.
  * 
  * @author Ian Ress
  * @version 0.1

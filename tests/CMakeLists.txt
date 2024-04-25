@@ -38,6 +38,8 @@ if(ECU_ENABLE_UNIT_TESTING)
             # Tests
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_asserter.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_circular_dll.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_endian.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_fsm.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_timer.cpp
     )
 
@@ -46,10 +48,20 @@ if(ECU_ENABLE_UNIT_TESTING)
             ${CMAKE_CURRENT_LIST_DIR}/unit-test
     )
 
+    # Be less strict about warnings for unit test source code.
+    # Only pass -Wall. If CMAKE_BUILD_TYPE is "debug" then -g 
+    # compiler flag will automatically be set which saves debug 
+    # symbols.
+    target_compile_options(ecu_unit_test 
+        PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-fdiagnostics-color=always>
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
+    )
+
     # cpputest_normalize_test_output_location(ecu_unit_test)
     target_link_libraries(ecu_unit_test
         PRIVATE 
-            ecu
+            ecu             # Strict warnings. All of them enabled for actual library. See top CMake file.
             CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
             CppUTestExt     # Using namespace doesn't work. I.e. CppUTestExt::CppUTestExt
     )

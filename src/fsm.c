@@ -23,17 +23,7 @@
 /*------------------------------------------------------ FILE-SCOPE VARIABLES -----------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static const struct ecu_event entry_evt = 
-{
-    .id = ECU_ENTRY_EVENT
-};
-
-static const struct ecu_event exit_evt = 
-{
-    .id = ECU_EXIT_EVENT
-};
-
-static struct ecu_assert_functor *assert_functor = ECU_DEFAULT_FUNCTOR;
+static struct ecu_assert_functor *FSM_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 
 
@@ -41,50 +31,80 @@ static struct ecu_assert_functor *assert_functor = ECU_DEFAULT_FUNCTOR;
 /*------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_fsm_ctor(struct ecu_fsm *fsm, ecu_fsm_func_ptr init_state_0, 
-                  uint8_t max_state_transitions_0)
+void ecu_fsm_state_ctor(struct ecu_fsm_state *me, 
+                        ecu_fsm_on_entry_handler on_entry_0,
+                        ecu_fsm_on_exit_handler on_exit_0,
+                        ecu_fsm_state_handler handler_0)
 {
-    ECU_RUNTIME_ASSERT( (fsm && init_state_0 && max_state_transitions_0), assert_functor );
-    fsm->state = init_state_0;
-    fsm->max_state_transitions = max_state_transitions_0;
+    ECU_RUNTIME_ASSERT( (me && handler_0), FSM_ASSERT_FUNCTOR );
+    me->on_entry    = on_entry_0;   /* Optional so do not NULL assert. */
+    me->on_exit     = on_exit_0;    /* Optional so do not NULL assert. */
+    me->handler     = handler_0;    /* Mandatory. */
 }
 
 
-void ecu_fsm_dispatch(struct ecu_fsm *fsm, const struct ecu_event *event)
+void ecu_fsm_ctor(struct ecu_fsm *me, 
+                  const struct ecu_fsm_state *state_0)
 {
-    enum ecu_fsm_status status = ECU_FSM_ERROR;
-    ecu_fsm_func_ptr prev_state;
+    ECU_RUNTIME_ASSERT( (me && state_0), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (state_0->handler), FSM_ASSERT_FUNCTOR );
+    me->state = state_0;
+}
 
-    /* NULL assertions. Also reject user from dispatching reserved event. */
-    ECU_RUNTIME_ASSERT( (fsm && event), assert_functor );
-    ECU_RUNTIME_ASSERT( ((fsm->max_state_transitions) && (fsm->state) && \
-                         (event->id >= ECU_VALID_EVENT_ID_BEGIN)), assert_functor );
+
+void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event)
+{
+    enum ecu_fsm_status status = ECU_FSM_EVENT_IGNORED;
+    const struct ecu_fsm_state *prev_state = (const struct ecu_fsm_state *)0;
+
+    ECU_RUNTIME_ASSERT( (me && event), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me->state) && (event->id >= ECU_VALID_EVENT_ID_BEGIN)), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me->state->handler), FSM_ASSERT_FUNCTOR );
 
     /* Dispatch event to state. */
-    prev_state = fsm->state;
-    status = (*fsm->state)(fsm, event);
+    prev_state = me->state;
+    status = (*me->state->handler)(me, event);
 
     /* Handle State Transitions. */
-    for (uint8_t i = 0; (status == ECU_FSM_STATE_TRANSITION && fsm->state && i < fsm->max_state_transitions); i++)
+    while (status == ECU_FSM_STATE_TRANSITION)
     {
-        /* Run ECU_EXIT_EVENT of current state. Reject user from peforming state transition in ECU_EXIT_EVENT. */
-        status = (*prev_state)(fsm, &exit_evt);
-        ECU_RUNTIME_ASSERT( ((status != ECU_FSM_STATE_TRANSITION) && \
-                             (status != ECU_FSM_ERROR)), assert_functor );
+        /* State can only be changed when user signals a transition so only assert here. */
+        ECU_RUNTIME_ASSERT( (me->state), FSM_ASSERT_FUNCTOR );
+        ECU_RUNTIME_ASSERT( (me->state->handler), FSM_ASSERT_FUNCTOR );
 
-        /* Run ECU_ENTRY_EVENT of new state. */
-        prev_state = fsm->state;
-        status = (*fsm->state)(fsm, &entry_evt);
+        /* Exit old state. */
+        if (prev_state->on_exit)
+        {
+            (*prev_state->on_exit)(me);
+        }
+
+        /* Enter new state. */
+        prev_state = me->state;
+        if (me->state->on_entry)
+        {
+            status = (*me->state->on_entry)(me);
+
+            /* Reject user from self-transitioning into current state 
+            within entry handler. Pointless and causes infinite loop. */
+            ECU_RUNTIME_ASSERT( ((status != ECU_FSM_STATE_TRANSITION) || \
+                                 (prev_state != me->state)), FSM_ASSERT_FUNCTOR );
+        }
     }
+}
 
-    /* status != FSM_EVENT_TRANSITION verifies max state transitions were not exceeded. */
-    ECU_RUNTIME_ASSERT( ((fsm->state) && (status != ECU_FSM_STATE_TRANSITION) && \
-                         (status != ECU_FSM_ERROR)), assert_functor );
+
+enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *me, 
+                                         const struct ecu_fsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (me && state), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (state->handler), FSM_ASSERT_FUNCTOR );
+    me->state = state;
+    return ECU_FSM_STATE_TRANSITION;
 }
 
 
 void ecu_fsm_set_assert_functor(struct ecu_assert_functor *functor)
 {
     /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    assert_functor = functor;
+    FSM_ASSERT_FUNCTOR = functor;
 }

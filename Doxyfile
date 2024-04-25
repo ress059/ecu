@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "Embedded C Utilities - common data structures and patt
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = doc/images/logo.png
+PROJECT_LOGO           = doc/images/main/logo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -1008,7 +1008,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = doc/images
+IMAGE_PATH             = doc/images/endian doc/images/timer doc/images/fsm
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

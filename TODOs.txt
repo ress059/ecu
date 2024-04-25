@@ -4,21 +4,39 @@ Completed.
 3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
 since we are already doing that with tests that use extra_list; Documentation done.
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
+5. endian.h. Tests done. Documentation done.
+6. fsm.h/.c. Tests done. Documentation done.
+
+Git cleanup:
+1. See https://stackoverflow.com/questions/4981126/how-to-amend-several-commits-in-git-to-change-author/69947947#69947947.
+Do on entire repo.
+
+CMake:
+1. Verify tabbing in Linux-GNU.cmake is fixed.
+
+Asserter:
+1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
+void set_assert_functor(functor)
+{
+    ecu_timer_set_assert_functor(functor);
+    ecu_fsm_set_assert_functor(functor);
+    ecu_circular_dll_set_assert_functor(functor);
+    ....
+}
 
 All:
 1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
-
-fsm:
-1. Update documentation with new event.h/.c naming convention.
-2. Possible create an on_entry and on_exit function in a state struct for safer entry and exit events.
-3. Update documentation to include @private for private members and @pre for preconditions.
-4. In fsm.c change to FSM_ASSERT_FUNCTOR
-5. Pictures in fsm documentation.
 
 CI Pipeline Steps:
 If any step fails do not move on.
 1. format check. clang-format.
 2. Compile. cmake and cmake --build
+- cmake -DECU_DISABLE_RUNTIME_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
+- cmake --build --preset linux-gnu-build
+
+- cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
+- cmake --build --preset linux-gnu-build
+
 3. static analysis. clang-tidy
 4. run unit tests.
 5. generate documentation. doxygen
