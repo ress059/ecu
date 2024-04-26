@@ -27,8 +27,7 @@ typedef uint8_t ecu_tree_level_t;
 struct ecu_tree_node
 {
     struct ecu_circular_dll_node node; // has id and destroy
-    struct ecu_circular_dll siblings;
-    struct ecu_tree_node *child;
+    struct ecu_circular_dll children;
     struct ecu_tree_node *parent;
 
     // ecu_object_id id;
@@ -69,7 +68,7 @@ struct ecu_tree_sibling_iterator
 // Get next node's siblings. None so remove node [6, 5]...[6]....[0]
 struct ecu_tree_breadth_iterator
 {
-    struct ecu_circular_dll_node *list;
+    struct ecu_circular_dll_node *head; // current parent.
     struct ecu_circular_dll_iterator dll_iterator;
 };
 
@@ -117,6 +116,13 @@ extern struct ecu_tree_node *ecu_tree_sibling_iterator_begin(struct ecu_tree_sib
 
 extern struct ecu_tree_node *ecu_tree_sibling_iterator_end(struct ecu_tree_sibling_iterator *me);
 extern struct ecu_tree_node *ecu_tree_sibling_iterator_next(struct ecu_tree_sibling_iterator *me);
+
+
+extern struct ecu_tree_node *ecu_tree_breadth_iterator_begin(struct ecu_tree_breadth_iterator *me,
+                                                             struct ecu_tree *tree);
+
+extern struct ecu_tree_node *ecu_tree_breadth_iterator_end(struct ecu_tree_breadth_iterator *me);
+extern struct ecu_tree_node *ecu_tree_breadth_iterator_next(struct ecu_tree_breadth_iterator *me);
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: OTHER --------------------------------------------*/

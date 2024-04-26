@@ -7,13 +7,6 @@ since we are already doing that with tests that use extra_list; Documentation do
 5. endian.h. Tests done. Documentation done.
 6. fsm.h/.c. Tests done. Documentation done.
 
-Git cleanup:
-1. See https://stackoverflow.com/questions/4981126/how-to-amend-several-commits-in-git-to-change-author/69947947#69947947.
-Do on entire repo.
-
-CMake:
-1. Verify tabbing in Linux-GNU.cmake is fixed.
-
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
 void set_assert_functor(functor)

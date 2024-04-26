@@ -179,6 +179,47 @@ struct ecu_tree_node *ecu_tree_sibling_iterator_next(struct ecu_tree_sibling_ite
 
 
 
+
+
+struct ecu_tree_node *ecu_tree_breadth_iterator_begin(struct ecu_tree_breadth_iterator *me,
+                                                      struct ecu_tree *tree)
+{
+    ECU_RUNTIME_ASSERT( (me && tree), TREE_ASSERT_FUNCTOR );
+    struct ecu_circular_dll_node *start = ecu_circular_dll_iterator_begin(&me->dll_iterator, &tree->root.children);
+    me->head = ecu_circular_dll_iterator_end(&me->dll_iterator);
+    // assert tree is valid?
+    return (ECU_CIRCULAR_DLL_GET_ENTRY(start, struct ecu_tree_node, node));
+}
+
+
+struct ecu_tree_node *ecu_tree_breadth_iterator_end(struct ecu_tree_breadth_iterator *me)
+{
+    ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
+    struct ecu_circular_dll_node *end = ecu_circular_dll_iterator_end(&me->dll_iterator);
+    return (ECU_CIRCULAR_DLL_GET_ENTRY(end, struct ecu_tree_node, node));
+}
+
+
+struct ecu_tree_node *ecu_tree_breadth_iterator_next(struct ecu_tree_breadth_iterator *me)
+{
+    ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
+
+    if (ecu_circular_dll_iterator_next(&me->dll_iterator) == me->head)
+    {
+        for (me->head = ecu_circular_dll_iterator_next(&me->dll_iterator);
+             me->head = ecu_circular_dll_iterator_end(&me->dll_iterator);
+             me->head = ecu_circular_dll_iterator_next(&me->dll_iterator))
+        {
+
+        }
+    }
+
+    me->head = 
+}
+
+
+
+
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: OTHER --------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
