@@ -215,6 +215,12 @@ struct ecu_tree_node *ecu_tree_breadth_iterator_next(struct ecu_tree_breadth_ite
     }
 
     me->head = 
+
+    while (current->parent->tail == current)
+    {
+        current = current->parent;
+    }
+    current = current->next;
 }
 
 
