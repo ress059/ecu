@@ -50,8 +50,8 @@ static bool ring_buffer_valid(const struct ecu_ring_buffer *buf)
     bool valid = false;
     ECU_RUNTIME_ASSERT( (buf), RINGBUF_ASSERT_FUNCTOR );
 
-    if ((buf->buffer) && (buf->element_size > 0) && (buf->capacity > 0) && \
-        (buf->capacity % buf->element_size == 0))
+    if ((buf->buffer) && (buf->element_size > 0) && \
+        (buf->max_number_of_elements > 0))
     {
         valid = true;
     }
@@ -68,18 +68,18 @@ static bool ring_buffer_valid(const struct ecu_ring_buffer *buf)
 void ecu_ring_buffer_ctor(struct ecu_ring_buffer *me, 
                           void *buffer_0, 
                           size_t element_size_0, 
-                          size_t max_number_of_elements_0)
+                          size_t number_of_elements_0)
 {
     #warning "TODO: Add condition (element_size_0 * max_number_of_elements_0) doesn't overflow"
     ECU_RUNTIME_ASSERT( ((me) && (buffer_0) && (element_size_0 > 0) && \
-                         (max_number_of_elements_0 > 0)),
+                         (number_of_elements_0 > 0)),
                          RINGBUF_ASSERT_FUNCTOR );
 
     me->buffer          = buffer_0;
     me->head            = 0;
     me->tail            = 0;
     me->element_size    = element_size_0;
-    me->capacity        = element_size_0 * max_number_of_elements_0;
+    me->capacity        = element_size_0 * number_of_elements_0;
     me->full            = false;
     // Don't think memsetting buffer to all 0s is necessary.
 }
@@ -109,9 +109,9 @@ bool ecu_ring_buffer_write(struct ecu_ring_buffer *me,
 
     if (!me->full)
     {
-        destination = (uint8_t *)me->buffer + me->head;
+        destination = (uint8_t *)me->buffer + (me->head * size);
         memcpy((void *)destination, element, size);
-        me->head = (me->head + size) % me->capacity;
+        me->head = ++(me->head) % me->max_number_of_elements;
 
         if (me->head == me->tail)
         {
@@ -137,9 +137,9 @@ bool ecu_ring_buffer_read(struct ecu_ring_buffer *me,
 
     if (!ecu_ring_buffer_is_empty(me))
     {
-        source = (uint8_t *)me->buffer + me->tail;
+        source = (uint8_t *)me->buffer + (me->tail * size);
         memcpy(element, (const void *)source, size);
-        me->tail = (me->tail + size) % me->capacity;
+        me->tail = ++(me->tail) % me->max_number_of_elements;
         me->full = false; // todo how to avoid having to do this everytime?
         success = true;
     }
@@ -148,82 +148,35 @@ bool ecu_ring_buffer_read(struct ecu_ring_buffer *me,
 }
 
 
-
-
-
-// uint32_t Ring_Buffer_Static_Get_Number_Of_Elements(const Ring_Buffer_Static_Handle * me)
-// {
-//     uint32_t num_of_elements = 0;
-
-//     if (Is_Valid_Handle(me))
-//     {
-//         if (RB_Instances[(*me)].tail > RB_Instances[(*me)].head)
-//         {
-//             num_of_elements = ((RB_Instances[(*me)].capacity - (RB_Instances[(*me)].tail - RB_Instances[(*me)].head)) / RB_Instances[(*me)].element_size);
-//         }
-//         else if ((RB_Instances[(*me)].head == RB_Instances[(*me)].tail) && !(RB_Instances[(*me)].is_empty))
-//         {
-//             /* Ring Buffer is full. */
-//             num_of_elements = (RB_Instances[(*me)].capacity / RB_Instances[(*me)].element_size);
-//         }
-//         else
-//         {
-//             num_of_elements = ((RB_Instances[(*me)].head - RB_Instances[(*me)].tail) / RB_Instances[(*me)].element_size);
-//         }
-//     }
-
-//     return num_of_elements;
-// }
-
-// unsigned tiny_ring_buffer_count(tiny_ring_buffer_t* self)
-// {
-//   if(self->full) {
-//     return self->capacity;
-//   }
-//   else {
-//     unsigned count = self->head - self->tail;
-
-//     if(count > self->capacity) {
-//       count += self->capacity;
-//     }
-
-//     return count;
-//   }
-// }
 size_t ecu_ring_buffer_get_count(const struct ecu_ring_buffer *me)
 {
-    // number of elements currently stored in buffer.
-    size_t number_of_elements = 0;
+    size_t num_elements = 0;
     ECU_RUNTIME_ASSERT( (ring_buffer_valid(me)), RINGBUF_ASSERT_FUNCTOR );
 
     if (me->full)
     {
-        number_of_elements = me->capacity / me->element_size;
+        num_elements = me->max_number_of_elements;
+    }
+    else if (me->tail > me->head)
+    {
+        num_elements = me->tail - me->head
     }
     else
     {
-        if (me->tail > me->head)
-        {
-            number_of_elements = me->tail - me->head;
-        }
-        else 
-        {
-            number_of_elements = me->head - me->tail;
-        }
+        num_elements = me->head - me->tail;
     }
 
-    return number_of_elements;
+    return num_elements;
 } 
 
 
-size_t ecu_ring_buffer_get_capacity(const struct ecu_ring_buffer *me)
+size_t ecu_ring_buffer_get_max_size(const struct ecu_ring_buffer *me)
 {
     ECU_RUNTIME_ASSERT( (ring_buffer_valid(me)), RINGBUF_ASSERT_FUNCTOR );
-    return (me->capacity / me->element_size);
+    return me->max_number_of_elements;
 } 
 
 
-// bool Ring_Buffer_Static_Is_Empty(const Ring_Buffer_Static_Handle * me);
 bool ecu_ring_buffer_is_empty(const struct ecu_ring_buffer *me)
 {
     bool empty = false;
@@ -238,15 +191,11 @@ bool ecu_ring_buffer_is_empty(const struct ecu_ring_buffer *me)
 }
 
 
-// bool Ring_Buffer_Static_Is_Full(const Ring_Buffer_Static_Handle * me);
 bool ecu_ring_buffer_is_full(const struct ecu_ring_buffer *me)
 {
     ECU_RUNTIME_ASSERT( (ring_buffer_valid(me)), RINGBUF_ASSERT_FUNCTOR );
     return me->full;
 }
-
-
-
 
 
 void ecu_ring_buffer_set_assert_functor(struct ecu_assert_functor *functor)

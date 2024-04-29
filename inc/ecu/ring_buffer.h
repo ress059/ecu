@@ -21,11 +21,11 @@
 struct ecu_ring_buffer
 {
     void *buffer; // this ring buffer must have exclusive ownership of this buffer
-    volatile size_t head;
-    volatile size_t tail;
-    size_t element_size;    /* Number of bytes */
-    size_t buffer_size;     /* Number of bytes */
-    bool full;
+    volatile size_t head; // index
+    volatile size_t tail; // index
+    volatile bool full;
+    size_t element_size;            /* Number of bytes */
+    size_t max_number_of_elements;     /* Number of bytes */
 };
 
 
@@ -33,7 +33,7 @@ struct ecu_ring_buffer
 extern void ecu_ring_buffer_ctor(struct ecu_ring_buffer *me, 
                                  void *buffer_0, 
                                  size_t element_size_0, 
-                                 size_t max_number_of_elements_0);
+                                 size_t number_of_elements_0);
 
 // only resets head and tail. does not reset buffer contents.
 extern void ecu_ring_buffer_clear(struct ecu_ring_buffer *me);
