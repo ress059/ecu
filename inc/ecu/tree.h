@@ -13,97 +13,168 @@
 #ifndef ECU_TREE_H_
 #define ECU_TREE_H_
 
+
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------ INCLUDES ----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+/* STDLib. */
+#include <stddef.h> /* offsetof() */
 #include <stdint.h>
-/* Siblings are represented by a linked list. */
-#include <ecu/circular_dll.h>
+
+/* Runtime asserts. */
+#include <ecu/asserter.h>
+
+/* ecu_tree_node::id */
 #include <ecu/object_id.h>
 
 
 
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------- MACROS ------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * @brief Return pointer to user data that was stored in the tree.
+ * 
+ * @param ptr Address of tree node within user-defined struct. This will be of 
+ * type (struct ecu_tree_node *).
+ * @param type User-defined type stored in the list. I.e. (struct user_defined_type).
+ * @param member Name of tree node member within user-defined type.
+ */
 #define ECU_TREE_NODE_GET_ENTRY(ptr, type, member)   ((type *)((char *)(ptr) - offsetof(type, member)))
 
-typedef uint8_t ecu_tree_level_t;
 
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------- GENERIC TREE --------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * @private 
+ * @brief PRIVATE. Defined so this can easily be changed in the future.
+ * Maximum number of tree levels. I.e. if this is uint16_t the max tree
+ * levels would be 65535.
+ * 
+ * @warning This must be an unsigned type since number of tree levels
+ * is always positive. A compilation error will occur if this is 
+ * declared as a signed type.
+ */
+typedef uint_fast16_t ecu_tree_max_level_t;
+
+
+/**
+ * @brief Single node within tree.
+ */
 struct ecu_tree_node
 {
-    struct ecu_circular_dll_node node; // has id and destroy
-    struct ecu_circular_dll children;
+    /**
+     * @private 
+     * @brief PRIVATE. Pointer to first child.
+     */
+    struct ecu_tree_node *child;
+
+    /**
+     * @private 
+     * @brief PRIVATE. Parent.
+     */
     struct ecu_tree_node *parent;
 
-    // ecu_object_id id;
-    // void (*destroy)(struct ecu_tree_node *me);
-    // first immediate child if (node->child == node) then node has no children
-    // dummy node for iterator.
+    /**
+     * @private
+     * @brief PRIVATE. Next sibling. Siblings are represented by
+     * a circular linked list.
+     */
+    struct ecu_tree_node *next;
+
+    /**
+     * @private
+     * @brief PRIVATE. Previous sibling. Siblings are represented by
+     * a circular linked list.
+     */
+    struct ecu_tree_node *prev;
+    
+    /**
+     * @private
+     * @brief PRIVATE. Optional user-defined callback that
+     * defines node's destructor. Called when @ref ecu_tree_destroy() 
+     * is called and node is apart of the destroyed tree.
+     * 
+     * @warning Do not call @ref ecu_tree_destroy() or directly
+     * edit members of @ref ecu_tree_node directly in this callback. 
+     * User should only define any additional cleanup necessary for 
+     * their data type.
+     */
+    void (*destroy)(struct ecu_tree_node *me);
+
+    /**
+     * @private
+     * @brief PRIVATE. Optional ID user can assign to each node
+     * to identify different types stored in the same tree. See
+     * description of @ref object_id.h
+     */
+    ecu_object_id id;
 };
 
 
+// represents dummy delimeter.
 struct ecu_tree
 {
     struct ecu_tree_node root;
 };
 
 
-struct ecu_tree_sibling_iterator
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------- ITERATORS ---------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+struct ecu_tree_children_iterator
 {
-    struct ecu_circular_dll_iterator dll_iterator;
+    struct ecu_tree_node *head; // delimiter. the parent is used as head
+    struct ecu_tree_node *current;
+    struct ecu_tree_node *next;
 };
 
 
-// breadth-first. parse all nodes at given depth. Go down one level deeper and repeat.
-// fifo.
-//       1
-//    2    3
-// 4 5 6   
 
-// 1. Add node to queue.                    [1]
-//      node = 1;
-// 2. Add all node's siblings to queue.   [3, 2, 1]
-//      next = 2. next = 3. next = 1....node = 1->child = 2;
-// 3. Remove node from queue.               [3, 2]
-//      node = 1->child = 2;
-// Repeat process. Get all next node's siblings. Add to fifo [6, 5, 4, 3, 2] 
-//      next = 4. next = 5. next = 6. next = 2...node = 2->next = 3....
-// Remove node. [6, 5, 4, 3]
-// Get next node's siblings. none so remove node [6, 5, 4]
-// Get next node's siblings. None so remove node [6, 5]...[6]....[0]
-struct ecu_tree_breadth_iterator
+struct ecu_tree_postorder_iterator
 {
-    struct ecu_circular_dll_node *head; // current parent.
-    struct ecu_circular_dll_iterator dll_iterator;
+    struct ecu_tree_node *root;
+    struct ecu_tree_node *current;
+    struct ecu_tree_node *next;
+    struct ecu_tree_node delimiter;
 };
 
 
-// depth-first. Start at node. Go down branch until you reach leaf node. Go up one level and repeat.
-struct ecu_tree_depth_iterator
-{
 
-};
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: TREE ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void ecu_tree_ctor(struct ecu_tree *me);
 
 extern void ecu_tree_node_ctor(struct ecu_tree_node *me, 
-                               void (*destroy_0)(struct ecu_circular_dll_node *me),
+                               void (*destroy_0)(struct ecu_tree_node *me),
                                ecu_object_id id_0);
 
 extern void ecu_tree_destroy(struct ecu_tree *me);
-extern void ecu_tree_node_add(struct ecu_tree_node *me, struct ecu_tree_node *parent);
-extern void ecu_tree_node_remove(struct ecu_tree_node *me);
-extern ecu_tree_level_t ecu_tree_node_get_level(struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
-extern struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1, struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
+extern void ecu_tree_push_back(struct ecu_tree_node *me, struct ecu_tree_node *parent);
+extern void ecu_tree_remove_node(struct ecu_tree_node *me);
+extern ecu_tree_max_level_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
+extern struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1, 
+                                               struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
 
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------- PUBLIC FUNCTIONS: ITERATORS ------------------------------------------*/
+/*--------------------------------------------------- PUBLIC FUNCTIONS: CHILDREN ITERATOR -----------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 // iterators.
@@ -111,18 +182,23 @@ extern struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1, stru
 // iterate over all node's children and nested children.
 // iterate over entire tree.
 
-extern struct ecu_tree_node *ecu_tree_sibling_iterator_begin(struct ecu_tree_sibling_iterator *me,
+extern struct ecu_tree_node *ecu_tree_children_iterator_begin(struct ecu_tree_children_iterator *me,
                                                              struct ecu_tree_node *node);
+extern struct ecu_tree_node *ecu_tree_children_iterator_end(struct ecu_tree_children_iterator *me);
+extern struct ecu_tree_node *ecu_tree_children_iterator_next(struct ecu_tree_children_iterator *me);
 
-extern struct ecu_tree_node *ecu_tree_sibling_iterator_end(struct ecu_tree_sibling_iterator *me);
-extern struct ecu_tree_node *ecu_tree_sibling_iterator_next(struct ecu_tree_sibling_iterator *me);
 
 
-extern struct ecu_tree_node *ecu_tree_breadth_iterator_begin(struct ecu_tree_breadth_iterator *me,
-                                                             struct ecu_tree *tree);
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------- PUBLIC FUNCTIONS: POSTORDER ITERATOR -----------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 
-extern struct ecu_tree_node *ecu_tree_breadth_iterator_end(struct ecu_tree_breadth_iterator *me);
-extern struct ecu_tree_node *ecu_tree_breadth_iterator_next(struct ecu_tree_breadth_iterator *me);
+extern struct ecu_tree_node *ecu_tree_postorder_iterator_begin(struct ecu_tree_postorder_iterator *me,
+                                                               struct ecu_tree_node *root);
+extern struct ecu_tree_node *ecu_tree_postorder_iterator_end(struct ecu_tree_postorder_iterator *me);
+extern struct ecu_tree_node *ecu_tree_postorder_iterator_next(struct ecu_tree_postorder_iterator *me);
+
+
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: OTHER --------------------------------------------*/

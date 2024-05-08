@@ -41,6 +41,7 @@ if(ECU_ENABLE_UNIT_TESTING)
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_endian.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_fsm.cpp
             ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_timer.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/unit-test/tests/test_tree.cpp
     )
 
     target_include_directories(ecu_unit_test 

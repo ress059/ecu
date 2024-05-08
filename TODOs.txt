@@ -7,6 +7,15 @@ since we are already doing that with tests that use extra_list; Documentation do
 5. endian.h. Tests done. Documentation done.
 6. fsm.h/.c. Tests done. Documentation done.
 
+Ring Buffer:
+1. Add tests 
+2. Add documentation.
+
+Tree:
+1. Finish destroy function.
+2. Add tests.
+3. Add documentation
+
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
 void set_assert_functor(functor)

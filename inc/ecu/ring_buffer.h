@@ -17,6 +17,8 @@
 #include <stddef.h> /* size_t */
 #include <stdint.h>
 
+#include <ecu/asserter.h>
+
 
 struct ecu_ring_buffer
 {
@@ -25,7 +27,7 @@ struct ecu_ring_buffer
     volatile size_t tail; // index
     volatile bool full;
     size_t element_size;            /* Number of bytes */
-    size_t max_number_of_elements;     /* Number of bytes */
+    size_t max_number_of_elements;
 };
 
 
@@ -33,7 +35,7 @@ struct ecu_ring_buffer
 extern void ecu_ring_buffer_ctor(struct ecu_ring_buffer *me, 
                                  void *buffer_0, 
                                  size_t element_size_0, 
-                                 size_t number_of_elements_0);
+                                 size_t max_number_of_elements_0);
 
 // only resets head and tail. does not reset buffer contents.
 extern void ecu_ring_buffer_clear(struct ecu_ring_buffer *me);

@@ -68,20 +68,19 @@ static bool ring_buffer_valid(const struct ecu_ring_buffer *buf)
 void ecu_ring_buffer_ctor(struct ecu_ring_buffer *me, 
                           void *buffer_0, 
                           size_t element_size_0, 
-                          size_t number_of_elements_0)
+                          size_t max_number_of_elements_0)
 {
     #warning "TODO: Add condition (element_size_0 * max_number_of_elements_0) doesn't overflow"
     ECU_RUNTIME_ASSERT( ((me) && (buffer_0) && (element_size_0 > 0) && \
-                         (number_of_elements_0 > 0)),
+                         (max_number_of_elements_0 > 0)),
                          RINGBUF_ASSERT_FUNCTOR );
 
-    me->buffer          = buffer_0;
-    me->head            = 0;
-    me->tail            = 0;
-    me->element_size    = element_size_0;
-    me->capacity        = element_size_0 * number_of_elements_0;
-    me->full            = false;
-    // Don't think memsetting buffer to all 0s is necessary.
+    me->buffer                  = buffer_0;
+    me->head                    = 0;
+    me->tail                    = 0;
+    me->full                    = false;
+    me->element_size            = element_size_0;
+    me->max_number_of_elements  = max_number_of_elements_0;
 }
 
 
@@ -93,7 +92,6 @@ void ecu_ring_buffer_clear(struct ecu_ring_buffer *me)
     me->head        = 0;
     me->tail        = 0;
     me->full        = false;
-    // Don't think memsetting buffer to all 0s is necessary.
 }
 
 
@@ -159,7 +157,7 @@ size_t ecu_ring_buffer_get_count(const struct ecu_ring_buffer *me)
     }
     else if (me->tail > me->head)
     {
-        num_elements = me->tail - me->head
+        num_elements = me->tail - me->head;
     }
     else
     {

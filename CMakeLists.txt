@@ -70,6 +70,13 @@ if(ECU_DISABLE_RUNTIME_ASSERTS)
         PUBLIC 
             ECU_DISABLE_RUNTIME_ASSERTS 
     )
+
+    # Some functions will now be unused because they are called within 
+    # assert macros. Use -Wno to suppress these warnings.
+    target_compile_options(ecu
+        PRIVATE
+            $<$<C_COMPILER_ID:GNU,Clang>:-Wno-unused-function>
+    )
 endif()
 
 # CTest and enable_testing has to be in the root CMakeLists.txt. 
