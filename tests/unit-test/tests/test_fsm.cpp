@@ -21,9 +21,11 @@
 #include <type_traits>
 
 /* Files under test. */
-#include <ecu/asserter.h>
 #include <ecu/event.h>
 #include <ecu/fsm.h>
+
+/* Mocks */
+#include <mocks/mock_asserter.hpp>
 
 /* CppUTest. */
 #include <CppUTestExt/MockSupport.h>
@@ -134,52 +136,6 @@ concept is_state_transition_id = ((ID > StateIDs::STATE_TRANSITION_IDS_START) &&
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ STUB AND MOCK DECLARATIONS -----------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
-
-class AssertException
-{
-};
-
-
-/**
- * @brief Use when ECU library function calls within the unit test could 
- * cause assert to fire but you wish to ignore it. This throws an exception
- * so control immediately returns to the caller (the unit test). This 
- * prevents library code from running under an assert condition, leading to
- * undefined behavior.
- */
-struct AssertCallOk : public ecu_assert_functor 
-{
-public:
-    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
-    {
-        (void)me;
-        (void)file;
-        (void)line;
-        throw AssertException();
-    }
-};
-
-
-/**
- * @brief Use when ECU library function calls within the unit test should
- * never fire an assert. Calls a mock which will cause the test to fail
- * due to an unexpected call. Also throws an exception so control immediately
- * returns to the caller (the unit test). This prevents library code from 
- * running under an assert condition, leading to undefined behavior.
- */
-struct AssertCallFail : public ecu_assert_functor 
-{
-public:
-    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
-    {
-        (void)me;
-        (void)file;
-        (void)line;
-        mock().actualCall("AssertMock::assert_handler");
-        throw AssertException();
-    }
-};
-
 
 /**
  * @brief The actual FSM under test. For safe casting the fsm
