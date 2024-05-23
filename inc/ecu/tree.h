@@ -130,7 +130,7 @@ struct ecu_tree
 /*------------------------------------------------------------- ITERATORS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-struct ecu_tree_children_iterator
+struct ecu_tree_child_iterator
 {
     struct ecu_tree_node *head; // delimiter. the parent is used as head
     struct ecu_tree_node *current;
@@ -165,11 +165,16 @@ extern void ecu_tree_node_ctor(struct ecu_tree_node *me,
                                ecu_object_id id_0);
 
 extern void ecu_tree_destroy(struct ecu_tree *me);
-extern void ecu_tree_push_back(struct ecu_tree_node *me, struct ecu_tree_node *parent);
+extern void ecu_tree_add_child_push_back(struct ecu_tree *me, 
+                                         struct ecu_tree_node *new_child);
+extern void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
+                                              struct ecu_tree_node *new_child);
+
+// node's subtree will be unharmed. Therefore calling this on root does nothing.                                              
 extern void ecu_tree_remove_node(struct ecu_tree_node *me);
 extern ecu_tree_max_level_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
-extern struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1, 
-                                               struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
+extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 
+                                              struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
 
 
 
@@ -182,10 +187,10 @@ extern struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1,
 // iterate over all node's children and nested children.
 // iterate over entire tree.
 
-extern struct ecu_tree_node *ecu_tree_children_iterator_begin(struct ecu_tree_children_iterator *me,
-                                                             struct ecu_tree_node *node);
-extern struct ecu_tree_node *ecu_tree_children_iterator_end(struct ecu_tree_children_iterator *me);
-extern struct ecu_tree_node *ecu_tree_children_iterator_next(struct ecu_tree_children_iterator *me);
+extern struct ecu_tree_node *ecu_tree_child_iterator_begin(struct ecu_tree_child_iterator *me,
+                                                           struct ecu_tree_node *node);
+extern struct ecu_tree_node *ecu_tree_child_iterator_end(struct ecu_tree_child_iterator *me);
+extern struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_iterator *me);
 
 
 

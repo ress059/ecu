@@ -159,7 +159,7 @@ static bool node_valid(const struct ecu_tree_node *node)
 static void tree_root_destroy_callback(struct ecu_tree_node *me)
 {
     (void)me;
-    ECU_RUNTIME_ASSERT( (false), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (false), TREE_ASSERT_FUNCTOR ); // TODO Dont think I should do this. Will go off in iterator?
 }
 
 
@@ -201,40 +201,74 @@ void ecu_tree_destroy(struct ecu_tree *me)
 }
 
 
-// node with siblings can be added safely i think.
-void ecu_tree_push_back(struct ecu_tree_node *me, struct ecu_tree_node *parent)
+void ecu_tree_add_child_push_back(struct ecu_tree *me, 
+                                  struct ecu_tree_node *new_child)
+// void ecu_tree_add_child(struct ecu_tree_node *me, struct ecu_tree *tree)
+{
+    ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
+    ecu_tree_node_add_child_push_back(&me->root, new_child);
+}
+
+
+
+// node with siblings can be added safely i think. test this
+
+// me = parent node you want to add child to.
+void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
+                                       struct ecu_tree_node *new_child)
+// void ecu_tree_node_add_child(struct ecu_tree_node *me, struct ecu_tree_node *parent)
 {
     struct ecu_tree_node *old_tail = (struct ecu_tree_node *)0;
 
-    /* NULL assertions already done in these functions. */
-    ECU_RUNTIME_ASSERT( ((!node_in_tree(me)) && (node_in_tree(parent)) && \
-                         (node_valid(parent))), TREE_ASSERT_FUNCTOR );
+    /* NULL assertions already done in these functions. Notice it is OK
+    if parent is not within a tree. */
+    ECU_RUNTIME_ASSERT( ((new_child != parent) && (node_valid(parent)) && (node_valid(new_child)) && \
+                         (!node_in_tree(new_child)) && (!node_is_root(new_child))), 
+                         TREE_ASSERT_FUNCTOR );
     
+    // if (parent->child == parent)
+    // {
+    //     parent->child = me;
+    //     me->next = me;
+    //     me->prev = me;
+    // }
+    // else
+    // {
+    //     old_tail = parent->child->prev;
+    //     old_tail->next->prev = me;      /* parent->child->prev = me */
+    //     me->next = old_tail->next;      /* me->next = parent->child */
+    //     me->prev = old_tail;
+    //     old_tail->next = me;
+    // }
+
+    // me->parent = parent;
+
     if (parent->child == parent)
     {
-        parent->child = me;
-        me->next = me;
-        me->prev = me;
+        parent->child   = new_child;
+        new_child->next = new_child;
+        new_child->prev = new_child;
     }
     else
     {
         old_tail = parent->child->prev;
-        old_tail->next->prev = me;      /* parent->child->prev = me */
-        me->next = old_tail->next;      /* me->next = parent->child */
-        me->prev = old_tail;
-        old_tail->next = me;
+        old_tail->next->prev = new_child;   /* parent->child->prev = new_child */
+        new_child->next = old_tail->next;   /* new_child->next = parent->child */
+        new_child->prev = old_tail;
+        old_tail->next = new_child;
     }
 
-    me->parent = parent;
+    new_child->parent = parent;
 }
 
 
 // dont detach node from its children.
 void ecu_tree_remove_node(struct ecu_tree_node *me)
 {
-    /* NULL assertions already done in these functions. */
-    ECU_RUNTIME_ASSERT( (!node_is_root(me)) && (node_in_tree(me)) && \
-                        (node_valid(me)), TREE_ASSERT_FUNCTOR );
+    /* NULL assertions already done in these functions. Note it is
+    OK for the supplied node to be the root of the tree. In this
+    case nothing will be done. */
+    ECU_RUNTIME_ASSERT( (node_valid(me)), TREE_ASSERT_FUNCTOR );
 
     /* Need to handle edge case where node we are removing is the first child. */
     if (me->parent->child == me)
@@ -290,8 +324,8 @@ ecu_tree_max_level_t ecu_tree_node_get_level(const struct ecu_tree_node *me)
 
 
 // return null if nodes in different trees.
-struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1, 
-                                        struct ecu_tree_node *node2)
+struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 
+                                       struct ecu_tree_node *node2)
 {
     ECU_RUNTIME_ASSERT( (node1 && node2), TREE_ASSERT_FUNCTOR );
 
@@ -367,8 +401,8 @@ struct ecu_tree_node *ecu_tree_find_lca(struct ecu_tree_node *node1,
 /*--------------------------------------------------- PUBLIC FUNCTIONS: CHILDREN ITERATOR -----------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-struct ecu_tree_node *ecu_tree_children_iterator_begin(struct ecu_tree_children_iterator *me,
-                                                       struct ecu_tree_node *parent)
+struct ecu_tree_node *ecu_tree_child_iterator_begin(struct ecu_tree_child_iterator *me,
+                                                    struct ecu_tree_node *parent)
 {
     struct ecu_tree_node *start_node = (struct ecu_tree_node *)0;
     struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
@@ -396,7 +430,7 @@ struct ecu_tree_node *ecu_tree_children_iterator_begin(struct ecu_tree_children_
 }
 
 
-struct ecu_tree_node *ecu_tree_children_iterator_end(struct ecu_tree_children_iterator *me)
+struct ecu_tree_node *ecu_tree_child_iterator_end(struct ecu_tree_child_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (node_valid(me->head)), TREE_ASSERT_FUNCTOR );
@@ -404,7 +438,7 @@ struct ecu_tree_node *ecu_tree_children_iterator_end(struct ecu_tree_children_it
 }
 
 
-struct ecu_tree_node *ecu_tree_children_iterator_next(struct ecu_tree_children_iterator *me)
+struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_iterator *me)
 {
     struct ecu_tree_node *current_node = (struct ecu_tree_node *)0;
     struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
@@ -449,6 +483,10 @@ struct ecu_tree_node *ecu_tree_postorder_iterator_begin(struct ecu_tree_postorde
     struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
     ECU_RUNTIME_ASSERT( (me && root), TREE_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (node_valid(root)), TREE_ASSERT_FUNCTOR );
+
+    ecu_tree_node_ctor(&me->delimiter, 
+                       (void (*)(struct ecu_tree_node *))0, 
+                       ECU_OBJECT_ID_UNUSED);
 
     start_node = get_child_leaf(root);
 
