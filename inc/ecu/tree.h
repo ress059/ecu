@@ -52,19 +52,6 @@
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @private 
- * @brief PRIVATE. Defined so this can easily be changed in the future.
- * Maximum number of tree levels. I.e. if this is uint16_t the max tree
- * levels would be 65535.
- * 
- * @warning This must be an unsigned type since number of tree levels
- * is always positive. A compilation error will occur if this is 
- * declared as a signed type.
- */
-typedef uint_fast16_t ecu_tree_max_level_t;
-
-
-/**
  * @brief Single node within tree.
  */
 struct ecu_tree_node
@@ -121,6 +108,7 @@ struct ecu_tree_node
 // represents dummy delimeter.
 struct ecu_tree
 {
+    // MUST be first for compatibility between destroy function.
     struct ecu_tree_node root;
 };
 
@@ -158,7 +146,10 @@ struct ecu_tree_postorder_iterator
 extern "C" {
 #endif
 
-extern void ecu_tree_ctor(struct ecu_tree *me);
+// Can use ECU_TREE_NODE_GET_ENTRY() to get 
+extern void ecu_tree_ctor(struct ecu_tree *me,
+                          void (*destroy_0)(struct ecu_tree *me),
+                          ecu_object_id id_0);
 
 extern void ecu_tree_node_ctor(struct ecu_tree_node *me, 
                                void (*destroy_0)(struct ecu_tree_node *me),
@@ -177,8 +168,13 @@ extern void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent,
                                               struct ecu_tree_node *new_child);
 
 // node's subtree will be unharmed. Therefore calling this on root does nothing.
+// calling this on a node not in a tree also does nothing.
 extern void ecu_tree_remove_node(struct ecu_tree_node *me);
-extern ecu_tree_max_level_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
+
+// 0 indexed. Top level = 0.
+extern size_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
+
+// return null if lca not found (nodes not in same tree)
 extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 
                                               struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
 
@@ -192,6 +188,8 @@ extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
 // iterate over all node's children (first level. like a triangle).
 // iterate over all node's children and nested children.
 // iterate over entire tree.
+// notice this takes in a ecu_tree_node instead of ecu_tree so you can iterate over subtrees. Pass in
+    // ecu_tree_node.root to iterate over an entire tree.
 
 extern struct ecu_tree_node *ecu_tree_child_iterator_begin(struct ecu_tree_child_iterator *me,
                                                            struct ecu_tree_node *node);
@@ -204,6 +202,9 @@ extern struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_
 /*-------------------------------------------------- PUBLIC FUNCTIONS: POSTORDER ITERATOR -----------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
+// does not iterate over root.
+// notice this takes in a ecu_tree_node instead of ecu_tree so you can iterate over subtrees. Pass in
+    // ecu_tree_node.root to iterate over an entire tree.
 extern struct ecu_tree_node *ecu_tree_postorder_iterator_begin(struct ecu_tree_postorder_iterator *me,
                                                                struct ecu_tree_node *root);
 extern struct ecu_tree_node *ecu_tree_postorder_iterator_end(struct ecu_tree_postorder_iterator *me);
