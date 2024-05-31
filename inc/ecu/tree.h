@@ -165,12 +165,18 @@ extern void ecu_tree_node_ctor(struct ecu_tree_node *me,
                                ecu_object_id id_0);
 
 extern void ecu_tree_destroy(struct ecu_tree *me);
+
+// 1. Shouldn't be allowed to add tree root to another tree
+// 2. I think you should be able to add in all other cases:
+// 	2a. I.e. node that is in one tree. can add to another tree
+// 	2b. I.e. node that is already in tree. Add to same tree but in different
+// 		location. (Use case = file system. Moving folder two directories up.)
 extern void ecu_tree_add_child_push_back(struct ecu_tree *me, 
                                          struct ecu_tree_node *new_child);
 extern void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
                                               struct ecu_tree_node *new_child);
 
-// node's subtree will be unharmed. Therefore calling this on root does nothing.                                              
+// node's subtree will be unharmed. Therefore calling this on root does nothing.
 extern void ecu_tree_remove_node(struct ecu_tree_node *me);
 extern ecu_tree_max_level_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
 extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 

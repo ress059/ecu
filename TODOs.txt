@@ -26,6 +26,8 @@ void set_assert_functor(functor)
     ....
 }
 
+2. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
+
 All:
 1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
 

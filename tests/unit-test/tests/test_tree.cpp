@@ -139,8 +139,10 @@ TEST_GROUP(AddRemoveNode)
     AssertCallOk assert_call_ok_;
     AssertCallFail assert_call_fail_;
 
-    struct ecu_tree_postorder_iterator iterator_;
-    struct ecu_tree tree_;
+    struct ecu_tree_postorder_iterator postorder_iterator_;
+    struct ecu_tree_child_iterator child_iterator_;
+    struct ecu_tree tree1_;
+    struct ecu_tree tree2_;
     struct ecu_tree_node node1_;
     struct ecu_tree_node node2_;
     struct ecu_tree_node node3_;
@@ -1018,375 +1020,692 @@ TEST(PostOrderIterator, RemoveNodesInMiddleOfIteration)
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------- TESTS - ADDING AND REMOVING NODES --------------------------------------*/
+/*--------------------------------------------- TESTS - ADDING AND REMOVING NODES -------------------------------------------*/
+/*------------------------------- THESE TESTS FOCUS MORE ON IF THE SUBTREE IS REMOVED CORRECTLY -----------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
-#warning "TODO: Failing. Tree and test is setup properly."
-/**
- * @pre Postorder iterator is working properly since it is used
- * for test validation.
- */
-TEST(AddRemoveNode, AddFirstChildAndItsSubTree)
+
+// 1. Add subtree that has no siblings to another tree node.
+// 2. Add subtree that has siblings but is the first child to another tree node.
+// 3. Add subtree that is the middle sibling to another tree node.
+// 4. Add subtree that is the last sibling to another tree node.
+// 5. Add subtree leaf node to another tree.
+
+TEST(AddRemoveNode, AddSubTreeWithNoSibilngsToAnotherTree)
 {
-    /* Trees we are adding together. Node4 and its subtree is being added
-    to Node5:
-                    root                                node4
-                    |                                   |
-                    node5-----------node7               node1-----node2-----node3
-                                    |
-                                    node6
 
-    Post-addition the tree should be:
-
-                    root
-                    |
-                    node5---------------------------node7
-                    |                               |
-                    node4                           node6
-                    |
-                    node1-----node2-----node3
-    */
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
-        mock().strictOrder();
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node1_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node2_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node3_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node4_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node5_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node6_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node7_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &tree_.root);
-
-        ecu_tree_ctor(&tree_);
-        ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-
-        /* Create main tree. */
-        ecu_tree_add_child_push_back(&tree_, &node5_);
-        ecu_tree_add_child_push_back(&tree_, &node7_);
-        ecu_tree_node_add_child_push_back(&node7_, &node6_);
-
-        /* Create node4's subtree */
-        ecu_tree_node_add_child_push_back(&node4_, &node1_);
-        ecu_tree_node_add_child_push_back(&node4_, &node2_);
-        ecu_tree_node_add_child_push_back(&node4_, &node3_);
-
-        /* Steps 2 and 3: Action and assert. Add node4 and its subtree to node5. */
-        ecu_tree_node_add_child_push_back(&node5_, &node4_);
-
-        /* Verify tree. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &node4_);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
-    }
-    catch (AssertException& e)
-    {
-        (void)e;
-        /* FAIL */
-    }
-}
-
-#warning "TODO: Failing. Tree and test is setup properly."
-/**
- * @pre Postorder iterator is working properly since it is used
- * for test validation.
- * 
- * @brief Add child to a parent that already has children.
- */
-TEST(AddRemoveNode, AddChildAndItsSubTree)
-{
-    /* Trees we are adding together. Node6 and its subtree is being added
-    to root:
-
-                    root                            node6
-                    |                               |
-                    node1-------node3               node4-----node5
-                                |
-                                node2
-
-
-
-    Post-addition the tree should be:
-
-                    root
-                    |
-                    node1-------node3-------node6
-                                |           |
-                                node2       node4-----node5
-    */
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
-        mock().strictOrder();
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node1_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node2_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node3_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node4_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node5_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node6_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &tree_.root);
-
-        ecu_tree_ctor(&tree_);
-        ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-
-        /* Create main tree. */
-        ecu_tree_add_child_push_back(&tree_, &node1_);
-        ecu_tree_add_child_push_back(&tree_, &node3_);
-        ecu_tree_node_add_child_push_back(&node3_, &node2_);
-
-        /* Create node6's subtree */
-        ecu_tree_node_add_child_push_back(&node6_, &node4_);
-        ecu_tree_node_add_child_push_back(&node6_, &node5_);
-
-        /* Steps 2 and 3: Action and assert. Add node6 and its subtree to root. */
-        ecu_tree_add_child_push_back(&tree_, &node6_);
-
-        /* Verify tree. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &node4_);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
-    }
-    catch (AssertException& e)
-    {
-        (void)e;
-        /* FAIL */
-    }
 }
 
 
 /**
- * @pre Postorder iterator is working properly since it is used
- * for test validation.
- * 
- * @brief Edge case. Verify main tree is correct after removal. 
- * Verify removed node's subtree is unharmed.
+ * @brief Subtree has multiple siblings.
  */
-TEST(AddRemoveNode, RemoveFirstChildThatHasNoSiblings)
+TEST(AddRemoveNode, AddSubTreeThatIsFirstChildToAnotherTree)
 {
-    /* Test tree before removal. We are removing Node4. Its subtree
-    should be unharmed.
 
-                    root
-                    |
-                    node5---------------------------node7
-                    |                               |
-                    node4                           node6
-                    |
-                    node1-----node2-----node3
+}
 
-    Trees after removal should be:
 
-                    root                                node4
-                    |                                   |
-                    node5-----------node7               node1-----node2-----node3
-                                    |
-                                    node6
-    */
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+TEST(AddRemoveNode, AddSubTreeThatIsMiddleChildToAnotherTree)
+{
 
-        mock().strictOrder();
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node1_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node2_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node3_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node4_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node5_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node6_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node7_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &tree_.root);
+}
 
-        ecu_tree_ctor(&tree_);
-        ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
 
-        /* Level 1 */
-        ecu_tree_add_child_push_back(&tree_, &node5_);
-        ecu_tree_add_child_push_back(&tree_, &node7_);
+TEST(AddRemoveNode, AddSubTreeThatIsLastChildToAnotherTree)
+{
 
-        /* Level 2 */
-        ecu_tree_node_add_child_push_back(&node5_, &node4_);
+}
 
-        ecu_tree_node_add_child_push_back(&node7_, &node6_);
 
-        /* Level 3 */
-        ecu_tree_node_add_child_push_back(&node4_, &node1_);
-        ecu_tree_node_add_child_push_back(&node4_, &node2_);
-        ecu_tree_node_add_child_push_back(&node4_, &node3_);
+TEST(AddRemoveNode, AddLeafNodeToAnotherTree)
+{
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_tree_remove_node(&node4_);
+}
 
-        /* Verify node4's subtree is unharmed. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &node4_);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
 
-        /* Verify main tree is as expected. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &tree_.root);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
-    }
-    catch (AssertException& e)
-    {
-        (void)e;
-        /* FAIL */
-    }
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------- TESTS - ADDING AND REMOVING NODES -------------------------------------------*/
+/*-------------------------------- THESE TESTS FOCUS MORE ON IF THE SUBTREE IS ADDED CORRECTLY ------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+// 1. Add subtree not in tree to another tree.
+// 2. Add subtree to tree node that has no children.
+// 3. Add subtree to tree node that has children.
+// 4. Move subtree within same tree (e.g. file system moving folder two directories up).
+// 5. Cannot add tree root to another tree.
+
+TEST(AddRemoveNode, AddSubTreeNotInTreeToAnotherTree)
+{
+
+}
+
+
+TEST(AddRemoveNode, AddSubTreeToTreeNodeThatHasNoChildren)
+{
+
+}
+
+
+TEST(AddRemoveNode, AddSubTreeToTreeNodeThatHasChildren)
+{
+
 }
 
 
 /**
- * @pre Postorder iterator is working properly since it is used
- * for test validation.
- * 
- * @brief Edge case. Verify main tree is correct after removal. 
- * Verify removed node's subtree is unharmed.
+ * @brief Use case could be a file system where you move a folder to
+ * a different directory.
  */
-TEST(AddRemoveNode, RemoveFirstChildThatHasSiblings)
+TEST(AddRemoveNode, MoveSubTreeWithinSameTree)
 {
-    /* Test tree before removal. We are removing Node3. Its subtree
-    should be unharmed.
 
-                    root
-                    |
-                    node6
-                    |
-                    node3-----node4-----node5
-                    |
-                    node1-----node2
-
-    Trees after removal should be:
-
-                    root                    node3
-                    |                       |
-                    node6                   node1-----node2
-                    |
-                    node4-----node5
-    */
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
-        mock().strictOrder();
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node1_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node2_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node3_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node4_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node5_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &node6_);
-        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &tree_.root);
-
-        ecu_tree_ctor(&tree_);
-        ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-        ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-
-        /* Level 1 */
-        ecu_tree_add_child_push_back(&tree_, &node6_);
-
-        /* Level 2 */
-        ecu_tree_node_add_child_push_back(&node6_, &node3_);
-        ecu_tree_node_add_child_push_back(&node6_, &node4_);
-        ecu_tree_node_add_child_push_back(&node6_, &node5_);
-
-        /* Level 3 */
-        ecu_tree_node_add_child_push_back(&node3_, &node1_);
-        ecu_tree_node_add_child_push_back(&node3_, &node2_);
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_tree_remove_node(&node3_);
-
-        /* Verify node3's subtree is unharmed. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &node3_);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
-
-        /* Verify main tree is as expected. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &tree_.root);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
-        {
-            IteratorTreeNodeMock::verify_node(i);
-        }
-    }
-    catch (AssertException& e)
-    {
-        (void)e;
-        /* FAIL */
-    }
 }
+
+
+TEST(AddRemoveNode, CannotAddTreeRootToAnotherTree)
+{
+    
+}
+
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  */
+// TEST(AddRemoveNode, AddSubTreeNotInTreeToAnotherTree)
+// {
+//     /* Trees we are adding together. Node4 and its subtree is being added
+//     to Node5:
+//                     root1                               node4
+//                     |                                   |
+//                     node5-----------node7               node1-----node2-----node3
+//                                     |
+//                                     node6
+
+//     Post-addition the tree should be:
+
+//                     root
+//                     |
+//                     node5---------------------------node7
+//                     |                               |
+//                     node4                           node6
+//                     |
+//                     node1-----node2-----node3
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node3_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node4_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node5_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node6_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node7_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+
+//         /* Create main tree. */
+//         ecu_tree_add_child_push_back(&tree1_, &node5_);
+//         ecu_tree_add_child_push_back(&tree1_, &node7_);
+//         ecu_tree_node_add_child_push_back(&node7_, &node6_);
+
+//         /* Create node4's subtree */
+//         ecu_tree_node_add_child_push_back(&node4_, &node1_);
+//         ecu_tree_node_add_child_push_back(&node4_, &node2_);
+//         ecu_tree_node_add_child_push_back(&node4_, &node3_);
+
+//         /* Steps 2 and 3: Action and assert. Add node4 and its subtree to node5. */
+//         ecu_tree_node_add_child_push_back(&node5_, &node4_);
+
+//         /* Verify tree. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
+
+
+// TEST(AddRemoveNode, AddSubTreeWithNoSiblingsToAnotherTreeNodeThatHasNoChildren)
+// {
+//     /* Trees we are adding together. Node4 and its subtree is being added
+//     to Node5:
+//                     root1                               root2
+//                     |                                   |
+//                     node5-----------node7               node4
+//                                     |                   |
+//                                     node6               node1-----node2-----node3
+
+//     Post-addition the tree should be:
+
+//                     root
+//                     |
+//                     node5---------------------------node7
+//                     |                               |
+//                     node4                           node6
+//                     |
+//                     node1-----node2-----node3
+//     */
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  * 
+//  * @brief Add child to a parent that already has children.
+//  */
+// TEST(AddRemoveNode, AddSubTreeToTreeNodeWithChildren)
+// {
+//     /* Trees we are adding together. Node6 and its subtree is being added
+//     to root:
+
+//                     root                            node6
+//                     |                               |
+//                     node1-------node3               node4-----node5
+//                                 |
+//                                 node2
+
+
+
+//     Post-addition the tree should be:
+
+//                     root
+//                     |
+//                     node1-------node3-------node6
+//                                 |           |
+//                                 node2       node4-----node5
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node3_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node4_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node5_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node6_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+
+//         /* Create main tree. */
+//         ecu_tree_add_child_push_back(&tree1_, &node1_);
+//         ecu_tree_add_child_push_back(&tree1_, &node3_);
+//         ecu_tree_node_add_child_push_back(&node3_, &node2_);
+
+//         /* Create node6's subtree */
+//         ecu_tree_node_add_child_push_back(&node6_, &node4_);
+//         ecu_tree_node_add_child_push_back(&node6_, &node5_);
+
+//         /* Steps 2 and 3: Action and assert. Add node6 and its subtree to root. */
+//         ecu_tree_add_child_push_back(&tree1_, &node6_);
+
+//         /* Verify tree. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  */
+// TEST(AddRemoveNode, AddSingleNodeInSubTreeToTree)
+// {
+//     /* Trees we are adding together. Node4 is being added to root:
+
+//                     root                            node6
+//                     |                               |
+//                     node1-------node3               node4-----node5
+//                                 |
+//                                 node2
+
+
+
+//     Post-addition the trees should be:
+
+//                     root                                node6
+//                     |                                   |
+//                     node1-------node3-------node4       node5
+//                                 |
+//                                 node2
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node3_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node4_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node5_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node6_);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+
+//         /* Create main tree. */
+//         ecu_tree_add_child_push_back(&tree1_, &node1_);
+//         ecu_tree_add_child_push_back(&tree1_, &node3_);
+//         ecu_tree_node_add_child_push_back(&node3_, &node2_);
+
+//         /* Create node6's subtree */
+//         ecu_tree_node_add_child_push_back(&node6_, &node4_);
+//         ecu_tree_node_add_child_push_back(&node6_, &node5_);
+
+//         /* Steps 2 and 3: Action and assert. Add node4 to root. */
+//         ecu_tree_add_child_push_back(&tree1_, &node4_);
+
+//         /* Verify both tree and subtree. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
+
+
+// TEST(AddRemoveNode, CannotAddTreeRootToAnotherTree)
+// {
+
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  */
+// TEST(AddRemoveNode, CannotAddNodeAlreadyInTreeToAnotherTree)
+// {
+//     /* Test trees. We are attempting to add node1 to root2. Trees should
+//     remain the same since this operation is illegal.
+
+//                     root1                   root2
+//                     |
+//                     node1
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_ok_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree2_.root);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_ctor(&tree2_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_add_child_push_back(&tree1_, &node1_);
+
+//         /* Step 2: Action. */
+//         ecu_tree_add_child_push_back(&tree2_, &node1_);
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* OK */
+//     }
+
+//     /* Step 3: Assert. Both trees should remain the same since this operation is illegal.
+//     Verify with mocks. Do this outside of try-catch in case assert in API fires (expected behavior). */
+//     for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//          i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//          i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//     {
+//         IteratorTreeNodeMock::verify_node(i);
+//     }
+
+//     for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree2_.root);
+//          i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//          i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//     {
+//         IteratorTreeNodeMock::verify_node(i);
+//     }
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  */
+// TEST(AddRemoveNode, CannotAddNodeAlreadyInTreeToAnotherSubTree)
+// {
+//     /* Test trees. We are attempting to add node1 to node2. Trees should
+//     remain the same since this operation is illegal.
+
+//                     root1                   node2
+//                     |
+//                     node1
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_ok_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_add_child_push_back(&tree1_, &node1_);
+
+//         /* Step 2: Action. */
+//         ecu_tree_node_add_child_push_back(&node2_, &node1_);
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* OK */
+//     }
+
+//     /* Step 3: Assert. Both trees should remain the same since this operation is illegal.
+//     Verify with mocks. Do this outside of try-catch in case assert in API fires (expected behavior). */
+//     for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//          i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//          i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//     {
+//         IteratorTreeNodeMock::verify_node(i);
+//     }
+
+//     for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree2_.root);
+//          i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//          i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//     {
+//         IteratorTreeNodeMock::verify_node(i);
+//     }
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  * 
+//  * @brief Edge case. Verify main tree is correct after removal. 
+//  * Verify removed node's subtree is unharmed.
+//  */
+// TEST(AddRemoveNode, RemoveFirstChildThatHasNoSiblings)
+// {
+//     /* Test tree before removal. We are removing Node4. Its subtree
+//     should be unharmed.
+
+//                     root
+//                     |
+//                     node5---------------------------node7
+//                     |                               |
+//                     node4                           node6
+//                     |
+//                     node1-----node2-----node3
+
+//     Trees after removal should be:
+
+//                     root                                node4
+//                     |                                   |
+//                     node5-----------node7               node1-----node2-----node3
+//                                     |
+//                                     node6
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node3_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node4_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node5_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node6_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node7_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+
+//         /* Level 1 */
+//         ecu_tree_add_child_push_back(&tree1_, &node5_);
+//         ecu_tree_add_child_push_back(&tree1_, &node7_);
+
+//         /* Level 2 */
+//         ecu_tree_node_add_child_push_back(&node5_, &node4_);
+
+//         ecu_tree_node_add_child_push_back(&node7_, &node6_);
+
+//         /* Level 3 */
+//         ecu_tree_node_add_child_push_back(&node4_, &node1_);
+//         ecu_tree_node_add_child_push_back(&node4_, &node2_);
+//         ecu_tree_node_add_child_push_back(&node4_, &node3_);
+
+//         /* Steps 2 and 3: Action and assert. */
+//         ecu_tree_remove_node(&node4_);
+
+//         /* Verify node4's subtree is unharmed. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+
+//         /* Verify main tree is as expected. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
+
+
+// /**
+//  * @pre Postorder iterator is working properly since it is used
+//  * for test validation.
+//  * 
+//  * @brief Edge case. Verify main tree is correct after removal. 
+//  * Verify removed node's subtree is unharmed.
+//  */
+// TEST(AddRemoveNode, RemoveFirstChildThatHasSiblings)
+// {
+//     /* Test tree before removal. We are removing Node3. Its subtree
+//     should be unharmed.
+
+//                     root
+//                     |
+//                     node6
+//                     |
+//                     node3-----node4-----node5
+//                     |
+//                     node1-----node2
+
+//     Trees after removal should be:
+
+//                     root                    node3
+//                     |                       |
+//                     node6                   node1-----node2
+//                     |
+//                     node4-----node5
+//     */
+//     try
+//     {
+//         /* Step 1: Arrange. */
+//         ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+//         mock().strictOrder();
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node1_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node2_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node3_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node4_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node5_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &node6_);
+//         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+//               .withParameter("node", &tree1_.root);
+
+//         ecu_tree_ctor(&tree1_);
+//         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node4_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node5_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node6_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+//         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+
+//         /* Level 1 */
+//         ecu_tree_add_child_push_back(&tree1_, &node6_);
+
+//         /* Level 2 */
+//         ecu_tree_node_add_child_push_back(&node6_, &node3_);
+//         ecu_tree_node_add_child_push_back(&node6_, &node4_);
+//         ecu_tree_node_add_child_push_back(&node6_, &node5_);
+
+//         /* Level 3 */
+//         ecu_tree_node_add_child_push_back(&node3_, &node1_);
+//         ecu_tree_node_add_child_push_back(&node3_, &node2_);
+
+//         /* Steps 2 and 3: Action and assert. */
+//         ecu_tree_remove_node(&node3_);
+
+//         /* Verify node3's subtree is unharmed. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node3_);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+
+//         /* Verify main tree is as expected. */
+//         for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+//              i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+//              i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+//         {
+//             IteratorTreeNodeMock::verify_node(i);
+//         }
+//     }
+//     catch (AssertException& e)
+//     {
+//         (void)e;
+//         /* FAIL */
+//     }
+// }
 
 
 /**
@@ -1427,9 +1746,9 @@ TEST(AddRemoveNode, RemoveRoot)
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node6_);
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
-              .withParameter("node", &tree_.root);
+              .withParameter("node", &tree1_.root);
 
-        ecu_tree_ctor(&tree_);
+        ecu_tree_ctor(&tree1_);
         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node3_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
@@ -1439,7 +1758,7 @@ TEST(AddRemoveNode, RemoveRoot)
         ecu_tree_node_ctor(&node7_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
 
         /* Level 1 */
-        ecu_tree_add_child_push_back(&tree_, &node6_);
+        ecu_tree_add_child_push_back(&tree1_, &node6_);
 
         /* Level 2 */
         ecu_tree_node_add_child_push_back(&node6_, &node3_);
@@ -1451,12 +1770,12 @@ TEST(AddRemoveNode, RemoveRoot)
         ecu_tree_node_add_child_push_back(&node3_, &node2_);
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_tree_remove_node(&tree_.root);
+        ecu_tree_remove_node(&tree1_.root);
 
         /* Verify tree is the same post-removal of root. */
-        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &tree_.root);
-             i != ecu_tree_postorder_iterator_end(&iterator_);
-             i = ecu_tree_postorder_iterator_next(&iterator_))
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &tree1_.root);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
         {
             IteratorTreeNodeMock::verify_node(i);
         }
@@ -1471,8 +1790,22 @@ TEST(AddRemoveNode, RemoveRoot)
 
 
 
+/* NOTE: Adding node in a SUBTREE to another tree is perfectly valid and what you want
+in a tree API. */
 
 
+// TEST(??, CannotRemoveNodeNotInTree)
+// {
+
+// }
+
+
+/* Purposefully not done since no way of directly verifying by inspecting the tree
+or tree node. Can only verify by checking if an assert fired but do not want to do that since that
+is more implementation-defined. */
+// TEST(CircularDLL, CannotRemoveNodeNotInList)
+// {
+// }
 
 
 
@@ -1486,19 +1819,6 @@ TEST(AddRemoveNode, RemoveRoot)
 
 // // verify ECU_TREE_NODE_GET_ENTRY macro.
 // TEST(??, TreeNodeGetUserData)
-// {
-
-// }
-
-
-// TEST(??, CannotAddChildAlreadyInTree)
-// {
-//     // try to add achild that is already in another tree.
-//     // verify you can't add it. use child iterators.
-// }
-
-
-// TEST(??, CannotRemoveNodeNotInTree)
 // {
 
 // }

@@ -45,7 +45,7 @@ static struct ecu_assert_functor *TREE_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 static struct ecu_tree_node *get_root(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
 static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
-static bool node_is_root(const struct ecu_tree_node *node);
+static bool node_is_tree_root(const struct ecu_tree_node *node);
 static bool node_in_tree(struct ecu_tree_node *node); // pointer to nonconst since this called get_root() which takes in pointer to nonconst.
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node);
 static bool node_child_head_valid(const struct ecu_tree_node *node);
@@ -90,14 +90,16 @@ static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node)
 }
 
 
-static bool node_is_root(const struct ecu_tree_node *node)
+static bool node_is_tree_root(const struct ecu_tree_node *node)
 {
     bool is_root = false;
     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
 
     if ((node->parent == node) && \
-        (node->id == ECU_OBJECT_ID_RESERVED) && \
-        (node->destroy == &tree_root_destroy_callback))
+        (node->next == node) && \
+        (node->prev == node) && \
+        (node->destroy == &tree_root_destroy_callback) && \
+        (node->id == ECU_OBJECT_ID_RESERVED))
     {
         is_root = true;
     }
@@ -112,7 +114,7 @@ static bool node_is_root(const struct ecu_tree_node *node)
 // pointer to non-const.
 static bool node_in_tree(struct ecu_tree_node *node)
 {
-    return node_is_root(get_root(node));
+    return node_is_tree_root(get_root(node));
 }
 
 
@@ -203,54 +205,35 @@ void ecu_tree_destroy(struct ecu_tree *me)
 
 void ecu_tree_add_child_push_back(struct ecu_tree *me, 
                                   struct ecu_tree_node *new_child)
-// void ecu_tree_add_child(struct ecu_tree_node *me, struct ecu_tree *tree)
 {
     ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
     ecu_tree_node_add_child_push_back(&me->root, new_child);
 }
 
 
-
-// node with siblings can be added safely i think. test this
-
-// me = parent node you want to add child to.
 void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
                                        struct ecu_tree_node *new_child)
-// void ecu_tree_node_add_child(struct ecu_tree_node *me, struct ecu_tree_node *parent)
 {
     struct ecu_tree_node *old_tail = (struct ecu_tree_node *)0;
 
-    /* NULL assertions already done in these functions. Notice it is OK
-    if parent is not within a tree. */
-    ECU_RUNTIME_ASSERT( ((new_child != parent) && (node_valid(parent)) && (node_valid(new_child)) && \
-                         (!node_in_tree(new_child)) && (!node_is_root(new_child))), 
+    /* NULL assertions already done in these functions. Notice it is OK if parent is not within a tree. */
+    ECU_RUNTIME_ASSERT( ((new_child != parent) && (node_valid(parent)) && \
+                         (node_valid(new_child)) && (!node_is_tree_root(new_child))), 
                          TREE_ASSERT_FUNCTOR );
-    
-    // if (parent->child == parent)
-    // {
-    //     parent->child = me;
-    //     me->next = me;
-    //     me->prev = me;
-    // }
-    // else
-    // {
-    //     old_tail = parent->child->prev;
-    //     old_tail->next->prev = me;      /* parent->child->prev = me */
-    //     me->next = old_tail->next;      /* me->next = parent->child */
-    //     me->prev = old_tail;
-    //     old_tail->next = me;
-    // }
 
-    // me->parent = parent;
+    ecu_tree_remove_node(new_child);
 
+    /* Need to handle edge case where node we are adding is the parent's first child. */
     if (parent->child == parent)
     {
+        /* Parent has no children. This new node is the parent's first child. */
         parent->child   = new_child;
         new_child->next = new_child;
         new_child->prev = new_child;
     }
     else
     {
+        /* Parent already has children. */
         old_tail = parent->child->prev;
         old_tail->next->prev = new_child;   /* parent->child->prev = new_child */
         new_child->next = old_tail->next;   /* new_child->next = parent->child */

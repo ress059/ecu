@@ -7,8 +7,8 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 if(CMAKE_HOST_LINUX OR CMAKE_HOST_UNIX)
 	# Use list instead of GNUInstallDirs to suppress its warnings since compiler path not yet set.
 	list(APPEND PATH_HINTS "usr/bin" "usr/local/bin")
-    message(STATUS "Detected host system is Linux. Searching default install"
-				 	" directories usr/bin and usr/local/bin for GNU toolchain..")
+	message(STATUS "Detected host system is Linux. Searching default install"
+				   " directories usr/bin and usr/local/bin for GNU toolchain..")
 
 	find_program(LINKER					NAMES ld			HINTS ${PATH_HINTS} REQUIRED)
 	find_program(CMAKE_C_COMPILER		NAMES gcc			HINTS ${PATH_HINTS} REQUIRED)

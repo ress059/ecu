@@ -163,9 +163,9 @@
      * If this is false the assertion fails and triggers a compilation error.
      * This must be a literal expression that can be evaluated at compile-time.
      */
-    #define ECU_STATIC_ASSERT(check_)
+#   define ECU_STATIC_ASSERT(check_)
 #else
-    #if defined(__cplusplus) && (__cplusplus >= 201103L)
+#   if defined(__cplusplus) && (__cplusplus >= 201103L)
         /**
          * @brief Produce compilation error if assert fails. C++11 and greater
          * static_assert() which is natively supported.
@@ -174,9 +174,9 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define ECU_STATIC_ASSERT(check)        static_assert((check_))
-    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
-        #include <assert.h>
+#       define ECU_STATIC_ASSERT(check)        static_assert((check_))
+#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
+#       include <assert.h>
 
         /**
          * @brief Produce compilation error if assert fails. C11 and greater
@@ -186,8 +186,8 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define ECU_STATIC_ASSERT(check_)       _Static_assert((check_))
-    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
+#       define ECU_STATIC_ASSERT(check_)       _Static_assert((check_))
+#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
 
         /**
          * @brief Produce compilation error if assert fails. C23 and greater
@@ -197,8 +197,8 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define ECU_STATIC_ASSERT(check_)       static_assert((check_))
-    #else
+#       define ECU_STATIC_ASSERT(check_)       static_assert((check_))
+#   else
         /**
          * @brief Produce compilation error if assert fails. Using C/C++ standard that
          * does not support static assertions. Macro expands to extern char 
@@ -208,8 +208,8 @@
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-        #define ECU_STATIC_ASSERT(check_)       extern char ecu_static_assert_[(check_) ? 1 : -1]
-    #endif
+#       define ECU_STATIC_ASSERT(check_)       extern char ecu_static_assert_[(check_) ? 1 : -1]
+#   endif
 #endif /* ECU_DOXYGEN */
 
 
@@ -304,9 +304,9 @@ struct ecu_assert_functor
      * @param functor_ User-defined functor that executes if assert fires. 
      * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
      */
-    #define ECU_RUNTIME_ASSERT(check_, functor_)
+#   define ECU_RUNTIME_ASSERT(check_, functor_)
 #else
-    #if !defined(ECU_DISABLE_RUNTIME_ASSERTS)
+#   if !defined(ECU_DISABLE_RUNTIME_ASSERTS)
         /**
          * @brief PRIVATE. Used so memory is only allocated for file name once per 
          * file. __FILE_NAME__ macro is not used because it is compiler-dependent.
@@ -321,13 +321,13 @@ struct ecu_assert_functor
          * @param functor_ User-defined functor that executes if assert fires. 
          * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
          */
-        #define ECU_RUNTIME_ASSERT(check_, functor_)        ((check_) ? ((void)0) : ecu_assert_do_not_use((functor_), &ecu_file_name_[0], __LINE__))
-    #else
+#       define ECU_RUNTIME_ASSERT(check_, functor_)        ((check_) ? ((void)0) : ecu_assert_do_not_use((functor_), &ecu_file_name_[0], __LINE__))
+#   else
         /**
          * @brief Runtime asserts disabled so this macro does nothing.
          */
-        #define ECU_RUNTIME_ASSERT(check_, functor_)        ((void)0)
-    #endif
+#       define ECU_RUNTIME_ASSERT(check_, functor_)        ((void)0)
+#   endif
 
 #endif /* ECU_DOXYGEN */
 
