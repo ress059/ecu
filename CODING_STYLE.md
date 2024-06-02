@@ -9,7 +9,7 @@ void my_function_is_all_lowercase(void);
 int my_variable_is_all_lowercase;
 ```
 
-2. Anything publicly exposed with its own scope must be prefixed with "ecu_" to make it obvious in larger apps that the type/function/whatever comes from this library. Example:
+2. Anything in the global namespace must be prefixed with "ecu_" to make it obvious in larger apps that the type/function/whatever comes from this library. Example:
 ```C
 /***************** public_header.h *******************/
 #define ECU_PUBLIC_MACRO
@@ -34,7 +34,7 @@ static void private_function(void);
 # Include Paths
 1. Include paths for publicly-exposed headers will always begin with ecu in order for larger apps to have scope for include files. For example <ecu/asserter.h>, <ecu/fsm.h>, etc.
 
-# Doxygen Style commends
+# Doxygen Style comments
 1. @brief and @details directives never separated by a line. Example:
 ```C
 /**

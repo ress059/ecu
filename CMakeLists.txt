@@ -18,6 +18,7 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
     ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
     ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
 
     # Interfaces.
     ${CMAKE_CURRENT_LIST_DIR}/src/interface/itimer.c
@@ -67,6 +68,13 @@ if(ECU_DISABLE_RUNTIME_ASSERTS)
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_DISABLE_RUNTIME_ASSERTS 
+    )
+
+    # Some functions will now be unused because they are called within 
+    # assert macros. Use -Wno to suppress these warnings.
+    target_compile_options(ecu
+        PRIVATE
+            $<$<C_COMPILER_ID:GNU,Clang>:-Wno-unused-function>
     )
 endif()
 
