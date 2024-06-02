@@ -9,9 +9,7 @@ since we are already doing that with tests that use extra_list; Documentation do
 7. tree.h/.c. TODO.
 
 Ring Buffer:
-1. Add tests 
-2. Add documentation.
-3. May just stash this away for now.
+1. Add tests and documentation. Stashing away for now.
 
 Tree:
 1. Test destructor. Finish tests that add nodes in middle of iteration.
