@@ -93,6 +93,12 @@ struct ecu_tree_node
      * User should only define any additional cleanup necessary for 
      * their data type.
      */
+    // Parameter will either be struct ecu_tree_node * or struct ecu_tree *.
+    // User can use the ECU_TREE_NODE_GET_ENTRY() macro in both cases and use
+    // the object id to determine their user-defined types that store the ecu_tree
+    // and ecu_tree_node.
+    // object id can be used for type determination.
+    //
     void (*destroy)(struct ecu_tree_node *me);
 
     /**
@@ -102,14 +108,6 @@ struct ecu_tree_node
      * description of @ref object_id.h
      */
     ecu_object_id id;
-};
-
-
-// represents dummy delimeter.
-struct ecu_tree
-{
-    // MUST be first for compatibility between destroy function.
-    struct ecu_tree_node root;
 };
 
 
@@ -146,33 +144,25 @@ struct ecu_tree_postorder_iterator
 extern "C" {
 #endif
 
-// Can use ECU_TREE_NODE_GET_ENTRY() to get 
-extern void ecu_tree_ctor(struct ecu_tree *me,
-                          void (*destroy_0)(struct ecu_tree *me),
-                          ecu_object_id id_0);
 
 extern void ecu_tree_node_ctor(struct ecu_tree_node *me, 
                                void (*destroy_0)(struct ecu_tree_node *me),
                                ecu_object_id id_0);
 
-extern void ecu_tree_destroy(struct ecu_tree *me);
+// destroys node and all nodes in its subtree.
+extern void ecu_tree_node_destroy(struct ecu_tree_node *me);
 
-// 1. Shouldn't be allowed to add tree root to another tree
-// 2. I think you should be able to add in all other cases:
-// 	2a. I.e. node that is in one tree. can add to another tree
-// 	2b. I.e. node that is already in tree. Add to same tree but in different
-// 		location. (Use case = file system. Moving folder two directories up.)
-extern void ecu_tree_add_child_push_back(struct ecu_tree *me, 
+
+// new_child cannot equal parent.
+extern void ecu_tree_add_child_push_back(struct ecu_tree_node *parent, 
                                          struct ecu_tree_node *new_child);
-extern void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
-                                              struct ecu_tree_node *new_child);
 
 // node's subtree will be unharmed. Therefore calling this on root does nothing.
 // calling this on a node not in a tree also does nothing.
 extern void ecu_tree_remove_node(struct ecu_tree_node *me);
 
 // 0 indexed. Top level = 0.
-extern size_t ecu_tree_node_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
+extern size_t ecu_tree_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
 
 // return null if lca not found (nodes not in same tree)
 extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 

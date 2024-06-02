@@ -23,7 +23,7 @@
 
 // require root to be first member so destroy callback is backwards compatible with
 // both tree root and tree node.
-ECU_STATIC_ASSERT( (offsetof(struct ecu_tree, root) == 0) );
+// ECU_STATIC_ASSERT( (offsetof(struct ecu_tree, root) == 0) );
 
 
 
@@ -33,7 +33,7 @@ ECU_STATIC_ASSERT( (offsetof(struct ecu_tree, root) == 0) );
 
 static struct ecu_assert_functor *TREE_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
-static const struct ecu_tree_node ROOT_DELIMETER = {0}; // used to differentiate tree root from tree node.
+// static const struct ecu_tree_node ROOT_DELIMETER = {0}; // used to differentiate tree root from tree node.
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -42,7 +42,7 @@ static const struct ecu_tree_node ROOT_DELIMETER = {0}; // used to differentiate
 
 // static struct ecu_tree_node *get_root(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
 static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
-static bool node_is_tree_root(const struct ecu_tree_node *node);
+// static bool node_is_tree_root(const struct ecu_tree_node *node);
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node);
 static bool node_child_head_valid(const struct ecu_tree_node *node);
 static bool node_valid(const struct ecu_tree_node *node);
@@ -85,22 +85,22 @@ static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node)
 }
 
 
-static bool node_is_tree_root(const struct ecu_tree_node *node)
-{
-    ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
-    return (node->parent == &ROOT_DELIMETER);
+// static bool node_is_tree_root(const struct ecu_tree_node *node)
+// {
+//     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
+//     return (node->parent == &ROOT_DELIMETER);
 
-    // if ((node->parent == node) && \
-    //     (node->next == node) && \
-    //     (node->prev == node) && \
-    //     (node->destroy == &tree_root_destroy_callback) && \
-    //     (node->id == ECU_OBJECT_ID_RESERVED))
-    // {
-    //     is_root = true;
-    // }
+//     // if ((node->parent == node) && \
+//     //     (node->next == node) && \
+//     //     (node->prev == node) && \
+//     //     (node->destroy == &tree_root_destroy_callback) && \
+//     //     (node->id == ECU_OBJECT_ID_RESERVED))
+//     // {
+//     //     is_root = true;
+//     // }
 
-    // return is_root;
-}
+//     // return is_root;
+// }
 
 
 // precondition is node has been constructed.
@@ -129,12 +129,8 @@ static bool node_child_head_valid(const struct ecu_tree_node *node)
 
     /* Cases handled:
     1. node->child == node. Node has no children so child points to itself. 
-    2. node->child->parent == &ROOT_DELIMETER. Node has no children but this is
-       the root node. 
-    3. node->child->parent == node. Node has children. */
-    if ((node->child == node) || \
-        (node->child->parent == &ROOT_DELIMETER) || \
-        (node->child->parent == node))
+    2. node->child->parent == node. Node has children. */
+    if ((node->child == node) || (node->child->parent == node))
     {
         valid = true;
     }
@@ -162,25 +158,25 @@ static bool node_valid(const struct ecu_tree_node *node)
 /*------------------------------------------------------ PUBLIC FUNCTIONS: TREE ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_tree_ctor(struct ecu_tree *me,
-                   void (*destroy_0)(struct ecu_tree *me),
-                   ecu_object_id id_0)
-{
-    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), 
-                        TREE_ASSERT_FUNCTOR );
+// void ecu_tree_ctor(struct ecu_tree *me,
+//                    void (*destroy_0)(struct ecu_tree *me),
+//                    ecu_object_id id_0)
+// {
+//     ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), 
+//                         TREE_ASSERT_FUNCTOR );
 
-    me->root.child      = &me->root;
-    me->root.parent     = &ROOT_DELIMETER; /* Used to differentiate root from normal tree node. */
-    me->root.next       = &me->root;
-    me->root.prev       = &me->root;
-    me->root.destroy    = destroy_0;
-    me->root.id         = id_0;
+//     me->root.child      = &me->root;
+//     me->root.parent     = &ROOT_DELIMETER; /* Used to differentiate root from normal tree node. */
+//     me->root.next       = &me->root;
+//     me->root.prev       = &me->root;
+//     me->root.destroy    = destroy_0;
+//     me->root.id         = id_0;
 
 
-    // make destroy function take in struct ecu_tree_node *me instead?
-    // ecu_tree_node_ctor(me, destroy_0, id_0);
-    // me->parent = &ROOT_DELIMETER;
-}
+//     // make destroy function take in struct ecu_tree_node *me instead?
+//     // ecu_tree_node_ctor(me, destroy_0, id_0);
+//     // me->parent = &ROOT_DELIMETER;
+// }
 
 
 void ecu_tree_node_ctor(struct ecu_tree_node *me, 
@@ -199,31 +195,37 @@ void ecu_tree_node_ctor(struct ecu_tree_node *me,
 }
 
 
-void ecu_tree_destroy(struct ecu_tree *me)
+void ecu_tree_node_destroy(struct ecu_tree_node *me)
 {
-    (void)me;
-    // todo. loop through all nodes and call custom destructor for each node.
-    // have to handle destructur differently since we iterate through a tree differently. cannot rely on dll iterator.
+    struct ecu_tree_postorder_iterator iterator;
+
+    ECU_RUNTIME_ASSERT( (node_valid(me)), TREE_ASSERT_FUNCTOR );
+
+    for (struct ecu_tree_node *node = ecu_tree_postorder_iterator_begin(&iterator, me);
+         node != ecu_tree_postorder_iterator_end(&iterator); 
+         node = ecu_tree_postorder_iterator_next(&iterator))
+    {
+        ecu_tree_remove_node(node);
+
+        /* Do not reset node->id so user is able to identify their data type 
+        in their destructor callback. */
+        if (node->destroy)
+        {
+            (*node->destroy)(node);
+            node->destroy = (void (*)(struct ecu_tree_node *))0;
+        }
+    }
 }
 
 
-void ecu_tree_add_child_push_back(struct ecu_tree *me, 
+void ecu_tree_add_child_push_back(struct ecu_tree_node *parent, 
                                   struct ecu_tree_node *new_child)
-{
-    ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
-    ecu_tree_node_add_child_push_back(&me->root, new_child);
-}
-
-
-void ecu_tree_node_add_child_push_back(struct ecu_tree_node *parent, 
-                                       struct ecu_tree_node *new_child)
 {
     struct ecu_tree_node *old_tail = (struct ecu_tree_node *)0;
 
-    /* NULL assertions already done in these functions. Notice it is OK if parent is not within a tree. */
+    /* NULL assertions already done in these functions. Notice it is OK if new_child as previously a root. */
     ECU_RUNTIME_ASSERT( ((new_child != parent) && (node_valid(parent)) && \
-                         (node_valid(new_child)) && (!node_is_tree_root(new_child))), 
-                         TREE_ASSERT_FUNCTOR );
+                         (node_valid(new_child))), TREE_ASSERT_FUNCTOR );
 
     ecu_tree_remove_node(new_child);
 
@@ -290,16 +292,15 @@ void ecu_tree_remove_node(struct ecu_tree_node *me)
 
 node 3 would be at level 2.
 */
-size_t ecu_tree_node_get_level(const struct ecu_tree_node *me)
+size_t ecu_tree_get_level(const struct ecu_tree_node *me)
 {
     size_t level = 0;
     const struct ecu_tree_node *root = me;
 
-    /* Do not assert if node is in tree since the same algorithm is done here. */
     ECU_RUNTIME_ASSERT( (root), TREE_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (root->parent), TREE_ASSERT_FUNCTOR );
 
-    while ((root->parent != root) || (root->parent != &ROOT_DELIMETER))
+    while (root->parent != root)
     {
         level++;
         root = root->parent;
@@ -327,7 +328,7 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
     else
     {
         /* We do not have to NULL assert when getting node->parent because
-        ecu_tree_node_get_level() already traverses and NULL asserts parent 
+        ecu_tree_get_level() already traverses and NULL asserts parent 
         structure. 
         
         LCA algorithm:
@@ -341,8 +342,8 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
         nodes are equal LCA is found. Otherwise if you reached the root
         of the tree but both nodes are still not equal then the
         nodes are in separate trees. Return null in this case. */
-        level1 = ecu_tree_node_get_level(node1);
-        level2 = ecu_tree_node_get_level(node2);
+        level1 = ecu_tree_get_level(node1);
+        level2 = ecu_tree_get_level(node2);
 
         /* Steps 1 and 2 of algorithm. */
         if (level1 > level2)

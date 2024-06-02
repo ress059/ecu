@@ -6,15 +6,16 @@ since we are already doing that with tests that use extra_list; Documentation do
 4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
 5. endian.h. Tests done. Documentation done.
 6. fsm.h/.c. Tests done. Documentation done.
+7. tree.h/.c. TODO.
 
 Ring Buffer:
 1. Add tests 
 2. Add documentation.
+3. May just stash this away for now.
 
 Tree:
-1. Finish destroy function.
-2. Add tests.
-3. Add documentation
+1. Test destructor. Finish tests that add nodes in middle of iteration.
+2. Cleanup and documentation.
 
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
