@@ -12,8 +12,10 @@ Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
 
 Tree:
-1. Test destructor. Finish tests that add nodes in middle of iteration.
-2. Cleanup and documentation.
+1. Test destructor. 
+2. Test ecu_tree_nodes_in_same_tree() function.
+3. Finish tests that add nodes in middle of iteration.
+4. Cleanup and documentation.
 
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.

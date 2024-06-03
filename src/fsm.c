@@ -31,6 +31,15 @@ static struct ecu_assert_functor *FSM_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 /*------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+void ecu_fsm_ctor(struct ecu_fsm *me, 
+                  const struct ecu_fsm_state *state_0)
+{
+    ECU_RUNTIME_ASSERT( (me && state_0), FSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (state_0->handler), FSM_ASSERT_FUNCTOR );
+    me->state = state_0;
+}
+
+
 void ecu_fsm_state_ctor(struct ecu_fsm_state *me, 
                         ecu_fsm_on_entry_handler on_entry_0,
                         ecu_fsm_on_exit_handler on_exit_0,
@@ -40,15 +49,6 @@ void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
     me->on_entry    = on_entry_0;   /* Optional so do not NULL assert. */
     me->on_exit     = on_exit_0;    /* Optional so do not NULL assert. */
     me->handler     = handler_0;    /* Mandatory. */
-}
-
-
-void ecu_fsm_ctor(struct ecu_fsm *me, 
-                  const struct ecu_fsm_state *state_0)
-{
-    ECU_RUNTIME_ASSERT( (me && state_0), FSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (state_0->handler), FSM_ASSERT_FUNCTOR );
-    me->state = state_0;
 }
 
 

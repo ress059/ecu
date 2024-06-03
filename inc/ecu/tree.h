@@ -9,7 +9,6 @@
  */
 
 
-
 #ifndef ECU_TREE_H_
 #define ECU_TREE_H_
 
@@ -20,6 +19,7 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* STDLib. */
+#include <stdbool.h>
 #include <stddef.h> /* offsetof() */
 #include <stdint.h>
 
@@ -165,8 +165,13 @@ extern void ecu_tree_remove_node(struct ecu_tree_node *me);
 extern size_t ecu_tree_get_level(const struct ecu_tree_node *me); // me->parent->parent->parent..until you reach root node.
 
 // return null if lca not found (nodes not in same tree)
+// node1 and node2 are not pointers to const since lca can return node1 or node2 which will be nonconst.
 extern struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 
                                               struct ecu_tree_node *node2); // return null if two nodes aren't apart of same tree?
+
+// parameters are not pointers to const since calls get_lca() function.
+extern bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
+                                        struct ecu_tree_node *node2);
 
 
 

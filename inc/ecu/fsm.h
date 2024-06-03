@@ -285,7 +285,7 @@ enum ecu_fsm_status
 {
     ECU_FSM_STATE_TRANSITION,  /**< Dispatched event caused a state transition. Never return directly. Only return via call to ecu_fsm_change_state() */
     ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
-    ECU_FSM_EVENT_IGNORED,     /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
+    ECU_FSM_EVENT_IGNORED      /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
 };
 
 
@@ -375,6 +375,18 @@ extern "C" {
 /**@{*/
 /**
  * @pre Memory already allocated for @p me.
+ * @pre @p state_0 previously constructed via call to @ref ecu_fsm_state_ctor().
+ * @brief FSM constructor.
+ * 
+ * @param me FSM to construct. This cannot be NULL.
+ * @param state_0 Initial state to put fsm in. This cannot be NULL.
+ */
+extern void ecu_fsm_ctor(struct ecu_fsm *me, 
+                         const struct ecu_fsm_state *state_0);
+
+
+/**
+ * @pre Memory already allocated for @p me.
  * @brief State constructor.
  * 
  * @param me State to construct. This cannot be NULL.
@@ -389,18 +401,6 @@ extern void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
                                ecu_fsm_on_entry_handler on_entry_0,
                                ecu_fsm_on_exit_handler on_exit_0,
                                ecu_fsm_state_handler handler_0);
-
-
-/**
- * @pre Memory already allocated for @p me.
- * @pre @p state_0 previously constructed via call to @ref ecu_fsm_state_ctor().
- * @brief FSM constructor.
- * 
- * @param me FSM to construct. This cannot be NULL.
- * @param state_0 Initial state to put fsm in. This cannot be NULL.
- */
-extern void ecu_fsm_ctor(struct ecu_fsm *me, 
-                         const struct ecu_fsm_state *state_0);
 /**@}*/
 
 
