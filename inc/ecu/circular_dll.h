@@ -150,26 +150,20 @@ struct ecu_circular_dll
 
 
 /**
- * @brief List iterator. Allows users to construct multiple iterators
- * that operate indepenently of one another.
+ * @brief Non-const list iterator.
  */
 struct ecu_circular_dll_iterator
 {
     /**
      * @private
-     * @brief PRIVATE. List that is being iterated.
-     * 
-     * @note This is not declared as a pointer to const since iterator 
-     * functions return pointers to non-const @ref ecu_circular_dll.head
+     * @brief PRIVATE. List that is being iterated. The node
+     * in this member is used as the delimeter.
      */
     struct ecu_circular_dll *list;
 
     /**
      * @private
      * @brief PRIVATE. Current position in list.
-     * 
-     * @note This is not declared as a pointer to const since iterator 
-     * functions return pointers to non-const nodes.
      */
     struct ecu_circular_dll_node *current;
 
@@ -177,9 +171,6 @@ struct ecu_circular_dll_iterator
      * @private 
      * @brief PRIVATE. Next position in the list. This member allows
      * user to safely remove nodes from list while iterating through it.
-     * 
-     * @note This is not declared as a pointer to const since iterator 
-     * functions return pointers to non-const nodes.
      */
     struct ecu_circular_dll_node *next;
 };

@@ -33,7 +33,33 @@ static struct ecu_assert_functor *HSM_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 // static bool state_valid(const struct ecu_hsm_state *state);
 static enum ecu_hsm_status TOP_STATE_HANDLER(struct ecu_hsm *me, const struct ecu_event *event);
-static void TOP_STATE_EXIT_HANDLER(struct ecu_hsm *me);
+
+// WARNING: only call this in ecu_hsm_dispatch() and ecu_hsm_begin()
+// since this is a file-scope function we assume the state is in the hsm state tree and do
+// not assert this condition
+// hsm is pointer to nonconst since exit and entry handlers take in non-const hsm.
+static void hsm_enter_state(struct ecu_hsm *me, struct ecu_hsm_state *state);
+static void hsm_exit_state(struct ecu_hsm *me, struct ecu_hsm_state *state);
+
+// point to nonconst in case it returns itself.
+static struct ecu_hsm_state *get_parent_state(struct ecu_hsm_state *state);
+
+// pointer to nonconst because you are returning the same struct just offset...
+static struct ecu_hsm_state *convert_node_to_state(struct ecu_tree_node *node);
+
+
+static bool is_top_state(const struct ecu_hsm_state *top_state);
+
+// not pointer to const since calls ecu_tree_get_lca() which takes in pointers to non-const.
+static bool are_composite_states(struct ecu_hsm_state *state1, 
+                                 struct ecu_hsm_state *state2);
+
+static bool is_state_transition_status(enum ecu_hsm_status status);
+
+static bool hsm_valid(const struct ecu_hsm *hsm);
+static bool state_valid(const struct ecu_hsm_state *state);
+static bool top_state_valid(const struct ecu_hsm_top_state *top_state);
+
 
 
 
@@ -41,25 +67,114 @@ static void TOP_STATE_EXIT_HANDLER(struct ecu_hsm *me);
 /*------------------------------------------------- STATIC FUNCTION DEFINITIONS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-// static bool state_valid(const struct ecu_hsm_state *state)
-// {
-// 	ECU_RUNTIME_ASSERT( (state), HSM_ASSERT_FUNCTOR );
-
-// 	if (state->handler)
-// }
-
-
 static enum ecu_hsm_status TOP_STATE_HANDLER(struct ecu_hsm *me, const struct ecu_event *event)
 {
     (void)me;
     (void)event;
-    return ECU_HSM_EVENT_HANDLED;
+    return ECU_HSM_EVENT_IGNORED;
 }
 
 
-static void TOP_STATE_EXIT_HANDLER(struct ecu_hsm *me)
+static void hsm_enter_state(struct ecu_hsm *me, struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (false), HSM_ASSERT_FUNCTOR );
+    /* Only allow this function to be called when a state transition takes place. */
+    struct ecu_hsm_state *prev_state = (struct ecu_hsm_state *)0;    
+    ECU_RUNTIME_ASSERT( (me && state), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me->current_state) && (me->temp_state) && \
+                         (me->current_state != me->temp_state)), HSM_ASSERT_FUNCTOR );
+
+    prev_state = me->current_state;
+    if (state->on_entry)
+    {
+        /* Run entry handler. Reject state transitions from entry handler. */
+        (*state->on_entry)(me);
+        ECU_RUNTIME_ASSERT( (me->current_state == prev_state), HSM_ASSERT_FUNCTOR );
+    }
+}
+
+
+static void hsm_exit_state(struct ecu_hsm *me, struct ecu_hsm_state *state)
+{
+    /* Only allow this function to be called when a state transition takes place. */
+    struct ecu_hsm_state *prev_state = (struct ecu_hsm_state *)0;    
+    ECU_RUNTIME_ASSERT( (me && state), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me->current_state) && (me->temp_state) && \
+                         (me->current_state != me->temp_state)), HSM_ASSERT_FUNCTOR );
+
+    prev_state = me->current_state;
+    if (state->on_exit)
+    {
+        /* Run exit handler. Reject state transitions from exit handler. */
+        (*state->on_exit)(me);
+        ECU_RUNTIME_ASSERT( (me->current_state == prev_state), HSM_ASSERT_FUNCTOR );
+    }
+}
+
+
+static struct ecu_hsm_state *get_parent_state(struct ecu_hsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (state), HSM_ASSERT_FUNCTOR );
+    return (ECU_TREE_NODE_GET_ENTRY(&state->node.parent, struct ecu_hsm_state, node));
+}
+
+
+static struct ecu_hsm_state *convert_node_to_state(struct ecu_tree_node *node)
+{
+    ECU_RUNTIME_ASSERT( (node), HSM_ASSERT_FUNCTOR );
+    return (ECU_TREE_NODE_GET_ENTRY(node, struct ecu_hsm_state, node));
+}
+
+
+static bool is_top_state(const struct ecu_hsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (state), HSM_ASSERT_FUNCTOR );
+    return (state->handler == &TOP_STATE_HANDLER);
+}
+
+
+static bool are_composite_states(struct ecu_hsm_state *state1, 
+                                 struct ecu_hsm_state *state2)
+{
+    bool status = false;
+    struct ecu_tree_node *lca = (struct ecu_tree_node *)0;
+    ECU_RUNTIME_ASSERT( (state1 && state2), HSM_ASSERT_FUNCTOR );
+
+    lca = ecu_tree_get_lca(&state1->node, &state2->node);
+    if ((lca == &state1->node) || (lca == &state2->node))
+    {
+        status = true;
+    }
+
+    return status;
+}
+
+
+static bool is_state_transition_status(enum ecu_hsm_status status)
+{
+    return ((status == ECU_HSM_STATE_TRANSITION) || \
+            (status == ECU_HSM_LOCAL_STATE_TRANSITION) || \
+            (status == ECU_HSM_EXTERNAL_STATE_TRANSITION));
+}
+
+
+static bool hsm_valid(const struct ecu_hsm *hsm)
+{
+    ECU_RUNTIME_ASSERT( (hsm), HSM_ASSERT_FUNCTOR );
+    return ((hsm->top_state) && (hsm->current_state) && (hsm->temp_state)); 
+}
+
+
+static bool state_valid(const struct ecu_hsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (state), HSM_ASSERT_FUNCTOR );
+    return ((state->handler) && (state->handler != &TOP_STATE_HANDLER));
+}
+
+
+static bool top_state_valid(const struct ecu_hsm_top_state *top_state)
+{
+    ECU_RUNTIME_ASSERT( (top_state), HSM_ASSERT_FUNCTOR );
+    return (top_state->state.handler == &TOP_STATE_HANDLER);
 }
 
 
@@ -68,78 +183,152 @@ static void TOP_STATE_EXIT_HANDLER(struct ecu_hsm *me)
 /*------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-// entry handler would be a good place to initialize values in your hsm.
 void ecu_hsm_ctor(struct ecu_hsm *me,
-                  ecu_hsm_on_entry_handler on_entry_0)
+                  const struct ecu_hsm_top_state *top_state_0)
 {
-    /* on_entry_0 optional so do not NULL assert. */
-    ECU_RUNTIME_ASSERT( (me), HSM_ASSERT_FUNCTOR );
-
-	/* Do not call ecu_hsm_state_ctor() as helper function since this 
-	asserts the input state is not the top state. */
-    ecu_tree_node_ctor(&me->top.node, (void (*)(struct ecu_tree_node *))0, ECU_OBJECT_ID_UNUSED);
-	me->top.hsm 		= me;
-    me->top.on_entry    = on_entry_0;
-    me->top.on_exit     = &TOP_STATE_EXIT_HANDLER;
-    me->top.handler     = &TOP_STATE_HANDLER;
-    me->state           = &me->top;
+    ECU_RUNTIME_ASSERT( (me && top_state_0), HSM_ASSERT_FUNCTOR );
+    me->top_state       = top_state_0;
+    me->current_state   = &top_state_0->state;
 }
 
 
-// 1. Not adding super_state here since that would make the constructor order now matter. Higher level nodes (states)
-// would have to be constructed before lower level states since ecu_tree_node_ctor() must be called to add nodes to tree.
-// 2. undefined behavior if me == &ecu_hsm.top
+void ecu_hsm_top_state_ctor(struct ecu_hsm_top_state *me,
+                            ecu_hsm_on_entry_handler on_entry_0,
+                            ecu_hsm_on_exit_handler on_exit_0)
+{
+    /* on_entry_0 and on_exit_0 are optional so do not NULL assert. */
+    ECU_RUNTIME_ASSERT( (me), HSM_ASSERT_FUNCTOR );
+
+    ecu_tree_node_ctor(&me->state.node, (void (*)(struct ecu_tree_node *))0, ECU_OBJECT_ID_UNUSED);
+    me->state.on_entry  = on_entry_0;
+    me->state.on_exit   = on_exit_0;
+    me->state.handler   = &TOP_STATE_HANDLER;
+}
+
+
 void ecu_hsm_state_ctor(struct ecu_hsm_state *me,
-						const struct ecu_hsm *hsm_0,
                         ecu_hsm_on_entry_handler on_entry_0,
                         ecu_hsm_on_exit_handler on_exit_0,
                         ecu_hsm_state_handler handler_0)
 {
-    /* on_entry_0 and on_exit_0 optional so do not NULL assert. */
-    ECU_RUNTIME_ASSERT( (me && hsm_0 && handler_0), HSM_ASSERT_FUNCTOR );
-	ECU_RUNTIME_ASSERT( (me != &hsm_0->top), HSM_ASSERT_FUNCTOR );
+    /* on_entry_0 and on_exit_0 are optional so do not NULL assert. */
+    ECU_RUNTIME_ASSERT( (me && handler_0), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (!is_top_state(me)), HSM_ASSERT_FUNCTOR );
 
-	ecu_tree_node_ctor(&me->node, (void (*)(struct ecu_tree_node *))0, ECU_OBJECT_ID_UNUSED);
-	me->hsm			= hsm_0;
+    ecu_tree_node_ctor(&me->node, (void (*)(struct ecu_tree_node *))0, ECU_OBJECT_ID_UNUSED);
     me->on_entry    = on_entry_0;
     me->on_exit     = on_exit_0;
     me->handler     = handler_0;
 }
 
 
-// super_state must be in hsm tree.
-// pass in &ecu_hsm.top for top state or call ecu_hsm_add_to_top_state()
-// me != super_state.
-// me != top state
-// me and super_state must belong to same hsm.
-// if your state has substates those will also be moved over (moving over entire subtree).
-void ecu_hsm_add_to_super_state(struct ecu_hsm_state *me, 
-								struct ecu_hsm_state *super_state)
+void ecu_hsm_add_state_to_top_state(struct ecu_hsm_state *me,
+                                    struct ecu_hsm_top_state *top_state)
 {
-	/* Note how it is valid for super_state to be equal to &ecu_hsm.top */
-	ECU_RUNTIME_ASSERT( ((me) && (super_state) && (me != super_state)), HSM_ASSERT_FUNCTOR );
-	ECU_RUNTIME_ASSERT( ((me->hsm) && (super_state->hsm) && (me->hsm == super_state->hsm)), HSM_ASSERT_FUNCTOR );
-	ECU_RUNTIME_ASSERT( (me != &me->hsm->top), HSM_ASSERT_FUNCTOR );
-	ECU_RUNTIME_ASSERT( ((me->handler) && (super_state->handler)), HSM_ASSERT_FUNCTOR );
+    /* These functions NULL assert. */
+    ECU_RUNTIME_ASSERT( ((state_valid(me)) && (top_state_valid(top_state))), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me != &top_state->state), HSM_ASSERT_FUNCTOR );
 
-	// super state and me must belong to same hsm. can do direct pointer comparison
-
-	ecu_tree_add_child_push_back(&super_state->node, &me->node);
+    ecu_tree_add_child_push_back(&top_state->state.node, &me->node);
 }
 
 
-void ecu_hsm_add_to_top_state(struct ecu_hsm_state *me, struct ecu_hsm *top_state)
+void ecu_hsm_add_state_to_super_state(struct ecu_hsm_state *me,
+                                      struct ecu_hsm_state *super_state)
 {
+    /* These functions NULL assert. */
+    ECU_RUNTIME_ASSERT( ((state_valid(me)) && (state_valid(super_state))), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me != super_state), HSM_ASSERT_FUNCTOR );
 
+    ecu_tree_add_child_push_back(&super_state->node, &me->node);
 }
 
 
-// start_state != &me->top
-// start_state must be in hsm state tree.
 void ecu_hsm_begin(struct ecu_hsm *me,
                    const struct ecu_hsm_state *start_state)
 {
+    #warning "TODO"
+}
 
+
+void ecu_hsm_dispatch(struct ecu_hsm *me,
+                      const struct ecu_event *event)
+{
+    #warning "TODO: Still deciding on if I should have a hsm->temp_state varaible. This decreases variables \
+    in this function and allows us to assert me->current_state != me->temp_state for exit_state() and enter_state() functions."
+    enum ecu_hsm_status status                  = ECU_HSM_EVENT_IGNORED;
+    const struct ecu_hsm_state *exit_trace      = (const struct ecu_hsm_state *)0;
+    const struct ecu_hsm_state *entry_trace     = (const struct ecu_hsm_state *)0;
+    const struct ecu_hsm_state *parent_trace    = (const struct ecu_hsm_state *)0;
+    const struct ecu_hsm_state *lca             = (const struct ecu_hsm_state *)0;
+
+    ECU_RUNTIME_ASSERT( (me && event), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me->top_state) && (me->current_state) && (me->temp_state) && \
+                         (event->id >= ECU_VALID_EVENT_ID_BEGIN)), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me->current_state->handler), HSM_ASSERT_FUNCTOR );
+
+    /* Dispatch event to state. */
+    parent_trace    = me->current_state;
+    status          = (*me->current_state->handler)(me, event);
+
+    /* Top state handler always returns ECU_HSM_EVENT_IGNORED. */
+    while (status == ECU_HSM_EVENT_TO_SUPER_STATE)
+    {
+        /* Hsm state tree is set up improperly if the parent state is equal to itself. */
+        ECU_RUNTIME_ASSERT( (&parent_trace->node != parent_trace->node.parent), HSM_ASSERT_FUNCTOR );
+        parent_trace = get_parent_state(parent_trace);
+        ECU_RUNTIME_ASSERT( (parent_trace), HSM_ASSERT_FUNCTOR );
+        ECU_RUNTIME_ASSERT( (parent_trace->handler), HSM_ASSERT_FUNCTOR );
+        status = (*parent_trace->handler)(me, event);
+    }
+    
+    /* State transition taken. Figure out path. See file description for more details on this algorithm. */
+    // if (status == ECU_HSM_LOCAL_STATE_TRANSITION || ECU_HSM_EXTERNAL_STATE_TRANSITION)
+    if (me->current_state != me->temp_state)
+    {
+        ECU_RUNTIME_ASSERT( (is_state_transition_status(status)), HSM_ASSERT_FUNCTOR );
+        /* lca and entry_trace not asserted since convert_node_to_state() NULL asserts its function argument. */
+        // exit_trace          = start_state;
+        // parent_trace        = start_state;
+        // lca, entry_trace    = convert_node_to_state(ecu_tree_get_lca(&start_state->node, &me->current_state->node));
+        exit_trace          = me->current_state;
+        entry_trace, lca    = convert_node_to_state(ecu_tree_get_lca(&me->current_state->node, &me->temp_state->node));
+
+        /* Exit trace. See file description for more details. */
+        while (exit_trace != lca)
+        {
+            hsm_exit_state(me, exit_trace);
+            ECU_RUNTIME_ASSERT( (&exit_trace->node != exit_trace->node.parent), HSM_ASSERT_FUNCTOR );
+            exit_trace = get_parent_state(exit_trace);
+            ECU_RUNTIME_ASSERT( (exit_trace), HSM_ASSERT_FUNCTOR );
+        }
+
+        /* External transition only appropriate for composite states. LCA will be one of these two states. */
+        // if ((status == ECU_HSM_EXTERNAL_STATE_TRANSITION) && \
+        //     (are_composite_states(start_state, me->current_state)))
+        if (status == ECU_HSM_EXTERNAL_STATE_TRANSITION)
+        {
+            /* LCA will never be top since this is asserted in change_state() functions. */
+            ECU_RUNTIME_ASSERT( (are_composite_states(me->current_state, me->temp_state)), HSM_ASSERT_FUNCTOR );
+            hsm_exit_state(me, lca);
+            hsm_enter_state(me, lca);
+        }
+        
+        /* Entry trace. See file description for more details. */
+        // while (entry_trace != me->current_state)
+        while (entry_trace != me->temp_state)
+        {
+            parent_trace = me->temp_state;
+            while (parent_trace->node.parent != &entry_trace->node)
+            {
+                parent_trace = get_parent_state(parent_trace);
+            }
+
+            entry_trace = parent_trace;
+            hsm_enter_state(me, entry_trace);
+        }
+        me->current_state = me->temp_state;
+    }
 }
 
 
@@ -148,56 +337,35 @@ void ecu_hsm_begin(struct ecu_hsm *me,
 enum ecu_hsm_status ecu_hsm_change_state(struct ecu_hsm *me,
                                          const struct ecu_hsm_state *new_state)
 {
-    ECU_RUNTIME_ASSERT( (me && new_state), HSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (new_state->handler), HSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (new_state != &me->top), HSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (ecu_tree_nodes_in_same_tree(&me->top.node, &new_state->node)), HSM_ASSERT_FUNCTOR ); // TODO may be disqualifying const specifier since this function takes in nonconst.
+    /* NULL assertions done in functions. */
+    ECU_RUNTIME_ASSERT( ((hsm_valid(me)) && (state_valid(new_state))), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (new_state != me->top_state), HSM_ASSERT_FUNCTOR );
+    // TODO may be disqualifying const specifier since this function takes in nonconst.
+    ECU_RUNTIME_ASSERT( (ecu_tree_nodes_in_same_tree(&me->top_state->state.node, &new_state->node)), 
+                        HSM_ASSERT_FUNCTOR );
 
-    me->state = new_state;
+    me->temp_state = new_state;
     return ECU_HSM_STATE_TRANSITION;
 }
 
 
-void ecu_hsm_dispatch(struct ecu_hsm *me,
-                      const struct ecu_event *event)
+enum ecu_hsm_status ecu_hsm_change_state_external(struct ecu_hsm *me,
+                                                  const struct ecu_hsm_state *new_state)
 {
-    enum ecu_hsm_status status = ECU_HSM_EVENT_HANDLED;
-    const struct ecu_hsm_state *start_state = (const struct ecu_hsm_state *)0;
-	const struct ecu_hsm_state *current_state = (const struct ecu_hsm_state *)0;
-	const struct ecu_tree_node *super_state = (const struct ecu_tree_node *)0;
+    /* NULL assertions done in functions. */
+    ECU_RUNTIME_ASSERT( ((hsm_valid(me)) && (state_valid(new_state))), HSM_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (new_state != me->top_state), HSM_ASSERT_FUNCTOR );
+    // TODO may be disqualifying const specifier since this function takes in nonconst.
+    
+    ECU_RUNTIME_ASSERT( (ecu_tree_nodes_in_same_tree(&me->top_state->state.node, &new_state->node)), 
+                        HSM_ASSERT_FUNCTOR );
 
-    ECU_RUNTIME_ASSERT( (me && event), HSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (me->state->handler), HSM_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (event->id >= ECU_VALID_EVENT_ID_BEGIN), HSM_ASSERT_FUNCTOR );
-
-    // /*
-    // 1. dispatch event to state.
-    // 2. while (status != ECU_HSM_EVENT_TO_SUPER_STATE) {dispatch event to super state}
-    // 3. if (status == ECU_HSM_STATE_TRANSITION)
-    // {
-
-    // }  
-    // */
-	start_state = me->state;
-	current_state = me->state;
-	status = (*me->state->handler)(me, event);
-
-	while ((status == ECU_HSM_EVENT_TO_SUPER_STATE) && \
-		   (current_state != &me->top))
-	{
-		ECU_RUNTIME_ASSERT( (me->state->node.parent), HSM_ASSERT_FUNCTOR );
-
-		
-
-		current_state = ECU_TREE_NODE_GET_ENTRY(state_tree_node, struct ecu_hsm_state, node);
-		status = (*current_state->handler)(me, event);
-	}
+    me->temp_state = new_state;
+    return ECU_HSM_STATE_TRANSITION;
 }
 
 
-
-
-void ecu_fsm_set_assert_functor(struct ecu_assert_functor *functor)
+void ecu_hsm_set_assert_functor(struct ecu_assert_functor *functor)
 {
     /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
     HSM_ASSERT_FUNCTOR = functor;

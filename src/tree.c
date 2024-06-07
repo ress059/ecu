@@ -388,15 +388,7 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
 bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
                                  struct ecu_tree_node *node2)
 {
-    bool status = false;
-    struct ecu_tree_node *lca = ecu_tree_get_lca(node1, node2);
-
-    if (lca)
-    {
-        status = true;
-    }
-    
-    return status;
+    return (ecu_tree_get_lca(node1, node2) != (struct ecu_tree_node *)0);
 }
 
 

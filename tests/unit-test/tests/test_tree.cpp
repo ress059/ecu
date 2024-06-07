@@ -2049,7 +2049,7 @@ TEST(AddRemoveNode, RemoveRoot)
 /**
  * @brief Verify level of all nodes in tree is correct.
  */
-TEST(GetLevelAndLCA, NodesInDegenerateTree)
+TEST(GetLevelAndLCA, LevelNodesInDegenerateTree)
 {
     /* Test tree:
 
@@ -2084,7 +2084,7 @@ TEST(GetLevelAndLCA, NodesInDegenerateTree)
 }
 
 
-TEST(GetLevelAndLCA, NodesInGenericTree)
+TEST(GetLevelAndLCA, LevelNodesInGenericTree)
 {
     /* Test tree:
 
@@ -2131,7 +2131,7 @@ TEST(GetLevelAndLCA, NodesInGenericTree)
 }
 
 
-TEST(GetLevelAndLCA, AddAndRemoveSubTreesInTree)
+TEST(GetLevelAndLCA, LevelAddAndRemoveSubTreesInTree)
 {
     /* Test trees before addition. Add root2 to node1.
 
@@ -2217,8 +2217,9 @@ TEST(GetLevelAndLCA, AddAndRemoveSubTreesInTree)
  * 2. One node is the root of the tree. LCA should be the root.
  * 3. One node is the parent of another node. LCA should be the parent.
  * 4. One node is the grandparent of another node. LCA should be the grandparent.
+ * 5. Test associativity for all cases. I.e. lca(a, b) == lca(b, a)
  */
-TEST(GetLevelAndLCA, GenericTreeMultipleTestCases)
+TEST(GetLevelAndLCA, LCAGenericTreeMultipleTestCases)
 {
     /* Test tree:
 
@@ -2252,11 +2253,22 @@ TEST(GetLevelAndLCA, GenericTreeMultipleTestCases)
 
         /* Steps 2 and 3: Action and assert. */
         POINTERS_EQUAL(&node1_, ecu_tree_get_lca(&node4_, &node12_));
+        POINTERS_EQUAL(&node1_, ecu_tree_get_lca(&node12_, &node4_));
+
         POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node8_, &node10_));
+        POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node10_, &node8_));
+
         POINTERS_EQUAL(&root1_, ecu_tree_get_lca(&node3_, &node11_));
+        POINTERS_EQUAL(&root1_, ecu_tree_get_lca(&node11_, &node3_));
+
         POINTERS_EQUAL(&root1_, ecu_tree_get_lca(&root1_, &node12_));   /* One node is root. LCA should be root. */
+        POINTERS_EQUAL(&root1_, ecu_tree_get_lca(&node12_, &root1_));   /* One node is root. LCA should be root. */
+
         POINTERS_EQUAL(&node9_, ecu_tree_get_lca(&node9_, &node12_));   /* node9 is parent of node12. LCA should be node9 (the parent). */
+        POINTERS_EQUAL(&node9_, ecu_tree_get_lca(&node12_, &node9_));   /* node9 is parent of node12. LCA should be node9 (the parent). */
+
         POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node5_, &node12_));   /* node5 is grandparent of node12. LCA should be node5 (the grandparent). */
+        POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node12_, &node5_));   /* node5 is grandparent of node12. LCA should be node5 (the grandparent). */
     }
     catch (AssertException& e)
     {
@@ -2269,7 +2281,7 @@ TEST(GetLevelAndLCA, GenericTreeMultipleTestCases)
 /**
  * @brief LCA is the node itself.
  */
-TEST(GetLevelAndLCA, TwoNodesThatAreTheSame)
+TEST(GetLevelAndLCA, LCATwoNodesThatAreTheSame)
 {
     try
     {
@@ -2292,7 +2304,7 @@ TEST(GetLevelAndLCA, TwoNodesThatAreTheSame)
  * in the two different tree roots to verify null is
  * also returned.
  */
-TEST(GetLevelAndLCA, TwoNodesInDifferentTrees)
+TEST(GetLevelAndLCA, LCATwoNodesInDifferentTrees)
 {
     try
     {
@@ -2305,6 +2317,45 @@ TEST(GetLevelAndLCA, TwoNodesInDifferentTrees)
         /* Steps 2 and 3: Action and assert. */
         POINTERS_EQUAL((struct ecu_tree_node *)0, ecu_tree_get_lca(&node1_, &node2_));
         POINTERS_EQUAL((struct ecu_tree_node *)0, ecu_tree_get_lca(&root1_, &root2_));
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
+
+/**
+ * @brief This function calls LCA functions so included here.
+ */
+TEST(GetLevelAndLCA, TestNodesInSameTreeFunction)
+{
+    /* Test trees:
+
+        root1                   root2
+        |                       |
+        node1---node2           node3
+
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root2_, &node3_);
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE(ecu_tree_nodes_in_same_tree(&root1_, &root1_)); /* Same parameter edge case. */
+        CHECK_TRUE(ecu_tree_nodes_in_same_tree(&root1_, &node1_));
+        CHECK_TRUE(ecu_tree_nodes_in_same_tree(&node1_, &node2_));
+        CHECK_TRUE(ecu_tree_nodes_in_same_tree(&root2_, &node3_));
+        CHECK_TRUE(ecu_tree_nodes_in_same_tree(&node3_, &node3_)); /* Same parameter edge case. */
+
+        CHECK_FALSE(ecu_tree_nodes_in_same_tree(&root1_, &root2_));
+        CHECK_FALSE(ecu_tree_nodes_in_same_tree(&node3_, &node1_));
     }
     catch (AssertException& e)
     {
