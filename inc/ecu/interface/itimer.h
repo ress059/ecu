@@ -80,7 +80,8 @@ extern "C" {
  * ticks. This function is mandatory and cannot be NULL. See @ref timer.h 
  * description for an example.
  */
-extern void i_ecu_timer_ctor(struct i_ecu_timer *me, size_t tick_width_bytes_0,
+extern void i_ecu_timer_ctor(struct i_ecu_timer *me, 
+                             size_t tick_width_bytes_0,
                              ecu_max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me));
 
 

@@ -420,7 +420,8 @@ extern void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
  * @param event User-defined event to dispatch. This cannot be NULL.
  * @ref ecu_event.id must be greater than or equal to @ref ECU_VALID_EVENT_ID_BEGIN.
  */
-extern void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event);
+extern void ecu_fsm_dispatch(struct ecu_fsm *me, 
+                             const struct ecu_event *event);
 /**@}*/
 
 

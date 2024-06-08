@@ -142,7 +142,7 @@ struct ecu_circular_dll
 {
     /**
      * @private
-     * @brief PRIVATE. Dummy node used as delimeter to represent
+     * @brief PRIVATE. Dummy node used as delimiter to represent
      * start and end of list. Not apart of user's list.
      */
     struct ecu_circular_dll_node head;
@@ -157,7 +157,7 @@ struct ecu_circular_dll_iterator
     /**
      * @private
      * @brief PRIVATE. List that is being iterated. The node
-     * in this member is used as the delimeter.
+     * in this member is used as the delimiter.
      */
     struct ecu_circular_dll *list;
 
@@ -321,7 +321,7 @@ extern struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_
 
 /**
  * @pre @p me previously initialized via call to @ref ecu_circular_dll_iterator_begin()
- * @brief Returns terminal node in the list which is a dummy delimeter that 
+ * @brief Returns terminal node in the list which is a dummy delimiter that 
  * represents HEAD and TAIL of the list. Returned node should never be used 
  * directly.
  * 

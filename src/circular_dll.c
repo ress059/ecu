@@ -60,7 +60,7 @@ static bool node_in_list(const struct ecu_circular_dll_node *node);
 /**
  * @brief Callback assigned to @ref ecu_circular_dll.head.destroy in 
  * @ref ecu_circular_dll_ctor(). This head node is solely used 
- * as a dummy delimeter that should never be destroyed. Therefore we
+ * as a dummy delimiter that should never be destroyed. Therefore we
  * simply assert if this callback runs.
  */
 static void list_head_destroy_callback(struct ecu_circular_dll_node *me);

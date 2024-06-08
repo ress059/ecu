@@ -34,7 +34,8 @@ static struct ecu_assert_functor *ITIMER_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 /*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-void i_ecu_timer_ctor(struct i_ecu_timer *me, size_t tick_width_bytes_0,
+void i_ecu_timer_ctor(struct i_ecu_timer *me, 
+                      size_t tick_width_bytes_0,
                       ecu_max_tick_size_t (*get_ticks_0)(struct i_ecu_timer *me))
 {
     ECU_RUNTIME_ASSERT( (me && get_ticks_0), ITIMER_ASSERT_FUNCTOR );

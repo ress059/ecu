@@ -33,7 +33,7 @@
 
 static struct ecu_assert_functor *TREE_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
-// static const struct ecu_tree_node ROOT_DELIMETER = {0}; // used to differentiate tree root from tree node.
+// static const struct ecu_tree_node ROOT_DELIMITER = {0}; // used to differentiate tree root from tree node.
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -60,7 +60,7 @@ static bool node_valid(const struct ecu_tree_node *node);
 //     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
 //     ECU_RUNTIME_ASSERT( (node->parent), TREE_ASSERT_FUNCTOR );
 
-//     while ((root->parent != root) || (root->parent != &ROOT_DELIMETER))
+//     while ((root->parent != root) || (root->parent != &ROOT_DELIMITER))
 //     {
 //         root = root->parent;
 //         ECU_RUNTIME_ASSERT( (root), TREE_ASSERT_FUNCTOR );
@@ -88,7 +88,7 @@ static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node)
 // static bool node_is_tree_root(const struct ecu_tree_node *node)
 // {
 //     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
-//     return (node->parent == &ROOT_DELIMETER);
+//     return (node->parent == &ROOT_DELIMITER);
 
 //     // if ((node->parent == node) && \
 //     //     (node->next == node) && \
@@ -166,7 +166,7 @@ static bool node_valid(const struct ecu_tree_node *node)
 //                         TREE_ASSERT_FUNCTOR );
 
 //     me->root.child      = &me->root;
-//     me->root.parent     = &ROOT_DELIMETER; /* Used to differentiate root from normal tree node. */
+//     me->root.parent     = &ROOT_DELIMITER; /* Used to differentiate root from normal tree node. */
 //     me->root.next       = &me->root;
 //     me->root.prev       = &me->root;
 //     me->root.destroy    = destroy_0;
@@ -175,7 +175,7 @@ static bool node_valid(const struct ecu_tree_node *node)
 
 //     // make destroy function take in struct ecu_tree_node *me instead?
 //     // ecu_tree_node_ctor(me, destroy_0, id_0);
-//     // me->parent = &ROOT_DELIMETER;
+//     // me->parent = &ROOT_DELIMITER;
 // }
 
 

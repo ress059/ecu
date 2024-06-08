@@ -37,16 +37,16 @@
  */
 struct user_tree_node_type
 {
-	user_tree_node_type() : a_(0), b_(0), c_(0), d_(0)
-	{
-		ecu_tree_node_ctor(&node_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
-	}
+    user_tree_node_type() : a_(0), b_(0), c_(0), d_(0)
+    {
+        ecu_tree_node_ctor(&node_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
+    }
 
     uint8_t a_;
-	uint64_t b_;
+    uint64_t b_;
     struct ecu_tree_node node_;
-	uint16_t c_;
-	uint32_t d_;
+    uint16_t c_;
+    uint32_t d_;
 };
 
 

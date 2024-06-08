@@ -222,7 +222,8 @@ static bool timer_collection_valid(const struct ecu_timer_collection *me)
 /*------------------------------------------------------ PUBLIC FUNCTIONS --------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_timer_ctor(struct ecu_timer *me, void *object_0, 
+void ecu_timer_ctor(struct ecu_timer *me, 
+                    void *object_0, 
                     bool (*callback_0)(void *object))
 {
     ECU_RUNTIME_ASSERT( (me && callback_0), TIMER_ASSERT_FUNCTOR );
@@ -258,8 +259,10 @@ void ecu_timer_collection_destroy(struct ecu_timer_collection *me)
 }
 
 
-void ecu_timer_arm(struct ecu_timer_collection *me, struct ecu_timer *timer, 
-                   bool periodic, ecu_max_tick_size_t timeout_ticks)
+void ecu_timer_arm(struct ecu_timer_collection *me, 
+                   struct ecu_timer *timer, 
+                   bool periodic, 
+                   ecu_max_tick_size_t timeout_ticks)
 {
     ECU_RUNTIME_ASSERT( ((me) && (timer) && (timeout_ticks > 0)), TIMER_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );

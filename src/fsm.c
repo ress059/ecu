@@ -52,7 +52,8 @@ void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
 }
 
 
-void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event)
+void ecu_fsm_dispatch(struct ecu_fsm *me, 
+                      const struct ecu_event *event)
 {
     enum ecu_fsm_status status = ECU_FSM_EVENT_IGNORED;
     const struct ecu_fsm_state *prev_state = (const struct ecu_fsm_state *)0;

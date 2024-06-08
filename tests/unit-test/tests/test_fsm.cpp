@@ -1,7 +1,7 @@
 /**
  * @file
  * @brief Tests for public API functions in @ref fsm.h. This is more of an
- * integration tests than unit test.
+ * integration test than unit test.
  * 
  * @author Ian Ress
  * @version 0.1

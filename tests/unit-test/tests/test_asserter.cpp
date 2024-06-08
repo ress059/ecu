@@ -30,7 +30,7 @@
 
 /**
  * @brief Returns the base file name from the supplied string.
- * Uses '/' and '\' as delimeters.
+ * Uses '/' and '\' as delimiters.
  */
 static std::string extract_base_file_name(const char *path);
 
@@ -62,9 +62,8 @@ struct AssertMockNoParams : public ecu_assert_functor
         (void)file;
         (void)line;
 
-        mock()
-            .actualCall("AssertMockNoParams::assert_handler")
-            .onObject(me);
+        mock().actualCall("AssertMockNoParams::assert_handler")
+              .onObject(me);
     }
 };
 
@@ -92,10 +91,9 @@ struct AssertMockWithParams : public ecu_assert_functor
             base_file_name = std::string("ERROR: NULL FILE SUPPLIED");
         }
 
-        mock()
-            .actualCall("AssertMockWithParams::assert_handler")
-            .onObject(me)
-            .withParameter("file", base_file_name.c_str());
+        mock().actualCall("AssertMockWithParams::assert_handler")
+              .onObject(me)
+              .withParameter("file", base_file_name.c_str());
     }
 };
 
@@ -136,9 +134,8 @@ TEST_GROUP(AssertFunctors)
 TEST(AssertFunctors, OnlyMockHandler1Called)
 {
     /* Step 1: Arrange. */
-    mock()
-        .expectOneCall("AssertMockNoParams::assert_handler")
-        .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_1_));
+    mock().expectOneCall("AssertMockNoParams::assert_handler")
+          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_1_));
 
     /* Steps 2 and 3: Action and assert. */
     ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_no_params_1_) );
@@ -148,9 +145,8 @@ TEST(AssertFunctors, OnlyMockHandler1Called)
 TEST(AssertFunctors, OnlyMockHandler2Called)
 {
     /* Step 1: Arrange. */
-    mock()
-        .expectOneCall("AssertMockNoParams::assert_handler")
-        .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_2_));
+    mock().expectOneCall("AssertMockNoParams::assert_handler")
+          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_2_));
 
     /* Steps 2 and 3: Action and assert. */
     ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_no_params_2_) );
@@ -160,15 +156,13 @@ TEST(AssertFunctors, OnlyMockHandler2Called)
 TEST(AssertFunctors, CorrectFileName)
 {
     /* Step 1: Arrange. */
-    mock()
-        .expectOneCall("AssertMockWithParams::assert_handler")
-        .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_1_))
-        .withParameter("file", "test_asserter.cpp");
+    mock().expectOneCall("AssertMockWithParams::assert_handler")
+          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_1_))
+          .withParameter("file", "test_asserter.cpp");
 
-    mock()
-        .expectOneCall("AssertMockWithParams::assert_handler")
-        .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_2_))
-        .withParameter("file", "test_asserter.cpp");
+    mock().expectOneCall("AssertMockWithParams::assert_handler")
+          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_2_))
+          .withParameter("file", "test_asserter.cpp");
 
     /* Steps 2 and 3: Action and assert. */
     ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_with_params_1_) );

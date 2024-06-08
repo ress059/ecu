@@ -320,7 +320,8 @@ extern "C" {
  * @ref ecu_timer_collection_tick(). An example case where you could return false would 
  * be you tried to post to a queue but it was full.
  */
-extern void ecu_timer_ctor(struct ecu_timer *me, void *object_0, 
+extern void ecu_timer_ctor(struct ecu_timer *me, 
+                           void *object_0, 
                            bool (*callback_0)(void *object));
 
 
@@ -369,8 +370,10 @@ extern void ecu_timer_collection_destroy(struct ecu_timer_collection *me);
  * This cannot be 0. Application is responsible for converting ticks to appropriate
  * units of time since this is a property of the user's hardware.
  */
-extern void ecu_timer_arm(struct ecu_timer_collection *me, struct ecu_timer *timer, 
-                          bool periodic, ecu_max_tick_size_t timeout_ticks);
+extern void ecu_timer_arm(struct ecu_timer_collection *me, 
+                          struct ecu_timer *timer, 
+                          bool periodic, 
+                          ecu_max_tick_size_t timeout_ticks);
 
 
 /**

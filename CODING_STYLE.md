@@ -57,6 +57,16 @@ allowed are @warning and @code
  */
 ```
 
+# Formatting
+1. All public function declaration parameters separated out by new line. Note this rule does not apply
+for any code calling a pubilc function.
+```C
+void public_foo(int a, int b); /* Incorrect */
+
+void public_foo(int a,
+                int b); /* Correct */
+```
+
 
 # Other
 1. Same typedef rules as linux kernel. Essentially no typedefs unless absolutely necessary.

@@ -124,7 +124,7 @@ struct ecu_tree_child_iterator
 {
     /**
      * @private
-     * @brief PRIVATE. The delimeter node which is the parent
+     * @brief PRIVATE. The delimiter node which is the parent
      * node fed into @ref ecu_tree_child_iterator_begin(). Allows
      * iteration over all children using standard for/while loops.
      */
@@ -177,7 +177,7 @@ struct ecu_tree_postorder_iterator
 
     /**
      * @private
-     * @brief PRIVATE. Dummy delimeter node that is not apart of the
+     * @brief PRIVATE. Dummy delimiter node that is not apart of the
      * user's tree. Allows iteration over entire tree using standard
      * for/while loops.
      */
@@ -331,7 +331,7 @@ extern bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
 /**
  * @name Non-const Children Iterator
  * Iterate over a parent node's children. This parent node is used as 
- * a delimeter. It is safe to remove nodes in the middle of an iteration.
+ * a delimiter. It is safe to remove nodes in the middle of an iteration.
  * Iteration does not include further down levels (grandchildren, etc).
  * Example use:
  * @code {.c}
@@ -355,12 +355,12 @@ extern bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
  * @pre @p parent previously constructed via call to @ref ecu_tree_node_ctor().
  * @brief Start the iteration. Initializes iterator and returns the first 
  * child in the iteration. If the parent has no children this returns the 
- * parent node since it is used as a delimeter. It is safe to remove nodes 
+ * parent node since it is used as a delimiter. It is safe to remove nodes 
  * in the middle of an iteration.
  * 
  * @param me Iterator object to initialize.
  * @param parent Iterate over this node's children. This parent node is also used
- * as a delimeter for the iteration.
+ * as a delimiter for the iteration.
  */
 extern struct ecu_tree_node *ecu_tree_child_iterator_begin(struct ecu_tree_child_iterator *me,
                                                            struct ecu_tree_node *parent);
