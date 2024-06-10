@@ -23,7 +23,7 @@
  * \n 
  * 
  * This is all facilitated by the @ref ecu_fsm_dispatch() function. Users
- * indicate a state change by calling @ref ecu_fsm_change_state() within their
+ * indicate a state change by calling @ref ecu_fsm_transition_to_state() within their
  * state handlers. Consecutive state transitions and self-state transitions are
  * also allowed:
  * @image html consecutive-state-transitions.png "FSM Consecutive State Transitions"
@@ -31,10 +31,10 @@
  * @image html self-state-transition.png "FSM Self State Transition"
  * \n 
  * 
- * Consecutive state transitions are accomplished by calling @ref ecu_fsm_change_state()
+ * Consecutive state transitions are accomplished by calling @ref ecu_fsm_transition_to_state()
  * within a state's entry handler. Self-state transitions are accomplished by
- * passing your current state into @ref ecu_fsm_change_state(). For example
- * if you are in State 1 then ecu_fsm_change_state(&fsm, &state1) would cause
+ * passing your current state into @ref ecu_fsm_transition_to_state(). For example
+ * if you are in State 1 then ecu_fsm_transition_to_state(&fsm, &state1) would cause
  * a self-transition. <b>IMPORTANT: Do not do a self-transition within your entry 
  * handler. You can see that this will cause an infinite transition loop.</b>
  * 
@@ -144,7 +144,7 @@
  *         {
  *             // Transition from State 1 to State 2 on button press.
  *             // IMPORTANT: Ensure 'status' variable is updated from this function call.
- *             status = ecu_fsm_change_state((struct ecu_fsm *)me, &state2);
+ *             status = ecu_fsm_transition_to_state((struct ecu_fsm *)me, &state2);
  *             break;
  *         }
  * 
@@ -173,7 +173,7 @@
  * static enum ecu_fsm_status STATE_1_ON_ENTRY(struct user_fsm *me)
  * {
  *     // Turn State 1 LED on when state is entered. Return status to
- *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_change_state()
+ *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_transition_to_state()
  *     // within entry events as well for consecutive state transitions.
  *     me->state1_led = true;
  *     return ECU_FSM_EVENT_HANDLED;
@@ -199,7 +199,7 @@
  *         {
  *             // Transition from State 2 to State 1 on button press.
  *             // IMPORTANT: Ensure 'status' variable is updated from this function call.
- *             status = ecu_fsm_change_state((struct ecu_fsm *)me, &state1);
+ *             status = ecu_fsm_transition_to_state((struct ecu_fsm *)me, &state1);
  *             break;
  *         }
  * 
@@ -228,7 +228,7 @@
  * static enum ecu_fsm_status STATE_2_ON_ENTRY(struct user_fsm *me)
  * {
  *     // Turn State 2 LED on when state is entered. Return status to
- *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_change_state()
+ *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_transition_to_state()
  *     // within entry events as well for consecutive state transitions.
  *     me->state2_led = true;
  *     return ECU_FSM_EVENT_HANDLED;
@@ -283,7 +283,7 @@ struct ecu_fsm;
  */
 enum ecu_fsm_status
 {
-    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event caused a state transition. Never return directly. Only return via call to ecu_fsm_change_state() */
+    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event caused a state transition. Never return directly. Only return via call to ecu_fsm_transition_to_state() */
     ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
     ECU_FSM_EVENT_IGNORED      /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
 };
@@ -411,7 +411,7 @@ extern void ecu_fsm_state_ctor(struct ecu_fsm_state *me,
 /**
  * @pre @p me previously constructed via call to @ref ecu_fsm_ctor().
  * @brief Dispatch event to fsm. Handles state transitions signaled 
- * by @ref ecu_fsm_change_state() calls by updating the fsm's state,
+ * by @ref ecu_fsm_transition_to_state() calls by updating the fsm's state,
  * executing the proper exit handlers ( @ref ecu_fsm_state.on_exit ), 
  * and executing the proper entry handlers ( @ref ecu_fsm_state.on_entry ).
  * See @ref fsm.h for more details.
@@ -447,8 +447,8 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *me,
  * @return PRIVATE. Used internally by @ref ecu_fsm_dispatch() to determine 
  * proper fsm state transitions and behavior.
  */
-extern enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *me, 
-                                                const struct ecu_fsm_state *state);
+extern enum ecu_fsm_status ecu_fsm_transition_to_state(struct ecu_fsm *me, 
+                                                       const struct ecu_fsm_state *state);
 /**@}*/
 
 

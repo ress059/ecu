@@ -108,7 +108,7 @@ static enum ecu_fsm_status INIT_STATE(struct app_fsm *fsm, const struct app_even
             if(fsm->counter > 10)
             {
                 /* Self-state transition. */
-                status = ecu_fsm_change_state((struct ecu_fsm *)&app_fsm, &app_fsm_state);
+                status = ecu_fsm_transition_to_state((struct ecu_fsm *)&app_fsm, &app_fsm_state);
             }
             break;
         }

@@ -183,15 +183,15 @@ public:
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
         }
 
         return status;
@@ -211,15 +211,15 @@ public:
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
         }
 
         return status;
@@ -249,15 +249,15 @@ public:
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
         }
     }
 
@@ -272,15 +272,15 @@ public:
     {
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
         {
-            (void)ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+            (void)ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
         }
     }
 };
@@ -321,15 +321,15 @@ public:
 
         if constexpr(NEWSTATE == StateIDs::TO_STATE1)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE1_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE2)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE2_);
         }
         else if constexpr(NEWSTATE == StateIDs::TO_STATE3)
         {
-            status = ecu_fsm_change_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
+            status = ecu_fsm_transition_to_state(static_cast<struct ecu_fsm *>(me), &me->STATE3_);
         }
 
         return status;

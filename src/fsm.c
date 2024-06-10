@@ -94,8 +94,8 @@ void ecu_fsm_dispatch(struct ecu_fsm *me,
 }
 
 
-enum ecu_fsm_status ecu_fsm_change_state(struct ecu_fsm *me, 
-                                         const struct ecu_fsm_state *state)
+enum ecu_fsm_status ecu_fsm_transition_to_state(struct ecu_fsm *me, 
+                                                const struct ecu_fsm_state *state)
 {
     ECU_RUNTIME_ASSERT( (me && state), FSM_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (state->handler), FSM_ASSERT_FUNCTOR );

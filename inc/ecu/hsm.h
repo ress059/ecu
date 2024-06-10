@@ -29,7 +29,6 @@
 
 
 
-
 /* Forward declaration for state function typedefs. */
 struct ecu_hsm;
 
@@ -38,8 +37,8 @@ enum ecu_hsm_status
     ECU_HSM_EVENT_HANDLED,
     ECU_HSM_EVENT_IGNORED,
     ECU_HSM_EVENT_TO_SUPER_STATE,
-    ECU_HSM_STATE_TRANSITION,
-    ECU_HSM_EXTERNAL_STATE_TRANSITION
+    ECU_HSM_STATE_TRANSITION, // normal state transition that can be used in all scenarios. entry and exit condition of lca will NOT be run.
+    ECU_HSM_INTRA_STATE_TRANSITION // state transition between two composite states. entry and exit condition of lca (outermost composite state) will run.
 };
 
 
@@ -95,7 +94,7 @@ extern void ecu_hsm_top_state_ctor(struct ecu_hsm_top_state *me,
 
 // 1. Not adding super_state here since that would make the constructor order now matter. Higher level nodes (states)
 // would have to be constructed before lower level states since ecu_tree_node_ctor() must be called to add nodes to tree.
-// 2. undefined behavior if me == &ecu_hsm.top
+// 2. undefined behavior if you pass in a top state. I.e. &ecu_hsm_top_state.state
 extern void ecu_hsm_state_ctor(struct ecu_hsm_state *me,
                                ecu_hsm_on_entry_handler on_entry_0,
                                ecu_hsm_on_exit_handler on_exit_0,
@@ -103,11 +102,13 @@ extern void ecu_hsm_state_ctor(struct ecu_hsm_state *me,
 
 
 // runtime initialization of hsm state tree.
+// requires states to be constructed as precondition.
 extern void ecu_hsm_add_state_to_top_state(struct ecu_hsm_state *me,
                                            struct ecu_hsm_top_state *top_state);
 
 
 // runtime initialization of hsm state tree.
+// requires states to be constructed as precondition.
 extern void ecu_hsm_add_state_to_super_state(struct ecu_hsm_state *me,
                                              struct ecu_hsm_state *super_state);
 
@@ -117,7 +118,7 @@ extern void ecu_hsm_add_state_to_super_state(struct ecu_hsm_state *me,
 extern void ecu_hsm_begin(struct ecu_hsm *me,
                           const struct ecu_hsm_state *start_state);
 
-
+// requires hsm_begin() to have been called.
 extern void ecu_hsm_dispatch(struct ecu_hsm *me,
                              const struct ecu_event *event);
 
@@ -125,14 +126,17 @@ extern void ecu_hsm_dispatch(struct ecu_hsm *me,
 // exit path = from current state to lca (not including lca). entry path = from lca (not including it)
 // to new state.
 // show images of local and standard state transitions.
-extern enum ecu_hsm_status ecu_hsm_change_state(struct ecu_hsm *me,
-                                                const struct ecu_hsm_state *new_state);
+
+// show picture of state A in State B. transition path would be State A entry.
+// if you want State B exit -> State B entry -> State A entry call @ref ecu_hsm_transition_to_intra_state() instead.
+extern enum ecu_hsm_status ecu_hsm_transition_to_state(struct ecu_hsm *me,
+                                                       const struct ecu_hsm_state *new_state);
 
 // same state path of ecu_hsm_change_state() however lca is exited and entered as well.
 // show images of local and standard state transitions.
 // asserts if states arent composites.
-extern enum ecu_hsm_status ecu_hsm_change_state_external(struct ecu_hsm *me,
-                                                         const struct ecu_hsm_state *new_state);
+extern enum ecu_hsm_status ecu_hsm_transition_to_intra_state(struct ecu_hsm *me,
+                                                             const struct ecu_hsm_state *new_state);
 // make function name mention composite/substate and superstate somehow?
 
 
