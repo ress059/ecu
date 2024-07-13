@@ -326,7 +326,8 @@ extern bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------- PUBLIC FUNCTIONS: CHILDREN ITERATOR -------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
-
+#warning "TODO ADD message. It is safe to add nodes in the middle of the iteration but it is undefined whether \
+these nodes will be iterated over. It is only guaranteed that the next iteratio nwill include all nodes."
 #warning "TODO Add image"
 /**
  * @name Non-const Children Iterator
@@ -390,6 +391,8 @@ extern struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_
 /*------------------------------------------------- PUBLIC FUNCTIONS: POSTORDER ITERATOR ------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
+#warning "TODO ADD message. It is safe to add nodes in the middle of the iteration but it is undefined whether \
+these nodes will be iterated over. It is only guaranteed that the next iteratio nwill include all nodes."
 /**
  * @name Non-const Postorder Iterator
  * Iterate over entire tree or any subtree within a tree in postorder

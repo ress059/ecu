@@ -58,6 +58,8 @@ struct user_tree_node_type
 class IteratorTreeNodeMock
 {
 public:
+    IteratorTreeNodeMock() = delete;
+
     /**
      * @brief Used to verify tree node returned by iterator is correct.
      * Mock is used instead of direct comparison to make creation of
@@ -68,9 +70,6 @@ public:
         mock().actualCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", me);
     }
-
-private:
-    IteratorTreeNodeMock() = default;
 };
 
 
@@ -213,11 +212,57 @@ TEST_GROUP(AddRemoveNode)
 };
 
 
-#warning "TODO"
-// TEST_GROUP(Destructor)
-// {
-// 	ecu_tree_node_ctor(&node, &destroy_callback_that_calls_mock, ECU_OBJECT_ID_UNUSED);
-// };
+TEST_GROUP(Destructor)
+{
+    virtual void setup() override 
+    {
+        assert_call_ok_.handler = &AssertCallOk::assert_handler;
+        assert_call_fail_.handler = &AssertCallFail::assert_handler;
+
+        ecu_tree_node_ctor(&root1_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node1_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node2_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node3_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node4_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node5_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node6_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node7_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+        ecu_tree_node_ctor(&node8_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
+    }
+
+    virtual void teardown() override
+    {
+        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
+        mock().checkExpectations();
+        mock().clear();
+    }
+
+    static void destroy_mock(struct ecu_tree_node *me)
+    {
+        mock().actualCall("Destructor::destroy_mock")
+              .withParameter("node", me);
+    }
+
+    static void verify_node(struct ecu_tree_node *me)
+    {
+        mock("RemainingTree").actualCall("Destructor::verify_node")
+                             .withParameter("node", me);
+    }
+
+    AssertCallOk assert_call_ok_;
+    AssertCallFail assert_call_fail_;
+
+    struct ecu_tree_postorder_iterator postorder_iterator_;
+    struct ecu_tree_node root1_;
+    struct ecu_tree_node node1_;
+    struct ecu_tree_node node2_;
+    struct ecu_tree_node node3_;
+    struct ecu_tree_node node4_;
+    struct ecu_tree_node node5_;
+    struct ecu_tree_node node6_;
+    struct ecu_tree_node node7_;
+    struct ecu_tree_node node8_;
+};
 
 
 TEST_GROUP(GetLevelAndLCA)
@@ -602,10 +647,122 @@ TEST(ChildIterator, CanRemoveChildrenInMiddleOfIteration)
 }
 
 
-#warning "TODO:"
-// TEST(ChildIterator, CanAddChildrenInMiddleOfIteration)
-// {
-// }
+/**
+ * @pre Postorder iterator tests are passing. Postorder iterator
+ * is used to verify final tree structure in this test. 
+ * 
+ * @brief Add nodes in middle of the iteration. Verify iterator
+ * is able to complete. It is only guaranteed that all nodes 
+ * will be iterated over at the NEXT iteration. So verify all 
+ * nodes were added at the next iteration. Also verify overall
+ * tree structure at end.
+ */
+TEST(ChildIterator, CanAddNodesInMiddleOfIteration)
+{
+    /* Test tree before addition. When we reach child1 we add child6.
+    When we reach child2 we add child7 and child8. When we reach child3 
+    we add child4 and child5.
+
+                    parent
+                    |
+                    child1------child2------child3
+
+        Test tree after addition. Note we first verify our child iterator
+        goes over only child 1 through child. We then verify the overall
+        tree structure with a postorder iterator.
+
+                    parent
+                    |
+                    child1------child2------child3------child4------child5
+                    |           |
+                    child6      child7
+    */
+    struct ecu_tree_postorder_iterator postorder_iterator;
+
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        mock().strictOrder();
+        /* Child iteration. */
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child1_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child2_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child3_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child4_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child5_);
+
+        /* Verifying tree structure with postorder iterator. */
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child6_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child1_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child7_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child2_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child3_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child4_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &child5_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &parent_);
+
+        ecu_tree_add_child_push_back(&parent_, &child1_);
+        ecu_tree_add_child_push_back(&parent_, &child2_);
+        ecu_tree_add_child_push_back(&parent_, &child3_);
+
+        /* Step 2: Action. Add nodes in middle of iteration. See comment at
+        top of TEST() for where nodes are added in tree. */
+        for (struct ecu_tree_node *i = ecu_tree_child_iterator_begin(&iterator_, &parent_);
+             i != ecu_tree_child_iterator_end(&iterator_);
+             i = ecu_tree_child_iterator_next(&iterator_))
+        {
+            if (i == &child1_)
+            {
+                ecu_tree_add_child_push_back(&child1_, &child6_);
+            }
+            else if (i == &child2_)
+            {
+                ecu_tree_add_child_push_back(&child2_, &child7_);
+            }
+            else if (i == &child3_)
+            {
+                ecu_tree_add_child_push_back(&parent_, &child4_);
+                ecu_tree_add_child_push_back(&parent_, &child5_);
+            }
+        }
+
+        /* Step 3: Assert. Verify newly added nodes are iterated through in next iteration. */
+        for (struct ecu_tree_node *i = ecu_tree_child_iterator_begin(&iterator_, &parent_);
+             i != ecu_tree_child_iterator_end(&iterator_);
+             i = ecu_tree_child_iterator_next(&iterator_))
+        {
+            IteratorTreeNodeMock::verify_node(i);
+        }
+
+        /* Step 3: Assert. Verify tree structure with postorder iterator. This MUST be right
+        after we test the child iteration since mocks are in strict order. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator, &parent_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator))
+        {
+            IteratorTreeNodeMock::verify_node(i);
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
 
@@ -943,10 +1100,95 @@ TEST(PostOrderIterator, CanRemoveNodesInMiddleOfIteration)
 }
 
 
-#warning "TODO:"
-// TEST(PostOrderIterator, CanAddNodesInMiddleOfIteration)
-// {
-// }
+/**
+ * @brief Add nodes in middle of the iteration. Verify iterator
+ * is able to complete. It is only guaranteed that all nodes 
+ * will be iterated over at the NEXT iteration. So verify all 
+ * nodes were added at the next iteration.
+ */
+TEST(PostOrderIterator, CanAddNodesInMiddleOfIteration)
+{
+    /* Test tree before adding nodes. When we reach node1 we add
+    node5 and node6. When we reach node2 we add node7. When we reach
+    node3 we add node4.
+
+                    root1
+                    |
+                    node1---node2---node3
+
+        Test tree after adding nodes
+
+                    root1
+                    |
+                    node1---node2---node3---node4
+                    |       |
+                    node5   node6
+                    |
+                    node7
+
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        mock().strictOrder();
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node7_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node5_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node1_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node6_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node2_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node3_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node4_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &root1_);
+
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+
+        /* Step 2: Action. Add nodes in middle of iteration. See comment at
+        beginning of TEST() for where in the tree these nodes are added. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&iterator_);
+             i = ecu_tree_postorder_iterator_next(&iterator_))
+        {
+            if (i == &node1_)
+            {
+                ecu_tree_add_child_push_back(&node1_, &node5_);
+                ecu_tree_add_child_push_back(&node2_, &node6_);
+            }
+            else if (i == &node2_)
+            {
+                ecu_tree_add_child_push_back(&node5_, &node7_);
+            }
+            else if (i == &node3_)
+            {
+                ecu_tree_add_child_push_back(&root1_, &node4_);
+            }
+        }
+
+        /* Step 3: Assert. Verify newly added nodes are iterated through in next iteration. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&iterator_);
+             i = ecu_tree_postorder_iterator_next(&iterator_))
+        {
+            IteratorTreeNodeMock::verify_node(i);
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
 
@@ -1946,99 +2188,678 @@ TEST(AddRemoveNode, RemoveRoot)
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------- TESTS - DESTRUCTOR ------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
-#warning "TODO:"
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Verify all node destroy callbacks are called. Verify 
-//  * all nodes are not in a tree after destroy operation.
-//  */
-// TEST(??, DestroyEntireTree)
-// {
-// 	// verify nodes are not in tree with postorder iterator.
-// }
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Verify all node destroy callbacks are called. Verify 
+ * all nodes are not in a tree after destroy operation.
+ */
+TEST(Destructor, DestroyEntireTree)
+{
+    /* Tree before operation. We are destroying root1.
+
+                    root1
+                    |
+                    node1---node2---node3
+                    |               |
+                    node4           node5---node6---node7
+                    |
+                    node8
+
+    Post-operation entire tree should be destroyed.
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &root1_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node1_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node2_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node3_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node4_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node5_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node6_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node7_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node8_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&node1_, &node4_);
+        ecu_tree_add_child_push_back(&node3_, &node5_);
+        ecu_tree_add_child_push_back(&node3_, &node6_);
+        ecu_tree_add_child_push_back(&node3_, &node7_);
+        ecu_tree_add_child_push_back(&node4_, &node8_);
+
+        /* Steps 2 and 3: Action and assert. Destroy root1. */
+        ecu_tree_node_destroy(&root1_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &root1_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node1_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node2_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node2_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node3_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node3_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node4_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node5_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node5_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node6_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node6_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node7_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node7_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node8_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node8_);
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Verify only node destroy callbacks in destroyed subtree 
-//  * were called. Verify all nodes in destroyed subtree are not apart
-//  * of a tree anymore. Verify remaining tree is still intact with
-//  * proper structure.
-//  */
-// TEST(??, DestroySubTreeThatHasNoSiblings)
-// {
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Verify only node destroy callbacks in destroyed subtree 
+ * were called. Verify all nodes in destroyed subtree are not apart
+ * of a tree anymore. Verify remaining tree is still intact with
+ * proper structure.
+ */
+TEST(Destructor, DestroySubTreeThatHasNoSiblings)
+{
+    /* Tree before operation. We are destroying node4.
 
-// }
+                    root1
+                    |
+                    node1---node2---node3
+                            |
+                            node4
+                            |
+                            node5---node6---node7
+                                            |
+                                            node8
+
+    Post-operation the remaining tree should be
+
+                    root1
+                    |
+                    node1---node2---node3
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node4_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node5_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node6_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node7_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node8_);
+
+        /* Verify remaining tree is still intact. Order matters. */
+        mock("RemainingTree").strictOrder();
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node1_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node2_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node3_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &root1_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&node2_, &node4_);
+        ecu_tree_add_child_push_back(&node4_, &node5_);
+        ecu_tree_add_child_push_back(&node4_, &node6_);
+        ecu_tree_add_child_push_back(&node4_, &node7_);
+        ecu_tree_add_child_push_back(&node7_, &node8_);
+
+        /* Steps 2 and 3: Action and assert. Destroy node4. */
+        ecu_tree_node_destroy(&node4_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node4_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node5_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node5_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node6_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node6_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node7_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node7_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node8_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node8_);
+        }
+
+        /* Step 3: Assert. Verify rest of tree is still intact. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            verify_node(i); /* Destructor::verify_node(i); */
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Subtree has siblings. Verify only node destroy callbacks 
-//  * in destroyed subtree were called. Verify all nodes in destroyed 
-//  * subtree are not apart of a tree anymore. Verify remaining tree 
-//  * is still intact with proper structure.
-//  */
-// TEST(??, DestroySubTreeThatIsFirstChild)
-// {
-// 	// subtree has siblings
-// }
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Subtree has siblings. Verify only node destroy callbacks 
+ * in destroyed subtree were called. Verify all nodes in destroyed 
+ * subtree are not apart of a tree anymore. Verify remaining tree 
+ * is still intact with proper structure.
+ */
+TEST(Destructor, DestroySubTreeThatIsFirstChild)
+{
+    /* Tree before operation. We are destroying node1.
+
+                    root1
+                    |
+                    node1-----------node2-----------node3
+                    |                               |
+                    node4---node5---node6           node7---node8
+
+    Post-operation the remaining tree should be
+
+                    root1
+                    |
+                    node2---node3
+                            |
+                            node7---node8
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node1_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node4_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node5_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node6_);
+
+        /* Verify remaining tree is still intact. Order matters. */
+        mock("RemainingTree").strictOrder();
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node2_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node7_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node8_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node3_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &root1_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&node1_, &node4_);
+        ecu_tree_add_child_push_back(&node1_, &node5_);
+        ecu_tree_add_child_push_back(&node1_, &node6_);
+        ecu_tree_add_child_push_back(&node3_, &node7_);
+        ecu_tree_add_child_push_back(&node3_, &node8_);
+
+        /* Steps 2 and 3: Action and assert. Destroy node1. */
+        ecu_tree_node_destroy(&node1_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node1_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node4_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node5_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node5_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node6_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node6_);
+        }
+
+        /* Step 3: Assert. Verify rest of tree is still intact. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            verify_node(i); /* Destructor::verify_node(i); */
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Verify only node destroy callbacks in destroyed subtree 
-//  * were called. Verify all nodes in destroyed subtree are not 
-//  * apart of a tree anymore. Verify remaining tree is still intact 
-//  * with proper structure.
-//  */
-// TEST(??, DestroySubTreeThatIsMiddleChild)
-// {
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Verify only node destroy callbacks in destroyed subtree 
+ * were called. Verify all nodes in destroyed subtree are not 
+ * apart of a tree anymore. Verify remaining tree is still intact 
+ * with proper structure.
+ */
+TEST(Destructor, DestroySubTreeThatIsMiddleChild)
+{
+    /* Tree before operation. We are destroying node2.
 
-// }
+                    root1
+                    |
+                    node1---node2---node3---node4
+                            |               |
+                            node5---node6   node7---node8
+
+    Post-operation the remaining tree should be
+
+                    root1
+                    |
+                    node1---node3---node4
+                                    |
+                                    node7---node8
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node2_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node5_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node6_);
+
+        /* Verify remaining tree is still intact. Order matters. */
+        mock("RemainingTree").strictOrder();
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node1_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node3_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node7_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node8_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node4_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &root1_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&root1_, &node4_);
+        ecu_tree_add_child_push_back(&node2_, &node5_);
+        ecu_tree_add_child_push_back(&node2_, &node6_);
+        ecu_tree_add_child_push_back(&node4_, &node7_);
+        ecu_tree_add_child_push_back(&node4_, &node8_);
+
+        /* Steps 2 and 3: Action and assert. Destroy node2. */
+        ecu_tree_node_destroy(&node2_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node2_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node2_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node5_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node5_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node6_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node6_);
+        }
+
+        /* Step 3: Assert. Verify rest of tree is still intact. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            verify_node(i); /* Destructor::verify_node(i); */
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Verify only node destroy callbacks in destroyed subtree 
-//  * were called. Verify all nodes in destroyed subtree are not 
-//  * apart of a tree anymore. Verify remaining tree is still intact 
-//  * with proper structure.
-//  */
-// TEST(??, DestroySubTreeThatIsLastChild)
-// {
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Verify only node destroy callbacks in destroyed subtree 
+ * were called. Verify all nodes in destroyed subtree are not 
+ * apart of a tree anymore. Verify remaining tree is still intact 
+ * with proper structure.
+ */
+TEST(Destructor, DestroySubTreeThatIsLastChild)
+{
+    /* Tree before operation. We are destroying node4.
 
-// }
+                    root1
+                    |
+                    node1---node2---node3---node4
+                            |               |
+                            node5---node6   node7---node8
+
+    Post-operation the remaining tree should be
+
+                    root1
+                    |
+                    node1---node2---node3
+                            |
+                            node5---node6
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node4_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node7_);
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node8_);
+
+        /* Verify remaining tree is still intact. Order matters. */
+        mock("RemainingTree").strictOrder();
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node1_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node5_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node6_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node2_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node3_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &root1_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&root1_, &node4_);
+        ecu_tree_add_child_push_back(&node2_, &node5_);
+        ecu_tree_add_child_push_back(&node2_, &node6_);
+        ecu_tree_add_child_push_back(&node4_, &node7_);
+        ecu_tree_add_child_push_back(&node4_, &node8_);
+
+        /* Steps 2 and 3: Action and assert. Destroy node4. */
+        ecu_tree_node_destroy(&node4_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node4_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node7_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node7_);
+        }
+
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node8_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node8_);
+        }
+
+        /* Step 3: Assert. Verify rest of tree is still intact. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            verify_node(i); /* Destructor::verify_node(i); */
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
-// /**
-//  * @pre Node, addition, removal, and postorder iterator tests are 
-//  * passing since the destructor relies on these operations. This 
-//  * test also uses postorder iterator for verification.
-//  * 
-//  * @brief Verify only destroy callback for leaf node was caled. 
-//  * Verify leaf is no longer in a tree. Verify remaining tree is still 
-//  * intact with proper structure.
-//  */
-// TEST(???, DestroyLeafNode)
-// {
+/**
+ * @pre Node addition, removal, and postorder iterator tests are 
+ * passing since the destructor relies on these operations. This 
+ * test also uses postorder iterator for verification.
+ * 
+ * @brief Verify only destroy callback for leaf node was caled. 
+ * Verify leaf is no longer in a tree. Verify remaining tree is 
+ * still intact with proper structure.
+ */
+TEST(Destructor, DestroyLeafNode)
+{
+    /* Tree before operation. We are destroying node4.
 
-// }
+                    root1
+                    |
+                    node1---node2---node3
+                                    |
+                                    node4
+
+    Post-operation the remaining tree should be
+
+                    root1
+                    |
+                    node1---node2---node3
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+
+        /* Verify all nodes have been destroyed. Order does not matter. */
+        mock().expectOneCall("Destructor::destroy_mock")
+              .withParameter("node", &node4_);
+
+        /* Verify remaining tree is still intact. Order matters. */
+        mock("RemainingTree").strictOrder();
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node1_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node2_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &node3_);
+        mock("RemainingTree").expectOneCall("Destructor::verify_node")
+                             .withParameter("node", &root1_);
+
+        /* Create tree. */
+        ecu_tree_add_child_push_back(&root1_, &node1_);
+        ecu_tree_add_child_push_back(&root1_, &node2_);
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&node3_, &node4_);
+
+        /* Steps 2 and 3: Action and assert. Destroy node4. */
+        ecu_tree_node_destroy(&node4_);
+
+        /* Step 3: Assert. Verify all nodes are no longer within a tree. Do a postorder
+        iteration for every node. If node is still in a tree then iteration will return
+        the other nodes in the tree, thus failing the POINTERS_EQUAL() check. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &node4_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            POINTERS_EQUAL(i, &node4_);
+        }
+
+        /* Step 3: Assert. Verify rest of tree is still intact. */
+        for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+             i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+             i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+        {
+            verify_node(i); /* Destructor::verify_node(i); */
+        }
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
 
 
 
