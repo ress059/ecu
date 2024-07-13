@@ -13,9 +13,10 @@ Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
 
 Tree:
-1. Test destructor.
-2. Finish tests that add nodes in middle of iteration.
-3. Cleanup and documentation.
+1. Finished tree.c cleanup and code verification (asserts, style, etc).
+2. Test destructor.
+3. Finish tests that add nodes in middle of iteration.
+4. Cleanup and documentation.
 
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.

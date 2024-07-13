@@ -21,11 +21,6 @@
 #include <stdbool.h>
 
 
-// require root to be first member so destroy callback is backwards compatible with
-// both tree root and tree node.
-// ECU_STATIC_ASSERT( (offsetof(struct ecu_tree, root) == 0) );
-
-
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------- FILE-SCOPE VARIABLES ----------------------------------------------*/
@@ -33,16 +28,13 @@
 
 static struct ecu_assert_functor *TREE_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
-// static const struct ecu_tree_node ROOT_DELIMITER = {0}; // used to differentiate tree root from tree node.
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------- STATIC FUNCTION DECLARATIONS ------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-// static struct ecu_tree_node *get_root(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
 static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
-// static bool node_is_tree_root(const struct ecu_tree_node *node);
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node);
 static bool node_child_head_valid(const struct ecu_tree_node *node);
 static bool node_valid(const struct ecu_tree_node *node);
@@ -53,57 +45,25 @@ static bool node_valid(const struct ecu_tree_node *node);
 /*--------------------------------------------------- STATIC FUNCTION DEFINITIIONS ------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-// parameter is not pointer to const since function can return the node itself.
-// static struct ecu_tree_node *get_root(struct ecu_tree_node *node)
-// {
-//     struct ecu_tree_node *root = node;
-//     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
-//     ECU_RUNTIME_ASSERT( (node->parent), TREE_ASSERT_FUNCTOR );
-
-//     while ((root->parent != root) || (root->parent != &ROOT_DELIMITER))
-//     {
-//         root = root->parent;
-//         ECU_RUNTIME_ASSERT( (root), TREE_ASSERT_FUNCTOR );
-//     }
-
-//     return root;
-// }
-
-
 static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node)
 {
-    struct ecu_tree_node *leaf = node;
+    /* Do not assert node_valid(node->parent) since it is indirectly asserted
+    by node_valid(node) in the first iteration of the while-loop. */
     ECU_RUNTIME_ASSERT( (node_valid(node)), TREE_ASSERT_FUNCTOR );
 
-    while (leaf->child != leaf)
+    while (node->child != node)
     {
-        leaf = leaf->child;
-        ECU_RUNTIME_ASSERT( (node_valid(leaf)), TREE_ASSERT_FUNCTOR );
+        node = node->child;
+        ECU_RUNTIME_ASSERT( (node_valid(node)), TREE_ASSERT_FUNCTOR );
     }
 
-    return leaf;
+    return node;
 }
 
 
-// static bool node_is_tree_root(const struct ecu_tree_node *node)
-// {
-//     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
-//     return (node->parent == &ROOT_DELIMITER);
-
-//     // if ((node->parent == node) && \
-//     //     (node->next == node) && \
-//     //     (node->prev == node) && \
-//     //     (node->destroy == &tree_root_destroy_callback) && \
-//     //     (node->id == ECU_OBJECT_ID_RESERVED))
-//     // {
-//     //     is_root = true;
-//     // }
-
-//     // return is_root;
-// }
-
-
 // precondition is node has been constructed.
+// WARNING: this function must check @p node for null in order for api using this function
+// to remain consistent (api offloads null checking to this function)
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node)
 {
     bool valid = false;
@@ -121,11 +81,13 @@ static bool node_in_valid_sibling_list(const struct ecu_tree_node *node)
 }
 
 
+// WARNING: this function must check @p node for null in order for api using this function
+// to remain consistent (api offloads null checking to this function)
 static bool node_child_head_valid(const struct ecu_tree_node *node)
 {
     bool valid = false;
     ECU_RUNTIME_ASSERT( (node), TREE_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (node->child), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((node->child) && (node->parent)), TREE_ASSERT_FUNCTOR );
 
     /* Cases handled:
     1. node->child == node. Node has no children so child points to itself. 
@@ -139,6 +101,9 @@ static bool node_child_head_valid(const struct ecu_tree_node *node)
 }
 
 
+// check if node is in valid sibling list and has valid child structure.
+// WARNING: this function must check @p node for null in order for api using this function
+// to remain consistent (api offloads null checking to this function)
 static bool node_valid(const struct ecu_tree_node *node)
 {
     return (node_in_valid_sibling_list(node) && \
@@ -146,38 +111,10 @@ static bool node_valid(const struct ecu_tree_node *node)
 }
 
 
-// static void tree_root_destroy_callback(struct ecu_tree_node *me)
-// {
-//     (void)me;
-//     ECU_RUNTIME_ASSERT( (false), TREE_ASSERT_FUNCTOR ); // TODO Dont think I should do this. Will go off in iterator?
-// }
-
-
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ PUBLIC FUNCTIONS: TREE ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
-
-// void ecu_tree_ctor(struct ecu_tree *me,
-//                    void (*destroy_0)(struct ecu_tree *me),
-//                    ecu_object_id id_0)
-// {
-//     ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), 
-//                         TREE_ASSERT_FUNCTOR );
-
-//     me->root.child      = &me->root;
-//     me->root.parent     = &ROOT_DELIMITER; /* Used to differentiate root from normal tree node. */
-//     me->root.next       = &me->root;
-//     me->root.prev       = &me->root;
-//     me->root.destroy    = destroy_0;
-//     me->root.id         = id_0;
-
-
-//     // make destroy function take in struct ecu_tree_node *me instead?
-//     // ecu_tree_node_ctor(me, destroy_0, id_0);
-//     // me->parent = &ROOT_DELIMITER;
-// }
-
 
 void ecu_tree_node_ctor(struct ecu_tree_node *me, 
                         void (*destroy_0)(struct ecu_tree_node *me),
@@ -223,8 +160,8 @@ void ecu_tree_add_child_push_back(struct ecu_tree_node *parent,
 {
     struct ecu_tree_node *old_tail = (struct ecu_tree_node *)0;
 
-    /* NULL assertions already done in these functions. Notice it is OK if new_child as previously a root. */
-    ECU_RUNTIME_ASSERT( ((new_child != parent) && (node_valid(parent)) && \
+    /* Notice it is OK if new_child was previously a root. */
+    ECU_RUNTIME_ASSERT( ((parent != new_child) && (node_valid(parent)) && \
                          (node_valid(new_child))), TREE_ASSERT_FUNCTOR );
 
     ecu_tree_remove_node(new_child);
@@ -240,11 +177,11 @@ void ecu_tree_add_child_push_back(struct ecu_tree_node *parent,
     else
     {
         /* Parent already has children. */
-        old_tail = parent->child->prev;
-        old_tail->next->prev = new_child;   /* parent->child->prev = new_child */
-        new_child->next = old_tail->next;   /* new_child->next = parent->child */
-        new_child->prev = old_tail;
-        old_tail->next = new_child;
+        old_tail                = parent->child->prev;
+        old_tail->next->prev    = new_child;            /* parent->child->prev = new_child */
+        new_child->next         = old_tail->next;       /* new_child->next = parent->child */
+        new_child->prev         = old_tail;
+        old_tail->next          = new_child;
     }
 
     new_child->parent = parent;
@@ -254,9 +191,8 @@ void ecu_tree_add_child_push_back(struct ecu_tree_node *parent,
 // dont detach node from its children.
 void ecu_tree_remove_node(struct ecu_tree_node *me)
 {
-    /* NULL assertions already done in these functions. Note it is
-    OK for the supplied node to be the root of the tree. In this
-    case nothing will be done. */
+    /* Note it is OK for the supplied node to be the root of the tree. 
+    In this case nothing will be done. */
     ECU_RUNTIME_ASSERT( (node_valid(me)), TREE_ASSERT_FUNCTOR );
 
     /* Need to handle edge case where node we are removing is the first child. */
@@ -274,11 +210,11 @@ void ecu_tree_remove_node(struct ecu_tree_node *me)
         }
     }
 
-    me->next->prev = me->prev;
-    me->prev->next = me->next;
-    me->next = me;
-    me->prev = me;
-    me->parent = me;
+    me->next->prev  = me->prev;
+    me->prev->next  = me->next;
+    me->next        = me;
+    me->prev        = me;
+    me->parent      = me;
 }
 
 
@@ -292,19 +228,20 @@ void ecu_tree_remove_node(struct ecu_tree_node *me)
 
 node 3 would be at level 2.
 */
+
 size_t ecu_tree_get_level(const struct ecu_tree_node *me)
 {
     size_t level = 0;
-    const struct ecu_tree_node *root = me;
 
-    ECU_RUNTIME_ASSERT( (root), TREE_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (root->parent), TREE_ASSERT_FUNCTOR );
+    /* Do not assert node_valid(me->parent) since it is indirectly asserted
+    by node_valid(me) in the first iteration of the while-loop. */
+    ECU_RUNTIME_ASSERT( (node_valid(me)), TREE_ASSERT_FUNCTOR );
 
-    while (root->parent != root)
+    while (me->parent != me)
     {
-        level++;
-        root = root->parent;
-        ECU_RUNTIME_ASSERT( (root), TREE_ASSERT_FUNCTOR );
+        ++level;
+        me = me->parent;
+        ECU_RUNTIME_ASSERT( (node_valid(me)), TREE_ASSERT_FUNCTOR );
     }
 
     return level;
@@ -315,11 +252,11 @@ size_t ecu_tree_get_level(const struct ecu_tree_node *me)
 struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1, 
                                        struct ecu_tree_node *node2)
 {
-    ECU_RUNTIME_ASSERT( (node1 && node2), TREE_ASSERT_FUNCTOR );
-
-    size_t level1 = 0;
-    size_t level2 = 0;
+    size_t level = 0;
+    size_t level_node1 = 0;
+    size_t level_node2 = 0;
     struct ecu_tree_node *lca = (struct ecu_tree_node *)0;
+    ECU_RUNTIME_ASSERT( ((node_valid(node1)) && (node_valid(node2))), TREE_ASSERT_FUNCTOR );
 
     if (node1 == node2)
     {
@@ -327,11 +264,7 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
     }
     else
     {
-        /* We do not have to NULL assert when getting node->parent because
-        ecu_tree_get_level() already traverses and NULL asserts parent 
-        structure. 
-        
-        LCA algorithm:
+        /* LCA algorithm:
         1. Find whichever node is at a deeper level.
 
         2. Only for the deeper node, traverse up the tree (get parent) 
@@ -339,36 +272,40 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
         are equal LCA is found. Otherwise proceed to Step #3.
         
         3. Traverse up the tree (get parent) for both nodes. If both
-        nodes are equal LCA is found. Otherwise if you reached the root
-        of the tree but both nodes are still not equal then the
-        nodes are in separate trees. Return null in this case. */
-        level1 = ecu_tree_get_level(node1);
-        level2 = ecu_tree_get_level(node2);
+        nodes are equal LCA is found. If you reached the root of the tree 
+        but both nodes are still not equal then the nodes are in separate 
+        trees. Return null in this case. Otherwise keep repeating Step #3. */
+        level_node1 = ecu_tree_get_level(node1);
+        level_node2 = ecu_tree_get_level(node2);
 
         /* Steps 1 and 2 of algorithm. */
-        if (level1 > level2)
+        if (level_node1 > level_node2)
         {
-            while (level1 != level2)
+            while (level_node1 != level_node2)
             {
                 node1 = node1->parent;
-                level1--;
+                --level_node1;
+                ECU_RUNTIME_ASSERT( (node_valid(node1)), TREE_ASSERT_FUNCTOR );
             }
         }
-        else if (level2 > level1)
+        else if (level_node2 > level_node1)
         {
-            while (level1 != level2)
+            while (level_node1 != level_node2)
             {
                 node2 = node2->parent;
-                level2--;
+                --level_node2;
+                ECU_RUNTIME_ASSERT( (node_valid(node2)), TREE_ASSERT_FUNCTOR );
             }
         }
+        level = level_node1; /* level_node1 == level_node2 at this point. Use variable 'level' for easier reading. */
 
         /* Step 3 of algorithm. */
-        while ((node1 != node2) && (level1 != 0))
+        while ((node1 != node2) && (level != 0))
         {
             node1 = node1->parent;
             node2 = node2->parent;
-            level1--;
+            --level;
+            ECU_RUNTIME_ASSERT( ((node_valid(node1)) && (node_valid(node2))), TREE_ASSERT_FUNCTOR );
         }
 
         if (node1 == node2)
@@ -388,7 +325,18 @@ struct ecu_tree_node *ecu_tree_get_lca(struct ecu_tree_node *node1,
 bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
                                  struct ecu_tree_node *node2)
 {
-    return (ecu_tree_get_lca(node1, node2) != (struct ecu_tree_node *)0);
+    /* WARNING: This function requires that ecu_tree_get_lca(node1, node2) returns 
+    NULL if node1 and node2 are in different trees. This function must be refactored 
+    if this ever changes. */
+    bool in_same_tree = false;
+    ECU_RUNTIME_ASSERT( ((node_valid(node1)) && (node_valid(node2))), TREE_ASSERT_FUNCTOR );
+
+    if (ecu_tree_get_lca(node1, node2))
+    {
+        in_same_tree = true;
+    }
+
+    return in_same_tree;
 }
 
 
@@ -400,28 +348,25 @@ bool ecu_tree_nodes_in_same_tree(struct ecu_tree_node *node1,
 struct ecu_tree_node *ecu_tree_child_iterator_begin(struct ecu_tree_child_iterator *me,
                                                     struct ecu_tree_node *parent)
 {
-    struct ecu_tree_node *start_node = (struct ecu_tree_node *)0;
-    struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
-    ECU_RUNTIME_ASSERT( (me && parent), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (node_valid(parent)), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(parent->child)), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(parent->child->next)), TREE_ASSERT_FUNCTOR );
 
-    start_node = parent->child;
-    ECU_RUNTIME_ASSERT( (node_valid(start_node)), TREE_ASSERT_FUNCTOR );
+    me->head    = parent;
+    me->current = parent->child;
 
-    if (start_node == parent || start_node->next == start_node)
+    if ((parent->child == parent) || (parent->child->next == parent->child))
     {
-        /* 0 or 1 child. */
-        next_node = parent;
+        /* parent has 0 or 1 child. Next node is the parent (delimiter). */
+        me->next = parent;
     }
     else
     {
-        next_node = start_node->next;
-        ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
+        /* parent has more than 1 child. Next node is the next child in the linked list. */
+        me->next = parent->child->next;
     }
 
-    me->head = parent;
-    me->current = start_node;
-    me->next = next_node;
     return (me->current);
 }
 
@@ -436,33 +381,30 @@ struct ecu_tree_node *ecu_tree_child_iterator_end(struct ecu_tree_child_iterator
 
 struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_iterator *me)
 {
-    struct ecu_tree_node *current_node = (struct ecu_tree_node *)0;
-    struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
+    /* Don't assert me->current since it is just set to me->next. */
     ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( ((node_valid(me->head)) && (node_valid(me->current)) && \
-                         (node_valid(me->next))), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((node_valid(me->head)) && (node_valid(me->next))), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((node_valid(me->next->next)) && (node_valid(me->head->child))), TREE_ASSERT_FUNCTOR );
 
-    /* Current is what was stored in next from previous call to 
-    this function. Update our next value. */
-    current_node = me->next;
-    next_node = me->next;
-
-    if (current_node->next == me->head->child)
+    /* Current is what was stored in next from previous call to this function. Update our next value. */
+    me->current = me->next;
+    
+    if (me->current->next == me->head->child)
     {
-        next_node = me->head;
+        /* One node before end of iteration. Next node is the parent (delimiter). */
+        me->next = me->head;
     }
-    else if (current_node == me->head)
+    else if (me->current == me->head)
     {
-        next_node = me->head->child;
+        /* Reached end of iteration. Restarting the iteration so next node is parent's first child. */
+        me->next = me->head->child;
     }
     else
     {
-        next_node = current_node->next;
+        /* Still in middle of child list. Return next child in linked list. */
+        me->next = me->next->next;
     }
 
-    ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
-    me->current = current_node;
-    me->next = next_node;
     return (me->current);
 }
 
@@ -475,40 +417,53 @@ struct ecu_tree_node *ecu_tree_child_iterator_next(struct ecu_tree_child_iterato
 struct ecu_tree_node *ecu_tree_postorder_iterator_begin(struct ecu_tree_postorder_iterator *me,
                                                         struct ecu_tree_node *root)
 {
-    struct ecu_tree_node *start_node = (struct ecu_tree_node *)0;
-    struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
     ECU_RUNTIME_ASSERT( (me && root), TREE_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (node_valid(root)), TREE_ASSERT_FUNCTOR );
 
+    /* Not using a static delimiter node in this constructor for now in case
+    user messes up delimiter node. If this happens it would be contained in 
+    their single iterator object. Messing up a static delimiter node would
+    effect ALL iterator objects since it would be shared. Cannot fix this by
+    making delimiter const since ecu_tree_postorder_iterator_end() and 
+    ecu_tree_postorder_iterator_next() return pointers to non-const. */
     ecu_tree_node_ctor(&me->delimiter, 
                        (void (*)(struct ecu_tree_node *))0, 
                        ECU_OBJECT_ID_UNUSED);
 
-    start_node = get_child_leaf(root);
+    me->root    = root;
+    me->current = get_child_leaf(root);
+    ECU_RUNTIME_ASSERT( (node_valid(me->current)), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(me->current->next)), TREE_ASSERT_FUNCTOR );
 
-    if (start_node == root)
+    if (me->current == me->root)
     {
-        next_node = &me->delimiter;
+        /* Root has no nodes so next node is delimiter. Cannot combine everything into one 
+        if (me->current->next == me->current) statement since root can be a SUBTREE. me->current 
+        would be root so me->current->next would be root's sibling which is incorrect. */
+        me->next = &me->delimiter;
     }
     else
     {
-        next_node = start_node->next;
-        ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
-
-        if (next_node == next_node->parent->child)
+        if (me->current->next == me->current)
         {
-            next_node = next_node->parent;
-            ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
+            /* First leaf (current node) has no siblings. Next node is parent of first leaf. 
+            Don't assert me->current->parent is valid since me->next is asserted at end. 
+            me->current->next was asserted beforehand since it is used in if statement.
+            NOTE: we can do if (me->current->next == me->current) instead of 
+            if (me->current->next == me->current->parent->child) since me->current will 
+            ALWAYS be the first child since we are just starting the iteration. I.e. me->current
+            will always be me->current->parent->child. This is NOT the case for 
+            ecu_tree_postorder_iterator_next() which is why that uses me->current->parent->child. */
+            me->next = me->current->parent;
         }
         else
         {
-            next_node = get_child_leaf(next_node);
+            /* First leaf (current node) has siblings. Next node is next sibling's leaf. */
+            me->next = get_child_leaf(me->current->next);
         }
+        ECU_RUNTIME_ASSERT( (node_valid(me->next)), TREE_ASSERT_FUNCTOR );
     }
 
-    me->root = root;
-    me->current = start_node;
-    me->next = next_node;
     return (me->current);
 }
 
@@ -522,43 +477,41 @@ struct ecu_tree_node *ecu_tree_postorder_iterator_end(struct ecu_tree_postorder_
 
 struct ecu_tree_node *ecu_tree_postorder_iterator_next(struct ecu_tree_postorder_iterator *me)
 {
-    struct ecu_tree_node *current_node = (struct ecu_tree_node *)0;
-    struct ecu_tree_node *next_node = (struct ecu_tree_node *)0;
+    /* Don't assert me->current since it is just set to me->next */
     ECU_RUNTIME_ASSERT( (me), TREE_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( ((node_valid(me->root)) && (node_valid(me->current)) && \
-                         (node_valid(me->next))), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((node_valid(me->root)) && (node_valid(me->next))), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next->next)), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next->parent)), TREE_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next->parent->child)), TREE_ASSERT_FUNCTOR );
 
-    /* Current is what was stored in next from previous call to 
-    this function. Update our next value. */
-    current_node = me->next;
-    next_node = me->next;
+    /* Current is what was stored in next from previous call to this function. Update our next value. */       
+    me->current = me->next;
 
-    if (current_node == me->root)
+    if (me->current == me->root)
     {
-        next_node = &me->delimiter;
+        /* One node before end of iteration. Next node is dummy delimiter. */
+        me->next = &me->delimiter;
     }
-    else if (current_node == &me->delimiter)
+    else if (me->current == &me->delimiter)
     {
-        next_node = get_child_leaf(me->root);
+        /* Reached end of iteration. Restarting the iteration so next node is root's first leaf. */
+        me->next = get_child_leaf(me->root);
     }
     else
     {
-        next_node = next_node->next;
-        ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
-
-        if (next_node == next_node->parent->child)
+        if (me->current->next == me->current->parent->child)
         {
-            next_node = next_node->parent;
-            ECU_RUNTIME_ASSERT( (node_valid(next_node)), TREE_ASSERT_FUNCTOR );
+            /* Reached end of sibling list. Next node is parent. */
+            me->next = me->current->parent;
         }
         else
         {
-            next_node = get_child_leaf(next_node);
+            /* In the middle of the sibling list. Next node is next sibling's leaf. */
+            me->next = get_child_leaf(me->current->next);
         }
+        ECU_RUNTIME_ASSERT( (node_valid(me->next)), TREE_ASSERT_FUNCTOR );
     }
-    
-    me->current = current_node;
-    me->next = next_node;
+
     return (me->current);
 }
 
