@@ -2120,6 +2120,78 @@ TEST(AddRemoveNode, CannotAddNodeToItself)
 
 /**
  * @pre Postorder iterator is working properly since it is used
+ * for test validation. Asserts enabled.
+ * 
+ * @brief This is currently unsupported and an illegal operation.
+ * The tree should not be changed.
+ */
+TEST(AddRemoveNode, AddParentToChild)
+{
+    /* Tree before operation. We are trying to add Node3 to Node2 and afterwards
+    attempting to add Root1 to Node2. These are illegal operations since we are
+    attempting to add a parent to one of its children. Tree should be exactly 
+    the same post-operation.
+
+                    root1
+                    |
+                    node3
+                    |
+                    node1---node2
+    */
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_ok_));
+
+        mock().strictOrder();
+
+        /* Tree post-operation check. */
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node1_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node2_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &node3_);
+        mock().expectOneCall("IteratorTreeNodeMock::verify_node")
+              .withParameter("node", &root1_);
+
+        /* Create Tree1. */
+        ecu_tree_add_child_push_back(&root1_, &node3_);
+        ecu_tree_add_child_push_back(&node3_, &node1_);
+        ecu_tree_add_child_push_back(&node3_, &node2_);
+
+        /* Step 2: Action. Add node3 to node2 which is illegal. */
+        ecu_tree_add_child_push_back(&node2_, &node3_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* OK */
+    }
+
+    try
+    {
+        /* Step 2: Action. Add root1 to node2 which is illegal. */
+        ecu_tree_add_child_push_back(&node2_, &root1_);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* OK */
+    }
+
+    /* Step 3: Assert. Verify tree is the same. Do this outside try-catch in case assert fires. */
+    for (struct ecu_tree_node *i = ecu_tree_postorder_iterator_begin(&postorder_iterator_, &root1_);
+         i != ecu_tree_postorder_iterator_end(&postorder_iterator_);
+         i = ecu_tree_postorder_iterator_next(&postorder_iterator_))
+    {
+        IteratorTreeNodeMock::verify_node(i);
+    }
+}
+
+
+/**
+ * @pre Postorder iterator is working properly since it is used
  * for test validation.
  * 
  * @brief Verify nothing happens to tree when root is removed.

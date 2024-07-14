@@ -2,6 +2,10 @@
  * @file
  * @brief TODO
  * 
+ * 1. Example of using ECU_TREE_NODE_GET_ENTRY() macro.
+ * 2. 
+ * 
+ * 
  * @author Ian Ress
  * @version 0.1
  * @date 2024-04-24
@@ -62,7 +66,7 @@ struct ecu_tree_node
 {
     /**
      * @private 
-     * @brief PRIVATE. Pointer to first child.
+     * @brief PRIVATE. First child.
      */
     struct ecu_tree_node *child;
 
@@ -89,10 +93,10 @@ struct ecu_tree_node
     /**
      * @private
      * @brief PRIVATE. Optional user-defined callback that
-     * defines node's destructor. Called when @ref ecu_tree_destroy() 
+     * defines node's destructor. Called when @ref ecu_tree_node_destroy() 
      * is called and node is apart of the destroyed tree.
      * 
-     * @warning Do not call @ref ecu_tree_destroy() or directly
+     * @warning Do not call @ref ecu_tree_node_destroy() or directly
      * edit members of @ref ecu_tree_node directly in this callback. 
      * User should only define any additional cleanup necessary for 
      * their data type.
@@ -204,7 +208,7 @@ extern "C" {
  * 
  * @warning @p me cannot be an active node apart of an existing tree. 
  * Otherwise contents of the tree may be lost and behavior is undefined.
- * @warning If @p destroy_0 callback is supplied, do not call @ref ecu_tree_destroy(),
+ * @warning If @p destroy_0 callback is supplied, do not call @ref ecu_tree_node_destroy(),
  * @ref ecu_tree_remove_node(), or directly edit any members of @ref ecu_tree_node 
  * in your callback. Users should only define any additional cleanup necessary for 
  * their data type. Cleanup of the actual @ref ecu_tree_node type is done automatically 
@@ -213,9 +217,9 @@ extern "C" {
  * @param me Tree node to construct. This cannot be NULL.
  * @param destroy_0 Optional user-defined callback that defines additional
  * cleanup for node's destructor. Called when @ref ecu_tree_node_destroy() 
- * is called and node is apart of the destroyed tree.
+ * is called and node is apart of the destroyed tree. Supply NULL if unused.
  * @param id_0 Optional ID user can assign to each node to identify different 
- * types stored in the same tree. Set to @ref ECU_OBJECT_ID_UNUSED if unused.
+ * types stored in the same tree. Supply @ref ECU_OBJECT_ID_UNUSED if unused.
  * See @ref object_id.h description for more details. This value must be 
  * greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
  */
@@ -228,12 +232,15 @@ extern void ecu_tree_node_ctor(struct ecu_tree_node *me,
  * @pre @p me previously constructed via call to @ref ecu_tree_node_ctor()
  * @brief Tree destructor. Removes supplied node and its entire subtree. Also
  * calls user-supplied destructor @ref ecu_tree_node.destroy for each removed 
- * node if one was supplied in @ref ecu_tree_node_ctor().
+ * node if one was supplied in @ref ecu_tree_node_ctor(). See image below for
+ * examples.
  * 
  * @param me This node and its subtree will be destroyed. I.e. supplying the
  * tree root will destroy the entire tree. Supplying a node within a tree
  * will destroy the node and its subtree but the remaining tree will still be
  * intact.
+ * 
+ * @image html tree-ecu-tree-node-destroy.png "Tree Destructor Examples"
  */
 extern void ecu_tree_node_destroy(struct ecu_tree_node *me);
 /**@}*/
@@ -243,7 +250,6 @@ extern void ecu_tree_node_destroy(struct ecu_tree_node *me);
  * @name Tree Manipulation
  */
 /**@{*/
-#warning "TODO Show example image"
 /**
  * @pre @p parent and @p new_child previously constructed via call 
  * to @ref ecu_tree_node_ctor().
@@ -251,28 +257,33 @@ extern void ecu_tree_node_destroy(struct ecu_tree_node *me);
  * If the added node is already apart of an existing tree it will
  * be removed and added to this new tree. The added node will be
  * pushed back to the end of the sibling list. See images below for
- * further details:
- * @image TODO adding node/its subtree from one tree to another.
+ * examples.
  * 
- * @warning @p new_child cannot be the same as @p parent.
+ * @warning @p new_child cannot be the same as @p parent. I.e.
+ * parent != child
+ * @warning You cannot add a parent to one of its children. I.e. @p new_child 
+ * cannot be the parent of @p parent.
  * 
  * @param parent Parent node to add child to.
  * @param new_child Node that is being added to the tree. This node's
  * subtree will also be added with its structure still intact.
+ * 
+ * @image html tree-ecu-tree-add-child-push-back.png "Adding Nodes Examples"
  */
 extern void ecu_tree_add_child_push_back(struct ecu_tree_node *parent, 
                                          struct ecu_tree_node *new_child);
 
-
+#warning "TODO: Stopped here. Still have to add image"
 /**
  * @pre @p me previously constructed via call to @ref ecu_tree_node_ctor().
  * @brief Removes a node and its subtree from a tree. The node's
- * subtree will remain unharmed. Therefore calling this on a tree root
- * or calling this on a node not in a tree does nothing. See images
- * below for further details:
- * @image TODO removing nodes from tree.
+ * subtree will remain unharmed and intact. Therefore calling this on a 
+ * tree root or calling this on a node not in a tree does nothing. See 
+ * images below for examples.
  * 
  * @param me Node to remove.
+ *
+ * @image html tree-ecu-tree-remove-node.png "Removing Nodes Examples"
  */
 extern void ecu_tree_remove_node(struct ecu_tree_node *me);
 /**@}*/

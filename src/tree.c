@@ -34,10 +34,68 @@ static struct ecu_assert_functor *TREE_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 /*--------------------------------------------------- STATIC FUNCTION DECLARATIONS ------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node); // pointer to nonconst since function can potentially return the parameter.
+/**
+ * @pre @p node previously constructed via call to @ref ecu_tree_node_ctor().
+ * @brief Returns the first child leaf node.
+ * 
+ * @param node Root of tree/subtree to get child leaf of. Pointer to 
+ * non-const since this function can potentially return this parameter 
+ * if it has no children.
+ */
+static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node);
+
+
+/**
+ * @pre @p node previously constructed via call to @ref ecu_tree_node_ctor().
+ * @brief Returns true if node is in a valid sibling list. False otherwise.
+ * Valid means (node->next->prev == node) and (node->prev->next == node).
+ * 
+ * @note This function MUST NULL check @p node in order for public tree API
+ * to remain consistent. API offloads NULL checking to this function. 
+ * 
+ * @param node Node to check.
+ */
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node);
+
+
+/**
+ * @pre @p node previously constructed via call to @ref ecu_tree_node_ctor().
+ * @brief Returns true if node has a valid child structure. False otherwise.
+ * Valid means (node->child == node) if node has no children or 
+ * (node->child->parent == node) if node has children.
+ * 
+ * @note This function MUST NULL check @p node in order for public tree API
+ * to remain consistent. API offloads NULL checking to this function. 
+ * 
+ * @param node Node to check.
+ */
 static bool node_child_head_valid(const struct ecu_tree_node *node);
+
+
+/**
+ * @pre @p node previously constructed via call to @ref ecu_tree_node_ctor().
+ * @brief Returns true if node is valid. False otherwise. Valid means node
+ * has both a valid sibling list and child structure.
+ * 
+ * @note This function MUST NULL check @p node in order for public tree API
+ * to remain consistent. API offloads NULL checking to this function. 
+ * 
+ * @param node Node to check.
+ */
 static bool node_valid(const struct ecu_tree_node *node);
+
+
+/**
+ * @pre @p parent and @p child previously constructed via call to 
+ * @ref ecu_tree_node_ctor().
+ * @brief Returns true if @p parent is a parent, grandparent, grandgrandparent,
+ * etc of @p child. This function checks the entire tree starting from child up 
+ * until the root.
+ * 
+ * @warning @p parent and @p child cannot be the same node.
+ */
+static bool is_parent_of(const struct ecu_tree_node *parent,
+                         const struct ecu_tree_node *child);
 
 
 
@@ -61,9 +119,6 @@ static struct ecu_tree_node *get_child_leaf(struct ecu_tree_node *node)
 }
 
 
-// precondition is node has been constructed.
-// WARNING: this function must check @p node for null in order for api using this function
-// to remain consistent (api offloads null checking to this function)
 static bool node_in_valid_sibling_list(const struct ecu_tree_node *node)
 {
     bool valid = false;
@@ -81,8 +136,6 @@ static bool node_in_valid_sibling_list(const struct ecu_tree_node *node)
 }
 
 
-// WARNING: this function must check @p node for null in order for api using this function
-// to remain consistent (api offloads null checking to this function)
 static bool node_child_head_valid(const struct ecu_tree_node *node)
 {
     bool valid = false;
@@ -101,13 +154,34 @@ static bool node_child_head_valid(const struct ecu_tree_node *node)
 }
 
 
-// check if node is in valid sibling list and has valid child structure.
-// WARNING: this function must check @p node for null in order for api using this function
-// to remain consistent (api offloads null checking to this function)
 static bool node_valid(const struct ecu_tree_node *node)
 {
     return (node_in_valid_sibling_list(node) && \
             node_child_head_valid(node));
+}
+
+
+static bool is_parent_of(const struct ecu_tree_node *parent,
+                         const struct ecu_tree_node *child)
+{
+    bool parent_of = false;
+    ECU_RUNTIME_ASSERT( ((parent != child) && (node_valid(parent)) && \
+                         (node_valid(child))), TREE_ASSERT_FUNCTOR );
+
+    while (child->parent != child)
+    {
+        if (child->parent == parent)
+        {
+            parent_of = true;
+            break;
+        }
+        else
+        {
+            child = child->parent;
+        }
+    }
+
+    return parent_of;
 }
 
 
@@ -162,7 +236,8 @@ void ecu_tree_add_child_push_back(struct ecu_tree_node *parent,
 
     /* Notice it is OK if new_child was previously a root. */
     ECU_RUNTIME_ASSERT( ((parent != new_child) && (node_valid(parent)) && \
-                         (node_valid(new_child))), TREE_ASSERT_FUNCTOR );
+                         (node_valid(new_child)) && !is_parent_of(new_child, parent)), 
+                         TREE_ASSERT_FUNCTOR );
 
     ecu_tree_remove_node(new_child);
 
@@ -188,7 +263,6 @@ void ecu_tree_add_child_push_back(struct ecu_tree_node *parent,
 }
 
 
-// dont detach node from its children.
 void ecu_tree_remove_node(struct ecu_tree_node *me)
 {
     /* Note it is OK for the supplied node to be the root of the tree. 
