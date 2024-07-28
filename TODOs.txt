@@ -15,7 +15,7 @@ Ring Buffer:
 Tree:
 1. Finished tree.c cleanup and code verification (asserts, style, etc).
 2. Finished destructor tests and tests for adding nodes in middle of iteration. 
-3. Just need to do cleanup and documentation.
+3. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 Asserter:
 1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.

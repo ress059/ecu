@@ -35,14 +35,14 @@
 			"inherits": "build-test",
 			"displayName": "Linux-GNU-Build",
 			"description": "Compile ECU library on Linux host with GNU toolchain.",
-			"toolchainFile": "${sourceDir}/tests/cmake/Linux-GNU.cmake"
+			"toolchainFile": "${sourceDir}/tests/cmake/linux-gnu-x86.cmake"
 		},
 		{
 			"name": "linux-gnu-unit-test",
 			"displayName": "Linux-GNU-Unit-Test",
 			"description": "Compile and run ECU library unit tests on Linux host with GNU toolchain. Uses GTest.",
 			"inherits": "unit-test",
-			"toolchainFile": "${sourceDir}/tests/cmake/Linux-GNU.cmake"
+			"toolchainFile": "${sourceDir}/tests/cmake/linux-gnu-x86.cmake"
 		}
     ],
 	"buildPresets": [
