@@ -20,7 +20,6 @@
 
 /* Files under test. */
 #include <ecu/timer.h>
-#include <ecu/interface/itimer.h>
 
 /* Mocks */
 #include <mocks/mock_asserter.hpp>
@@ -39,34 +38,40 @@ template<typename T>
 concept valid_tick_width = (sizeof(T) <= sizeof(ecu_max_tick_size_t));
 
 
+/**
+ * @brief Supply interface that stubs the user's hardware timer driver.
+ * This is a template so we can force compilation error if supplied tick 
+ * width is invalid.
+ */
 template<typename T>
 requires std::unsigned_integral<T> && valid_tick_width<T>
-struct TimerDriverStub : public i_ecu_timer
+class ITimerStub
 {
 public:
-    TimerDriverStub() : ticks_(0)
+    ITimerStub() : m_tick_width_bytes(sizeof(T))
     {
-       i_ecu_timer_ctor(static_cast<struct i_ecu_timer *>(this), sizeof(T), &get_time);
+
     }
 
     void set_ticks(T ticks)
     {
-        ticks_ = ticks;
+        m_ticks = ticks;
     }
 
-    static constexpr size_t get_size()
+    static ecu_max_tick_size_t get_ticks(void *object)
     {
-        return sizeof(T);
+        ITimerStub *me = static_cast<ITimerStub *>(object);
+
+        /* It is guaranteed sizeof(ecu_max_tick_size_t) >= sizeof(me->m_ticks) so overflow
+        due to downcast will never occur. */
+        return static_cast<ecu_max_tick_size_t>(me->m_ticks);
     }
+
+public:
+    size_t m_tick_width_bytes;
 
 private:
-    T ticks_;
-
-    static ecu_max_tick_size_t get_time(struct i_ecu_timer *me)
-    {
-        TimerDriverStub *instance = static_cast<TimerDriverStub *>(me);
-        return static_cast<ecu_max_tick_size_t>(instance->ticks_);
-    }
+    T m_ticks;
 };
 
 
@@ -116,34 +121,72 @@ static bool timer_callback_mock_false(void *object)
 /*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST_GROUP(TimerCollection)
+class TimerCollectionBase : public Utest
 {
-    virtual void setup() override 
+public:
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
+        m_assert_call_ok.handler = &AssertCallOk::assert_handler;
+        m_assert_call_fail.handler = &AssertCallFail::assert_handler;
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
         ecu_timer_set_assert_functor(ECU_DEFAULT_FUNCTOR);
-        i_ecu_timer_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
 
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
+public:
+    AssertCallOk m_assert_call_ok;
+    AssertCallFail m_assert_call_fail;
 
-    struct ecu_timer_collection collection_;
-    struct ecu_timer timer1_;
-    struct ecu_timer timer2_;
-    struct ecu_timer timer3_;
-    struct ecu_timer timer4_;
+public:
+    struct ecu_timer_collection m_collection;
+    struct ecu_timer m_timer1;
+    struct ecu_timer m_timer2;
+    struct ecu_timer m_timer3;
+    struct ecu_timer m_timer4;
+};
 
-    TimerDriverStub<uint8_t> timer_source_ui8_;
-    TimerDriverStub<uint16_t> timer_source_ui16_;
-    TimerDriverStub<uint32_t> timer_source_ui32_;
+
+/**
+ * @brief Timer collection using uint8_t hardware timer.
+ */
+TEST_GROUP_BASE(TimerCollectionUI8, TimerCollectionBase)
+{
+public:
+    ITimerStub<uint8_t> m_itimer;
+};
+
+
+/**
+ * @brief Timer collection using uint16_t hardware timer.
+ */
+TEST_GROUP_BASE(TimerCollectionUI16, TimerCollectionBase)
+{
+public:
+    ITimerStub<uint16_t> m_itimer;
+};
+
+
+/**
+ * @brief Timer collection using uint32_t hardware timer.
+ */
+TEST_GROUP_BASE(TimerCollectionUI32, TimerCollectionBase)
+{
+public:
+    ITimerStub<uint32_t> m_itimer;
+};
+
+
+/**
+ * @brief Timer collection using uint64_t hardware timer.
+ */
+TEST_GROUP_BASE(TimerCollectionUI64, TimerCollectionBase)
+{
+public:
+    ITimerStub<uint64_t> m_itimer;
 };
 
 
@@ -157,54 +200,64 @@ TEST_GROUP(TimerCollection)
  * collector destructor. Repeat process multiple times in a row. Behavior
  * should be defined.
  */
-TEST(TimerCollection, ConstructorDestructorTest)
+TEST(TimerCollectionUI32, ConstructorDestructorTest)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
     try
     {
         /* Step 1: Arrange. */
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        
-        timer_source_ui32_.set_ticks(0);
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
 
         /* Steps 2 and 3: Action and assert. */
         /* First sequence. */
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer2_, &timer2_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer3_, &timer3_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer4_, &timer4_, &timer_callback_mock_true);
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer2_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer3_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer4_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_collection_destroy(&collection_);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
+
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer2, static_cast<void *>(&m_timer2), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer3, static_cast<void *>(&m_timer3), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer4, static_cast<void *>(&m_timer4), &timer_callback_mock_true);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer2, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer3, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer4, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_collection_destroy(&m_collection);
 
         /* Second sequence. */
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer2_, &timer2_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer3_, &timer3_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer4_, &timer4_, &timer_callback_mock_true);
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer2_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer3_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer4_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_collection_destroy(&collection_);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
+
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer2, static_cast<void *>(&m_timer2), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer3, static_cast<void *>(&m_timer3), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer4, static_cast<void *>(&m_timer4), &timer_callback_mock_true);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer2, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer3, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer4, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_collection_destroy(&m_collection);
 
         /* Third sequence. */
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer2_, &timer2_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer3_, &timer3_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer4_, &timer4_, &timer_callback_mock_true);
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer2_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer3_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer4_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_collection_destroy(&collection_);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
+
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer2, static_cast<void *>(&m_timer2), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer3, static_cast<void *>(&m_timer3), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer4, static_cast<void *>(&m_timer4), &timer_callback_mock_true);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer2, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer3, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer4, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_collection_destroy(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -217,7 +270,7 @@ TEST(TimerCollection, ConstructorDestructorTest)
 /**
  * @brief Verify via timer callback mock.
  */
-TEST(TimerCollection, SingleTimerTimesOutCorrectly)
+TEST(TimerCollectionUI32, SingleTimerTimesOutCorrectly)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -225,37 +278,39 @@ TEST(TimerCollection, SingleTimerTimesOutCorrectly)
     {
         /* Step 1: Arrange. */
         mock().expectNCalls(2, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
 
-        timer_source_ui32_.set_ticks(0);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(0, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(0, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
         /* Timer should not expire here since ticks not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Update ticks. Timer should now expire. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Call couple more times to verify timer doesn't expire since tick counter not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Update ticks. Timer should expire again. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*2);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*2);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -268,7 +323,7 @@ TEST(TimerCollection, SingleTimerTimesOutCorrectly)
 /**
  * @brief Verify via timer callback mocks.
  */
-TEST(TimerCollection, MultipleTimersTimeoutCorrectly)
+TEST(TimerCollectionUI32, MultipleTimersTimeoutCorrectly)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -276,60 +331,62 @@ TEST(TimerCollection, MultipleTimersTimeoutCorrectly)
     {
         /* Step 1: Arrange. */
         mock().expectNCalls(2, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer2_));
+              .withParameter("obj", static_cast<void *>(&m_timer2));
 
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer3_));
+              .withParameter("obj", static_cast<void *>(&m_timer3));
 
         mock().expectNCalls(2, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer4_));
+              .withParameter("obj", static_cast<void *>(&m_timer4));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
 
-        timer_source_ui32_.set_ticks(0);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer2, static_cast<void *>(&m_timer2), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer3, static_cast<void *>(&m_timer3), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer4, static_cast<void *>(&m_timer4), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer2_, &timer2_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer3_, &timer3_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer4_, &timer4_, &timer_callback_mock_true);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer2_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT*2));
-        ecu_timer_arm(&collection_, &timer3_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT*2));
-        ecu_timer_arm(&collection_, &timer4_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer2, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT*2));
+        ecu_timer_arm(&m_collection, &m_timer3, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT*2));
+        ecu_timer_arm(&m_collection, &m_timer4, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
 
-        CHECK_EQUAL(0, timer1_.starting_ticks);
-        CHECK_EQUAL(0, timer2_.starting_ticks);
-        CHECK_EQUAL(0, timer3_.starting_ticks);
-        CHECK_EQUAL(0, timer4_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
-        CHECK_EQUAL((TICK_INCREMENT*2), timer2_.timeout_ticks);
-        CHECK_EQUAL((TICK_INCREMENT*2), timer3_.timeout_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer4_.timeout_ticks);
+        CHECK_EQUAL(0, m_timer1.starting_ticks);
+        CHECK_EQUAL(0, m_timer2.starting_ticks);
+        CHECK_EQUAL(0, m_timer3.starting_ticks);
+        CHECK_EQUAL(0, m_timer4.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
+        CHECK_EQUAL((TICK_INCREMENT*2), m_timer2.timeout_ticks);
+        CHECK_EQUAL((TICK_INCREMENT*2), m_timer3.timeout_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer4.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. Timers 2 and 3 should still be active. */
         /* No timers should expire here since ticks not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Update ticks. Only timers 1 and 4 should expire once. Call tick multiple
         times to verify timers only expire once. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Update ticks. All timers should expire once. Call tick multiple times
         to verify timers only expire once. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*2);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*2);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -343,7 +400,7 @@ TEST(TimerCollection, MultipleTimersTimeoutCorrectly)
  * @brief Periodic timers keep expiring and non-periodic timers
  * only expire once.
  */
-TEST(TimerCollection, PeriodicAndNonPeriodicTimers)
+TEST(TimerCollectionUI32, PeriodicAndNonPeriodicTimers)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -352,62 +409,63 @@ TEST(TimerCollection, PeriodicAndNonPeriodicTimers)
         /* Step 1: Arrange. */
         /* Timers 1 and 2 = periodic. Timers 3 and 4 = non-periodic. */
         mock().expectNCalls(5, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
         mock().expectNCalls(5, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer2_));
+              .withParameter("obj", static_cast<void *>(&m_timer2));
 
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer3_));
+              .withParameter("obj", static_cast<void *>(&m_timer3));
 
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer4_));
+              .withParameter("obj", static_cast<void *>(&m_timer4));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
 
-        timer_source_ui32_.set_ticks(0);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer2, static_cast<void *>(&m_timer2), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer3, static_cast<void *>(&m_timer3), &timer_callback_mock_true);
+        ecu_timer_ctor(&m_timer4, static_cast<void *>(&m_timer4), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer2_, &timer2_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer3_, &timer3_, &timer_callback_mock_true);
-        ecu_timer_ctor(&timer4_, &timer4_, &timer_callback_mock_true);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer2, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer3, false, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        ecu_timer_arm(&m_collection, &m_timer4, false, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
 
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer2_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer3_, false, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        ecu_timer_arm(&collection_, &timer4_, false, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-
-        CHECK_EQUAL(0, timer1_.starting_ticks);
-        CHECK_EQUAL(0, timer2_.starting_ticks);
-        CHECK_EQUAL(0, timer3_.starting_ticks);
-        CHECK_EQUAL(0, timer4_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer2_.timeout_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer3_.timeout_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer4_.timeout_ticks);
+        CHECK_EQUAL(0, m_timer1.starting_ticks);
+        CHECK_EQUAL(0, m_timer2.starting_ticks);
+        CHECK_EQUAL(0, m_timer3.starting_ticks);
+        CHECK_EQUAL(0, m_timer4.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer2.timeout_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer3.timeout_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer4.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
         /* Timeout 1 */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Timeout 2 */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*2);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*2);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Timeout 3 */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*3);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*3);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Timeout 4 */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*4);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*4);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Timeout 5 */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT*5);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT*5);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -421,7 +479,7 @@ TEST(TimerCollection, PeriodicAndNonPeriodicTimers)
  * @brief User's timer driver has 8-bit width and counter wraps around.
  * Verify module able to handle this.
  */
-TEST(TimerCollection, U8TimerOverflowHandled)
+TEST(TimerCollectionUI8, UI8TimerOverflowHandled)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -429,28 +487,30 @@ TEST(TimerCollection, U8TimerOverflowHandled)
     {
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
-        timer_source_ui8_.set_ticks(UINT8_MAX);
+        m_itimer.set_ticks(UINT8_MAX);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui8_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(UINT8_MAX, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(UINT8_MAX, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
-        timer_source_ui8_.set_ticks(TICK_INCREMENT-1);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT-1);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Call tick multiple times to verify timer only expires once since ticks not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -464,7 +524,7 @@ TEST(TimerCollection, U8TimerOverflowHandled)
  * @brief User's timer driver has 16-bit width and counter wraps around.
  * Verify module able to handle this.
  */
-TEST(TimerCollection, U16TimerOverflowHandled)
+TEST(TimerCollectionUI16, UI16TimerOverflowHandled)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -472,28 +532,30 @@ TEST(TimerCollection, U16TimerOverflowHandled)
     {
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
-        timer_source_ui16_.set_ticks(UINT16_MAX);
+        m_itimer.set_ticks(UINT16_MAX);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui16_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(UINT16_MAX, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(UINT16_MAX, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
-        timer_source_ui16_.set_ticks(TICK_INCREMENT-1);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT-1);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Call tick multiple times to verify timer only expires once since ticks not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -507,7 +569,7 @@ TEST(TimerCollection, U16TimerOverflowHandled)
  * @brief User's timer driver has 32-bit width and counter wraps around.
  * Verify module able to handle this.
  */
-TEST(TimerCollection, U32TimerOverflowHandled)
+TEST(TimerCollectionUI32, UI32TimerOverflowHandled)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -515,28 +577,75 @@ TEST(TimerCollection, U32TimerOverflowHandled)
     {
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
-        timer_source_ui32_.set_ticks(UINT32_MAX);
+        m_itimer.set_ticks(UINT32_MAX);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_true);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(UINT32_MAX, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(UINT32_MAX, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT-1);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT-1);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Call tick multiple times to verify timer only expires once since ticks not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+    }
+    catch (AssertException& e)
+    {
+        (void)e;
+        /* FAIL */
+    }
+}
+
+
+/**
+ * @brief User's timer driver has 64-bit width and counter wraps around.
+ * Verify module able to handle this.
+ */
+TEST(TimerCollectionUI64, UI64TimerOverflowHandled)
+{
+    static uint8_t constexpr TICK_INCREMENT = 10; 
+
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("timer_callback_mock")
+              .withParameter("obj", static_cast<void *>(&m_timer1));
+
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+
+        /* Set the tick counter to max value right before a wraparound. */
+        m_itimer.set_ticks(UINT64_MAX);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
+                                  
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(UINT64_MAX, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
+
+        /* Steps 2 and 3: Action and assert. */
+        m_itimer.set_ticks(TICK_INCREMENT-1);
+        ecu_timer_collection_tick(&m_collection);
+
+        /* Call tick multiple times to verify timer only expires once since ticks not updated. */
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -549,34 +658,36 @@ TEST(TimerCollection, U32TimerOverflowHandled)
 /**
  * @brief Verify timeout callback isn't called.
  */
-TEST(TimerCollection, DisarmTimerRightBeforeTimeout)
+TEST(TimerCollectionUI32, DisarmTimerRightBeforeTimeout)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
     try
     {
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_false);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        timer_source_ui32_.set_ticks(0);
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_false);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(0, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(0, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and assert. */
         /* 1 tick before timeout. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT-1);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT-1);
+        ecu_timer_collection_tick(&m_collection);
 
-        ecu_timer_disarm(&timer1_);
+        ecu_timer_disarm(&m_timer1);
 
         /* Would timeout if timer it wasn't disarmed. Call tick multiple times to verify this. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT+1);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT+1);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {
@@ -590,7 +701,7 @@ TEST(TimerCollection, DisarmTimerRightBeforeTimeout)
  * @brief Verify timer keeps expiring if user callback returns false.
  * Verify timer stops once callback returns true.
  */
-TEST(TimerCollection, CallbackReturningFalse)
+TEST(TimerCollectionUI32, CallbackReturningFalse)
 {
     static uint8_t constexpr TICK_INCREMENT = 10; 
 
@@ -598,34 +709,35 @@ TEST(TimerCollection, CallbackReturningFalse)
     {
         /* Step 1: Arrange. */
         mock().expectNCalls(4, "timer_callback_mock")
-              .withParameter("obj", static_cast<void *>(&timer1_));
+              .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-        i_ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
+        m_itimer.set_ticks(0);
+        ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_false);
+        ecu_timer_collection_ctor(&m_collection, 
+                                  &m_itimer.get_ticks, 
+                                  static_cast<void *>(&m_itimer), 
+                                  m_itimer.m_tick_width_bytes);
 
-        timer_source_ui32_.set_ticks(0);
-
-        ecu_timer_ctor(&timer1_, &timer1_, &timer_callback_mock_false);
-        ecu_timer_collection_ctor(&collection_, static_cast<struct i_ecu_timer *>(&timer_source_ui32_));
-        ecu_timer_arm(&collection_, &timer1_, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
-        CHECK_EQUAL(0, timer1_.starting_ticks);
-        CHECK_EQUAL(TICK_INCREMENT, timer1_.timeout_ticks);
+        ecu_timer_arm(&m_collection, &m_timer1, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
+        CHECK_EQUAL(0, m_timer1.starting_ticks);
+        CHECK_EQUAL(TICK_INCREMENT, m_timer1.timeout_ticks);
 
         /* Steps 2 and 3: Action and asset. */
         /* Should timeout with each tick call since callback returns false. */
-        timer_source_ui32_.set_ticks(TICK_INCREMENT);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        m_itimer.set_ticks(TICK_INCREMENT);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
 
         /* Callback now returns true. Timer callback should only be called on this first tick call. */
-        timer1_.callback = &timer_callback_mock_true;
-        ecu_timer_collection_tick(&collection_);
+        m_timer1.callback = &timer_callback_mock_true;
+        ecu_timer_collection_tick(&m_collection);
 
         /* Afterwards timer callback should not be called here since ticks are not updated. */
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
-        ecu_timer_collection_tick(&collection_);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
+        ecu_timer_collection_tick(&m_collection);
     }
     catch (AssertException& e)
     {

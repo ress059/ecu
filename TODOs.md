@@ -8,6 +8,7 @@ since we are already doing that with tests that use extra_list; Documentation do
 6. fsm.h/.c. Tests done. Documentation done.
 7. tree.h/.c. TODO. Tests done.
 8. hsm.h/.c. TODO.
+9. attributes.h. TODO documentation.
 
 Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
@@ -98,17 +99,6 @@ so this only applies to GCC. I.e.
 
 
 ## Asserter
-1. Getting unused warning when using ECU_STATIC_ASSERT() that uses the
-extern char ecu_static_assert_[] array since we never use it. Maybe add GCC
-pragmas to ignore the unused stuff? I.e.
-```C
-#ifdef GCC
-#pragma GCC -wno-unused-warning //whatever syntax to ignore unused warning
-#define ECU_STATIC_ASSERT() ...
-#end pragma
-#endif
-```
-
 2. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
 ```C
 void set_assert_functor(functor)
@@ -124,45 +114,16 @@ void set_assert_functor(functor)
 
 
 ## Timer
-1. I think the i_ecu_timer callback should take in a void* instead of the i_ecu_timer object itself...
-currently you are forcing the user to use inheritance if they need more info than the i_ecu_timer struct...
-I.e.
-```C
-// Thinking of doing this
-struct i_ecu_timer
-{
-    size_t tick_width_bytes;
-    void *obj;
-    ecu_max_tick_size_t (*get_ticks)(void *obj);
-};
-
-// Current implementation.
-struct i_ecu_timer
-{
-    size_t tick_width_bytes;
-    ecu_max_tick_size_t (*get_ticks)(struct i_ecu_timer *me);
-};
-```
-
-2. Think it makes more sense to combine i_ecu_timer into ecu_timer_collection struct. I.e.
-```C
-// Thinking about doing this
-struct ecu_timer_collection
-{
-    // just put the api directly insie the timer_collection struct.
-    size_t tick_width_bytes;
-    ecu_max_tick_size_t (*get_ticks)(struct i_ecu_timer *me);
-};
-
-// Currently doing this.
-struct ecu_timer_collection
-{
-    struct i_ecu_timer *api;
-};
-```
+1. Delete i_ecu_timer.h/.c (after you copy its documentation).
+2. Finish documentation of timer module.
 
 
 ## Build system and syntax
+0. Polish up build-system overall.
+    - Make build directory outside tests folder. I.e. move from tests/build/... to build/ top-level directory.
+    - Create a separate toolchains folder that has .cmake files.
+    - Maybe add new build configurations for ARM GNU - compile it for cm0, cm3, cm4, cr5, etc.
+
 1. Print "cannot use endian.h" warning only at build-time NOT configuration time.
 Otherwise message is always printed
 - Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?

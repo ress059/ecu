@@ -1,3 +1,9 @@
+target_compile_options(ecu 
+    PRIVATE 
+        $<$<C_COMPILER_ID:GNU>:-std=gnu99>
+)
+
+
 if(ECU_ENABLE_BUILD_TESTING)
     add_executable(ecu_build_test 
         ${CMAKE_CURRENT_LIST_DIR}/build-test/main.c
@@ -62,7 +68,7 @@ if(ECU_ENABLE_UNIT_TESTING)
         PRIVATE
             $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always>
             $<$<CXX_COMPILER_ID:GNU>:-Wall>
-            $<AND:$<CONFIG:Debug>,$<C_COMPILER_ID:GNU>>:-g3>
+            $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-g3>
     )
 
 

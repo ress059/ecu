@@ -31,6 +31,13 @@ target_include_directories(ecu
 )
 
 
+# ECU library requires at least C99.
+target_compile_features(ecu 
+    PUBLIC 
+        c_std_99    
+)
+
+
 # Target Endianness.
 if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
     target_compile_definitions(ecu 

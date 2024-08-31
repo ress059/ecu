@@ -19,6 +19,20 @@
 
 
 
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------- GLOBAL VARIABLES -------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+/* When using C99, static asserts are not natively supported. Therefore ECU_STATIC_ASSERT() 
+macro uses ecu_static_assert_do_not_use_[] array to produce compilation errors. Therefore
+this array must actually be defined somewhere since it will be referenced whenever
+ECU_STATIC_ASSERT() is called. */
+#ifdef ECU_USING_C99_STATIC_ASSERT_DO_NOT_USE_
+const char ecu_static_assert_do_not_use_[1] = {0};
+#endif
+
+
+
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/

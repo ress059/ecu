@@ -9,7 +9,7 @@
 		{
 			"name": "build-test",
 			"hidden": true,
-			"binaryDir": "${sourceDir}/tests/build-test/build",
+			"binaryDir": "tests/build-test/build",
 			"cacheVariables": 
 			{
 				"ECU_ENABLE_TESTING": true,
@@ -21,7 +21,7 @@
 		{
 			"name": "unit-test",
 			"hidden": true,
-			"binaryDir": "${sourceDir}/tests/unit-test/build",
+			"binaryDir": "tests/unit-test/build",
 			"cacheVariables": 
 			{
 				"ECU_ENABLE_TESTING": true,
@@ -35,14 +35,14 @@
 			"inherits": "build-test",
 			"displayName": "Linux-GNU-Build",
 			"description": "Compile ECU library on Linux host with GNU toolchain.",
-			"toolchainFile": "${sourceDir}/tests/cmake/linux-gnu-x86.cmake"
+			"toolchainFile": "tests/cmake/linux-gnu-x86.cmake"
 		},
 		{
 			"name": "linux-gnu-unit-test",
 			"displayName": "Linux-GNU-Unit-Test",
 			"description": "Compile and run ECU library unit tests on Linux host with GNU toolchain. Uses GTest.",
 			"inherits": "unit-test",
-			"toolchainFile": "${sourceDir}/tests/cmake/linux-gnu-x86.cmake"
+			"toolchainFile": "tests/cmake/linux-gnu-x86.cmake"
 		}
     ],
 	"buildPresets": [

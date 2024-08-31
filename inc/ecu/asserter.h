@@ -113,7 +113,11 @@
 /*------------------------------------------------------------ INCLUDES ----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+/* STDLib. */
 #include <stdint.h>
+
+/* Unused attribute. */
+#include "ecu/attributes.h"
 
 
 
@@ -130,7 +134,6 @@
      * 
      * 1. Expands to this when compiling with C++11 and greater. Uses static_assert()
      * natively supported by this version.
-     * 
      * @code{.c}
      * #define ECU_STATIC_ASSERT(check)               static_assert((check_))
      * @endcode
@@ -138,7 +141,6 @@
      * 2. Expands to this when compiling with C11 and greater. Uses _Static_assert() 
      * which is defined in the assert.h header file. Therefore assert.h is also 
      * included in this case.
-     * 
      * @code{.c}
      * #include <assert.h>
      * #define ECU_STATIC_ASSERT(check_)              _Static_assert((check_))
@@ -146,17 +148,15 @@
      * 
      * 3. Expands to this when compiling with C23 and greater. Uses static_assert() 
      * which is natively supported in this standard.
-     * 
      * @code{.c}
      * #define ECU_STATIC_ASSERT(check_)              static_assert((check_))
      * @endcode
      * 
-     * 4. Expands to this when when using C/C++ standard that does not support
-     * static assertions. Macro expands to extern char ecu_static_assert_[-1]
-     * if assert fires, thus producing a compilation error.
-     * 
+     * 4. Expands to this when using C/C++ standard that does not support
+     * static assertions. If an assert fires, this macro produces a compilation 
+     * error by referencing a symbol that is a negative-sized array.
      * @code{.c}
-     * #define ECU_STATIC_ASSERT(check_)              extern char ecu_static_assert_[(check_) ? 1 : -1]
+     * #define ECU_STATIC_ASSERT(check_)              extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1]
      * @endcode
      * 
      * @param check_ Condition to check. If this is true the assertion passes.
@@ -199,16 +199,17 @@
          */
 #       define ECU_STATIC_ASSERT(check_)       static_assert((check_))
 #   else
+#       define ECU_USING_C99_STATIC_ASSERT_DO_NOT_USE_
         /**
          * @brief Produce compilation error if assert fails. Using C/C++ standard that
-         * does not support static assertions. Macro expands to extern char 
-         * ecu_static_assert_[-1] if assert fires, thus producing a compilation error.
+         * does not support static assertions. If an assert fires, this macro produces 
+         * a compilation error by referencing a symbol that is a negative-sized array.
          * 
          * @param check_ Condition to check. If this is true the assertion passes.
          * If this is false the assertion fails and triggers a compilation error.
          * This must be a literal expression that can be evaluated at compile-time.
          */
-#       define ECU_STATIC_ASSERT(check_)       extern char ecu_static_assert_[(check_) ? 1 : -1]
+#       define ECU_STATIC_ASSERT(check_)       extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1] ECU_ATTRIBUTE_UNUSED
 #   endif
 #endif /* ECU_DOXYGEN */
 
