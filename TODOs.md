@@ -173,3 +173,6 @@ I.e. #include <ecu/asserter.h> to #include "ecu/asserter.h"
 
 3. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+4. In CMakePresets.json do not use vscode variables. Can just change paths to
+absolute paths instead. I.e. toolchains/a.cmake instead of ${sourceDir}/toolchains/a.cmake

@@ -49,9 +49,6 @@
 /* Compile-time and runtime asserts. */
 #include <ecu/asserter.h>
 
-/* Clock tick interface provided by user. */
-#include <ecu/interface/itimer.h>
-
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -108,18 +105,8 @@ static bool timer_active(const struct ecu_timer *timer);
 
 
 /**
- * @brief Returns true if the user-supplied timer driver is valid. False otherwise.
- * Valid means that itimer->get_ticks callback exists, and itimer->tick_width_bytes
- * is set properly.
- * 
- * @param itimer Driver to check. Cannot be NULL. 
- */
-static bool i_timer_vaild(const struct i_ecu_timer *itimer);
-
-
-/**
  * @brief Returns true if the timer collection is valid. False otherwise. Valid
- * means that collection->driver is valid and collection->overflow_mask is set
+ * means that collection->api is valid and collection->overflow_mask is set
  * properly.
  * 
  * @param collection Collection to check. Cannot be NULL.
@@ -183,34 +170,17 @@ static bool timer_active(const struct ecu_timer *timer)
 }
 
 
-static bool i_timer_vaild(const struct i_ecu_timer *itimer)
-{
-    bool valid = false;
-
-    ECU_RUNTIME_ASSERT( (itimer), TIMER_ASSERT_FUNCTOR );
-
-    if ((itimer->get_ticks) && \
-        (itimer->tick_width_bytes > 0 && itimer->tick_width_bytes <= sizeof(ecu_max_tick_size_t)))
-    {
-        valid = true;
-    }
-
-    return valid;
-}
-
-
 static bool timer_collection_valid(const struct ecu_timer_collection *me)
 {
     bool valid = false;
 
     ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
 
-    if (i_timer_vaild(me->driver))
+    if ((me->api.get_ticks) && \
+        ((me->api.tick_width_bytes > 0) && (me->api.tick_width_bytes <= sizeof(ecu_max_tick_size_t))) && \
+        (me->overflow_mask == calculate_overflow_mask(me->api.tick_width_bytes)))
     {
-        if (me->overflow_mask == calculate_overflow_mask(me->driver->tick_width_bytes))
-        {
-            valid = true;
-        }
+        valid = true;
     }
 
     return valid;
@@ -239,23 +209,33 @@ void ecu_timer_ctor(struct ecu_timer *me,
 
 
 void ecu_timer_collection_ctor(struct ecu_timer_collection *me,
-                               struct i_ecu_timer *driver_0)
+                               ecu_max_tick_size_t (*get_ticks_0)(void *object),
+                               void *object_0,
+                               size_t tick_width_bytes_0)
 {
-    ECU_RUNTIME_ASSERT( (me && driver_0), TIMER_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (i_timer_vaild(driver_0)), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me && get_ticks_0), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (tick_width_bytes_0 > 0 && tick_width_bytes_0 <= sizeof(ecu_max_tick_size_t)),
+                        TIMER_ASSERT_FUNCTOR );
     
+    /* Iterator is not "constructed" since it is only used and initialized in ecu_timer_collection_tick(). */
     ecu_circular_dll_ctor(&me->list);
-    me->driver          = driver_0;
-    me->overflow_mask   = calculate_overflow_mask(driver_0->tick_width_bytes);
+    me->api.get_ticks           = get_ticks_0;
+    me->api.object              = object_0;
+    me->api.tick_width_bytes    = tick_width_bytes_0;
+    me->overflow_mask           = calculate_overflow_mask(tick_width_bytes_0);
 }
 
 
 void ecu_timer_collection_destroy(struct ecu_timer_collection *me)
 {
     ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );
+
     ecu_circular_dll_destroy(&me->list); /* Automatically calls timer_destroy() for each ecu_timer node. */
-    me->driver          = (struct i_ecu_timer *)0;
-    me->overflow_mask   = 0;
+    me->api.get_ticks           = (ecu_max_tick_size_t (*)(void *))0;
+    me->api.object              = (void *)0;
+    me->api.tick_width_bytes    = 0;
+    me->overflow_mask           = 0;
 }
 
 
@@ -266,13 +246,12 @@ void ecu_timer_arm(struct ecu_timer_collection *me,
 {
     ECU_RUNTIME_ASSERT( ((me) && (timer) && (timeout_ticks > 0)), TIMER_ASSERT_FUNCTOR );
     ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );
-    /* Checking for valid/active timer is offloaded to ecu_timer_collection_tick() function. */
 
     ecu_circular_dll_push_back(&me->list, &timer->node); /* Asserts if node already in a list. */
     timer->armed            = true;
     timer->periodic         = periodic;
     timer->timeout_ticks    = timeout_ticks;
-    timer->starting_ticks   = (*me->driver->get_ticks)(me->driver);
+    timer->starting_ticks   = (*me->api.get_ticks)(me->api.object);
 }
 
 
@@ -307,12 +286,13 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
     {
         ECU_RUNTIME_ASSERT( (node), TIMER_ASSERT_FUNCTOR );
         struct ecu_timer *t = ECU_CIRCULAR_DLL_GET_ENTRY(node, struct ecu_timer, node);
-        ECU_RUNTIME_ASSERT( (timer_active(t)), TIMER_ASSERT_FUNCTOR ); /* timer_active() NULL asserts t. */
+        ECU_RUNTIME_ASSERT( (t), TIMER_ASSERT_FUNCTOR );
+        ECU_RUNTIME_ASSERT( (timer_active(t)), TIMER_ASSERT_FUNCTOR );
 
         /* Use unsigned overflow to automatically handle tick counter wraparound. Guaranteed to 
         always be unsigned overflow since we static assert ecu_max_tick_size_t is unsigned. See 
         timer.c file description for details. */
-        elapsed_ticks = ((*me->driver->get_ticks)(me->driver)) - (t->starting_ticks);
+        elapsed_ticks = ((*me->api.get_ticks)(me->api.object)) - (t->starting_ticks);
         elapsed_ticks = elapsed_ticks & me->overflow_mask;
 
         if (elapsed_ticks >= t->timeout_ticks)
@@ -323,7 +303,7 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
             {
                 if (t->periodic)
                 {
-                    t->starting_ticks = (*me->driver->get_ticks)(me->driver);
+                    t->starting_ticks = (*me->api.get_ticks)(me->api.object);
                 }
                 else 
                 {

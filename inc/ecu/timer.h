@@ -184,13 +184,13 @@
  * @private 
  * @brief PRIVATE. Defined so this can easily be changed in the future.
  * User's hardware timer width must be less than or equal to this.
- * I.e. @ref i_ecu_timer.tick_width_bytes <= sizeof(ecu_max_tick_size_t)
+ * I.e. @ref ecu_timer_collection.api.tick_width_bytes <= sizeof(ecu_max_tick_size_t)
  * 
  * @warning This must be an unsigned type in order to handle tick counter 
  * wraparounds. A compilation error will occur if this is declared as a 
  * signed type.
  */
-typedef uint32_t ecu_max_tick_size_t;
+typedef uint64_t ecu_max_tick_size_t;
 
 
 /**
@@ -255,10 +255,42 @@ struct ecu_timer
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief A linked list of timers.
+ * @brief A linked list of timers. Also provides an interface so user's
+ * can link their timer to this module.
  */
 struct ecu_timer_collection
 {
+    /**
+     * @private 
+     * @brief PRIVATE. User-defined timer driver that contains hardware dependencies.
+     * See @ref timer.h description for more details.
+     */
+    struct 
+    {
+        /**
+         * @private 
+         * @brief PRIVATE. Returns the raw number of clock ticks. See @ref timer.h 
+         * description for an example.
+         */
+        ecu_max_tick_size_t (*get_ticks)(void *object);
+
+        /**
+         * @private
+         * @brief PRIVATE. Optional object to pass into @ref get_ticks().
+         */
+        void *object;
+
+        /**
+         * @private 
+         * @brief PRIVATE. Width, in bytes, of user's timer. For example if you 
+         * are using a 32-bit timer this would be 4.
+         * 
+         * @warning This must be less than or equal to @ref ecu_max_tick_size_t.
+         * I.e. @ref tick_width_bytes <= sizeof(ecu_max_tick_size_t)
+         */
+        size_t tick_width_bytes;
+    } api;
+
     /**
      * @private 
      * @brief PRIVATE. List of timers.
@@ -270,16 +302,6 @@ struct ecu_timer_collection
      * @brief PRIVATE. Timer list iterator.
      */
     struct ecu_circular_dll_iterator iterator;
-
-    /**
-     * @private 
-     * @brief PRIVATE. User-defined timer driver that contains hardware dependencies.
-     * See @ref timer.h description for more details.
-     * 
-     * @note Not const qualified since @ref i_ecu_timer.get_ticks takes in non-const
-     * @ref i_ecu_timer
-     */
-    struct i_ecu_timer *driver;
 
     /**
      * @private 
@@ -305,7 +327,8 @@ extern "C" {
 /**@{*/
 /**
  * @pre Memory already allocated for @p me and @p object
- * @brief Timer constructor.
+ * @brief Timer constructor. Once constructed, timers are started by adding them to a 
+ * @ref ecu_timer_collection by calling @ref ecu_timer_arm().
  * 
  * @warning @p me cannot be an active timer apart of an existing @ref ecu_timer_collection. 
  * Otherwise the timer collection will become corrupted and behavior is undefined.
@@ -327,19 +350,28 @@ extern void ecu_timer_ctor(struct ecu_timer *me,
 
 /**
  * @pre Memory already allocated for @p me.
- * @pre @p driver_0 previously constructed via call to @ref i_ecu_timer_ctor()
- * @brief Timer collection constructor.
+ * @brief Timer collection constructor. Holds a linked list of @ref ecu_timer objects
+ * and provides an interface to interact with the user's hardware timer.
  * 
  * @warning @p me cannot be an active collection that has timers in it.
  * Otherwise the collection will detach itself from all its timers and 
  * behavior is undefined.
+ * @warning @p tick_width_bytes_0 must be less than or equal to @ref ecu_max_tick_size_t.
+ * I.e. @p tick_width_bytes <= sizeof(ecu_max_tick_size_t)
  * 
  * @param me Timer collection to construct. This cannot be NULL.
- * @param driver_0 User-defined timer driver. See @ref timer.h description
- * for more details.
+ * @param get_ticks User-defined function that returns the raw number of 
+ * clock ticks of their hardware timer source. This function is mandatory 
+ * and cannot be NULL. See @ref timer.h description for an example.
+ * @param object_0 Optional object to pass into @ref get_ticks_0 function.
+ * Pass in NULL if unused.
+ * @param tick_width_bytes_0 Width, in bytes, of your timer. For example if you 
+ * are using a 32-bit timer this would be 4.
  */
 extern void ecu_timer_collection_ctor(struct ecu_timer_collection *me,
-                                      struct i_ecu_timer *driver_0);
+                                      ecu_max_tick_size_t (*get_ticks_0)(void *object),
+                                      void *object_0,
+                                      size_t tick_width_bytes_0);
 
 
 /**

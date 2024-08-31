@@ -5,15 +5,13 @@ option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
 
 
 if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
-    message(WARNING "Using untested compiler. See entries in ECU_SUPPORTED_COMPILERS "
-                    "for a list of supported and tested compilers.")
+    message(WARNING "Using untested compiler. Currently supported compilers = ${ECU_SUPPORTED_COMPILERS}")
 endif()
 
 
 # Note this library is meant to be compiled with the target 
 # application's toolchain.
 add_library(ecu STATIC
-    # Library source code.
     ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
     ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c
     ${CMAKE_CURRENT_LIST_DIR}/src/event.c
@@ -22,9 +20,6 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
     ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
     ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
-
-    # Interfaces.
-    ${CMAKE_CURRENT_LIST_DIR}/src/interface/itimer.c
 )
 
 
