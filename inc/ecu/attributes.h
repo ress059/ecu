@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Wraps some popular, compiler-specific attributes around #define
+ * @brief Wraps some popular, compiler-specific attributes around define
  * directives. Providing this interface allows all compiler-specific attributes 
  * to be contained within this single module instead of being scattered throughout 
  * application code. Therefore if the toolchain changes, only the macro definitions 
@@ -15,27 +15,22 @@
  * int var __attribute__((unused)) = 1;
  * 
  * 
- * // Pseudocode for this module
- * #ifdef __GNUC__
- * #    define ECU_ATTRIBUTE_UNUSED            __attribute__((unused))
- * #endif
- * 
- * 
  * // Using this module is a much better approach as this adds an additional
  * // layer of protection. If a different compiler needs to be used that does 
  * // not support __attribute__((unused)) then only the ECU_ATTRIBUTE_UNUSED
  * // definition has to be changed. Any application code referencing this define
  * // can remain the same.
+ * #include "ecu/attributes.h"
  * int var2 ECU_ATTRIBUTE_UNUSED = 1;
  * @endcode
  * 
  * @warning Only GCC is currently supported. For unsupported compilers, attributes 
  * that do not effect code functionality will be defined, but expand to nothing so 
- * any application using them will still compile. An example of this is @ref ECU_ATTRIBUTE_UNUSED
+ * any application using them will still compile. An example of this is @ref ECU_ATTRIBUTE_UNUSED.
  * For unsupported compilers, attributes that are critical to code functionality
  * will NOT be defined. Therefore if any of these attributes are used in your code,
  * a compilation error will occur from an unresolved symbol reference. An example of
- * this is @ref ECU_ATTRIBUTE_PACKED
+ * this is @ref ECU_ATTRIBUTE_PACKED.
  * 
  * @author Ian Ress
  * @version 0.1
@@ -60,10 +55,10 @@
      * #define ECU_ATTRIBUTE_UNUSED             __attribute__((unused))
      * @endcode
      * 
-     * 2. If none of the previous options apply to your toolchain (you are using
-     * an unsupported compiler), then this expands to nothing since the unused
-     * attribute is not critical to code's functionality. Therefore any code
-     * using this macro will still compile.
+     * 2. If none of the previous options apply to your toolchain then you 
+     * are using an unsupported compiler. In this case, this macro expands to 
+     * nothing since the unused attribute is not critical to code's functionality. 
+     * Therefore any code using this macro will still compile.
      * @code{.c}
      * #define ECU_ATTRIBUTE_UNUSED
      * @endcode
@@ -85,9 +80,10 @@
      * #define ECU_ATTRIBUTE_PACKED             __attribute__((packed))
      * @endcode
      * 
-     * 2. If none of the previous options apply to your toolchain (you are using
-     * an unsupported compiler), then this will NOT be defined and will produce
-     * a compilation error if used. See warning directive for more details.
+     * 2. If none of the previous options apply to your toolchain then you are 
+     * using an unsupported compiler. In this case, this macro will NOT be defined 
+     * and should produce a compilation error if used. See warning directive for more 
+     * details.
      */
 #   define ECU_ATTRIBUTE_PACKED
 #else
