@@ -3,12 +3,12 @@ Completed.
 2. event.h/.c and object_id.hs/.c done. Documentation done.
 3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
 since we are already doing that with tests that use extra_list; Documentation done.
-4. itimer.h/.c and timer.h/.c done. Tests done. Documentation done.
+4. timer.h/.c done. Tests done. Documentation done.
 5. endian.h. Tests done. Documentation done.
 6. fsm.h/.c. Tests done. Documentation done.
 7. tree.h/.c. TODO. Tests done.
 8. hsm.h/.c. TODO.
-9. attributes.h. TODO documentation.
+9. attributes.h. done. Documentation done.
 
 Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
@@ -111,11 +111,6 @@ void set_assert_functor(functor)
 ```
 
 3. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
-
-
-## Timer
-1. Delete i_ecu_timer.h/.c (after you copy its documentation).
-2. Finish documentation of timer module.
 
 
 ## Build system and syntax

@@ -19,14 +19,14 @@
 #include <cstdint>
 
 /* Files under test. */
-#include <ecu/timer.h>
+#include "ecu/timer.h"
 
 /* Mocks */
-#include <mocks/mock_asserter.hpp>
+#include "mocks/mock_asserter.hpp"
 
 /* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppUTest/TestHarness.h>
+#include "CppUTestExt/MockSupport.h"
+#include "CppUTest/TestHarness.h"
 
 
 

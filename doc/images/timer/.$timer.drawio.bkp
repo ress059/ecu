@@ -1,54 +1,85 @@
-<mxfile host="Electron" modified="2024-04-14T12:35:39.731Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="FuEQ63yQM1c0HlvQGQwP" version="21.1.2" type="device">
-  <diagram name="Page-1" id="b_uDBBJ2MgNxLQHOcmpQ">
-    <mxGraphModel dx="2537" dy="993" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<mxfile host="Electron" modified="2024-04-14T22:12:17.095Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="EjxdYBfITkkrWjl3Z7UY" version="21.1.2" type="device" pages="2">
+  <diagram name="Timer-structure" id="b_uDBBJ2MgNxLQHOcmpQ">
+    <mxGraphModel dx="2268" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-9" target="E3zxyAR4qr2r-lfOXRCv-10">
+        <mxCell id="lt3md72Ah2DvntdAdP_9-1" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-50" y="380" width="1100" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="0m-n_d27Zn1V3y7lR1SX-1" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillStyle=solid;fillColor=#E6E6E6;strokeColor=none;" parent="lt3md72Ah2DvntdAdP_9-1" vertex="1">
+          <mxGeometry width="1099.9999999999998" height="250.00000000000003" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-9" value="struct ecu_timer_collection&lt;br&gt;(Dummy terminal node)" style="rounded=1;whiteSpace=wrap;html=1;" parent="lt3md72Ah2DvntdAdP_9-1" vertex="1">
+          <mxGeometry x="27.84810126582278" y="71.42857142857143" width="208.86075949367083" height="107.14285714285714" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-10" target="E3zxyAR4qr2r-lfOXRCv-9" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-9" target="E3zxyAR4qr2r-lfOXRCv-12">
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-10" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" parent="lt3md72Ah2DvntdAdP_9-1" vertex="1">
+          <mxGeometry x="306.32911392405055" y="71.42857142857143" width="208.86075949367083" height="107.14285714285714" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-9" target="E3zxyAR4qr2r-lfOXRCv-10" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-11" target="E3zxyAR4qr2r-lfOXRCv-10" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-11" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" parent="lt3md72Ah2DvntdAdP_9-1" vertex="1">
+          <mxGeometry x="584.8101265822784" y="71.42857142857143" width="208.86075949367083" height="107.14285714285714" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-10" target="E3zxyAR4qr2r-lfOXRCv-11" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-12" target="E3zxyAR4qr2r-lfOXRCv-11" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.464;entryY=1.013;entryDx=0;entryDy=0;entryPerimeter=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-12" target="E3zxyAR4qr2r-lfOXRCv-9" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="45" y="400" />
-              <mxPoint x="645" y="400" />
+              <mxPoint x="967.7215189873416" y="214.28571428571428" />
+              <mxPoint x="125.31645569620251" y="214.28571428571428" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-9" value="struct ecu_timer_collection&lt;br&gt;(Dummy terminal node)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="-30" y="420" width="150" height="60" as="geometry" />
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-12" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" parent="lt3md72Ah2DvntdAdP_9-1" vertex="1">
+          <mxGeometry x="863.2911392405061" y="71.42857142857143" width="208.86075949367083" height="107.14285714285714" as="geometry" />
         </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-10" target="E3zxyAR4qr2r-lfOXRCv-9">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-10" target="E3zxyAR4qr2r-lfOXRCv-11">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-10" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="170" y="420" width="150" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-11" target="E3zxyAR4qr2r-lfOXRCv-10">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-11" target="E3zxyAR4qr2r-lfOXRCv-12">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-11" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="370" y="420" width="150" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-12" target="E3zxyAR4qr2r-lfOXRCv-11">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.464;entryY=1.013;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="E3zxyAR4qr2r-lfOXRCv-12" target="E3zxyAR4qr2r-lfOXRCv-9">
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-9" target="E3zxyAR4qr2r-lfOXRCv-12" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="645" y="500" />
-              <mxPoint x="40" y="500" />
+              <mxPoint x="132.2784810126582" y="35.714285714285715" />
+              <mxPoint x="967.7215189873416" y="35.714285714285715" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="E3zxyAR4qr2r-lfOXRCv-12" value="struct ecu_timer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="570" y="420" width="150" height="60" as="geometry" />
+        <mxCell id="E3zxyAR4qr2r-lfOXRCv-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="lt3md72Ah2DvntdAdP_9-1" source="E3zxyAR4qr2r-lfOXRCv-11" target="E3zxyAR4qr2r-lfOXRCv-12" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="MRhKOPgnAMyhnWef8QOH" name="User-defined-timer">
+    <mxGraphModel dx="746" dy="436" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="5bX2r2RtYOvgmtIAgZh--1" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="90" y="300" width="540" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="1NHUgZrfUA_fVuOd6SKd-7" value="" style="rounded=1;whiteSpace=wrap;html=1;fillStyle=solid;fillColor=#E6E6E6;strokeColor=none;" parent="5bX2r2RtYOvgmtIAgZh--1" vertex="1">
+          <mxGeometry y="13.846153846153848" width="540" height="152.30769230769232" as="geometry" />
+        </mxCell>
+        <mxCell id="1NHUgZrfUA_fVuOd6SKd-2" value="struct ecu_timer_collection&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;&quot;&gt;{&lt;/span&gt;&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;....&lt;/span&gt;&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;border-color: var(--border-color);&quot;&gt; &lt;/span&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;....&lt;/span&gt;&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;border-color: var(--border-color);&quot;&gt; &lt;/span&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;struct i_ecu_timer *driver;&lt;/span&gt;&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;&quot;&gt;};&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="5bX2r2RtYOvgmtIAgZh--1" vertex="1">
+          <mxGeometry x="14.594594594594597" width="248.1081081081081" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="1NHUgZrfUA_fVuOd6SKd-5" value="Hardware timer defined by user." style="rounded=1;whiteSpace=wrap;html=1;" parent="5bX2r2RtYOvgmtIAgZh--1" vertex="1">
+          <mxGeometry x="350.27027027027026" y="27.692307692307697" width="175.13513513513513" height="83.07692307692308" as="geometry" />
+        </mxCell>
+        <mxCell id="5bX2r2RtYOvgmtIAgZh--7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="5bX2r2RtYOvgmtIAgZh--1" target="1NHUgZrfUA_fVuOd6SKd-5">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="183" y="113" as="sourcePoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

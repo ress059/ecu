@@ -44,10 +44,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/timer.h>
+#include "ecu/timer.h"
 
 /* Compile-time and runtime asserts. */
-#include <ecu/asserter.h>
+#include "ecu/asserter.h"
 
 
 
