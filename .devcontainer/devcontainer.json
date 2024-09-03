@@ -1,0 +1,33 @@
+{
+	"name": "ecu",
+	"build": 
+	{
+		/* Use Dockerfile in root of this repo */
+		"dockerfile": "${localWorkspaceFolder}/Dockerfile"
+	},
+
+	"customizations": 
+	{
+		"vscode": 
+		{
+			/* VSCode extensions to install when container is first created. */
+			"extensions": 
+			[
+				"ms-vscode.cpptools-extension-pack",
+				"cschlosser.doxdocgen",
+				"ms-python.python",
+				"redhat.vscode-yaml",
+				"marus25.cortex-debug",
+				"ms-azuretools.vscode-docker"
+			],
+			/* Make bash default terminal. Set up intellisense. */
+			"settings": 
+			{
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"C_Cpp.default.compileCommands": "${config:cmake.buildDirectory}/compile_commands.json",
+				"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+				"workbench.editor.enablePreview": false
+			}
+		}
+	}
+}
