@@ -158,4 +158,5 @@ named "ecu" to give scope to your #include directives.
 
 Next Steps
 ==============================================
-See :ref:`Features Section <features>` for an in-depth explanation of ECU's features and API.
+See :ref:`Developer Guide Section <developer_guide>` for an in-depth explanation of :ref:`ECU's 
+features <introduction_key_features>` and API.

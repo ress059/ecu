@@ -1,18 +1,14 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Configuration file for the ECU documentation builder.
 
 # -- Path setup --------------------------------------------------------------
+import sys
+from pathlib import Path
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+ECU_BASE_DIR = Path(__file__).resolve().parents[2]
+
+
+# sys.path.append("/home/me/docproj/ext/breathe/") !!!! TODO Need to add breathe executable to path!!! How to do this in a non-jank way???
+
 
 
 # -- Project information -----------------------------------------------------
@@ -34,7 +30,8 @@ extensions = [
             "sphinx.ext.graphviz",
             "sphinx.ext.todo",
             "sphinx_tabs.tabs",
-            "hoverxref.extension"
+            "hoverxref.extension",
+            "breathe"
 ]
 
 hoverxref_roles = [
@@ -72,3 +69,11 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+
+
+# -- Breathe configuration -------------------------------------------------
+breathe_projects = {
+    "ECU": str(ECU_BASE_DIR / "doc" / "doxygen" / "xml")
+}
+
+breathe_default_project = "ECU"

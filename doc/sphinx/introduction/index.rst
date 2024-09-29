@@ -16,6 +16,8 @@ algorithms targeted for embedded platforms.
 
 Key Features
 """""""""""""""""""""""""""""""""""""""""""""""
+.. _introduction_key_features:
+
 + Static and run-time assert framework for embedded targets.
 
 - Linked lists.
@@ -126,4 +128,5 @@ Next Steps
 """""""""""""""""""""""""""""""""""""""""""""""
 See :ref:`Getting Started Section <getting_started>` to learn how to import ECU into your project.
 
-See :ref:`Features Section <features>` for an in-depth explanation of ECU's features and API.
+See :ref:`Developer Guide Section <developer_guide>` for an in-depth explanation of 
+:ref:`ECU's features <introduction_key_features>` and API.

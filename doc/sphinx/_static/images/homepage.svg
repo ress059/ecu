@@ -41,8 +41,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.0875"
-     inkscape:cx="-2170.4211"
-     inkscape:cy="-1870.78"
+     inkscape:cx="-3894.5075"
+     inkscape:cy="-1415.7273"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -67,7 +67,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -91,7 +91,7 @@
     </g>
     <g
        id="g6489"
-       transform="matrix(0.26458333,0,0,0.26458333,-903.83343,644.19957)"
+       transform="matrix(0.26458333,0,0,0.26458333,-887.39419,627.73552)"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951">
       <svg
@@ -279,7 +279,7 @@
     </g>
     <g
        id="g6654"
-       transform="matrix(0.26458333,0,0,0.26458333,-2068.0001,635.12844)"
+       transform="matrix(0.26458333,0,0,0.26458333,-2066.6799,612.61667)"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951">
       <svg
@@ -449,7 +449,7 @@
     </g>
     <g
        id="g6843"
-       transform="matrix(0.26458333,0,0,0.26458333,-1487.4287,647.22339)">
+       transform="matrix(0.26458333,0,0,0.26458333,-1486.1085,630.75932)">
       <svg
          id="svg6841"
          version="1.1"
@@ -662,81 +662,45 @@
        id="rect6891-7"
        width="420.14771"
        height="95.147957"
-       x="-2008.2932"
-       y="947.66443"
+       x="-2003.798"
+       y="926.58856"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-1801.2568"
-       y="1009.8278"
-       id="text6895"
-       inkscape:export-xdpi="96.005951"
-       inkscape:export-ydpi="96.005951"><tspan
-         sodipodi:role="line"
-         id="tspan6893"
-         x="-1801.2568"
-         y="1009.8278"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:70.55555725px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Getting Started</tspan><tspan
-         sodipodi:role="line"
-         x="-1801.2568"
-         y="1065.613"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.27777863px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan6914">Import ECU into your project.</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke-width:0.26458332"
        id="rect6891-7-3"
        width="420.14771"
        height="95.147957"
-       x="-1431.6617"
-       y="958.69037" />
+       x="-1430.3416"
+       y="943.58618" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-1222.588"
-       y="1027.9175"
+       x="-1221.1167"
+       y="996.91211"
        id="text6895-9"><tspan
          sodipodi:role="line"
          id="tspan6893-4"
-         x="-1222.588"
-         y="1027.9175"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:70.55555725px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Features</tspan><tspan
+         x="-1221.1167"
+         y="996.91211"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:63.5px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Developer Guide</tspan><tspan
          sodipodi:role="line"
-         x="-1222.588"
-         y="1083.7028"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.27777863px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
+         x="-1221.1167"
+         y="1051.7305"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:35.27777863px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="tspan6914-4">API and how to use ECU.</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke-width:0.26458332"
        id="rect6891-7-3-4"
        width="420.14771"
        height="95.147957"
-       x="-851.48761"
-       y="950.32117"
+       x="-835.0484"
+       y="938.54327"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-631.18054"
-       y="1018.8992"
-       id="text6895-9-9"
-       inkscape:export-xdpi="96.005951"
-       inkscape:export-ydpi="96.005951"><tspan
-         sodipodi:role="line"
-         id="tspan6893-4-3"
-         x="-631.18054"
-         y="1018.8992"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:70.55555725px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">GitHub</tspan><tspan
-         sodipodi:role="line"
-         x="-631.18054"
-         y="1074.6844"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.27777863px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan6914-4-4">View project on GitHub.</tspan></text>
     <g
        id="g6166"
-       transform="matrix(0.26458333,0,0,0.26458333,-2633.4525,610.93768)"
+       transform="matrix(0.26458333,0,0,0.26458333,-2635.1561,612.61614)"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951">
       <svg
@@ -909,28 +873,10 @@
        id="rect6891"
        width="420.14771"
        height="95.147957"
-       x="-2575.1665"
-       y="915.82294"
+       x="-2576.8701"
+       y="917.5014"
        inkscape:export-xdpi="96.005951"
        inkscape:export-ydpi="96.005951" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-2371.2322"
-       y="991.63177"
-       id="text6895-4"
-       inkscape:export-xdpi="96.005951"
-       inkscape:export-ydpi="96.005951"><tspan
-         sodipodi:role="line"
-         id="tspan6893-9"
-         x="-2371.2322"
-         y="991.63177"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:70.55555725px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Introduction</tspan><tspan
-         sodipodi:role="line"
-         x="-2371.2322"
-         y="1047.417"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.27777863px;font-family:'Baskerville Old Face';-inkscape-font-specification:'Baskerville Old Face, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan6914-3">What is ECU?</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:178.07226562px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.45180655"
@@ -941,6 +887,54 @@
          id="tspan1075"
          x="-2163.907"
          y="1509.1154"
-         style="stroke-width:4.45180655">x = 30.656, y = 159.164 </tspan></text>
+         style="stroke-width:4.45180655">x = 35, y = 176 </tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="-1801.4137"
+       y="970.39307"
+       id="text6895-9-5"><tspan
+         sodipodi:role="line"
+         id="tspan6893-4-4"
+         x="-1801.4137"
+         y="970.39307"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:63.5px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Getting Started</tspan><tspan
+         sodipodi:role="line"
+         x="-1801.4137"
+         y="1025.2114"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:35.27777863px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
+         id="tspan6914-4-0">Import ECU to your project.</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="-2371.293"
+       y="978.83813"
+       id="text6895-9-5-5"><tspan
+         sodipodi:role="line"
+         id="tspan6893-4-4-3"
+         x="-2371.293"
+         y="978.83813"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:63.5px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">Introduction</tspan><tspan
+         sodipodi:role="line"
+         x="-2371.293"
+         y="1033.6565"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:35.27777863px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
+         id="tspan6914-4-0-5">What is ECU?</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="-622.45367"
+       y="985.53394"
+       id="text6895-9-5-7"><tspan
+         sodipodi:role="line"
+         id="tspan6893-4-4-6"
+         x="-622.45367"
+         y="985.53394"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:63.5px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332">GitHub</tspan><tspan
+         sodipodi:role="line"
+         x="-622.45367"
+         y="1040.3523"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:35.27777863px;font-family:'Californian FB';-inkscape-font-specification:'Californian FB, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
+         id="tspan6914-4-0-3">View project on GitHub.</tspan></text>
   </g>
 </svg>
