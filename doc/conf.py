@@ -30,8 +30,7 @@ extensions = [
             "sphinx.ext.graphviz",
             "sphinx.ext.todo",
             "sphinx_tabs.tabs",
-            "hoverxref.extension",
-            "breathe"
+            "hoverxref.extension"
 ]
 
 hoverxref_roles = [
@@ -72,8 +71,8 @@ html_css_files = [
 
 
 # -- Breathe configuration -------------------------------------------------
-breathe_projects = {
-    "ECU": str(ECU_BASE_DIR / "doc" / "doxygen" / "xml")
-}
+# breathe_projects = {
+#     "ECU": str(ECU_BASE_DIR / "doc" / "doxygen" / "xml")
+# }
 
-breathe_default_project = "ECU"
+# breathe_default_project = "ECU"

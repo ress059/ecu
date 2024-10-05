@@ -14,6 +14,8 @@ Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
 
 Tree:
+- NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
+- Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
 1. Finished tree.c cleanup and code verification (asserts, style, etc).
 2. Finished destructor tests and tests for adding nodes in middle of iteration. 
 3. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.

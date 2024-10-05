@@ -1,4 +1,4 @@
 tests/build-test/build/
 tests/unit-test/build/
-doc/doxygen/
-doc/sphinx/build/
+doc/doxygen/html/
+doc/build/
