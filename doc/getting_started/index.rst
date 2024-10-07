@@ -158,5 +158,5 @@ named "ecu" to give scope to your #include directives.
 
 Next Steps
 ==============================================
-See :ref:`Developer Guide Section <developer_guide>` for an in-depth explanation of :ref:`ECU's 
-features <introduction_key_features>` and API.
+Navigate to the :ref:`Contents Sidebar <asserter_h>` (asserter.h, attributes.h, etc) to view 
+in-depth documentation and APIs for each library module.

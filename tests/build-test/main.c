@@ -14,10 +14,10 @@
 #include <stdint.h>
 
 /* ECU library. Call some common API functions. */
-#include <ecu/asserter.h>
-#include <ecu/circular_dll.h>
-#include <ecu/event.h>
-#include <ecu/fsm.h>
+#include "ecu/asserter.h"
+#include "ecu/circular_dll.h"
+#include "ecu/event.h"
+#include "ecu/fsm.h"
 
 
 
@@ -25,8 +25,9 @@
 /*---------------------------------------------------------- STATIC ASSERTS -------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-ECU_STATIC_ASSERT( (2==2) );
+ECU_STATIC_ASSERT( (2==2), "Test static assert." );
 
+ECU_STATIC_ASSERT( (2==3), "Test static assert." );
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/

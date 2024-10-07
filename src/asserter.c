@@ -15,7 +15,14 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/asserter.h>
+#include "ecu/asserter.h"
+
+/* Assert handler setters for each module. */
+#include "ecu/circular_dll.h"
+#include "ecu/fsm.h"
+#include "ecu/hsm.h"
+#include "ecu/timer.h"
+#include "ecu/tree.h"
 
 
 
@@ -23,11 +30,15 @@
 /*------------------------------------------------------- GLOBAL VARIABLES -------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-/* When using C99, static asserts are not natively supported. Therefore ECU_STATIC_ASSERT() 
-macro uses ecu_static_assert_do_not_use_[] array to produce compilation errors. Therefore
-this array must actually be defined somewhere since it will be referenced whenever
-ECU_STATIC_ASSERT() is called. */
-#ifdef ECU_USING_C99_STATIC_ASSERT_DO_NOT_USE_
+/* When using C/C++ standard that does not natively support static assert, we must implement
+a custom mechanism. We make ECU_STATIC_ASSERT() macro uses ecu_static_assert_do_not_use_[] array 
+to produce compilation errors via negative-array indexing. Macro expands to ecu_static_assert_do_not_use_[1]
+if assert passes. Macro expands to ecu_static_assert_do_not_use_[-1] if assert fails, thus producing
+a compilation error. 
+
+Therefore this array must actually be defined somewhere since it will be referenced whenever
+ECU_STATIC_ASSERT() is called. Define and allocate memory for it here.*/
+#ifdef ECU_USING_CUSTOM_STATIC_ASSERT_DO_NOT_USE_
 const char ecu_static_assert_do_not_use_[1] = {0};
 #endif
 
@@ -58,16 +69,32 @@ static void default_assert_handler(void)
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
+void ecu_set_assert_functor_all(struct ecu_assert_functor *functor)
+{
+    /* Do not NULL check functor since setting to NULL means the default assert handler will now be called. */
+    ecu_circular_dll_set_assert_functor(functor);
+    ecu_fsm_set_assert_functor(functor);
+    // ecu_hsm_set_assert_functor(functor);
+    ecu_timer_set_assert_functor(functor);
+    ecu_tree_set_assert_functor(functor);
+}
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------- PRIVATE FUNCTIONS -------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-void ecu_assert_do_not_use(struct ecu_assert_functor *me, const char *file, int line)
+void ecu_assert_do_not_use(struct ecu_assert_functor *functor, const char *file, int line)
 {
-    if (me)
+    if (functor)
     {
-        if (me->handler)
+        if (functor->handler)
         {
-            (*me->handler)(me, file, line); /* user-defined handler. */
+            (*functor->handler)(functor, file, line); /* user-defined handler. */
         }
         else
         {

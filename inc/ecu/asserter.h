@@ -5,17 +5,6 @@
  * ECU_DISABLE_RUNTIME_ASSERTS. I.e. -DECU_DISABLE_RUNTIME_ASSERTS. Example usage:
  * 
  * @code{.c}
- * /----------------------------- Compile-time assert example: ------------------------/
- * /---------------------------------------- file.c -----------------------------------/
- * ECU_STATIC_ASSERT( (true) ); // Passes
- * ECU_STATIC_ASSERT( (5==5) ); // Passes
- * 
- * ECU_STATIC_ASSERT( (false) ); // Fails
- * ECU_STATIC_ASSERT( (sizeof(int) >= 2) ); // Passes
- * @endcode
- * \n
- * 
- * @code{.c}
  * /-------------------------------- Run-time assert example: -------------------------/
  * /---------------------------------------- file.c -----------------------------------/
  * 
@@ -132,84 +121,73 @@
      * used when compiling. Serves as a common interface that the Application can use to
      * remain backwards compatible with various standards.
      * 
-     * 1. Expands to this when compiling with C++11 and greater. Uses static_assert()
-     * natively supported by this version.
+     * 1. Expands to this when compiling with C++11 and greater or C23 and greater. 
+     * Uses static_assert() natively supported by this standard.
      * @code{.c}
-     * #define ECU_STATIC_ASSERT(check)               static_assert((check_))
+     * #define ECU_STATIC_ASSERT(check_, msg_)               static_assert((check_), msg_)
      * @endcode
      * 
-     * 2. Expands to this when compiling with C11 and greater. Uses _Static_assert() 
-     * which is defined in the assert.h header file. Therefore assert.h is also 
-     * included in this case.
+     * 2. Expands to this when compiling with C11 and greater (before C23). 
+     * Uses _Static_assert() which is defined in the assert.h header file. Therefore 
+     * assert.h is also included in this case.
      * @code{.c}
-     * #include <assert.h>
-     * #define ECU_STATIC_ASSERT(check_)              _Static_assert((check_))
+     * #include <assert.h> // Included iby asserter.h module.
+     * 
+     * #define ECU_STATIC_ASSERT(check_, msg_)              _Static_assert((check_), msg_)
      * @endcode
      * 
      * 3. Expands to this when compiling with C23 and greater. Uses static_assert() 
-     * which is natively supported in this standard.
+     * which is natively supported by this standard.
      * @code{.c}
-     * #define ECU_STATIC_ASSERT(check_)              static_assert((check_))
+     * #define ECU_STATIC_ASSERT(check_, msg_)              static_assert((check_), msg_)
      * @endcode
      * 
      * 4. Expands to this when using C/C++ standard that does not support
      * static assertions. If an assert fires, this macro produces a compilation 
-     * error by referencing a symbol that is a negative-sized array.
+     * error by referencing a symbol that is a negative-sized array. @p msg_
+     * is not used in this case.
      * @code{.c}
-     * #define ECU_STATIC_ASSERT(check_)              extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1]
+     * #define ECU_STATIC_ASSERT(check_, msg_)              extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1]
      * @endcode
      * 
      * @param check_ Condition to check. If this is true the assertion passes.
      * If this is false the assertion fails and triggers a compilation error.
      * This must be a literal expression that can be evaluated at compile-time.
+     * @param msg_ Message shown in console if static assert fires. Unused if
+     * using pre-C11 or pre-C++11 standard but still required by caller to maintain 
+     * backwards compatibility.
      */
-#   define ECU_STATIC_ASSERT(check_)
+#   define ECU_STATIC_ASSERT(check_, msg_)
 #else
-#   if defined(__cplusplus) && (__cplusplus >= 201103L)
+#   if (__cplusplus >= 201103L)
         /**
-         * @brief Produce compilation error if assert fails. C++11 and greater
-         * static_assert() which is natively supported.
-         * 
-         * @param check_ Condition to check. If this is true the assertion passes.
-         * If this is false the assertion fails and triggers a compilation error.
-         * This must be a literal expression that can be evaluated at compile-time.
+         * @brief Compiling with C++11 and greater so use static_assert().
          */
-#       define ECU_STATIC_ASSERT(check)        static_assert((check_))
-#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112L)
+#       define ECU_STATIC_ASSERT(check_, msg_)          static_assert((check_), msg_)
+#   elif !defined(__cplusplus) && (__STDC_VERSION__ >= 201112L) && (__STDC_VERSION__ < 202311L)
 #       include <assert.h>
 
         /**
-         * @brief Produce compilation error if assert fails. C11 and greater
-         * _Static_assert(). Includes assert.h header.
-         * 
-         * @param check_ Condition to check. If this is true the assertion passes.
-         * If this is false the assertion fails and triggers a compilation error.
-         * This must be a literal expression that can be evaluated at compile-time.
+         * @brief Compiling with C11 and greater (before C23) so use _Static_assert(). 
+         * Includes assert.h header.
          */
-#       define ECU_STATIC_ASSERT(check_)       _Static_assert((check_))
-#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
+#       define ECU_STATIC_ASSERT(check_, msg_)          _Static_assert((check_), msg_)
+#   elif !defined(__cplusplus) && (__STDC_VERSION__ >= 202311L)
 
         /**
-         * @brief Produce compilation error if assert fails. C23 and greater
-         * static_assert() which is natively supported.
-         * 
-         * @param check_ Condition to check. If this is true the assertion passes.
-         * If this is false the assertion fails and triggers a compilation error.
-         * This must be a literal expression that can be evaluated at compile-time.
+         * @brief Compiling with C23 and greater so use static_assert().
          */
-#       define ECU_STATIC_ASSERT(check_)       static_assert((check_))
+#       define ECU_STATIC_ASSERT(check_, msg_)          static_assert((check_), msg_)
 #   else
-#       define ECU_USING_C99_STATIC_ASSERT_DO_NOT_USE_
+#       define ECU_USING_CUSTOM_STATIC_ASSERT_DO_NOT_USE_
         /**
-         * @brief Produce compilation error if assert fails. Using C/C++ standard that
-         * does not support static assertions. If an assert fires, this macro produces 
-         * a compilation error by referencing a symbol that is a negative-sized array.
+         * @brief Compiling with standard that does not natively support static assertions.
+         * Use custom implementation - reference symbol with negative-sized array.
          * 
-         * @param check_ Condition to check. If this is true the assertion passes.
-         * If this is false the assertion fails and triggers a compilation error.
-         * This must be a literal expression that can be evaluated at compile-time.
+         * @note msg_ parameter still required by caller to maintain backwards compatibility
+         * across all C/C++ standards.
          */
-#       define ECU_STATIC_ASSERT(check_)       extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1] ECU_ATTRIBUTE_UNUSED
+#       define ECU_STATIC_ASSERT(check_, msg_)          extern const char ecu_static_assert_do_not_use_[(check_) ? 1 : -1] ECU_ATTRIBUTE_UNUSED
 #   endif
 #endif /* ECU_DOXYGEN */
 
@@ -343,11 +321,23 @@ extern "C" {
 #endif
 
 /**
+ * @brief Set a functor to execute if an assert fires within any module.
+ * Allows user to set the same assert functor for all of ECU instead of 
+ * having to call each module (@ref ecu_circular_dll_set_assert_functor(),
+ * @ref ecu_fsm_set_assert_functor(), etc) separately.
+ * 
+ * @param functor User-supplied functor. If a NULL value is supplied
+ * the default functor will be used.
+ */
+extern void ecu_set_assert_functor_all(struct ecu_assert_functor *functor);
+
+
+/**
  * @brief PRIVATE. Do not call this function. This needs to have 
  * external linkage so @ref ECU_RUNTIME_ASSERT() macro can see 
  * and call it.
  */
-extern void ecu_assert_do_not_use(struct ecu_assert_functor *me, const char *file, int line);
+extern void ecu_assert_do_not_use(struct ecu_assert_functor *functor, const char *file, int line);
 
 #ifdef __cplusplus
 }
