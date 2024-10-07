@@ -1,23 +1,23 @@
 # Configuration file for the ECU documentation builder.
 
-# -- Path setup --------------------------------------------------------------
+# ------------------------------- Path setup ------------------------------
 import sys
 from pathlib import Path
 
-ECU_BASE_DIR = Path(__file__).resolve().parents[2]
+ECU_BASE_DIR = Path(__file__).resolve().parents[1]
 
 
 # sys.path.append("/home/me/docproj/ext/breathe/") !!!! TODO Need to add breathe executable to path!!! How to do this in a non-jank way???
 
 
 
-# -- Project information -----------------------------------------------------
+# -------------------------- Project information --------------------------
 project = "Embedded C Utilities (ECU)"
 copyright = "2024, Ian Ress"
 author = "Ian Ress"
 
 
-# -- General configuration ---------------------------------------------------
+# -------------------------- General configuration --------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -30,6 +30,7 @@ extensions = [
             "sphinx.ext.graphviz",
             "sphinx.ext.todo",
             "sphinx_tabs.tabs",
+            "sphinxcontrib.doxylink",
             "hoverxref.extension"
 ]
 
@@ -52,7 +53,7 @@ exclude_patterns = []
 todo_include_todos = True
 
 
-# -- Options for HTML output -------------------------------------------------
+# -------------------------- Options for HTML output --------------------------
 html_logo = "_static/images/logo.svg"
 html_favicon = "_static/images/favicon.svg"
 html_theme = "sphinx_rtd_theme"
@@ -68,6 +69,17 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+
+
+# -------------------------- Doxylink setup --------------------------
+doxylink = {
+    # "ecudoxygen" is the role name that you can later use in sphinx to reference this doxygen documentation.
+    # First parameter is tagfile.
+    # Second parameter is a relative path pointing from sphinx output directory to the doxygen output 
+    # folder inside the output directory tree. Doxylink will use the tagfile to get the html file name 
+    # of the symbol you want to link and then prefix it with this path to generate html links (<a>-tags).
+    "ecudoxygen": (str(ECU_BASE_DIR / "doc" / "doxygen" / "html" / "tagfile.xml"), "doxygen/html")
+}
 
 
 # -- Breathe configuration -------------------------------------------------

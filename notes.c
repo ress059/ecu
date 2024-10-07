@@ -62,3 +62,7 @@ enum ecu_hsm_status STARTING_STATE(struct ecu_hsm *me, struct my_event *e)
 1. doxygen
 2. doxysphinx build doc/ doc/build Doxyfile
 3. sphinx-build -b html doc/ doc/build
+
+pip install sphinx_rtd_theme
+pip install doxysphinx
+pip install sphinxcontrib-doxylink
