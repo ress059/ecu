@@ -1,36 +1,9 @@
 /**
  * @file
- * @brief Wraps some popular, compiler-specific attributes around define
- * directives. Providing this interface allows all compiler-specific attributes 
- * to be contained within this single module instead of being scattered throughout 
- * application code. Therefore if the toolchain changes, only the macro definitions 
- * in this file would need to be updated (with respect to the compiler attributes). 
- * For example:
- * 
- * @code{.c}
- * // Compiler-specific attributes should never be used directly in application
- * // code like this. If a different compiler needs to be used that does not 
- * // support __attribute__((unused)) then declarations like this must be 
- * // manually changed across the entire application.
- * int var __attribute__((unused)) = 1;
- * 
- * 
- * // Using this module is a much better approach as this adds an additional
- * // layer of protection. If a different compiler needs to be used that does 
- * // not support __attribute__((unused)) then only the ECU_ATTRIBUTE_UNUSED
- * // definition has to be changed. Any application code referencing this define
- * // can remain the same.
- * #include "ecu/attributes.h"
- * int var2 ECU_ATTRIBUTE_UNUSED = 1;
- * @endcode
- * 
- * @warning Only GCC is currently supported. For unsupported compilers, attributes 
- * that do not effect code functionality will be defined, but expand to nothing so 
- * any application using them will still compile. An example of this is @ref ECU_ATTRIBUTE_UNUSED.
- * For unsupported compilers, attributes that are critical to code functionality
- * will NOT be defined. Therefore if any of these attributes are used in your code,
- * a compilation error will occur from an unresolved symbol reference. An example of
- * this is @ref ECU_ATTRIBUTE_PACKED.
+ * @brief 
+ * @rst
+ * See :ref:`attributes.h section <attributes_h>` in Sphinx documentation. 
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
@@ -47,7 +20,8 @@
 #if defined(ECU_DOXYGEN)
     /**
      * @brief This attribute is assigned to a variable to tell the compiler that it 
-     * may be unused. Variable(s) with this attribute will not produce unused warnings
+     * may be unused. 
+     * @details Variable(s) with this attribute will not produce unused warnings
      * even if the unused warning flag is passed to the compiler.
      * 
      * 1. Expands to this if compiling with GCC.
@@ -56,9 +30,9 @@
      * @endcode
      * 
      * 2. If none of the previous options apply to your toolchain then you 
-     * are using an unsupported compiler. In this case, this macro expands to 
-     * nothing since the unused attribute is not critical to code's functionality. 
-     * Therefore any code using this macro will still compile.
+     * are using an unsupported compiler. Non-critical attribute so macro
+     * will expand to nothing in this case. Therefore any code using this macro 
+     * will still compile.
      * @code{.c}
      * #define ECU_ATTRIBUTE_UNUSED
      * @endcode
@@ -68,22 +42,15 @@
     /**
      * @brief This attribute is assigned to enum, struct, or union types and 
      * tells the compiler to not produce any padding between members.
-     * 
-     * @warning If you are using an unsupported compiler this macro will NOT be
-     * defined. Therefore if this macro is used anywhere in your code but your
-     * toolchain does not support it, a compilation error will occur from an unresolved 
-     * symbol reference. This is because the packed attribute effects code's functionality 
-     * so an error should be emitted if it is used, but not supported by your toolchain.
-     * 
+     * @details
      * 1. Expands to this if compiling with GCC.
      * @code{.c}
      * #define ECU_ATTRIBUTE_PACKED             __attribute__((packed))
      * @endcode
      * 
      * 2. If none of the previous options apply to your toolchain then you are 
-     * using an unsupported compiler. In this case, this macro will NOT be defined 
-     * and should produce a compilation error if used. See warning directive for more 
-     * details.
+     * using an unsupported compiler. Critical attribute so this macro will NOT be 
+     * defined. Any code using this macro will produce a compilation error. 
      */
 #   define ECU_ATTRIBUTE_PACKED
 #else

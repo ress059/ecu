@@ -1,0 +1,9 @@
+.homepage {
+    width:40%;
+    transition: transform .3s ease-out;
+}
+  
+
+.homepage:hover {
+    transform: translate(0, -10px);
+}

@@ -56,7 +56,7 @@
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /* Compilation error if ecu_max_tick_size_t is a signed type. Must be unsigned. */
-ECU_STATIC_ASSERT( (((ecu_max_tick_size_t)(-1)) > ((ecu_max_tick_size_t)0)) );
+ECU_STATIC_ASSERT( (((ecu_max_tick_size_t)(-1)) > ((ecu_max_tick_size_t)0)), "ecu_max_tick_size_t must be an unsigned type." );
 
 
 

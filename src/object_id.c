@@ -28,7 +28,7 @@
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /* Produce compilation error if ecu_id is an unsigned type. */
-ECU_STATIC_ASSERT( (((ecu_object_id)(-1)) < ((ecu_object_id)(0))) );
+ECU_STATIC_ASSERT( (((ecu_object_id)(-1)) < ((ecu_object_id)(0))), "ecu_object_id must be an unsigned type." );
 
 /* The start of object IDs that users can define must always be 0 for future compatibility. */
-ECU_STATIC_ASSERT( (ECU_USER_OBJECT_ID_BEGIN == 0) );
+ECU_STATIC_ASSERT( (ECU_USER_OBJECT_ID_BEGIN == 0), "ECU_USER_OBJECT_ID_BEGIN must equal 0." );

@@ -14,21 +14,24 @@ Ring Buffer:
 1. Add tests and documentation. Stashing away for now.
 
 Tree:
+- NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
+- Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
 1. Finished tree.c cleanup and code verification (asserts, style, etc).
 2. Finished destructor tests and tests for adding nodes in middle of iteration. 
 3. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 Asserter:
-1. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
-void set_assert_functor(functor)
-{
-    ecu_timer_set_assert_functor(functor);
-    ecu_fsm_set_assert_functor(functor);
-    ecu_circular_dll_set_assert_functor(functor);
-    ....
-}
+1. Test ecu_set_assert_functor_all() function. Call function, fire assert in each module,
+confirm functor is used via mock?
 
-2. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
+2. Add compilation tests for static assert.
+
+3. Have to change event.h constructor to non-inline so I can use a file-specific assert functor.
+currently using default assert functor which is not OK.
+
+4. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
+
+5. Finish sphinx documentation.
 
 All:
 1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
