@@ -25,6 +25,14 @@
 
 
 
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------- DEFINE FILE NAME FOR ASSERTER ----------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+ECU_ASSERT_DEFINE_NAME("ecu/circular_dll.c")
+
+
+
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
@@ -70,9 +78,8 @@ static bool list_valid(const struct ecu_circular_dll *list)
 {
     bool valid = false;
 
-    ECU_RUNTIME_ASSERT( (list), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( ((list->head.next) && (list->head.prev)),
-                        DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (list) );
+    ECU_RUNTIME_ASSERT( ((list->head.next) && (list->head.prev)) );
 
     /* Note how this also handles the case where head node's next and prev pointers point 
     to itself. Requires list to have been constructed since we are accessing list->head.next->prev
@@ -92,8 +99,8 @@ static bool node_valid(const struct ecu_circular_dll_node *node)
 {
     bool valid = false;
 
-    ECU_RUNTIME_ASSERT( (node), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( ((node->next) && (node->prev)), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node) );
+    ECU_RUNTIME_ASSERT( ((node->next) && (node->prev)) );
 
     /* Note how this also handles the case where head node's next and prev pointers point 
     to itself. Requires node to have been constructed since we are accessing node->next->prev
@@ -112,8 +119,8 @@ static bool node_in_list(const struct ecu_circular_dll_node *node)
 {
     bool in_list = false;
 
-    ECU_RUNTIME_ASSERT( (node), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( ((node->next) && (node->prev)), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (node) );
+    ECU_RUNTIME_ASSERT( ((node->next) && (node->prev)) );
 
     /* Requires node to have been constructed since we are accesing node->next->prev
     and node->prev->next. Otherwise garbage, non-NULL values of node->next and node->prev 
@@ -131,7 +138,7 @@ static bool node_in_list(const struct ecu_circular_dll_node *node)
 static void list_head_destroy_callback(struct ecu_circular_dll_node *me)
 {
     (void)me;
-    ECU_RUNTIME_ASSERT( (false), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (false) );
 }
 
 
@@ -144,9 +151,8 @@ void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me,
                                 void (*destroy_0)(struct ecu_circular_dll_node *me),
                                 ecu_object_id id_0)
 {
-    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (destroy_0 != (void (*)(struct ecu_circular_dll_node *))&ecu_circular_dll_destroy),
-                         DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_OBJECT_ID_BEGIN)) );
+    ECU_RUNTIME_ASSERT( (destroy_0 != (void (*)(struct ecu_circular_dll_node *))&ecu_circular_dll_destroy) );
     /* Do NOT do ECU_RUNTIME_ASSERT( (!node_in_list(me)), DLL_ASSERT_FUNCTOR );
     or ECU_RUNTIME_ASSERT( (node_is_valid(me)), DLL_ASSERT_FUNCTOR);
     since it is valid for next and prev pointers to be initialized to non-NULL 
@@ -164,7 +170,7 @@ void ecu_circular_dll_node_ctor(struct ecu_circular_dll_node *me,
 
 void ecu_circular_dll_ctor(struct ecu_circular_dll *me)
 {
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
     /* Do NOT assert if list has nodes in it or call list_valid(me) since it is valid 
     for next and prev pointers to be initialized to non-NULL garbage values before 
     a constructor call. Otherwise me->head.next->.. and me->head.prev->.. accesses 
@@ -183,8 +189,8 @@ void ecu_circular_dll_destroy(struct ecu_circular_dll *me)
 {
     struct ecu_circular_dll_iterator iterator;
 
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (list_valid(me)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     for (struct ecu_circular_dll_node *node = ecu_circular_dll_iterator_begin(&iterator, me);
          node != ecu_circular_dll_iterator_end(&iterator); 
@@ -211,11 +217,11 @@ void ecu_circular_dll_push_back(struct ecu_circular_dll *me,
 {
     struct ecu_circular_dll_node *old_tail = (struct ecu_circular_dll_node *)0;
 
-    ECU_RUNTIME_ASSERT( (me && node), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me && node) );
 
     /* Functions called in macro so there is no overhead if asserts are disabled. */
-    ECU_RUNTIME_ASSERT( (list_valid(me)), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (!node_in_list(node)), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
 
     old_tail = me->head.prev;       /* Do not have to NULL assert because list_valid() check. */
     old_tail->next->prev = node;    /* me->head.prev = node; */
@@ -227,8 +233,8 @@ void ecu_circular_dll_push_back(struct ecu_circular_dll *me,
 
 void ecu_circular_dll_remove_node(struct ecu_circular_dll_node *me)
 {
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (node_in_list(me)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_in_list(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     me->next->prev = me->prev;
     me->prev->next = me->next;
@@ -242,8 +248,8 @@ uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *me)
     uint32_t i = 0;
     struct ecu_circular_dll_iterator iterator;
 
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (list_valid(me)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     for (struct ecu_circular_dll_node *node = ecu_circular_dll_iterator_begin(&iterator, me);
          node != ecu_circular_dll_iterator_end(&iterator); 
@@ -258,8 +264,8 @@ uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *me)
 
 bool ecu_circular_dll_is_empty(const struct ecu_circular_dll *me)
 {
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (list_valid(me)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
     return (me->head.next == &me->head);
 }
 
@@ -272,8 +278,8 @@ bool ecu_circular_dll_is_empty(const struct ecu_circular_dll *me)
 struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_circular_dll_iterator *me,
                                                               struct ecu_circular_dll *list)
 {
-    ECU_RUNTIME_ASSERT( (me && list), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (list_valid(list)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me && list) );
+    ECU_RUNTIME_ASSERT( (list_valid(list)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
 
     me->list = list;
     me->current = list->head.next;      /* list_valid() asserts this node is in list. */
@@ -284,22 +290,22 @@ struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_circula
 
 struct ecu_circular_dll_node *ecu_circular_dll_iterator_end(struct ecu_circular_dll_iterator *me)
 {
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (list_valid(me->list)), DLL_ASSERT_FUNCTOR ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me->list)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
     return (&me->list->head);
 }
 
 
 struct ecu_circular_dll_node *ecu_circular_dll_iterator_next(struct ecu_circular_dll_iterator *me)
 {
-    ECU_RUNTIME_ASSERT( (me), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
 
     /* Do NOT do ECU_RUNTIME_ASSERT( (node_in_list(me->next)), DLL_ASSERT_FUNCTOR);
     since it is perfectly valid for iterated list to have no nodes in it. 
     Functions called in macro so there is no overhead if asserts are disabled. */
-    ECU_RUNTIME_ASSERT( (list_valid(me->list)), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (node_valid(me->next)), DLL_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (node_valid(me->next->next)), DLL_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next->next)) );
 
     me->current = me->next;
     me->next = me->next->next;
