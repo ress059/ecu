@@ -194,118 +194,91 @@
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------- RUNTIME ASSERT MACRO HELPERS -------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-/**
- * @brief User-defined functor that executes if @ref ECU_RUNTIME_ASSERT()
- * fires. Example use:
- * 
- * @code{.c}
- * struct ecu_assert_functor func;
- * func.handler = &my_handler_function;
- * func.data = (void *)&my_data; // Can also use ecu_assert_functor as base class instead.
- * 
- * ECU_RUNTIME_ASSERT(false, &func);
- * @endcode
- * 
- * See @ref asserter.h file description for more details.
- */
-struct ecu_assert_functor
-{
-    /**
-     * @brief Custom handler that executes if @ref ECU_RUNTIME_ASSERT() fires.
-     * 
-     * @param me this functor. Passed so members within this struct can be
-     * accessed in your handler function.
-     * @param file The @ref ECU_RUNTIME_ASSERT() macro will pass the file name
-     * where the assert fired into this parameter. User can optionally use it
-     * in their handler.
-     * @param line The @ref ECU_RUNTIME_ASSERT() macro will pass the line number
-     * where the assert fired into this parameter. User can optionally use it
-     * in their handler.
-     */
-    void (*handler)(struct ecu_assert_functor *me, const char *file, int line);
-
-    /**
-     * @brief Custom data that can be passed to user-defined @ref handler.
-     * @ref ecu_assert_functor struct can also be used as a base class
-     * instead of using this parameter.
-     */
-    void *data;
-};
-
-
-/**
- * @brief Pass into @ref ECU_RUNTIME_ASSERT() macro if you do not want
- * to use a custom functor. Example call:
- * 
- * @code{.c}
- * ECU_RUNTIME_ASSERT(false, ECU_DEFAULT_FUNCTOR);
- * @endcode
- * 
- * Default assert handler will execute if this is used. The default
- * handler hangs in a permanent while loop if NDEBUG is not defined
- * so users are able to inspect the call stack.
- */
-#define ECU_DEFAULT_FUNCTOR                          ((struct ecu_assert_functor *)0)
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------- RUNTIME ASSERT MACROS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 #if defined(ECU_DOXYGEN)
     /**
-     * @brief Expands differently depending on if ECU_DISABLE_RUNTIME_ASSERTS
-     * is defined.
+     * @brief Define the file name @ref ECU_RUNTIME_ASSERT() uses for this file.
+     * @details Use this macro at the top of each source file if @ref ECU_RUNTIME_ASSERT()
+     * is ever used. @p name_ defines the string literal that will be passed 
+     * to @ref ECU_RUNTIME_ASSERT() and @ref ecu_assert_handler() if an assert 
+     * fires within your source file. This method is a more memory-efficient
+     * alternative to the conventional __FILE__ macro. Behavior of this macro
+     * depends on if ECU_DISABLE_RUNTIME_ASSERTS is defined or not:
      * 
-     * 1. Expands to this if ECU_DISABLE_RUNTIME_ASSERTS is NOT defined:
+     * 1. If ECU_DISABLE_RUNTIME_ASSERTS is NOT defined then this macro expands
+     * to:
      * @code{.c}
-     * #define ECU_RUNTIME_ASSERT(check_, functor_)        ((check_) ? ((void)0) : ecu_assert_do_not_use((functor_), &ecu_file_name_[0], __LINE__))
+     * #define ECU_ASSERT_DEFINE_NAME(name_)    static const char ecu_file_name_[] = name_;
      * @endcode
      * 
-     * Run-time asserts are active in this case. If an assert fires either 
-     * a default functor or user-defined functor will execute. See @ref asserter.h 
-     * file description for more details.
-     * 
-     * 2. Expands to this if ECU_DISABLE_RUNTIME_ASSERTS is defined:
+     * 2. If ECU_DISABLE_RUNTIME_ASSERTS is defined then this macro expands to
+     * nothing since run-time asserts are disabled:
      * @code{.c}
-     * #define ECU_RUNTIME_ASSERT(check_, functor_)        ((void)0)
+     * #define ECU_ASSERT_DEFINE_NAME(name_)
      * @endcode
      * 
-     * Run-time asserts are disabled in this case so the macro does nothing.
-     * This reduces overhead of the library but verifications are no longer 
-     * done.
+     * @warning Do **not** terminate this macro with a semicolon.
      * 
-     * @param check_ Condition to check. If this is true nothing happens. 
-     * If this is false the assert fires and executes a user-supplied functor.
-     * @param functor_ User-defined functor that executes if assert fires. 
-     * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
+     * @param name_ string literal representing source file name.
      */
-#   define ECU_RUNTIME_ASSERT(check_, functor_)
+#   define ECU_ASSERT_DEFINE_NAME(name_)
+
+    /**
+     * @pre @ref ECU_ASSERT_DEFINE_NAME() called.
+     * @brief Assert condition is true at run-time.
+     * @details This macro should be used to verify conditions that should
+     * always be true unless there is a software bug or processor error.
+     * For example: NULL dereferences, out of bounds array access, invalid
+     * function parameters, etc. Behavior of this macro depends on if 
+     * ECU_DISABLE_RUNTIME_ASSERTS is defined:
+     * 
+     * 1. If ECU_DISABLE_RUNTIME_ASSERTS is NOT defined then run-time asserts
+     * are active. This macro will call a user-defined handler if an assert 
+     * fires. The file name and line number where the assert fired will be
+     * passed into this handler. It expands to:
+     * @code{.c}
+     * define ECU_RUNTIME_ASSERT(check_)       ((check_) ? ((void)0) : ecu_assert_handler(&ecu_file_name_[0], __LINE__))
+     * @endcode
+     * 
+     * The file name (&ecu_file_name_[0]) will be the string passed into
+     * @ref ECU_ASSERT_DEFINE_NAME() macro, which must be called at the
+     * top of each source file before any run-time asserts are used.
+     * 
+     * 2. If ECU_DISABLE_RUNTIME_ASSERTS is defined then run-time asserts
+     * are disabled and this macro does nothing. This reduces overhead at
+     * the cost of reliability. It expands to:
+     * @code{.c}
+     * define ECU_RUNTIME_ASSERT(check_)       ((void)0)
+     * @endcode
+     * 
+     * @param check_ Condition to check. Assert passes if this is true.
+     * Assert fires if this is false.
+     */
+#   define ECU_RUNTIME_ASSERT(check_)
 #else
 #   if !defined(ECU_DISABLE_RUNTIME_ASSERTS)
         /**
-         * @brief PRIVATE. Used so memory is only allocated for file name once per 
-         * file. __FILE_NAME__ macro is not used because it is compiler-dependent.
+         * @brief Run-time asserts enabled so this macro defines the
+         * file name.
          */
-        static const char ecu_file_name_[] = __FILE__;
+#       define ECU_ASSERT_DEFINE_NAME(name_)    static const char ecu_file_name_[] = name_;
 
         /**
-         * @brief Runtime asserts enabled so this macro does checks.
-         * 
-         * @param check_ Condition to check. If this is true nothing happens. 
-         * If this is false the assert fires and executes a user-supplied functor.
-         * @param functor_ User-defined functor that executes if assert fires. 
-         * If unused this should be @ref ECU_DEFAULT_FUNCTOR.
+         * @brief Run-time asserts enabled so this macro verifies
+         * conditions are true.
          */
-#       define ECU_RUNTIME_ASSERT(check_, functor_)        ((check_) ? ((void)0) : ecu_assert_do_not_use((functor_), &ecu_file_name_[0], __LINE__))
+#       define ECU_RUNTIME_ASSERT(check_)       ((check_) ? ((void)0) : ecu_assert_handler(&ecu_file_name_[0], __LINE__))
 #   else
         /**
          * @brief Runtime asserts disabled so this macro does nothing.
          */
-#       define ECU_RUNTIME_ASSERT(check_, functor_)        ((void)0)
+#       define ECU_ASSERT_DEFINE_NAME(name_)
+
+        /**
+         * @brief Runtime asserts disabled so this macro does nothing.
+         */
+#       define ECU_RUNTIME_ASSERT(check_)       ((void)0)
 #   endif
 
 #endif /* ECU_DOXYGEN */
@@ -313,7 +286,7 @@ struct ecu_assert_functor
 
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- PRIVATE FUNCTIONS -------------------------------------------------*/
+/*-------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -321,23 +294,18 @@ extern "C" {
 #endif
 
 /**
- * @brief Set a functor to execute if an assert fires within any module.
- * Allows user to set the same assert functor for all of ECU instead of 
- * having to call each module (@ref ecu_circular_dll_set_assert_functor(),
- * @ref ecu_fsm_set_assert_functor(), etc) separately.
+ * @pre @ref ECU_ASSERT_DEFINE_NAME() called.
+ * @brief Defines system response under an assert condition. 
+ * @details This is called if @ref ECU_RUNTIME_ASSERT() fires. It 
+ * MUST be defined by the user since system response behavior is a 
+ * property of the application. A linker error will occur if this 
+ * is not defined.
  * 
- * @param functor User-supplied functor. If a NULL value is supplied
- * the default functor will be used.
+ * @param file File name the assert fired in. This is the string
+ * literal passed into @ref ECU_ASSERT_DEFINE_NAME().
+ * @param line Line number where the assert fired.
  */
-extern void ecu_set_assert_functor_all(struct ecu_assert_functor *functor);
-
-
-/**
- * @brief PRIVATE. Do not call this function. This needs to have 
- * external linkage so @ref ECU_RUNTIME_ASSERT() macro can see 
- * and call it.
- */
-extern void ecu_assert_do_not_use(struct ecu_assert_functor *functor, const char *file, int line);
+extern void ecu_assert_handler(const char *file, int line);
 
 #ifdef __cplusplus
 }
