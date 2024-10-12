@@ -16,11 +16,28 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Files under test. */
-#include <ecu/asserter.h>
+#include "ecu/asserter.h"
+#include "ecu/circular_dll.h"
+#include "ecu/event.h"
+#include "ecu/fsm.h"
+#include "ecu/hsm.h"
+#include "ecu/timer.h"
+#include "ecu/tree.h"
+
+/* Stubs. */
+#include "stubs/stub_asserter.hpp"
 
 /* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppUTest/TestHarness.h>
+#include "CppUTestExt/MockSupport.h"
+#include "CppUTest/TestHarness.h"
+
+
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------- DEFINE FILE NAME FOR ASSERTER ----------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+ECU_ASSERT_DEFINE_NAME("test_asserter.cpp")
 
 
 
@@ -28,11 +45,7 @@
 /*------------------------------------------------ STATIC FUNCTION DECLARATIONS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-/**
- * @brief Returns the base file name from the supplied string.
- * Uses '/' and '\' as delimiters.
- */
-static std::string extract_base_file_name(const char *path);
+static void assert_handler(const char *file, int line);
 
 
 
@@ -40,62 +53,11 @@ static std::string extract_base_file_name(const char *path);
 /*------------------------------------------------- STATIC FUNCTION DEFINITIONS ---------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-static std::string extract_base_file_name(const char *path)
+static void assert_handler(const char *file, int line)
 {
-    std::string file(path);
-    return file.substr(file.find_last_of("/\\") + 1); /* '/' or '\' to remain OS-agnostic. */
+    (void)line;
+    mock().actualCall(__func__).withParameter("p1", file);
 }
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------------- MOCKS -------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-/**
- * @brief Verify functor was called. Do not verify any parameters.
- */
-struct AssertMockNoParams : public ecu_assert_functor
-{
-    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
-    {
-        (void)file;
-        (void)line;
-
-        mock().actualCall("AssertMockNoParams::assert_handler")
-              .onObject(me);
-    }
-};
-
-
-/**
- * @brief Verify functor was called and correct file name was passed. Base
- * file name is always extracted in case full paths are passed. Purposefully
- * do not verify line parameter to avoid false negatives.
- */
-struct AssertMockWithParams : public ecu_assert_functor 
-{
-    static void assert_handler(struct ecu_assert_functor *me, const char *file, int line)
-    {
-        (void)line;
-
-        /* Has to outlive function call in order for CppuTest mock to use string. */
-        static std::string base_file_name;
-
-        if (file)
-        {
-            base_file_name = extract_base_file_name(file);
-        }
-        else
-        {
-            base_file_name = std::string("ERROR: NULL FILE SUPPLIED");
-        }
-
-        mock().actualCall("AssertMockWithParams::assert_handler")
-              .onObject(me)
-              .withParameter("file", base_file_name.c_str());
-    }
-};
 
 
 
@@ -103,26 +65,17 @@ struct AssertMockWithParams : public ecu_assert_functor
 /*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST_GROUP(AssertFunctors)
+TEST_GROUP(Asserter)
 {
-    virtual void setup() override 
+    void setup() override
     {
-        assert_mock_no_params_1_.handler = &AssertMockNoParams::assert_handler;
-        assert_mock_no_params_2_.handler = &AssertMockNoParams::assert_handler;
-        assert_mock_with_params_1_.handler = &AssertMockWithParams::assert_handler;
-        assert_mock_with_params_2_.handler = &AssertMockWithParams::assert_handler;
+        set_assert_handler(&assert_handler);
     }
 
-    virtual void teardown() override 
+    void teardown() override
     {
-        mock().checkExpectations();
-        mock().clear();
+        set_assert_handler(stubs::AssertResponse::FAIL);
     }
-
-    AssertMockNoParams assert_mock_no_params_1_;
-    AssertMockNoParams assert_mock_no_params_2_;
-    AssertMockWithParams assert_mock_with_params_1_;
-    AssertMockWithParams assert_mock_with_params_2_;
 };
 
 
@@ -131,40 +84,143 @@ TEST_GROUP(AssertFunctors)
 /*---------------------------------------------------------------- TESTS ----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-TEST(AssertFunctors, OnlyMockHandler1Called)
+/**
+ * @brief Verify @ref ECU_ASSERT_DEFINE_NAME() macro
+ * works correctly in this module.
+ */
+TEST(Asserter, DefineNameMacro)
 {
-    /* Step 1: Arrange. */
-    mock().expectOneCall("AssertMockNoParams::assert_handler")
-          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_1_));
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "test_asserter.cpp");
 
-    /* Steps 2 and 3: Action and assert. */
-    ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_no_params_1_) );
+        /* Steps 2 and 3: Action and assert. */
+        ECU_RUNTIME_ASSERT( (false) );
+    }
+
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
 }
 
 
-TEST(AssertFunctors, OnlyMockHandler2Called)
+/**
+ * @brief Verify file name is correct when assert fires
+ * in circular_dll.c
+ */
+TEST(Asserter, ECUCircularDLLAssert)
 {
-    /* Step 1: Arrange. */
-    mock().expectOneCall("AssertMockNoParams::assert_handler")
-          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_no_params_2_));
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/circular_dll.c");
 
-    /* Steps 2 and 3: Action and assert. */
-    ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_no_params_2_) );
+        /* Steps 2 and 3: Action and assert. */
+        ecu_circular_dll_ctor((struct ecu_circular_dll *)0);
+    }
+
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
 }
 
 
-TEST(AssertFunctors, CorrectFileName)
+/**
+ * @brief Verify file name is correct when assert fires
+ * in event.c
+ */
+TEST(Asserter, ECUEventAssert)
 {
-    /* Step 1: Arrange. */
-    mock().expectOneCall("AssertMockWithParams::assert_handler")
-          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_1_))
-          .withParameter("file", "test_asserter.cpp");
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
 
-    mock().expectOneCall("AssertMockWithParams::assert_handler")
-          .onObject(static_cast<ecu_assert_functor *>(&assert_mock_with_params_2_))
-          .withParameter("file", "test_asserter.cpp");
+        /* Steps 2 and 3: Action and assert. */
+        ecu_event_ctor((struct ecu_event *)0, 0);
+    }
 
-    /* Steps 2 and 3: Action and assert. */
-    ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_with_params_1_) );
-    ECU_RUNTIME_ASSERT( false, static_cast<ecu_assert_functor *>(&assert_mock_with_params_2_) );
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
+}
+
+
+/**
+ * @brief Verify file name is correct when assert fires
+ * in fsm.c
+ */
+TEST(Asserter, ECUFsmAssert)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/fsm.c");
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_fsm_ctor((struct ecu_fsm *)0, (const struct ecu_fsm_state *)0);
+    }
+
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
+}
+
+
+/**
+ * @brief Verify file name is correct when assert fires
+ * in hsm.c
+ */
+TEST(Asserter, ECUHsmAssert)
+{
+    /* Placeholder until HSM module is complete. */
+}
+
+
+/**
+ * @brief Verify file name is correct when assert fires
+ * in timer.c
+ */
+TEST(Asserter, ECUTimerAssert)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_timer_ctor((struct ecu_timer *)0, (void *)0, (bool (*)(void *))0);
+    }
+
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
+}
+
+
+/**
+ * @brief Verify file name is correct when assert fires
+ * in tree.c
+ */
+TEST(Asserter, ECUTreeAssert)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_tree_node_ctor((struct ecu_tree_node *)0, (void (*)(struct ecu_tree_node *))0, 0);
+    }
+
+    catch (stubs::AssertException& e)
+    {
+        (void)e;
+    }
 }
