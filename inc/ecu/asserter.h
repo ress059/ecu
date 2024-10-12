@@ -159,12 +159,12 @@
      */
 #   define ECU_STATIC_ASSERT(check_, msg_)
 #else
-#   if (__cplusplus >= 201103L)
+#   if defined(__cplusplus) && (__cplusplus >= 201103L)
         /**
          * @brief Compiling with C++11 and greater so use static_assert().
          */
 #       define ECU_STATIC_ASSERT(check_, msg_)          static_assert((check_), msg_)
-#   elif !defined(__cplusplus) && (__STDC_VERSION__ >= 201112L) && (__STDC_VERSION__ < 202311L)
+#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) && (__STDC_VERSION__ < 202311L)
 #       include <assert.h>
 
         /**
@@ -172,7 +172,7 @@
          * Includes assert.h header.
          */
 #       define ECU_STATIC_ASSERT(check_, msg_)          _Static_assert((check_), msg_)
-#   elif !defined(__cplusplus) && (__STDC_VERSION__ >= 202311L)
+#   elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L)
 
         /**
          * @brief Compiling with C23 and greater so use static_assert().
@@ -262,7 +262,7 @@
          * @brief Run-time asserts enabled so this macro defines the
          * file name.
          */
-#       define ECU_ASSERT_DEFINE_NAME(name_)    static const char ecu_file_name_[] = name_;
+#       define ECU_ASSERT_DEFINE_NAME(name_)    static const char ecu_file_name_[] ECU_ATTRIBUTE_UNUSED = name_;
 
         /**
          * @brief Run-time asserts enabled so this macro verifies
