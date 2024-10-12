@@ -15,15 +15,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/hsm.h>
+#include "ecu/hsm.h"
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ FILE-SCOPE VARIABLES -----------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static struct ecu_assert_functor *HSM_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
+/* Runtime asserts. */
+#include "ecu/asserter.h"
 
 
 
@@ -435,11 +430,4 @@ enum ecu_hsm_status ecu_hsm_transition_to_intra_state(struct ecu_hsm *me,
 
     me->temp_state = new_state;
     return ECU_HSM_INTRA_STATE_TRANSITION;
-}
-
-
-void ecu_hsm_set_assert_functor(struct ecu_assert_functor *functor)
-{
-    /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    HSM_ASSERT_FUNCTOR = functor;
 }

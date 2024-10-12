@@ -15,15 +15,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/fsm.h>
+#include "ecu/fsm.h"
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ FILE-SCOPE VARIABLES -----------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static struct ecu_assert_functor *FSM_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
+/* Runtime asserts. */
+#include "ecu/asserter.h"
 
 
 
@@ -101,11 +96,4 @@ enum ecu_fsm_status ecu_fsm_transition_to_state(struct ecu_fsm *me,
     ECU_RUNTIME_ASSERT( (state->handler), FSM_ASSERT_FUNCTOR );
     me->state = state;
     return ECU_FSM_STATE_TRANSITION;
-}
-
-
-void ecu_fsm_set_assert_functor(struct ecu_assert_functor *functor)
-{
-    /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    FSM_ASSERT_FUNCTOR = functor;
 }

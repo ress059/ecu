@@ -16,10 +16,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/event.h>
+#include "ecu/event.h"
 
-/* Static assert. */
-#include <ecu/asserter.h>
+/* Asserts. */
+#include "ecu/asserter.h"
 
 
 
@@ -32,3 +32,16 @@ ECU_STATIC_ASSERT( (((ecu_event_id)(-1)) < ((ecu_event_id)(0))), "ecu_event_id m
 
 /* The start of event IDs that users can define must always be 0 for future compatibility. */
 ECU_STATIC_ASSERT( (ECU_USER_EVENT_ID_BEGIN == 0), "ECU_USER_EVENT_ID_BEGIN must equal 0." );
+
+
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+void ecu_event_ctor(struct ecu_event *me, 
+                    ecu_event_id id_0)
+{
+    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_EVENT_ID_BEGIN)) );
+    me->id = id_0;
+}

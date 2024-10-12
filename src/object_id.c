@@ -16,10 +16,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/object_id.h>
+#include "ecu/object_id.h"
 
 /* Static assert. */
-#include <ecu/asserter.h>
+#include "ecu/asserter.h"
 
 
 

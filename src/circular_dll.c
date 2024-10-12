@@ -15,18 +15,13 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Translation unit. */
-#include <ecu/circular_dll.h>
+#include "ecu/circular_dll.h"
 
 /* STDLib. */
 #include <stdbool.h>
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------- FILE-SCOPE VARIABLES ------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static struct ecu_assert_functor *DLL_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
+/* Runtime asserts. */
+#include "ecu/asserter.h"
 
 
 
@@ -309,16 +304,4 @@ struct ecu_circular_dll_node *ecu_circular_dll_iterator_next(struct ecu_circular
     me->current = me->next;
     me->next = me->next->next;
     return (me->current);
-}
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ PUBLIC FUNCTIONS: OTHER --------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-void ecu_circular_dll_set_assert_functor(struct ecu_assert_functor *functor)
-{
-    /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    DLL_ASSERT_FUNCTOR = functor;
 }

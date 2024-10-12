@@ -64,10 +64,8 @@
 /*------------------------------------------------------------ INCLUDES ----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
+/* STDLib. */
 #include <stdint.h>
-
-/* Runtime asserts. */
-#include <ecu/asserter.h>
 
 
 
@@ -171,13 +169,8 @@ extern "C" {
  * for more details.
  * @param id_0 User-defined event ID.
  */
-static inline void ecu_event_ctor(struct ecu_event *me, 
-                                  ecu_event_id id_0)
-{
-    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_EVENT_ID_BEGIN)), 
-                        ECU_DEFAULT_FUNCTOR );
-    me->id = id_0;
-}
+extern void ecu_event_ctor(struct ecu_event *me, 
+                           ecu_event_id id_0);
 
 #ifdef __cplusplus
 }

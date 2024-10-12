@@ -46,7 +46,7 @@
 /* Translation unit. */
 #include "ecu/timer.h"
 
-/* Compile-time and runtime asserts. */
+/* Asserts. */
 #include "ecu/asserter.h"
 
 
@@ -57,14 +57,6 @@
 
 /* Compilation error if ecu_max_tick_size_t is a signed type. Must be unsigned. */
 ECU_STATIC_ASSERT( (((ecu_max_tick_size_t)(-1)) > ((ecu_max_tick_size_t)0)), "ecu_max_tick_size_t must be an unsigned type." );
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- FILE-SCOPE VARIABLES ----------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static struct ecu_assert_functor *TIMER_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 
 
@@ -317,11 +309,4 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
             }
         }
     }
-}
-
-
-void ecu_timer_set_assert_functor(struct ecu_assert_functor *functor)
-{
-    /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    TIMER_ASSERT_FUNCTOR = functor;
 }
