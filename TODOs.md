@@ -1,5 +1,5 @@
 Completed.
-1. asserter.h/.c done. Documentation done. Tests done.
+1. asserter.h/.c TODO.
 2. event.h/.c and object_id.hs/.c done. Documentation done.
 3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
 since we are already doing that with tests that use extra_list; Documentation done.
@@ -21,17 +21,8 @@ Tree:
 3. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 Asserter:
-1. Test ecu_set_assert_functor_all() function. Call function, fire assert in each module,
-confirm functor is used via mock?
-
-2. Add compilation tests for static assert.
-
-3. Have to change event.h constructor to non-inline so I can use a file-specific assert functor.
-currently using default assert functor which is not OK.
-
-4. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
-
-5. Finish sphinx documentation.
+0. Update unit tests with new asserter.
+1. Finish doxygen and sphinx documentation.
 
 All:
 1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).

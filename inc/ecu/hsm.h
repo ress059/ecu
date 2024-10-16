@@ -19,13 +19,10 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* HSM represented as generic tree. */
-#include <ecu/tree.h>
-
-/* Runtime asserts. */
-#include <ecu/asserter.h>
+#include "ecu/tree.h"
 
 /* Base event class. */
-#include <ecu/event.h>
+#include "ecu/event.h"
 
 
 
@@ -144,23 +141,6 @@ static inline enum ecu_hsm_status ecu_hsm_dispatch_event_to_super_state(void)
 {
     return ECU_HSM_EVENT_TO_SUPER_STATE;
 }
-
-
-/**
- * @name Asserts In This Module
- */
-/**@{*/
-/**
- * @brief Set a functor to execute if an assert fires within this module. 
- * @details This is optional - if no functor is set a default one will be 
- * used. The default functor hangs in a permanent while loop if NDEBUG is 
- * not defined so users are able to inspect the call stack.
- * 
- * @param functor User-supplied functor. If a NULL value is supplied
- * the default functor will be used. 
- */
-extern void ecu_hsm_set_assert_functor(struct ecu_assert_functor *functor);
-/**@}*/
 
 #ifdef __cplusplus
 }

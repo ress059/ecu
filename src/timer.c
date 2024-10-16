@@ -46,8 +46,16 @@
 /* Translation unit. */
 #include "ecu/timer.h"
 
-/* Compile-time and runtime asserts. */
+/* Asserts. */
 #include "ecu/asserter.h"
+
+
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------- DEFINE FILE NAME FOR ASSERTER ----------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------*/
+
+ECU_ASSERT_DEFINE_NAME("ecu/timer.c")
 
 
 
@@ -57,14 +65,6 @@
 
 /* Compilation error if ecu_max_tick_size_t is a signed type. Must be unsigned. */
 ECU_STATIC_ASSERT( (((ecu_max_tick_size_t)(-1)) > ((ecu_max_tick_size_t)0)), "ecu_max_tick_size_t must be an unsigned type." );
-
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- FILE-SCOPE VARIABLES ----------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
-
-static struct ecu_assert_functor *TIMER_ASSERT_FUNCTOR = ECU_DEFAULT_FUNCTOR;
 
 
 
@@ -121,9 +121,9 @@ static bool timer_collection_valid(const struct ecu_timer_collection *collection
 
 static void timer_destroy(struct ecu_circular_dll_node *me)
 {
-    ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
     struct ecu_timer *t = ECU_CIRCULAR_DLL_GET_ENTRY(me, struct ecu_timer, node);
-    ECU_RUNTIME_ASSERT( (t), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (t) );
 
     /* Do not call ecu_circular_dll_remove_node(). Only define
     additional cleanup independent of the node class. */
@@ -141,8 +141,7 @@ static ecu_max_tick_size_t calculate_overflow_mask(size_t i_tick_width_bytes)
     static const ecu_max_tick_size_t MAX_NUMBER_OF_BITS = 8U * sizeof(ecu_max_tick_size_t);
     
     ECU_RUNTIME_ASSERT( (i_tick_width_bytes > 0) && \
-                        (i_tick_width_bytes <= sizeof(ecu_max_tick_size_t)),
-                        TIMER_ASSERT_FUNCTOR );
+                        (i_tick_width_bytes <= sizeof(ecu_max_tick_size_t)) );
 
     /* Example: assume ecu_max_tick_size_t = 4 bytes and i_tick_width_bytes = 2 bytes.
     1) UINT32_MAX >> 32 - (8U * i_tick_width_bytes)
@@ -159,7 +158,7 @@ static bool timer_active(const struct ecu_timer *timer)
 {
     bool active = false;
 
-    ECU_RUNTIME_ASSERT( (timer), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (timer) );
 
     if ((timer->armed) && (timer->timeout_ticks > 0) && (timer->callback))
     {
@@ -174,7 +173,7 @@ static bool timer_collection_valid(const struct ecu_timer_collection *me)
 {
     bool valid = false;
 
-    ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
 
     if ((me->api.get_ticks) && \
         ((me->api.tick_width_bytes > 0) && (me->api.tick_width_bytes <= sizeof(ecu_max_tick_size_t))) && \
@@ -196,7 +195,7 @@ void ecu_timer_ctor(struct ecu_timer *me,
                     void *object_0, 
                     bool (*callback_0)(void *object))
 {
-    ECU_RUNTIME_ASSERT( (me && callback_0), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me && callback_0) );
 
     ecu_circular_dll_node_ctor(&me->node, &timer_destroy, ECU_OBJECT_ID_UNUSED);
     me->object          = object_0;     /* Optional so do not NULL assert. */
@@ -213,9 +212,8 @@ void ecu_timer_collection_ctor(struct ecu_timer_collection *me,
                                void *object_0,
                                size_t tick_width_bytes_0)
 {
-    ECU_RUNTIME_ASSERT( (me && get_ticks_0), TIMER_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (tick_width_bytes_0 > 0 && tick_width_bytes_0 <= sizeof(ecu_max_tick_size_t)),
-                        TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me && get_ticks_0) );
+    ECU_RUNTIME_ASSERT( (tick_width_bytes_0 > 0 && tick_width_bytes_0 <= sizeof(ecu_max_tick_size_t)) );
     
     /* Iterator is not "constructed" since it is only used and initialized in ecu_timer_collection_tick(). */
     ecu_circular_dll_ctor(&me->list);
@@ -228,8 +226,8 @@ void ecu_timer_collection_ctor(struct ecu_timer_collection *me,
 
 void ecu_timer_collection_destroy(struct ecu_timer_collection *me)
 {
-    ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)) );
 
     ecu_circular_dll_destroy(&me->list); /* Automatically calls timer_destroy() for each ecu_timer node. */
     me->api.get_ticks           = (ecu_max_tick_size_t (*)(void *))0;
@@ -244,8 +242,8 @@ void ecu_timer_arm(struct ecu_timer_collection *me,
                    bool periodic, 
                    ecu_max_tick_size_t timeout_ticks)
 {
-    ECU_RUNTIME_ASSERT( ((me) && (timer) && (timeout_ticks > 0)), TIMER_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( ((me) && (timer) && (timeout_ticks > 0)) );
+    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)) );
 
     ecu_circular_dll_push_back(&me->list, &timer->node); /* Asserts if node already in a list. */
     timer->armed            = true;
@@ -257,7 +255,7 @@ void ecu_timer_arm(struct ecu_timer_collection *me,
 
 void ecu_timer_disarm(struct ecu_timer *me)
 {
-    ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
 
     ecu_circular_dll_remove_node(&me->node); /* Asserts node is in a list. */
     me->armed            = false;
@@ -272,8 +270,8 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
     bool callback_success = false;
     ecu_max_tick_size_t elapsed_ticks = 0;
 
-    ECU_RUNTIME_ASSERT( (me), TIMER_ASSERT_FUNCTOR );
-    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)), TIMER_ASSERT_FUNCTOR );
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (timer_collection_valid(me)) );
     /* Don't assert if list is empty. */
 
     /* Currently servicing all timers in single function call to avoid scenario 
@@ -284,10 +282,10 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
          node != ecu_circular_dll_iterator_end(&me->iterator);
          node = ecu_circular_dll_iterator_next(&me->iterator))
     {
-        ECU_RUNTIME_ASSERT( (node), TIMER_ASSERT_FUNCTOR );
+        ECU_RUNTIME_ASSERT( (node) );
         struct ecu_timer *t = ECU_CIRCULAR_DLL_GET_ENTRY(node, struct ecu_timer, node);
-        ECU_RUNTIME_ASSERT( (t), TIMER_ASSERT_FUNCTOR );
-        ECU_RUNTIME_ASSERT( (timer_active(t)), TIMER_ASSERT_FUNCTOR );
+        ECU_RUNTIME_ASSERT( (t) );
+        ECU_RUNTIME_ASSERT( (timer_active(t)) );
 
         /* Use unsigned overflow to automatically handle tick counter wraparound. Guaranteed to 
         always be unsigned overflow since we static assert ecu_max_tick_size_t is unsigned. See 
@@ -317,11 +315,4 @@ void ecu_timer_collection_tick(struct ecu_timer_collection *me)
             }
         }
     }
-}
-
-
-void ecu_timer_set_assert_functor(struct ecu_assert_functor *functor)
-{
-    /* Do not NULL check since setting to NULL means the default assert handler will now be called. */
-    TIMER_ASSERT_FUNCTOR = functor;
 }
