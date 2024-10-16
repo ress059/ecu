@@ -1,0 +1,1 @@
+Dummy file to commit directory structure. Will put linker scripts in each test MCU folder.
