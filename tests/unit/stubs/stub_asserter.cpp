@@ -38,7 +38,7 @@ static void assert_fail(const char *file, int line);
 /*----------------------------------------------------- FILE SCOPE VARIABLES -----------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-static void (*current_handler)(const char *file, int line) = (void (*)(const char *, int)) = &assert_fail;
+static void (*current_handler)(const char *file, int line) = &assert_fail;
 
 
 
@@ -68,17 +68,17 @@ static void assert_fail(const char *file, int line)
 /*------------------------------------------------------ PUBLIC FUNCTIONS --------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-void stubs::set_assert_handler(assert_response response)
+void stubs::set_assert_handler(stubs::AssertResponse response)
 {
     switch (response)
     {
-        case stubs::assert_response::OK:
+        case stubs::AssertResponse::OK:
         {
             current_handler = &assert_ok;
             break;
         }
 
-        case stubs::assert_response::FAIL:
+        case stubs::AssertResponse::FAIL:
         {
             current_handler = &assert_fail;
             break;

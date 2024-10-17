@@ -108,10 +108,8 @@ void set_assert_functor(functor)
 
 
 ## Build system and syntax
-0. Polish up build-system overall.
-    - Make build directory outside tests folder. I.e. move from tests/build/... to build/ top-level directory.
-    - Create a separate toolchains folder that has .cmake files.
-    - Maybe add new build configurations for ARM GNU - compile it for cm0, cm3, cm4, cr5, etc.
+0. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
+Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
 
 1. Print "cannot use endian.h" warning only at build-time NOT configuration time.
 Otherwise message is always printed
@@ -123,6 +121,3 @@ I.e. #include <ecu/asserter.h> to #include "ecu/asserter.h"
 
 3. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
-
-4. In CMakePresets.json do not use vscode variables. Can just change paths to
-absolute paths instead. I.e. toolchains/a.cmake instead of ${sourceDir}/toolchains/a.cmake

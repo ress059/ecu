@@ -34,7 +34,11 @@
 			"displayName": "linux-gnu-unit-test",
 			"description": "Build ECU unit test executable with GNU. Host = Linux x86. Target = Linux x86.",
 			"binaryDir": "bin/linux_gnu_unit_test",
-			"toolchainFile": "toolchains/gnu/linux/linux-gnu-x86.cmake"
+			"toolchainFile": "toolchains/gnu/linux/linux-gnu-x86.cmake",
+            "cacheVariables":
+            {
+                "MCU": "linux"
+            }
 		},
 		{
 			"name": "linux-gnu-build",
@@ -42,7 +46,11 @@
 			"displayName": "linux-gnu-build",
 			"description": "Build ECU executable with GNU. Host = Linux x86. Target = Linux x86.",
 			"binaryDir": "bin/linux_gnu_build",
-			"toolchainFile": "toolchains/gnu/linux/linux-gnu-x86.cmake"
+			"toolchainFile": "toolchains/gnu/linux/linux-gnu-x86.cmake",
+            "cacheVariables":
+            {
+                "MCU": "linux"
+            }
 		},
 		{
 			"name": "stm32l0-gnu-build",
@@ -50,7 +58,11 @@
 			"displayName": "stm32l0-gnu-build",
 			"description": "Build ECU executable with GNU. Host = Linux x86. Target = stm32l0. PLACEHOLDER FOR NOW.",
 			"binaryDir": "bin/stm32l0_gnu_build",
-			"toolchainFile": "TODO This is just a placeholder for now."
+			"toolchainFile": "TODO This is just a placeholder for now.",
+            "cacheVariables":
+            {
+                "MCU": "stm32l0"
+            }
 		}
     ],
 	"buildPresets": [

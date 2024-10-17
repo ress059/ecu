@@ -23,7 +23,7 @@ add_library(ecu STATIC
 )
 
 
-# Example include in the Application would be #include <ecu/fsm.h> 
+# Example include in the Application would be #include "ecu/fsm.h" 
 # in order to give larger apps some scope when including files.
 target_include_directories(ecu
     PUBLIC 
@@ -39,12 +39,12 @@ target_compile_features(ecu
 
 
 # Target Endianness.
-if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+if(${CMAKE_C_BYTE_ORDER} STREQUAL "LITTLE_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_LITTLE_ENDIAN 
     )
-elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+elseif(${CMAKE_C_BYTE_ORDER} STREQUAL "BIG_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_BIG_ENDIAN 
@@ -81,7 +81,7 @@ target_compile_options(ecu
 # Warn the user that run-time asserts are being disabled. It is
 # not recommended to disable run-time asserts but we have this
 # as an option to decrease overhead of the library.
-if(ECU_DISABLE_RUNTIME_ASSERTS)
+if(${ECU_DISABLE_RUNTIME_ASSERTS})
     message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts "
                     "will not fire in this library. Are you sure you wish to disable asserts??")
 
@@ -101,7 +101,7 @@ endif()
 
 # CTest and enable_testing has to be in the root CMakeLists.txt. 
 # Tests will not be discovered if this is in tests/CMakeLists.txt....
-if(ECU_ENABLE_TESTING)
+if(${ECU_ENABLE_TESTING})
     include(CTest)
     enable_testing()
     add_subdirectory(tests)

@@ -69,12 +69,12 @@ TEST_GROUP(Asserter)
 {
     void setup() override
     {
-        set_assert_handler(&assert_handler);
+        stubs::set_assert_handler(&assert_handler);
     }
 
     void teardown() override
     {
-        set_assert_handler(stubs::AssertResponse::FAIL);
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
     }
 };
 
