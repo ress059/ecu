@@ -21,15 +21,15 @@
 #include <type_traits>
 
 /* Files under test. */
-#include <ecu/event.h>
-#include <ecu/fsm.h>
+#include "ecu/event.h"
+#include "ecu/fsm.h"
 
-/* Mocks */
-#include <mocks/mock_asserter.hpp>
+/* Stubs. */
+#include "stubs/stub_asserter.hpp"
 
 /* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppUTest/TestHarness.h>
+#include "CppUTestExt/MockSupport.h"
+#include "CppUTest/TestHarness.h"
 
 
 
@@ -147,9 +147,6 @@ concept is_state_transition_id = ((ID > StateIDs::STATE_TRANSITION_IDS_START) &&
 struct FsmTestBase : public ecu_fsm
 {
 public:
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
-
     EventTestBase event_;
     struct ecu_fsm_state STATE1_;
     struct ecu_fsm_state STATE2_;
@@ -344,15 +341,13 @@ public:
 
 TEST_GROUP(FsmTestGroupBase)
 {
-    void setup()
+    void setup() override
     {
-        me_.assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        me_.assert_call_fail_.handler = &AssertCallFail::assert_handler;
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
     }
 
-    void teardown()
+    void teardown() override
     {
-        ecu_fsm_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
@@ -375,7 +370,6 @@ TEST(FsmTestGroupBase, SingleStateTransition)
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
         mock().strictOrder();
 
         /* State 1 handler. */
@@ -416,7 +410,7 @@ TEST(FsmTestGroupBase, SingleStateTransition)
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -436,7 +430,6 @@ TEST(FsmTestGroupBase, ConsecutiveStateTransitions)
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
         mock().strictOrder();
 
         /* State 1 handler. */
@@ -497,7 +490,7 @@ TEST(FsmTestGroupBase, ConsecutiveStateTransitions)
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -514,7 +507,6 @@ TEST(FsmTestGroupBase, SelfStateTransition)
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
         mock().strictOrder();
 
         /* State 1 handler. */
@@ -555,7 +547,7 @@ TEST(FsmTestGroupBase, SelfStateTransition)
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -577,7 +569,6 @@ TEST(FsmTestGroupBase, StateChangeInExitHandler)
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_fail_));
         mock().strictOrder();
 
         /* State 1 handler. */
@@ -620,7 +611,7 @@ TEST(FsmTestGroupBase, StateChangeInExitHandler)
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_dispatch(static_cast<struct ecu_fsm *>(&me_), &me_.event_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -636,7 +627,7 @@ TEST(FsmTestGroupBase, InvalidEventIdDispatched)
     try 
     {
         /* Step 1: Arrange. */
-        ecu_fsm_set_assert_functor(static_cast<struct ecu_assert_functor *>(&me_.assert_call_ok_));
+        stubs::set_assert_handler(stubs::AssertResponse::OK);
 
         /* Set up fsm. */
         ecu_fsm_state_ctor(&me_.STATE1_, 
@@ -664,7 +655,7 @@ TEST(FsmTestGroupBase, InvalidEventIdDispatched)
         /* Verify fsm does not run. States are all mocks so mock will go off if it does, thus failing the test. */
         ecu_fsm_dispatch(&me_, &me_.event_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* OK */
