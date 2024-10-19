@@ -21,7 +21,7 @@ set(ECU_BUILD_NAME "ecu_unit_test")
 
 add_executable(${ECU_BUILD_NAME} 
     # Main
-    ${CMAKE_CURRENT_LIST_DIR}/src/AllTests.cpp 
+    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp 
 
     # Tests
     ${CMAKE_CURRENT_LIST_DIR}/src/test_asserter.cpp

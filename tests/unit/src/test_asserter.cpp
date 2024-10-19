@@ -57,6 +57,7 @@ static void assert_handler(const char *file, int line)
 {
     (void)line;
     mock().actualCall(__func__).withParameter("p1", file);
+    throw stubs::AssertException();
 }
 
 
@@ -75,6 +76,8 @@ TEST_GROUP(Asserter)
     void teardown() override
     {
         stubs::set_assert_handler(stubs::AssertResponse::FAIL);
+        mock().checkExpectations();
+        mock().clear();
     }
 };
 
