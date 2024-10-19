@@ -21,8 +21,8 @@
 /* Files under test. */
 #include "ecu/timer.h"
 
-/* Mocks */
-#include "mocks/mock_asserter.hpp"
+/* Stubs. */
+#include "stubs/stub_asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
@@ -126,20 +126,14 @@ class TimerCollectionBase : public Utest
 public:
     void setup() override 
     {
-        m_assert_call_ok.handler = &AssertCallOk::assert_handler;
-        m_assert_call_fail.handler = &AssertCallFail::assert_handler;
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
     }
 
     void teardown() override
     {
-        ecu_timer_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
-
-public:
-    AssertCallOk m_assert_call_ok;
-    AssertCallFail m_assert_call_fail;
 
 public:
     struct ecu_timer_collection m_collection;
@@ -207,7 +201,6 @@ TEST(TimerCollectionUI32, ConstructorDestructorTest)
     try
     {
         /* Step 1: Arrange. */
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
 
         /* Steps 2 and 3: Action and assert. */
@@ -259,7 +252,7 @@ TEST(TimerCollectionUI32, ConstructorDestructorTest)
         ecu_timer_arm(&m_collection, &m_timer4, true, static_cast<ecu_max_tick_size_t>(TICK_INCREMENT));
         ecu_timer_collection_destroy(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -280,7 +273,6 @@ TEST(TimerCollectionUI32, SingleTimerTimesOutCorrectly)
         mock().expectNCalls(2, "timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
 
         ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
@@ -312,7 +304,7 @@ TEST(TimerCollectionUI32, SingleTimerTimesOutCorrectly)
         m_itimer.set_ticks(TICK_INCREMENT*2);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -342,7 +334,6 @@ TEST(TimerCollectionUI32, MultipleTimersTimeoutCorrectly)
         mock().expectNCalls(2, "timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer4));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
 
         ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
@@ -388,7 +379,7 @@ TEST(TimerCollectionUI32, MultipleTimersTimeoutCorrectly)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -420,7 +411,6 @@ TEST(TimerCollectionUI32, PeriodicAndNonPeriodicTimers)
         mock().expectOneCall("timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer4));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
 
         ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_true);
@@ -467,7 +457,7 @@ TEST(TimerCollectionUI32, PeriodicAndNonPeriodicTimers)
         m_itimer.set_ticks(TICK_INCREMENT*5);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -488,8 +478,6 @@ TEST(TimerCollectionUI8, UI8TimerOverflowHandled)
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
-
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
         m_itimer.set_ticks(UINT8_MAX);
@@ -512,7 +500,7 @@ TEST(TimerCollectionUI8, UI8TimerOverflowHandled)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -533,8 +521,6 @@ TEST(TimerCollectionUI16, UI16TimerOverflowHandled)
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
-
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
         m_itimer.set_ticks(UINT16_MAX);
@@ -557,7 +543,7 @@ TEST(TimerCollectionUI16, UI16TimerOverflowHandled)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -578,8 +564,6 @@ TEST(TimerCollectionUI32, UI32TimerOverflowHandled)
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
-
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
         m_itimer.set_ticks(UINT32_MAX);
@@ -602,7 +586,7 @@ TEST(TimerCollectionUI32, UI32TimerOverflowHandled)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -623,8 +607,6 @@ TEST(TimerCollectionUI64, UI64TimerOverflowHandled)
         /* Step 1: Arrange. */
         mock().expectOneCall("timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
-
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
 
         /* Set the tick counter to max value right before a wraparound. */
         m_itimer.set_ticks(UINT64_MAX);
@@ -647,7 +629,7 @@ TEST(TimerCollectionUI64, UI64TimerOverflowHandled)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -664,7 +646,6 @@ TEST(TimerCollectionUI32, DisarmTimerRightBeforeTimeout)
 
     try
     {
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
         ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_false);
         ecu_timer_collection_ctor(&m_collection, 
@@ -689,7 +670,7 @@ TEST(TimerCollectionUI32, DisarmTimerRightBeforeTimeout)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -711,7 +692,6 @@ TEST(TimerCollectionUI32, CallbackReturningFalse)
         mock().expectNCalls(4, "timer_callback_mock")
               .withParameter("obj", static_cast<void *>(&m_timer1));
 
-        ecu_timer_set_assert_functor(static_cast<struct ecu_assert_functor *>(&m_assert_call_fail));
         m_itimer.set_ticks(0);
         ecu_timer_ctor(&m_timer1, static_cast<void *>(&m_timer1), &timer_callback_mock_false);
         ecu_timer_collection_ctor(&m_collection, 
@@ -739,7 +719,7 @@ TEST(TimerCollectionUI32, CallbackReturningFalse)
         ecu_timer_collection_tick(&m_collection);
         ecu_timer_collection_tick(&m_collection);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
