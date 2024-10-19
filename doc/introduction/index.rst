@@ -24,7 +24,7 @@ Key Features
 
 + Endianness compatibility macros.
 
-- Finite state machines and hierarchical state machines.
+- Event-driven finite state machines and hierarchical state machines.
 
 + Hardware-independent timers.
 
@@ -73,18 +73,11 @@ ECU Directory Structure
     ├── doc/
     ├── inc/
     |   └── ecu/
-    |
     ├── src/
     ├── tests/ 
     ├── toolchains/
-    |               
-    ├── clang-format 
-    ├── clang-format-ignore 
-    ├── .gitignore 
     ├── CMakeLists.txt 
-    ├── CMakePresets.json 
-    ├── Dockerfile 
-    └── Doxyfile
+    └── CMakePresets.json
 
 ``doc/``: Documentation for ECU's API and this site.
 
@@ -104,24 +97,9 @@ using CMake, ECU's build system assists with this.
 ``toolchains/``: Contains `CMake toolchain files <https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html>`_ 
 for ECU's internal use. This is used to test ECU against various compilers.
 
-``clang-format``: Settings for ECU's code :term:`linter`. For internal use.
-
-``clang-format-ignore``: Lists out the file extensions ECU's code linter should ignore. For internal use.
-
-``.gitignore``: Lists out files that :term:`git` should ignore. For internal use.
-
 ``CMakeLists.txt``: Top-level CMake file for ECU's internal build system.
 
-``Dockerfile``: defines all dependencies (compilers, tools, etc) ECU uses internally. Used to assemble 
-a :term:`docker` image which is then used to run a :term:`container`. ECU source code is developed inside 
-this container. This container is also used for ECU's :term:`CI` pipeline.
-
-``Doxyfile``: defines settings for Doxygen-generated documentation. For internal use.
-
-.. todo:: 
-
-    Directory structure above contains updated one I am planning to go to.
-    Delete this TODO once directory structure in ECU updated.
+``CMakePresets.json``: ECU's build configurations. For internal use.
 
 
 Next Steps

@@ -1,53 +1,19 @@
 Completed.
-1. asserter.h/.c TODO.
-2. event.h/.c and object_id.hs/.c done. Documentation done.
-3. circular_dll.h/.c done. Tests done. Don't need to test 2 nodes in same struct that are apart of separate lists
-since we are already doing that with tests that use extra_list; Documentation done.
-4. timer.h/.c done. Tests done. Documentation done.
-5. endian.h. Tests done. Documentation done.
-6. fsm.h/.c. Tests done. Documentation done.
-7. tree.h/.c. TODO. Tests done.
+1. asserter.h/.c Tests done. Documentation done.
+2. event.h/.c and object_id.hs/.c. Tests done. TODO Documentation.
+3. circular_dll.h/.c. Tests done. TODO new features and documentation.
+4. timer.h/.c done. Tests done. TODO Documentation.
+5. endian.h. Tests done. TODO Documentation.
+6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
+7. tree.h/.c. Tests done. TODO Code cleanup and Documentation.
 8. hsm.h/.c. TODO.
-9. attributes.h. done. Documentation done.
-
-Ring Buffer:
-1. Add tests and documentation. Stashing away for now.
-
-Tree:
-- NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
-- Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
-1. Finished tree.c cleanup and code verification (asserts, style, etc).
-2. Finished destructor tests and tests for adding nodes in middle of iteration. 
-3. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
-
-Asserter:
-0. Update unit tests with new asserter.
-1. Finish doxygen and sphinx documentation.
-
-All:
-1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
-
-CI Pipeline Steps:
-If any step fails do not move on.
-1. format check. clang-format.
-2. Compile. cmake and cmake --build
-- cmake -DECU_DISABLE_RUNTIME_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
-- cmake --build --preset linux-gnu-build
-
-- cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
-- cmake --build --preset linux-gnu-build
-
-3. static analysis. clang-tidy
-4. run unit tests.
-5. generate documentation. doxygen
+9. attributes.h. Tests done. Documentation done.
 
 
+## Ring buffer
+1. Add ring buffer module (currently stashed). Add tests and documentation.
 
 
-
-
-
-# TODOs from Library Testing/Usage
 ## FSM
 1. Should entry and exit handlers both take in an event? Reasoning is in
 case fsm should be updated with any event data on entry/exit.
@@ -78,10 +44,30 @@ if any parameters have to change but that is the same case for run-time function
 #define ECU_FSM_STATE_CTOR_COMPILETIME(state, entry_handler, exit_handler, state_handler) ....
 ```
 
-## Circular DLL and tree
-1. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
-to struct ecu_timer* increases alignment requirements. THIS IS OK.
-Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
+
+## Circular DLL
+1. Allow node to be added/removed anywhere in the list...that's the point of a linked list...
+Currently only support push_back(). Add tests for this.
+
+2. Remove separate structure for list and node (similar to linux where node is a list). I.e.
+```C
+/* Get rid of this */
+struct ecu_circular_dll
+{
+};
+
+/* Only have this. */
+struct ecu_circular_dll_node
+{
+}
+```
+
+3. Change names from ecu_circular_dll to just ecu_dll. Applies to everything (file name,
+struct names, function names, etc).
+
+4. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
+to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
+THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
 so this only applies to GCC. I.e.
 ```C
 #ifdef GCC
@@ -92,19 +78,24 @@ so this only applies to GCC. I.e.
 ```
 
 
-## Asserter
-2. Make set_assert_functor() function that sets the assert handler of all modules. I.e.
+## Tree
+1. In ECU_TREE_NODE_GET_ENTRY() macro call, getting warning about how cast from char*
+to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
+THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
+so this only applies to GCC. I.e.
 ```C
-void set_assert_functor(functor)
-{
-    ecu_timer_set_assert_functor(functor);
-    ecu_fsm_set_assert_functor(functor);
-    ecu_circular_dll_set_assert_functor(functor);
-    ....
-}
+#ifdef GCC
+#pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
+#define ECU_TREE_NODE_GET_ENTRY() ....
+#end pragma
+#endif
 ```
 
-3. Figure out scheme for passing file name into assert handler without using __FILE__ macro for each assert check call.
+2. NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
+3. Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
+4. Finished (done!) tree.c cleanup and code verification (asserts, style, etc).
+5. Finished (done!) destructor tests and tests for adding nodes in middle of iteration. 
+6. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 
 ## Build system and syntax
@@ -116,8 +107,24 @@ Otherwise message is always printed
 - Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?
 - Note the if() elseif() stuff is evaluated at configuration time.
 
-2. Change all ecu includes from <> to "".
-I.e. #include <ecu/asserter.h> to #include "ecu/asserter.h"
-
-3. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
+2. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+
+## CI Pipeline Steps:
+If any step fails do not move on.
+1. format check. clang-format.
+2. Compile. cmake and cmake --build
+- cmake -DECU_DISABLE_RUNTIME_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
+- cmake --build --preset linux-gnu-build
+
+- cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
+- cmake --build --preset linux-gnu-build
+
+3. static analysis. clang-tidy
+4. run unit tests.
+5. generate documentation. doxygen
+
+
+## All:
+1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).

@@ -4,7 +4,7 @@ ECU Project Documentation
 ###############################################
 Welcome to the documentation for Embedded C Utilities (:term:`ECU`). 
 
-Click any of the icons below to get started with ECU. Navigate to the Contents sidebar (asserter.h, attributes.h, etc) 
+Click any of the icons below to get started with ECU. Navigate through the Contents sidebar (asserter.h, attributes.h, etc) 
 to view in-depth documentation and APIs for each library module.
 
 .. raw:: html

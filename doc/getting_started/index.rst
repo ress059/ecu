@@ -27,10 +27,6 @@ Importing steps depend on your build system, which are described in the variants
 .. tabs::
 
     .. tab:: CMake (recommended)
-
-        Add the following snippets into your CMakeLists.txt files if your project uses a CMake 
-        build system.
-
         #. Use `CMake FetchContent <https://cmake.org/cmake/help/latest/module/FetchContent.html>`_ to obtain 
            ECU's source code:
            
@@ -47,6 +43,23 @@ Importing steps depend on your build system, which are described in the variants
             .. todo:: 
 
                 Update Git link on release.
+
+        #. Define :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>` in your application. This function 
+           executes when a run-time assert fires in ECU. You must define how your system responds to this.
+           **This step is mandatory or else you will get a linker error.**
+
+            .. code-block:: c
+
+                /* app.c */
+                #include "ecu/asserter.h"
+
+                void ecu_assert_handler(const char *file, int line)
+                {
+                    /* Pseudocode example. Define how your system behaves under an assert
+                    condition. In this case, we record the error then reset the CPU. */
+                    record(file, line);
+                    reset_cpu();
+                }
 
         #. Use `target_compile_options() <https://cmake.org/cmake/help/latest/command/target_compile_options.html>`_ 
            to set the optimization level of ECU depending on your project's requirements. **This step is optional.**
@@ -103,13 +116,6 @@ Importing steps depend on your build system, which are described in the variants
                 )
 
     .. tab:: Other
-
-        Follow these steps if you are not using CMake. In this case, the recommended route is 
-        to use git submodules. 
-        
-        You will have to manually add ECU's headers to your include paths. 
-        You will also have to manually compile and link ECU's source code against your application.
-
         #. Import ECU into your project as a git submodule.
 
             .. code-block:: bash 
@@ -123,6 +129,25 @@ Importing steps depend on your build system, which are described in the variants
 
                 git submodule init 
                 git submodule update
+
+        #. Checkout the submodule to the specific tag/version of ECU you want to use.
+
+        #. Define :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>` in your application. This function 
+           executes when a run-time assert fires in ECU. You must define how your system responds to this.
+           **This step is mandatory or else you will get a linker error.**
+
+            .. code-block:: c
+
+                /* app.c */
+                #include "ecu/asserter.h"
+
+                void ecu_assert_handler(const char *file, int line)
+                {
+                    /* Pseudocode example. Define how your system behaves under an assert
+                    condition. In this case, we record the error then reset the CPU. */
+                    record(file, line);
+                    reset_cpu();
+                }
 
         #. Add the "inc" folder of ECU to your include paths. See :ref:`ECU's directory structure <directory_structure>`
            for further reference.
