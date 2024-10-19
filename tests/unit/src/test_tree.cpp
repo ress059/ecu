@@ -15,14 +15,14 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Files under test. */
-#include <ecu/tree.h>
+#include "ecu/tree.h"
 
-/* Mocks */
-#include <mocks/mock_asserter.hpp>
+/* Stubs. */
+#include "stubs/stub_asserter.hpp"
 
 /* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppUTest/TestHarness.h>
+#include "CppUTestExt/MockSupport.h"
+#include "CppUTest/TestHarness.h"
 
 
 
@@ -80,11 +80,9 @@ public:
 
 TEST_GROUP(ChildIterator)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
         ecu_tree_node_ctor(&parent_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&child1_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&child2_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
@@ -97,15 +95,11 @@ TEST_GROUP(ChildIterator)
         ecu_tree_node_ctor(&child9_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
-
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
 
     struct ecu_tree_child_iterator iterator_;
     struct ecu_tree_node parent_;
@@ -123,11 +117,9 @@ TEST_GROUP(ChildIterator)
 
 TEST_GROUP(PostOrderIterator)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
         ecu_tree_node_ctor(&root1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
@@ -143,15 +135,11 @@ TEST_GROUP(PostOrderIterator)
         ecu_tree_node_ctor(&node12_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
-
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
 
     struct ecu_tree_postorder_iterator iterator_;
     struct ecu_tree_node root1_;
@@ -172,11 +160,9 @@ TEST_GROUP(PostOrderIterator)
 
 TEST_GROUP(AddRemoveNode)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
         ecu_tree_node_ctor(&root1_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&root2_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node1_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
@@ -188,15 +174,11 @@ TEST_GROUP(AddRemoveNode)
         ecu_tree_node_ctor(&node7_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
-
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
 
     struct ecu_tree_postorder_iterator postorder_iterator_;
     struct ecu_tree_child_iterator child_iterator_;
@@ -214,11 +196,9 @@ TEST_GROUP(AddRemoveNode)
 
 TEST_GROUP(Destructor)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
         ecu_tree_node_ctor(&root1_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node1_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node2_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
@@ -230,9 +210,8 @@ TEST_GROUP(Destructor)
         ecu_tree_node_ctor(&node8_, &destroy_mock, ECU_OBJECT_ID_UNUSED);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
@@ -249,9 +228,6 @@ TEST_GROUP(Destructor)
                              .withParameter("node", me);
     }
 
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
-
     struct ecu_tree_postorder_iterator postorder_iterator_;
     struct ecu_tree_node root1_;
     struct ecu_tree_node node1_;
@@ -267,11 +243,9 @@ TEST_GROUP(Destructor)
 
 TEST_GROUP(GetLevelAndLCA)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
-
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
         ecu_tree_node_ctor(&root1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&root2_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
         ecu_tree_node_ctor(&node1_,  (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
@@ -288,15 +262,11 @@ TEST_GROUP(GetLevelAndLCA)
         ecu_tree_node_ctor(&node12_, (void (*)(struct ecu_tree_node *me))0, ECU_OBJECT_ID_UNUSED);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
-
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
 
     struct ecu_tree_node root1_;
     struct ecu_tree_node root2_;
@@ -317,21 +287,17 @@ TEST_GROUP(GetLevelAndLCA)
 
 TEST_GROUP(TreeMisc)
 {
-    virtual void setup() override 
+    void setup() override 
     {
-        assert_call_ok_.handler = &AssertCallOk::assert_handler;
-        assert_call_fail_.handler = &AssertCallFail::assert_handler;
+        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
     }
 
-    virtual void teardown() override
+    void teardown() override
     {
-        ecu_tree_set_assert_functor(ECU_DEFAULT_FUNCTOR);
         mock().checkExpectations();
         mock().clear();
     }
 
-    AssertCallOk assert_call_ok_;
-    AssertCallFail assert_call_fail_;
 	user_tree_node_type user_tree_node_;
 };
 
@@ -356,8 +322,6 @@ TEST(ChildIterator, ParentWithMultipleChildren)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &child1_);
@@ -381,7 +345,7 @@ TEST(ChildIterator, ParentWithMultipleChildren)
         /* Steps 2 and 3: Action and assert. Test wraparound. */
         POINTERS_EQUAL(&child1_, ecu_tree_child_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -397,8 +361,7 @@ TEST(ChildIterator, ParentWithNoChildren)
     */
     try
     {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        /* Step 1: Arrange. Done in setup(). */
 
         /* Steps 2 and 3: Action and assert. */
         ecu_tree_add_child_push_back(&parent_, &child1_);
@@ -412,7 +375,7 @@ TEST(ChildIterator, ParentWithNoChildren)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -435,8 +398,6 @@ TEST(ChildIterator, ParentWithOneChild)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &child1_);
@@ -454,7 +415,7 @@ TEST(ChildIterator, ParentWithOneChild)
         /* Steps 2 and 3: Action and assert. Test wraparound. */
         POINTERS_EQUAL(&child1_, ecu_tree_child_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -480,8 +441,6 @@ TEST(ChildIterator, Grandparent)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &child1_);
@@ -508,7 +467,7 @@ TEST(ChildIterator, Grandparent)
         /* Steps 2 and 3: Action and assert. Test wraparound. */
         POINTERS_EQUAL(&child1_, ecu_tree_child_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -534,8 +493,6 @@ TEST(ChildIterator, ParentWithSiblingsThatAllHaveChildren)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &child4_);
@@ -590,7 +547,7 @@ TEST(ChildIterator, ParentWithSiblingsThatAllHaveChildren)
         }
         POINTERS_EQUAL(&child8_, ecu_tree_child_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -613,8 +570,6 @@ TEST(ChildIterator, CanRemoveChildrenInMiddleOfIteration)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &child1_);
@@ -639,7 +594,7 @@ TEST(ChildIterator, CanRemoveChildrenInMiddleOfIteration)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -682,8 +637,6 @@ TEST(ChildIterator, CanAddNodesInMiddleOfIteration)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         /* Child iteration. */
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
@@ -757,7 +710,7 @@ TEST(ChildIterator, CanAddNodesInMiddleOfIteration)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -791,8 +744,6 @@ TEST(PostOrderIterator, MultiLevelTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node1_);
@@ -847,7 +798,7 @@ TEST(PostOrderIterator, MultiLevelTree)
         POINTERS_EQUAL(&node2_, ecu_tree_postorder_iterator_next(&iterator_));
         POINTERS_EQUAL(&node3_, ecu_tree_postorder_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -876,8 +827,6 @@ TEST(PostOrderIterator, MultiLevelSubTreeWithSiblings)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node1_);
@@ -924,7 +873,7 @@ TEST(PostOrderIterator, MultiLevelSubTreeWithSiblings)
         POINTERS_EQUAL(&node2_, ecu_tree_postorder_iterator_next(&iterator_));
         POINTERS_EQUAL(&node3_, ecu_tree_postorder_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -950,8 +899,6 @@ TEST(PostOrderIterator, MultiLevelDegenerateTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node1_);
@@ -979,7 +926,7 @@ TEST(PostOrderIterator, MultiLevelDegenerateTree)
         POINTERS_EQUAL(&node2_, ecu_tree_postorder_iterator_next(&iterator_));
         POINTERS_EQUAL(&node3_, ecu_tree_postorder_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -996,8 +943,6 @@ TEST(PostOrderIterator, SingleNode)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &root1_);
@@ -1013,7 +958,7 @@ TEST(PostOrderIterator, SingleNode)
         /* Steps 2 and 3: Action and assert. Verify wraparound. */
         POINTERS_EQUAL(&root1_, ecu_tree_postorder_iterator_next(&iterator_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1040,8 +985,6 @@ TEST(PostOrderIterator, CanRemoveNodesInMiddleOfIteration)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node1_);
@@ -1092,7 +1035,7 @@ TEST(PostOrderIterator, CanRemoveNodesInMiddleOfIteration)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1130,8 +1073,6 @@ TEST(PostOrderIterator, CanAddNodesInMiddleOfIteration)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node7_);
@@ -1183,7 +1124,7 @@ TEST(PostOrderIterator, CanAddNodesInMiddleOfIteration)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1224,8 +1165,6 @@ TEST(AddRemoveNode, AddSubTreeWithNoSibilngsToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree1 post-operation check. */
@@ -1277,7 +1216,7 @@ TEST(AddRemoveNode, AddSubTreeWithNoSibilngsToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1312,8 +1251,6 @@ TEST(AddRemoveNode, AddSubTreeThatIsFirstChildToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree1 post-operation check. */
@@ -1368,7 +1305,7 @@ TEST(AddRemoveNode, AddSubTreeThatIsFirstChildToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1401,8 +1338,6 @@ TEST(AddRemoveNode, AddSubTreeThatIsMiddleChildToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree1 post-operation check. */
@@ -1457,7 +1392,7 @@ TEST(AddRemoveNode, AddSubTreeThatIsMiddleChildToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1490,8 +1425,6 @@ TEST(AddRemoveNode, AddSubTreeThatIsLastChildToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree1 post-operation check. */
@@ -1546,7 +1479,7 @@ TEST(AddRemoveNode, AddSubTreeThatIsLastChildToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1579,8 +1512,6 @@ TEST(AddRemoveNode, AddLeafNodeToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree1 post-operation check. */
@@ -1635,7 +1566,7 @@ TEST(AddRemoveNode, AddLeafNodeToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1672,8 +1603,6 @@ TEST(AddRemoveNode, AddTreeToAnotherTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -1706,7 +1635,7 @@ TEST(AddRemoveNode, AddTreeToAnotherTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1739,8 +1668,6 @@ TEST(AddRemoveNode, AddTreeToTreeNodeThatHasNoChildren)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -1773,7 +1700,7 @@ TEST(AddRemoveNode, AddTreeToTreeNodeThatHasNoChildren)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1808,8 +1735,6 @@ TEST(AddRemoveNode, AddTreeToTreeNodeThatHasChildren)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -1848,7 +1773,7 @@ TEST(AddRemoveNode, AddTreeToTreeNodeThatHasChildren)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1886,8 +1811,6 @@ TEST(AddRemoveNode, MoveSubTreeUpWithinSameTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -1925,7 +1848,7 @@ TEST(AddRemoveNode, MoveSubTreeUpWithinSameTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -1958,8 +1881,6 @@ TEST(AddRemoveNode, PushBackSubTreeWithinSameTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -1991,7 +1912,7 @@ TEST(AddRemoveNode, PushBackSubTreeWithinSameTree)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2020,8 +1941,6 @@ TEST(AddRemoveNode, AddSubTreeAlreadyInRequestedPlace)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -2052,7 +1971,7 @@ TEST(AddRemoveNode, AddSubTreeAlreadyInRequestedPlace)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2078,8 +1997,7 @@ TEST(AddRemoveNode, CannotAddNodeToItself)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_ok_));
-
+        stubs::set_assert_handler(stubs::AssertResponse::OK);
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -2102,7 +2020,7 @@ TEST(AddRemoveNode, CannotAddNodeToItself)
         ecu_tree_add_child_push_back(&node3_, &node3_);
         ecu_tree_add_child_push_back(&node3_, &node3_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* OK */
@@ -2141,8 +2059,7 @@ TEST(AddRemoveNode, AddParentToChild)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_ok_));
-
+        stubs::set_assert_handler(stubs::AssertResponse::OK);
         mock().strictOrder();
 
         /* Tree post-operation check. */
@@ -2163,7 +2080,7 @@ TEST(AddRemoveNode, AddParentToChild)
         /* Step 2: Action. Add node3 to node2 which is illegal. */
         ecu_tree_add_child_push_back(&node2_, &node3_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* OK */
@@ -2174,7 +2091,7 @@ TEST(AddRemoveNode, AddParentToChild)
         /* Step 2: Action. Add root1 to node2 which is illegal. */
         ecu_tree_add_child_push_back(&node2_, &root1_);
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* OK */
@@ -2212,8 +2129,6 @@ TEST(AddRemoveNode, RemoveRoot)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         mock().strictOrder();
         mock().expectOneCall("IteratorTreeNodeMock::verify_node")
               .withParameter("node", &node1_);
@@ -2248,7 +2163,7 @@ TEST(AddRemoveNode, RemoveRoot)
             IteratorTreeNodeMock::verify_node(i);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2286,8 +2201,6 @@ TEST(Destructor, DestroyEntireTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &root1_);
@@ -2387,7 +2300,7 @@ TEST(Destructor, DestroyEntireTree)
             POINTERS_EQUAL(i, &node8_);
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2428,8 +2341,6 @@ TEST(Destructor, DestroySubTreeThatHasNoSiblings)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &node4_);
@@ -2512,7 +2423,7 @@ TEST(Destructor, DestroySubTreeThatHasNoSiblings)
             verify_node(i); /* Destructor::verify_node(i); */
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2551,8 +2462,6 @@ TEST(Destructor, DestroySubTreeThatIsFirstChild)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &node1_);
@@ -2628,7 +2537,7 @@ TEST(Destructor, DestroySubTreeThatIsFirstChild)
             verify_node(i); /* Destructor::verify_node(i); */
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2667,8 +2576,6 @@ TEST(Destructor, DestroySubTreeThatIsMiddleChild)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &node2_);
@@ -2737,7 +2644,7 @@ TEST(Destructor, DestroySubTreeThatIsMiddleChild)
             verify_node(i); /* Destructor::verify_node(i); */
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2776,8 +2683,6 @@ TEST(Destructor, DestroySubTreeThatIsLastChild)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &node4_);
@@ -2846,7 +2751,7 @@ TEST(Destructor, DestroySubTreeThatIsLastChild)
             verify_node(i); /* Destructor::verify_node(i); */
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2882,8 +2787,6 @@ TEST(Destructor, DestroyLeafNode)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         /* Verify all nodes have been destroyed. Order does not matter. */
         mock().expectOneCall("Destructor::destroy_mock")
               .withParameter("node", &node4_);
@@ -2926,7 +2829,7 @@ TEST(Destructor, DestroyLeafNode)
             verify_node(i); /* Destructor::verify_node(i); */
         }
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2957,8 +2860,6 @@ TEST(GetLevelAndLCA, LevelNodesInDegenerateTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         ecu_tree_add_child_push_back(&root1_, &node1_);
         ecu_tree_add_child_push_back(&node1_, &node2_);
         ecu_tree_add_child_push_back(&node2_, &node3_);
@@ -2969,7 +2870,7 @@ TEST(GetLevelAndLCA, LevelNodesInDegenerateTree)
 		UNSIGNED_LONGS_EQUAL(2, ecu_tree_get_level(&node2_));
 		UNSIGNED_LONGS_EQUAL(3, ecu_tree_get_level(&node3_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -2994,8 +2895,6 @@ TEST(GetLevelAndLCA, LevelNodesInGenericTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         ecu_tree_add_child_push_back(&root1_, &node1_);
 		ecu_tree_add_child_push_back(&root1_, &node2_);
 		ecu_tree_add_child_push_back(&root1_, &node3_);
@@ -3016,7 +2915,7 @@ TEST(GetLevelAndLCA, LevelNodesInGenericTree)
 		UNSIGNED_LONGS_EQUAL(3, ecu_tree_get_level(&node7_));
 		UNSIGNED_LONGS_EQUAL(4, ecu_tree_get_level(&node8_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -3053,8 +2952,6 @@ TEST(GetLevelAndLCA, LevelAddAndRemoveSubTreesInTree)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
 		/* Create Tree1. */
 		ecu_tree_add_child_push_back(&root1_, &node1_);
 		ecu_tree_add_child_push_back(&root1_, &node2_);
@@ -3091,7 +2988,7 @@ TEST(GetLevelAndLCA, LevelAddAndRemoveSubTreesInTree)
 		UNSIGNED_LONGS_EQUAL(2, ecu_tree_get_level(&node3_));
 		UNSIGNED_LONGS_EQUAL(2, ecu_tree_get_level(&node4_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -3129,8 +3026,6 @@ TEST(GetLevelAndLCA, LCAGenericTreeMultipleTestCases)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         ecu_tree_add_child_push_back(&root1_, &node1_);
         ecu_tree_add_child_push_back(&root1_, &node2_);
         ecu_tree_add_child_push_back(&node1_, &node3_);
@@ -3163,7 +3058,7 @@ TEST(GetLevelAndLCA, LCAGenericTreeMultipleTestCases)
         POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node5_, &node12_));   /* node5 is grandparent of node12. LCA should be node5 (the grandparent). */
         POINTERS_EQUAL(&node5_, ecu_tree_get_lca(&node12_, &node5_));   /* node5 is grandparent of node12. LCA should be node5 (the grandparent). */
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -3178,13 +3073,12 @@ TEST(GetLevelAndLCA, LCATwoNodesThatAreTheSame)
 {
     try
     {
-        /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
+        /* Step 1: Arrange. Done in setup(). */
 
         /* Steps 2 and 3: Action and assert. */
         POINTERS_EQUAL(&node1_, ecu_tree_get_lca(&node1_, &node1_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -3202,8 +3096,6 @@ TEST(GetLevelAndLCA, LCATwoNodesInDifferentTrees)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         ecu_tree_add_child_push_back(&root1_, &node1_);
         ecu_tree_add_child_push_back(&root2_, &node2_);
 
@@ -3211,7 +3103,7 @@ TEST(GetLevelAndLCA, LCATwoNodesInDifferentTrees)
         POINTERS_EQUAL((struct ecu_tree_node *)0, ecu_tree_get_lca(&node1_, &node2_));
         POINTERS_EQUAL((struct ecu_tree_node *)0, ecu_tree_get_lca(&root1_, &root2_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
@@ -3234,8 +3126,6 @@ TEST(GetLevelAndLCA, TestNodesInSameTreeFunction)
     try
     {
         /* Step 1: Arrange. */
-        ecu_tree_set_assert_functor(static_cast<struct ecu_assert_functor *>(&assert_call_fail_));
-
         ecu_tree_add_child_push_back(&root1_, &node1_);
         ecu_tree_add_child_push_back(&root1_, &node2_);
         ecu_tree_add_child_push_back(&root2_, &node3_);
@@ -3250,7 +3140,7 @@ TEST(GetLevelAndLCA, TestNodesInSameTreeFunction)
         CHECK_FALSE(ecu_tree_nodes_in_same_tree(&root1_, &root2_));
         CHECK_FALSE(ecu_tree_nodes_in_same_tree(&node3_, &node1_));
     }
-    catch (AssertException& e)
+    catch (stubs::AssertException& e)
     {
         (void)e;
         /* FAIL */
