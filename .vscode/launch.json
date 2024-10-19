@@ -7,7 +7,7 @@
         {
             "name": "ECU Unit Test Debug - Linux GDB",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/tests/unit-test/build/tests/ecu_unit_test",
+            "program": "${workspaceFolder}/bin/linux_gnu_unit_test/tests/unit/ecu_unit_test",
             "type": "cppdbg",
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
