@@ -8,7 +8,7 @@ attributes.h
 
 
 Overview
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+=================================================
 Provides wrappers for compiler-specific attributes so they can be modularly used within
 application code. The benefits of using these wrappers can be seen below:
 
@@ -41,7 +41,7 @@ application code. The benefits of using these wrappers can be seen below:
 
 
 What If My Toolchain Is Not Supported By This Module?
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+=======================================================
 For all ``non-critical`` attributes, ECU will create an empty #define directive so your code
 will still compile. Definitions will NOT be provided for ``critical`` attributes, so you will get a 
 compilation error wherever they are used in the application.
@@ -83,7 +83,7 @@ which just suppresses unused warnings but does not change the code executable.
 
 
 API
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+=================================================
 .. toctree:: 
     :maxdepth: 1
 
