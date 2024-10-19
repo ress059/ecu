@@ -18,11 +18,11 @@
 #include <cstdint>
 
 /* Files under test. */
-#include <ecu/endian.h>
+#include "ecu/endian.h"
 
 /* CppUTest. */
-#include <CppUTestExt/MockSupport.h>
-#include <CppUTest/TestHarness.h>
+#include "CppUTestExt/MockSupport.h"
+#include "CppUTest/TestHarness.h"
 
 
 
