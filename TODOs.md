@@ -1,13 +1,14 @@
 Completed.
-1. asserter.h/.c Tests done. Documentation done.
-2. event.h/.c and object_id.hs/.c. Tests done. TODO Documentation.
+1. asserter.h/.c DONE.
+2. attributes.h. DONE.
 3. circular_dll.h/.c. Tests done. TODO new features and documentation.
-4. timer.h/.c done. Tests done. TODO Documentation.
-5. endian.h. Tests done. TODO Documentation.
+4. endian.h. DONE.
+5. event.h/.c TODO Documentation.
 6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
-7. tree.h/.c. Tests done. TODO Code cleanup and Documentation.
-8. hsm.h/.c. TODO.
-9. attributes.h. Tests done. Documentation done.
+7. hsm.h/.c. TODO.
+8. object_id.h/.c. TODO documentation.
+9. timer.h/.c done. Tests done. TODO Documentation.
+10. tree.h/.c. Tests done. TODO Code cleanup and Documentation.
 
 
 ## Ring buffer

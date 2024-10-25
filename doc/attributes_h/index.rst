@@ -54,16 +54,6 @@ which just suppresses unused warnings but does not change the code executable.
 
 .. code-block:: c
 
-    /*---------------- attributes.h pseudocode --------------*/
-    #if not using supported compiler 
-    #define ECU_ATTRIBUTE_UNUSED        /* Create empty definition for non-critical attributes. */
-
-    /* Definitions for critical attributes are NOT provided. */
-    #endif
-
-
-.. code-block:: c
-
     /*----------------------- file .c -----------------------*/
     #include "ecu/attributes.h" /* Assume you are using an unsupported toolchain for this example. */
 

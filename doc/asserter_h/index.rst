@@ -9,7 +9,8 @@ asserter.h
 
 Overview
 =================================================
-Framework for using static and runtime asserts on embedded platforms. 
+Provides a portable way to use static assertions across any C and C++ standard. 
+Also provides a framework for using runtime asserts on embedded platforms. 
 
 
 ECU Static Asserts
@@ -138,9 +139,10 @@ easier to find and respond to. This is enabled by default.
 
 Enabling and Disabling Runtime Asserts 
 """"""""""""""""""""""""""""""""""""""""""""""""
-To disable runtime asserts, the "ECU_DISABLE_RUNTIME_ASSERTS" preprocessor directive can be globally 
-defined. This reduces overhead at the cost of reliability. This is backwards compatible and any code 
-using ECU's runtime assert framework can remain unchanged. 
+To disable runtime asserts, ``-D ECU_DISABLE_RUNTIME_ASSERTS`` can be passed to 
+the preprocessor. Disabling asserts reduces overhead at the cost of reliability. 
+This is backwards compatible and any code using ECU's runtime assert framework 
+can remain unchanged. 
 
 .. code-block:: c
 
