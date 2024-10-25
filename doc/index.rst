@@ -29,6 +29,7 @@ to view in-depth documentation and APIs for each library module.
 
     asserter.h <asserter_h/index>
     attributes.h <attributes_h/index>
+    endian.h <endian_h/index>
 
 .. toctree::
     :maxdepth: 1
