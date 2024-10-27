@@ -13,7 +13,7 @@ endif()
 # application's toolchain.
 add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/circular_dll.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/dlist.c
     ${CMAKE_CURRENT_LIST_DIR}/src/event.c
     ${CMAKE_CURRENT_LIST_DIR}/src/fsm.c
     # ${CMAKE_CURRENT_LIST_DIR}/src/hsm.c

@@ -64,7 +64,8 @@ struct ecu_circular_dll_node
 ```
 
 3. Change names from ecu_circular_dll to just ecu_dll. Applies to everything (file name,
-struct names, function names, etc).
+struct names, function names, etc). **If you do change name update sphinx documentation**
+**that uses circular_dll stuff in code blocks.**
 
 4. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
 to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
@@ -77,6 +78,12 @@ so this only applies to GCC. I.e.
 #end pragma
 #endif
 ```
+
+# Timer
+1. When adding a new timer, order list nodes by timeout ticks (timer closest to timing
+out is at HEAD). This way ecu_timer_collection_tick() only has to check HEAD instead of
+iterating through entire list.
+
 
 
 ## Tree
@@ -91,12 +98,12 @@ so this only applies to GCC. I.e.
 #end pragma
 #endif
 ```
-
-2. NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
-3. Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
-4. Finished (done!) tree.c cleanup and code verification (asserts, style, etc).
-5. Finished (done!) destructor tests and tests for adding nodes in middle of iteration. 
-6. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
+2. Add add_sibling_left() and add_sibling_right() function. 
+3. NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
+4. Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
+5. Finished (done!) tree.c cleanup and code verification (asserts, style, etc).
+6. Finished (done!) destructor tests and tests for adding nodes in middle of iteration. 
+7. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 
 ## Build system and syntax
@@ -128,4 +135,10 @@ If any step fails do not move on.
 
 
 ## All:
+0. All declarations are max 1 line now. I.e.
+extern void foo(void);
+// only one line in between.
+extern void bar(void);
+
 1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
+2. Remove all @ref file in doxygen comments. I.e. "See @ref endian.h for more details", "see @ref circular_dll.h for more details", etc.
