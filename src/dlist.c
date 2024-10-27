@@ -44,6 +44,8 @@ ECU_ASSERT_DEFINE_NAME("ecu/dlist.c")
  */
 static bool list_valid(const struct ecu_dlist *list);
 
+static bool node_is_head(const struct ecu_dlist *list, const struct ecu_dlist_node *node);
+
 
 // pre = node and list constructed. Return true if node is in this list.
 static bool node_in_this_list(const struct ecu_dlist *list, const struct ecu_dlist_node *node);
@@ -70,7 +72,6 @@ static void list_head_destroy_callback(struct ecu_dlist_node *me);
 static bool list_valid(const struct ecu_dlist *list)
 {
     bool valid = false;
-
     ECU_RUNTIME_ASSERT( (list) );
     ECU_RUNTIME_ASSERT( (list->head.next && list->head.prev) );
 
@@ -89,10 +90,25 @@ static bool list_valid(const struct ecu_dlist *list)
 }
 
 
+static bool node_is_head(const struct ecu_dlist *list, const struct ecu_dlist_node *node)
+{
+    bool status = false;
+    ECU_RUNTIME_ASSERT( (list && node) );
+    ECU_RUNTIME_ASSERT( (list_valid(list)) );
+
+    if ((node->list == list) && \
+        (&list->head == node))
+    {
+        status = true;
+    }
+
+    return status;
+}
+
+
 static bool node_in_this_list(const struct ecu_dlist *list, const struct ecu_dlist_node *node)
 {
     bool status = false;
-
     ECU_RUNTIME_ASSERT( (list && node) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
     ECU_RUNTIME_ASSERT( (node->next && node->prev) );
@@ -114,7 +130,6 @@ static bool node_in_this_list(const struct ecu_dlist *list, const struct ecu_dli
 static bool node_in_other_list(const struct ecu_dlist *list, const struct ecu_dlist_node *node)
 {
     bool status = false;
-
     ECU_RUNTIME_ASSERT( (list && node) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
     ECU_RUNTIME_ASSERT( (node->next && node->prev) );
@@ -164,19 +179,17 @@ void ecu_dlist_ctor(struct ecu_dlist *me)
 }
 
 
-void ecu_dlist_destroy(struct ecu_circular_dll *me)
+void ecu_dlist_destroy(struct ecu_dlist *me)
 {
-    struct ecu_circular_dll_iterator iterator;
-
+    struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
-#warning "TODO"
-    for (struct ecu_circular_dll_node *node = ecu_circular_dll_iterator_begin(&iterator, me);
-         node != ecu_circular_dll_iterator_end(&iterator); 
-         node = ecu_circular_dll_iterator_next(&iterator))
+    for (struct ecu_dlist_node *node = ecu_dlist_iterator_begin(&iterator, me);
+         node != ecu_dlist_iterator_end(&iterator); 
+         node = ecu_dlist_iterator_next(&iterator))
     {
-        ecu_circular_dll_remove_node(node); /* Set next and prev to itself. */
+        ecu_dlist_remove(me, node); /* Sets next and prev to self. */
 
         /* Do not reset node->id so user is able to identify their data type 
         in their destructor callback. */
@@ -190,7 +203,6 @@ void ecu_dlist_destroy(struct ecu_circular_dll *me)
     me->head.next = &me->head;
     me->head.prev = &me->head;
 }
-
 
 
 void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
@@ -257,7 +269,7 @@ void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *new)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (!node_in_this_list(me, new) && !node_in_other_list(me, new)) );
     
-    /* WARNING: This requires ecu_dlist_insert() insert the new node BEFORE position. */
+    /* WARNING: This requires ecu_dlist_insert() to insert the new node BEFORE position. */
     ecu_dlist_insert(me, me->head.next, new);
 }
 
@@ -268,59 +280,36 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *new)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (!node_in_this_list(me, new) && !node_in_other_list(me, new)) );
 
-    /* WARNING: This requires ecu_dlist_insert() insert the new node BEFORE position. */
+    /* WARNING: This requires ecu_dlist_insert() to insert the new node BEFORE position. */
     ecu_dlist_insert(me, &me->head, new);
 }
 
 
-struct ecu_dlist_node *ecu_dlist_pop(struct ecu_dlist *me, const struct ecu_dlist_iterator *position)
+size_t ecu_dlist_get_size(struct ecu_dlist *me)
 {
-
-}
-
-
-
-// struct ecu_dlist_node *ecu_dlist_pop_front(struct ecu_dlist *me)
-// {
-//     struct ecu_dlist_node *front = (struct ecu_dlist_node *)0;
-//     ECU_RUNTIME_ASSERT( (me) );
-//     ECU_RUNTIME_ASSERT( (list_valid(me)) );
-//     ECU_RUNTIME_ASSERT( (!ecu_dlist_is_empty(me)) );
-
-//     front = me->head.next;
-//     ecu_dlist_remove(me, front);
-//     return front;
-// }
-
-
-// struct ecu_dlist_node *ecu_dlist_pop_back(struct ecu_dlist *me); // call ecu_dlist_remove()
-
-
-
-
-uint32_t ecu_circular_dll_get_size(struct ecu_circular_dll *me)
-{
-    uint32_t i = 0;
-    struct ecu_circular_dll_iterator iterator;
-
+    size_t i = 0;
+    struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
-    for (struct ecu_circular_dll_node *node = ecu_circular_dll_iterator_begin(&iterator, me);
-         node != ecu_circular_dll_iterator_end(&iterator); 
-         node = ecu_circular_dll_iterator_next(&iterator))
+    /* Loop through entire list here instead of using a size variable in 
+    ecu_dlist to prevent all add and remove functions having to keep track
+    of size. Isolate this dependency to only this function. */
+    for (struct ecu_dlist_node *node = ecu_dlist_iterator_begin(&iterator, me);
+         node != ecu_dlist_iterator_end(&iterator); 
+         node = ecu_dlist_iterator_next(&iterator))
     {
-        /* NULL assertions are done within the iterator functions. */
-        i++;
+        ++i;
     }
+
     return i;
 }
 
 
-bool ecu_circular_dll_is_empty(const struct ecu_circular_dll *me)
+bool ecu_dlist_is_empty(const struct ecu_dlist *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
     return (me->head.next == &me->head);
 }
 
@@ -330,37 +319,33 @@ bool ecu_circular_dll_is_empty(const struct ecu_circular_dll *me)
 /*---------------------------------------------------- PUBLIC FUNCTIONS: ITERATORS ------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-struct ecu_circular_dll_node *ecu_circular_dll_iterator_begin(struct ecu_circular_dll_iterator *me,
-                                                              struct ecu_circular_dll *list)
+struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list)
 {
     ECU_RUNTIME_ASSERT( (me && list) );
-    ECU_RUNTIME_ASSERT( (list_valid(list)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (list_valid(list)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next) || node_is_head(list, list->head.next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next->next) || node_is_head(list, list->head.next->next)) );
 
     me->list = list;
-    me->current = list->head.next;      /* list_valid() asserts this node is in list. */
-    me->next = list->head.next->next;   /* We assert this node is valid in ecu_circular_dll_iterator_next() call so it's not done here. */
+    me->current = list->head.next;
+    me->next = list->head.next->next;
     return (me->current);
 }
 
 
-struct ecu_circular_dll_node *ecu_circular_dll_iterator_end(struct ecu_circular_dll_iterator *me)
+struct ecu_dlist_node *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (list_valid(me->list)) ); /* Function called in macro so there is no overhead if asserts are disabled. */
+    ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
     return (&me->list->head);
 }
 
 
-struct ecu_circular_dll_node *ecu_circular_dll_iterator_next(struct ecu_circular_dll_iterator *me)
+struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-
-    /* Do NOT do ECU_RUNTIME_ASSERT( (node_in_list(me->next)), DLL_ASSERT_FUNCTOR);
-    since it is perfectly valid for iterated list to have no nodes in it. 
-    Functions called in macro so there is no overhead if asserts are disabled. */
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
-    ECU_RUNTIME_ASSERT( (node_valid(me->next)) );
-    ECU_RUNTIME_ASSERT( (node_valid(me->next->next)) );
+    ECU_RUNTIME_ASSERT( (nost_in_this_list(me->list, me->next) || node_is_head(me->list, me->next)) );
 
     me->current = me->next;
     me->next = me->next->next;

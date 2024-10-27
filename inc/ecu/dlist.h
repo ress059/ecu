@@ -278,15 +278,7 @@ extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *ne
  * @note If this function is called in the middle of an iteration, the
  * iterator WILL iterate through the newly added nodes.
  */
-extern void ecu_dlist_push_back(struct ecu_dlist *me, 
-                                struct ecu_dlist_node *new); // call ecu_dlist_insert(list.head)
-
-
-// assert if empty list.
-extern struct ecu_dlist_node *ecu_dlist_pop_front(struct ecu_dlist *me); // call ecu_dlist_remove()
-
-// assert if list empty
-extern struct ecu_dlist_node *ecu_dlist_pop_back(struct ecu_dlist *me); // call ecu_dlist_remove()
+extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *new);
 
 
 /**
@@ -337,8 +329,7 @@ extern bool ecu_dlist_node_in(const struct ecu_dlist *me, const struct ecu_dlist
  * @param list List to iterate through. This is not declared as pointer to const
  * since iterator functions can return non-const @ref ecu_dlist.head pointers.
  */
-extern struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me,
-                                                                     struct ecu_dlist *list);
+extern struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list);
 
 
 /**
