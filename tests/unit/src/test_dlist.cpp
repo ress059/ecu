@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Unit tests for public API functions in @ref circular_dll.h
+ * @brief Unit tests for public API functions in @ref ecu_dlist.h
  * 
  * @author Ian Ress
  * @version 0.1
@@ -15,7 +15,7 @@
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
 /* Files under test. */
-#include "ecu/circular_dll.h"
+#include "ecu/dlist.h"
 
 /* Stubs. */
 #include "stubs/stub_asserter.hpp"
@@ -87,6 +87,156 @@ TEST_GROUP(CircularDLL)
 /*---------------------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------- TESTS ----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
+
+
+/*
+0. ECU_DLIST_GET_ENTRY() general test. 
+1. Constructor destructor test. One below is fine.
+2. destroy(). Node destructor callbacks called. combine this with 3. node_ctor(id 1), node_ctor(id 2),... destroy(). Verify with mock.
+3. destroy(). Verify node IDs are passed to callbacks. Just make general destructor. if (nodeid = 1) {mock(destroy1)} else if (nodeid = 2) {mock(destroy2)}, etc.
+4. Test get_size() by calling push_front(), push_back(), insert_before(), insert_after() and remove(). general insert and removal test.
+4. insert_before() adds node BEFORE position. (verify with iterator instead of directly using prev?)
+5. Cannot insert_before() node that's already in another list.
+6. Cannot insert_before() node that's already in this list.
+7. Cannot insert_before() node when supplied position is in another list.
+8. insert_before() node can't be &list->head
+9. insert_after() adds node AFTER position.
+11. Cannot insert_after() node that's already in another list.
+12. Cannot insert_after() node that's already in this list.
+13. Cannot insert_after() node when supplied position is in another list.
+14. insert_after() node can't be &list->head
+15. Cannot remove() node not in list.
+16. Cannot remove() node in another list.
+17. push_front() adds node in front of list.
+18. push_back() adds node in back of list.
+
+19. General iterator test. Verify iterator goes over all nodes in correct order. (set ids, mock strict order).
+20. Using push_front() in middle of iteration is OK. These nodes WON'T be iterated over.
+21. Using push_back() in middle of iteration is OK. These nodes WILL be iterated over.
+22. Using insert_before() in middle of iteration is OK. These nodes WON'T be iterated over.
+23. Using insert_after() in middle of iteration is OK. These nodes WON'T be itreated over.
+24. Using remove() in middle of iteration is OK if it is on nodes BEFORE and AT current.
+
+25. Using remove() in middle of iteration on nodes AFTER current is NOT ok.
+26. Iterating over empty list is ok. verify begin() == end() == next()
+27. General is_empty() test. Can just do one call of push_front() and remove(). Don't overcomplicate it.
+*/
+
+
+
+TEST(??, EcuDListGetEntryMacro)
+{
+
+}
+
+
+TEST(??, ConstructorDestructorTest)
+{
+
+}
+
+TEST(??, NodeDestructorCallbacks)
+{
+
+}
+
+// general test for insert(), remove(), push_back(), push_front(), and get_size().
+TEST(??, GetSize)
+{
+
+}
+
+TEST(??, NodeIDsAvailableInDestructor)
+{
+
+}
+
+TEST(??, InsertAddsNodeBeforePosition)
+{
+
+}
+
+// cant insert node that is in another list.
+TEST(??, CannotInsertNodeInAnotherList)
+{
+
+}
+
+TEST(??, CannotInsertNodeAlreadyInThisList)
+{
+
+}
+
+// cannnot insert node when position is a node from another list.
+TEST(??, CannotInsertNodeToAnotherList)
+{
+
+}
+
+TEST(??, CannotRemoveNodeNotInList)
+{
+
+}
+
+TEST(??, CannotRemoveNodeFromAnotherList)
+{
+
+}
+
+// push front adds node to front of list.
+TEST(??, PushFront)
+{
+
+}
+
+// push back adds node to back of list.
+TEST(??, PushBack)
+{
+
+}
+
+// verify iterator goes over all nodes
+TEST(??, GeneralIteratorTest)
+{
+
+}
+
+// it is OK to do push front. These nodes WONT be iterated over.
+TEST(??, PushFrontDuringIteration)
+{
+
+}
+
+// it is OK to do push back.
+TEST(??, PushBackDuringIteration)
+{
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief Construct list and nodes, add nodes to list, and call list destructor.

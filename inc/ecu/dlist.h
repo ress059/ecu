@@ -75,17 +75,36 @@
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @brief Return pointer to user data that was stored in the linked list.
- * @details See @ref circular_dll.h description for an example using 
- * this macro. Users can set @ref ecu_dlist_node.id to identify
- * different types in their list when using this macro.
+ * @brief Retrieve non-const user-defined data stored in a dlist node.
  * 
- * @param ptr Address of linked list node within user-defined struct. This will be of 
- * type (struct ecu_dlist_node *).
- * @param type User-defined type stored in the list. I.e. (struct user_defined_type).
- * @param member Name of linked list node member within user-defined type.
+ * @param ptr Address of dlist node within your user-defined @p type.
+ * This should always be of type (struct ecu_dlist_node *), never
+ * (const struct ecu_dlist_node *).
+ * @param type User-defined type that contains the dlist node that @p ptr 
+ * points to. This should always be non-const. I.e. struct my_type,
+ * never const struct my_type.
+ * @param member Member name of the dlist node that @p ptr points to.
  */
-#define ECU_DLIST_GET_ENTRY(ptr, type, member)   ((type *)((char *)(ptr) - offsetof(type, member)))
+#define ECU_DLIST_GET_ENTRY(ptr, type, member)   ((type *)((uint8_t *)(ptr) - offsetof(type, member)))
+
+/**
+ * @brief Retrieve const user-defined data stored in a dlist node. 
+ * 
+ * @param ptr Address of dlist node within your user-defined @p type.
+ * This can be of type (struct ecu_dlist_node *) or (const struct ecu_dlist_node *).
+ * @param type User-defined type that contains the dlist node that @p ptr 
+ * points to. This should always be non-const. I.e. struct my_type,
+ * never const struct my_type.
+ * @param member Member name of the dlist node that @p ptr points to.
+ */
+#define ECU_DLIST_GET_CONST_ENTRY(ptr, type, member)    ((const type *)((const uint8_t *)(ptr) - offsetof(type, member)))
+
+/**
+ * @brief Convience macro for @ref ecu_dlist_node_ctor().
+ * @details Pass this value to @ref ecu_dlist_node_ctor() if 
+ * a user-defined node destructor is not needed.
+ */
+#define ECU_DLIST_NODE_DESTROY_UNUSED            ((void (*)(struct ecu_dlist_node *, enum ecu_object_id))0)
 
 
 
@@ -110,29 +129,28 @@ struct ecu_dlist_node
      */
     struct ecu_dlist_node *prev;
 
-    struct ecu_dlist *list; // list the node is in.
-
     /**
-     * @private
-     * @brief PRIVATE. Optional user-defined callback that
-     * defines node's destructor. Called when @ref ecu_dlist_destroy() 
-     * is called and node is apart of the destroyed list.
-     * 
-     * @warning Do not call @ref ecu_dlist_destroy() or directly
-     * edit members of @ref ecu_dlist_node directly in this callback. 
-     * User should only define any additional cleanup necessary for their data type.
+     * @private 
+     * @brief PRIVATE. List this node is in.
      */
-    void (*destroy)(struct ecu_dlist_node *me);
+    struct ecu_dlist *list;
 
     /**
      * @private
-     * @brief PRIVATE. Optional ID user can assign to each node
-     * to identify different types stored in the same list. See
-     * description of @ref object_id.h
+     * @brief PRIVATE. Optional user-defined node destructor.
+     * @details Executes when @ref ecu_dlist_destroy() or 
+     * @ref ecu_dlist_node_destroy() is called.
+     */
+    void (*destroy)(struct ecu_dlist_node *me, ecu_object_id id);
+
+    /**
+     * @private
+     * @brief PRIVATE. Optional node ID.
+     * @details Helps user identify different types stored in the
+     * same list.
      */
     ecu_object_id id;
 };
-
 
 /**
  * @brief Circular doubly linked list.
@@ -141,12 +159,12 @@ struct ecu_dlist
 {
     /**
      * @private
-     * @brief PRIVATE. Dummy node used as delimiter to represent
+     * @brief PRIVATE. List HEAD.
+     * @details Dummy node used as delimiter to represent
      * start and end of list. Not apart of user's list.
      */
     struct ecu_dlist_node head;
 };
-
 
 /**
  * @brief Non-const list iterator.
@@ -155,8 +173,8 @@ struct ecu_dlist_iterator
 {
     /**
      * @private
-     * @brief PRIVATE. List that is being iterated. The node
-     * in this member is used as the delimiter.
+     * @brief PRIVATE. List that is being iterated. 
+     * @details List's HEAD is used as a delimiter.
      */
     struct ecu_dlist *list;
 
@@ -168,10 +186,21 @@ struct ecu_dlist_iterator
 
     /**
      * @private 
-     * @brief PRIVATE. Next position in the list. This member allows
-     * user to safely remove nodes from list while iterating through it.
+     * @brief PRIVATE. Next position in the list. 
+     * @details Allows user to safely add and remove nodes 
+     * in the middle of an iteration.
      */
     struct ecu_dlist_node *next;
+};
+
+/**
+ * @brief Const list iterator.
+ */
+struct ecu_dlist_const_iterator
+{
+    const struct ecu_dlist *list;
+    const struct ecu_dlist_node *current;
+    const struct ecu_dlist_node *next;
 };
 
 
@@ -188,99 +217,182 @@ extern "C" {
  * @name Constructors
  */
 /**@{*/
-
-
-
 /**
  * @pre Memory already allocated for @p me.
  * @brief List constructor.
  * 
- * @warning @p me cannot be an active list that has nodes in it. Otherwise the
- * list will detach itself from all its nodes and behavior is undefined.
+ * @warning @p me must not be an active list, otherwise
+ * behavior is undefined.
  * 
  * @param me List to construct. This cannot be NULL. 
  */
 extern void ecu_dlist_ctor(struct ecu_dlist *me);
 
-
 /**
- * @pre @p me previously constructed via call to @ref ecu_dlist_ctor()
- * @brief List destructor. Removes all nodes from the list and calls user-supplied
- * destructor @ref ecu_dlist_node.destroy for each node if one was supplied 
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @brief List destructor. 
+ * @details Removes and resets all nodes within the list. User-defined 
+ * destructors for each node will execute if they were supplied 
  * in @ref ecu_dlist_node_ctor().
  * 
  * @param me List to destroy.
  */
 extern void ecu_dlist_destroy(struct ecu_dlist *me);
 
-
 /**
  * @pre Memory already allocated for @p me.
  * @brief Node constructor.
  * 
- * @warning @p me cannot be an active node apart of an existing list. Otherwise the list 
- * will become corrupted and behavior is undefined.
- * @warning If @p destroy_0 callback is supplied, do not call @ref ecu_dlist_destroy(),
- * @ref ecu_dlist_remove_node(), or directly edit any members of @ref ecu_dlist_node 
- * in your callback. Users should only define any additional cleanup necessary for their data type. 
- * Cleanup of the actual @ref ecu_dlist_node type is done automatically in this module.
- * @warning Read description of @ref object_id.h before supplying @p id_0 parameter.
+ * @warning @p me must not be an active node within a list, 
+ * otherwise behavior is undefined.
+ * @warning Do not call any list API functions (i.e. @ref ecu_dlist_node_destroy())
+ * within your @p destroy_0 callback, otherwise behavior is undefined.
+ * This callback should define any <b>additional</b> cleanup needed 
+ * to destroy your user-defined data stored in this node. Cleanup of
+ * the actual node is automatically done by this module.
  * 
  * @param me Node to construct. This cannot be NULL.
- * @param destroy_0 Optional user-defined callback that defines additional
- * cleanup for node's destructor. Called when @ref ecu_dlist_destroy() 
- * is called and node is apart of the destroyed list.
- * @param id_0 Optional ID user can assign to each node to identify different 
- * types stored in the same list. Set to @ref ECU_OBJECT_ID_UNUSED if unused.
- * See @ref object_id.h description for more details. This value must be 
- * greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
+ * @param destroy_0 Optional callback that defines additional cleanup 
+ * needed to destroy your user-defined data stored in this node. 
+ * @ref ecu_dlist_node_get_id() and @ref ECU_DLIST_GET_ENTRY() can
+ * be used in your callback to retrieve your user-defined data. This
+ * function is called when this node is apart of a list that is 
+ * destroyed by @ref ecu_dlist_destroy(). This function also executes 
+ * when @ref ecu_dlist_node_destroy() is called on this node. Supply 
+ * @ref ECU_DLIST_NODE_DESTROY_UNUSED if unused.
+ * @param id_0 Optional ID user can assign to each node to identify
+ * different types stored in the same list. Supply @ref ECU_OBJECT_ID_UNUSED
+ * if unused. This value must be greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
  */
 extern void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
-                                void (*destroy_0)(struct ecu_dlist_node *me),
+                                void (*destroy_0)(struct ecu_dlist_node *me, ecu_object_id id),
                                 ecu_object_id id_0);
 
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Node destructor.
+ * @details Removes node if it is in a list. Executes the user-defined 
+ * destructor if one was supplied to @ref ecu_dlist_node_ctor().
+ * 
+ * @param me Node to destroy.
+ */
+extern void ecu_dlist_node_destroy(struct ecu_dlist_node *me);
 /**@}*/
 
-
 /**
- * @name List Addition, Removal, and Status
+ * @name Node Member Functions
  */
 /**@{*/
-
-// insert before node. think just have list for future compatibility but do not use it.
-// just do same schem where verify position is in list.
-extern void ecu_dlist_insert(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *new);
-
-// general purpose pop function makes no sense since it needs to take in struct ecu_dlist_node *position which 
-// will be returned as well.
-
 /**
- * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor()
- * @brief Remove node from list. Previous and next nodes in list are 
- * automatically adjusted.
+ * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Return list this node is attached to. Returns NULL if
+ * node is not within a list.
  * 
- * @param me Node to remove. This node must be within a list.
+ * @param me Node to check.
  */
-extern void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node);
-
-
-extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *new);
+extern struct ecu_dlist *ecu_dlist_node_get_list(const struct ecu_dlist_node *me);
 
 /**
- * @pre @p me previously constructed via call to @ref ecu_dlist_ctor()
- * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor()
- * @brief Add node to back of the list.
+ * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Return node's ID.
+ * @details The ID returned is the one set in @ref ecu_dlist_node_ctor().
+ * This value can be used to differentiate between multiple types
+ * stored in the same list.
+ * 
+ * @param me Node to check.
+ */
+extern ecu_object_id ecu_dlist_node_get_id(const struct ecu_dlist_node *me);
+/**@}*/
+
+/**
+ * @name List Member Functions
+ */
+/**@{*/
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Add node to front of the list.
  * 
  * @param me List to add to.
  * @param node Node to add. Node cannot already be within the supplied 
  * list or apart of another active list.
  * 
- * @note If this function is called in the middle of an iteration, the
- * iterator WILL iterate through the newly added nodes.
+ * @note This is not meant to be used in the middle of an iteration however 
+ * it is safe to do so. If used during an iteration, the newly added node 
+ * will <b>not</b> be iterated over.
  */
-extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *new);
+extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Add node to back of the list.
+ * 
+ * @param me List to add to.
+ * @param node Node to add. Node cannot already be within the supplied 
+ * list @p me or apart of another list.
+ * 
+ * @note This is not meant to be used in the middle of an iteration 
+ * however it is safe to do so. If used during an iteration, it is 
+ * undefined whether the newly added node will be iterated over or not.
+ */
+extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
+ * @brief Add node before position node.
+ * 
+ * @param me List to add to.
+ * @param position Add @p node before this position node. This must
+ * be within the supplied list @p me.
+ * @param node Node to add. This cannot already be within the supplied
+ * list @p me or apart of another list.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
+ * can be used if you only have access to the position node.
+ * @note It is safe to use this in the middle of an iteration. The
+ * newly added node will <b>not</b> be iterated over. 
+ */
+extern void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
+ * @brief Add node after position node.
+ * 
+ * @param me List to add to.
+ * @param position Add @p node before this position node. This must
+ * be within the supplied list @p me.
+ * @param node Node to add. This cannot already be within the supplied
+ * list @p me or apart of another list.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
+ * can be used if you only have access to the position node.
+ * @note It is safe to use this in the middle of an iteration. The
+ * newly added node will <b>not</b> be iterated over.
+ */
+extern void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Remove node from list. 
+ * 
+ * @p me List to remove from.
+ * @p node Node to remove. This must be within the supplied
+ * list @p me.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(node)
+ * can be used if you only have access to the node.
+ * @note It is safe to use this in the middle of an iteration.
+ */
+extern void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node);
 
 
+
+
+# warning "TODO: Stopped here. Making const iterator so we can pass in const list"
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor()
  * @brief Returns number of nodes in a list.
@@ -300,8 +412,6 @@ extern size_t ecu_dlist_get_size(struct ecu_dlist *me);
  * @param me List to check.
  */
 extern bool ecu_dlist_is_empty(const struct ecu_dlist *me);
-
-extern bool ecu_dlist_node_in(const struct ecu_dlist *me, const struct ecu_dlist_node *node);
 /**@}*/
 
 
@@ -311,45 +421,51 @@ extern bool ecu_dlist_node_in(const struct ecu_dlist *me, const struct ecu_dlist
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * @name Iterators
- * You can safely add and remove nodes in the middle of an iteration.
- * If nodes are added via @ref ecu_dlist_push_back() the iterator
- * WILL iterate through the newly added nodes.
+ * @name Non-const Iterator
  */
 /**@{*/
 /**
  * @pre Memory already allocated for @p me
- * @pre @p list previously constructed via call to @ref ecu_dlist_ctor()
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
  * @brief Initializes iterator and returns first node in the list.
  * @details If the list has nodes this is the first user-defined node. 
  * If the list is empty this returns the same terminal node returned by
  * @ref ecu_dlist_iterator_end().
  * 
- * @param me Iterator object to initialize.
+ * @param me Non-const iterator to initialize.
  * @param list List to iterate through. This is not declared as pointer to const
  * since iterator functions can return non-const @ref ecu_dlist.head pointers.
  */
 extern struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list);
 
-
 /**
- * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin()
- * @brief Returns terminal node in the list which is a dummy delimiter that 
- * represents HEAD and TAIL of the list. Returned node should never be used 
- * directly.
+ * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
+ * @brief Returns last node in the list.
+ * @details The last node is a dummy delimeter that is not apart of the
+ * user's list. Therefore it should never be used directly.
  * 
- * @param me Iterator object.
+ * @param me Non-const iterator.
  */
 extern struct ecu_dlist_node *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me);
 
 
 /**
- * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin()
+ * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
  * @brief Returns the next node in the iteration.
  * 
- * @param me Iterator object.
+ * @param me Non-const iterator.
  */
 extern struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me);
+/**@}*/
+
+/**
+ * @name Const Iterator
+ */
+/**@{*/
+extern const struct ecu_dlist_node *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, const struct ecu_dlist *list);
+extern const struct ecu_dlist_node *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me);
+extern const struct ecu_dlist_node *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me);
+
 /**@}*/
 
 #ifdef __cplusplus

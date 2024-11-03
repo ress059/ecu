@@ -68,12 +68,12 @@
 	"buildPresets": [
         {
 			"name": "linux-gnu-unit-test",
-			"displayName": "Linux-GNU-Unit-Test",
+			"displayName": "linux-gnu-unit-test",
 			"configurePreset": "linux-gnu-unit-test"
 		},
         {
 			"name": "linux-gnu-build",
-			"displayName": "Linux-GNU-Build",
+			"displayName": "linux-gnu-build",
 			"configurePreset": "linux-gnu-build",
 			"verbose": true
 		},

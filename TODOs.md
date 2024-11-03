@@ -1,8 +1,8 @@
 Completed.
-1. asserter.h/.c DONE.
-2. attributes.h. DONE.
+1. asserter.h/.c DONE. TODO clang-format
+2. attributes.h. DONE. TODO clang-format
 3. circular_dll.h/.c. Tests done. TODO new features and documentation.
-4. endian.h. DONE.
+4. endian.h. DONE. TODO clang-format
 5. event.h/.c TODO Documentation.
 6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
 7. hsm.h/.c. TODO.
@@ -16,6 +16,10 @@ Completed.
 
 
 ## FSM
+1. Make helper macro that allows users to static assert that ecu_fsm is
+the first member of their fsm.
+2. **Test calling ecu_fsm_dispatch() within an fsm state handler**.
+
 1. Should entry and exit handlers both take in an event? Reasoning is in
 case fsm should be updated with any event data on entry/exit.
 I.e. 
@@ -47,27 +51,21 @@ if any parameters have to change but that is the same case for run-time function
 
 
 ## Circular DLL
+0. **Add a const iterator**
+
 1. Allow node to be added/removed anywhere in the list...that's the point of a linked list...
 Currently only support push_back(). Add tests for this.
 
-2. Remove separate structure for list and node (similar to linux where node is a list). I.e.
-```C
-/* Get rid of this */
-struct ecu_circular_dll
-{
-};
-
-/* Only have this. */
-struct ecu_circular_dll_node
-{
-}
-```
+2. Refactor timer since it uses old linked list.
 
 3. Change names from ecu_circular_dll to just ecu_dll. Applies to everything (file name,
 struct names, function names, etc). **If you do change name update sphinx documentation**
 **that uses circular_dll stuff in code blocks.**
 
-4. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
+4. Add sphinx documentation for using ecu_dlist_insert_before(), ecu_dlist_insert_after(),
+and ecu_dlist_remove() in the middle of an iteration.
+
+5. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
 to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
 THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
 so this only applies to GCC. I.e.
@@ -117,6 +115,11 @@ Otherwise message is always printed
 
 2. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+# Clang-format
+1. One line max now.
+2. Braces (if, while, for, etc).
+3. Pointer location. I.e. void* vs void *
 
 
 ## CI Pipeline Steps:
