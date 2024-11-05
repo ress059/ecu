@@ -20,7 +20,7 @@
 
 /* ECU library. Call some common API functions. */
 #include "ecu/asserter.h"
-#include "ecu/circular_dll.h"
+#include "ecu/dlist.h"
 #include "ecu/event.h"
 #include "ecu/fsm.h"
 
@@ -68,10 +68,10 @@ struct app_event
 };
 
 
-struct app_dll_node
+struct app_dlist_node
 {
     uint16_t x;
-    struct ecu_circular_dll_node node;
+    struct ecu_dlist_node node;
     uint32_t y;
 };
 
@@ -84,9 +84,9 @@ struct app_dll_node
 static struct app_fsm app_fsm;
 static struct ecu_fsm_state app_fsm_state;
 static struct app_event app_event;
-static struct app_dll_node app_node1;
-static struct app_dll_node app_node2;
-static struct ecu_circular_dll app_list;
+static struct app_dlist_node app_node1;
+static struct app_dlist_node app_node2;
+static struct ecu_dlist app_list;
 
 
 
@@ -152,15 +152,15 @@ int main(void)
 
     /* Call some API functions */
     ECU_RUNTIME_ASSERT( (3 == 3) );
-    ecu_circular_dll_ctor(&app_list);
-    ecu_circular_dll_node_ctor(&app_node1.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-    ecu_circular_dll_node_ctor(&app_node2.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_ctor(&app_list);
+    ecu_dlist_node_ctor(&app_node1.node, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_node_ctor(&app_node2.node, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
     ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, &app_fsm_state);
     
-    ecu_circular_dll_push_back(&app_list, &app_node1.node);
-    ecu_circular_dll_push_back(&app_list, &app_node2.node);
-    ecu_circular_dll_remove_node(&app_node2.node);
+    ecu_dlist_push_back(&app_list, &app_node1.node);
+    ecu_dlist_push_front(&app_list, &app_node2.node);
+    ecu_dlist_remove(ecu_dlist_node_get_list(&app_node2.node), &app_node2.node);
 
     ecu_fsm_dispatch((struct ecu_fsm *)&app_fsm, (const struct ecu_event *)&app_event);
 

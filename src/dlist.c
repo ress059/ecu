@@ -37,35 +37,68 @@ ECU_ASSERT_DEFINE_NAME("ecu/dlist.c")
 /*-------------------------------------------------- STATIC FUNCTION DECLARATIONS -------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-// ALL FUNCTIONS REQUIRE NODE OR LIST TO BE PREVIOUSLY constructed or else next and prev
-// pointers can be garbage non-NULL values, leading to seg faults when accessed.
-
-// node is constructed but doesn't have to be apart of a list.
+/**
+ * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * Otherwise node's next and prev pointers can be garbage non-NULL values,
+ * leading to seg faults when accessed.
+ * @brief Returns true if node's next and prev pointers are valid. Also
+ * checks node's destroy callback and ID are properly assigned. False 
+ * otherwise. 
+ * 
+ * @note This function will return false if list HEAD is supplied since
+ * node's destroy callback and ID are checked.
+ */
 static bool node_valid(const struct ecu_dlist_node *node);
 
 /**
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
- * @brief Returns true if the list is valid. False otherwise. A valid list
- * means list->head.next->prev == &list->head and list->head.prev->next == &list->head
+ * Otherwise list head's next and prev pointers can be garbage non-NULL values,
+ * leading to seg faults when accessed.
+ * @brief Returns true if list HEAD's next and prev pointers are valid.
+ * Also checks list HEAD's list pointer, destroy callback, and ID are 
+ * properly assigned. False otherwise.
  */
-// list in constructed.
 static bool list_valid(const struct ecu_dlist *list);
 
+/**
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor() and
+ * @p node previously constructed via call to @ref ecu_dlist_node_ctor(). Otherwise
+ * next and prev pointers can be garbage non-NULL values, leading to seg faults
+ * when accessed. 
+ * @brief Returns true if @p node is HEAD of @p list. False otherwise.
+ */
 static bool node_is_head(const struct ecu_dlist *list, const struct ecu_dlist_node *node);
 
-// pre = node and list constructed. Return true if node is in this list.
+/**
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor() and
+ * @p node previously constructed via call to @ref ecu_dlist_node_ctor(). Otherwise
+ * next and prev pointers can be garbage non-NULL values, leading to seg faults
+ * when accessed.
+ * @brief Returns true if @p node is in @p list. Also returns true if @p node
+ * is list HEAD. False otherwise.
+ */
 static bool node_in_this_list(const struct ecu_dlist *list, const struct ecu_dlist_node *node);
 
-// pre = node and list constructed. Return true if node in another list.
+/**
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor() and
+ * @p node previously constructed via call to @ref ecu_dlist_node_ctor(). Otherwise
+ * next and prev pointers can be garbage non-NULL values, leading to seg faults
+ * when accessed.
+ * @brief Returns true if @p node is in another list. Also returns true 
+ * if @p node is HEAD of another list. False otherwise.
+ * 
+ * @param list If node is in this supplied list, function returns false.
+ */
 static bool node_in_other_list(const struct ecu_dlist *list, const struct ecu_dlist_node *node);
 
 /**
- * @brief Callback assigned to @ref ecu_circular_dll.head.destroy in 
- * @ref ecu_circular_dll_ctor(). This head node is solely used 
- * as a dummy delimiter that should never be destroyed. Therefore we
- * simply assert if this callback runs.
+ * @brief Callback assigned to @ref ecu_dlist.head.destroy in 
+ * @ref ecu_dlist_ctor(). The HEAD node is solely used as a 
+ * dummy delimiter that should never be destroyed. Therefore we
+ * simply assert if this callback runs. Also provides additional
+ * protection if HEAD node is directly accessed and used in a list.
  */
-static void list_head_destroy_callback(struct ecu_dlist_node *me);
+static void INVALID_DESTROY_CALLBACK(struct ecu_dlist_node *me, ecu_object_id id);
 
 
 
@@ -80,7 +113,9 @@ static bool node_valid(const struct ecu_dlist_node *node)
     ECU_RUNTIME_ASSERT( (node->next && node->prev) );
 
     if ((node->next->prev == node) && \
-        (node->prev->next == node))
+        (node->prev->next == node) && \
+        (node->destroy != &INVALID_DESTROY_CALLBACK) && \
+        (node->id >= ECU_VALID_OBJECT_ID_BEGIN))
     {
         valid = true;
     }
@@ -98,7 +133,9 @@ static bool list_valid(const struct ecu_dlist *list)
 
     if ((list->head.next->prev == &list->head) && \
         (list->head.prev->next == &list->head) && \
-        (list->head.list == list))
+        (list->head.list == list) && \
+        (list->head.destroy == &INVALID_DESTROY_CALLBACK) && \
+        (list->head.id == ECU_OBJECT_ID_RESERVED))
     {
         valid = true;
     }
@@ -111,7 +148,10 @@ static bool node_is_head(const struct ecu_dlist *list, const struct ecu_dlist_no
     bool status = false;
     ECU_RUNTIME_ASSERT( (list && node) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
+    /* Do not assert node_valid(node) since node can be HEAD. */
 
+    /* list_valid() already checks all of HEAD's values so we only
+    need to check if node == list HEAD. */
     if ((node->list == list) && \
         (&list->head == node))
     {
@@ -126,10 +166,13 @@ static bool node_in_this_list(const struct ecu_dlist *list, const struct ecu_dli
     bool status = false;
     ECU_RUNTIME_ASSERT( (list && node) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
-    ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+    #warning "TODO Stopped here. These static functions are kind of a mess rn. \
+    Making insert() and remove() function node class functions so we dont need to pass \
+    in list. 
+    ECU_RUNTIME_ASSERT( (node_valid(node) || node_is_head(list, node)) );
+    /* Do not assert node_valid(node) since node can be HEAD. */
 
     if ((node->list == list) && \
-        (node->next != node) && (node->prev != node) && \
         (node->next->prev == node) && (node->prev->next == node))
     {
         status = true;
@@ -142,22 +185,36 @@ static bool node_in_other_list(const struct ecu_dlist *list, const struct ecu_dl
 {
     bool status = false;
     ECU_RUNTIME_ASSERT( (list && node) );
-    ECU_RUNTIME_ASSERT( (list_valid(list)) );
     ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+    ECU_RUNTIME_ASSERT( (list_valid(list)) );
+    /* Do not assert node_valid(node) since node can be HEAD. */
 
     if ((node->list != list) && \
-        (node->next != node) && (node->prev != node) && \
         (node->next->prev == node) && (node->prev->next == node))
     {
         status = true;
     }
 
+    if ((node->list) && (node->list != list))
+    {
+        ECU_RUNTIME_ASSERT( (list_valid(node->list)) );
+
+
+    } && node_in_this_list(node->list, node)
+
+    if (node->list) && node->list != list
+    {
+        ECU_RUNTIME_ASSERT( (list_valid(node->list)) );
+
+    }
+
     return status;
 }
 
-static void list_head_destroy_callback(struct ecu_dlist_node *me)
+static void INVALID_DESTROY_CALLBACK(struct ecu_dlist_node *me, ecu_object_id id)
 {
     (void)me;
+    (void)id;
     ECU_RUNTIME_ASSERT( (false) );
 }
 
@@ -170,18 +227,17 @@ static void list_head_destroy_callback(struct ecu_dlist_node *me)
 void ecu_dlist_ctor(struct ecu_dlist *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    /* Do NOT assert if list has nodes in it or call list_valid(me) since it is valid 
-    for next and prev pointers to be initialized to non-NULL garbage values before 
-    a constructor call. Otherwise me->head.next->.. and me->head.prev->.. accesses 
-    can lead to seg faults. It is the user's responsibility to not construct an 
-    active list that has nodes in it, which is clearly outlined in the warning 
-    directive of this function description. Also do not use ecu_dlist_node_ctor()
-    since we use reserved event ID. */
+    /* Do not assert if list has nodes in it or assert list_valid(me) since it is
+    valid for HEAD's next and prev pointer to be initialized to garbage non-NULL
+    values before a constructor call. It is the user's responsibility to not 
+    construct an active list, which is clearly outlined in the warning directive 
+    of this function description. Also do not use ecu_dlist_node_ctor() in this
+    function since we use a reserved event ID. */
 
     me->head.next       = &me->head;
     me->head.prev       = &me->head;
     me->head.list       = me;
-    me->head.destroy    = &list_head_destroy_callback;
+    me->head.destroy    = &INVALID_DESTROY_CALLBACK;
     me->head.id         = ECU_OBJECT_ID_RESERVED;
 }
 
@@ -197,30 +253,32 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
          node != ecu_dlist_iterator_end(&iterator); 
          node = ecu_dlist_iterator_next(&iterator))
     {
-        ecu_dlist_remove(node);
+        ecu_dlist_remove(me, node);
 
         if (node->destroy != ECU_DLIST_NODE_DESTROY_UNUSED)
         {
             (*node->destroy)(node, node->id);
-            node->destroy = ECU_DLIST_NODE_DESTROY_UNUSED;
         }
 
-        /* Yes, some of this is redundant since ecu_dlist_remove(node) is called
+        /* Yes, some of this is redundant since ecu_dlist_remove() is called
         beforehand. However this guarantees that the node is reset and that this
         function is completely independent from ecu_dlist_remove(). Also reset 
         the node ID AFTER the destroy callback is called so user is able to identify 
         their node data type in their callback. */
-        node->next  = node;
-        node->prev  = node;
-        node->list  = (struct ecu_dlist *)0;
-        node->id    = ECU_OBJECT_ID_RESERVED;
+        node->next = node;
+        node->prev = node;
+        node->list = (struct ecu_dlist *)0;
+        /* Forces user to have to reconstruct node. node_valid() checks destroy
+        callback and ID. */
+        node->destroy = &INVALID_DESTROY_CALLBACK;
+        node->id = ECU_OBJECT_ID_RESERVED; 
     }
 
-    me->head.next       = &me->head;
-    me->head.prev       = &me->head;
-    me->head.list       = (struct ecu_dlist *)0; /* Forces user to have to reconstruct list. */
-    me->head.destroy    = &list_head_destroy_callback;
-    me->head.id         = ECU_OBJECT_ID_RESERVED;
+    me->head.next = &me->head;
+    me->head.prev = &me->head;
+    me->head.list = (struct ecu_dlist *)0; /* Forces user to have to reconstruct list. list_valid() checks if this is self. */
+    me->head.destroy = &INVALID_DESTROY_CALLBACK;
+    me->head.id = ECU_OBJECT_ID_RESERVED;
 }
 
 void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
@@ -228,10 +286,11 @@ void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
                          ecu_object_id id_0)
 {
     ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (destroy_0 != &INVALID_DESTROY_CALLBACK) );
     ECU_RUNTIME_ASSERT( (id_0 >= ECU_VALID_OBJECT_ID_BEGIN) );
-    /* Do not assert node_in_this_list(me) or node_in_other_list(me) since
-    since it is valid for next, prev, and list pointer to be initialized to 
-    non-NULL garbage values before a constructor call. It is the user's 
+    /* Do not assert node_valid(), !node_in_this_list(), or !node_in_other_list() 
+    since it is valid for next, prev, and list pointers to be initialized to 
+    garbage non-NULL values before a constructor call. It is the user's 
     responsibility to not construct an active node, which is clearly outlined
     in the warning directive of this function description. */
 
@@ -242,37 +301,49 @@ void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
     me->id      = id_0;      /* Optional. */
 }
 
-# warning "TODO STOPPED HERE. ADDING COMMENTS"
 void ecu_dlist_node_destroy(struct ecu_dlist_node *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) ); /* Can't be HEAD. */
 
-    /* It is valid if the node has been constructed but it is not in a list. */
-    if (me->list && node_in_this_list(me->list, me))
+    /* me->list NULL check MUST be first. */
+    if (me->list && node_in_this_list(me->list, me) && !node_is_head(me->list, me))
     {
-        ecu_dlist_remove(me);
+        ecu_dlist_remove(me->list, me);
     }
 
-    if (me->destroy)
+    if (me->destroy != ECU_DLIST_NODE_DESTROY_UNUSED)
     {
         (*me->destroy)(me, me->id);
     }
+
     me->next = me;
     me->prev = me;
     me->list = (struct ecu_dlist *)0;
-    me->destroy = ECU_DLIST_NODE_DESTROY_UNUSED;
-
+    /* Forces user to have to reconstruct node. node_valid() checks destroy
+    callback and ID. Also reset ID AFTER destroy callback is called so user
+    can identify their type. */
+    me->destroy = &INVALID_DESTROY_CALLBACK;
+    me->id = ECU_OBJECT_ID_RESERVED; 
 }
 
-void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node)
+ecu_object_id ecu_dlist_node_get_id(const struct ecu_dlist_node *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    return (me->id);
+}
+
+void ecu_dlist_node_insert_before(struct ecu_dlist_node *position, struct ecu_dlist_node *node)
 {
     struct ecu_dlist_node *prev = (struct ecu_dlist_node *)0;
-    ECU_RUNTIME_ASSERT( (me && position && node) );
+    ECU_RUNTIME_ASSERT( (position && node) );
     ECU_RUNTIME_ASSERT( (position != node) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) );
-    ECU_RUNTIME_ASSERT( (node_in_this_list(me, position)) );
-    ECU_RUNTIME_ASSERT( (!node_in_this_list(me, node) && !node_in_other_list(me, node)) );
+#warning "TODO: Stopped editing the node class functions here. Still ahve to do this one and all the others."
+    ECU_RUNTIME_ASSERT( (list_valid(position->list)) ); /* Do not assert list_valid(node->list) since we are adding this node to a list. */
+    ECU_RUNTIME_ASSERT( (node_valid(node)) ); /* Do not assert node_valid(position) since position can be HEAD. */
+    ECU_RUNTIME_ASSERT( (node_in_this_list(position->list, position)) );
+    ECU_RUNTIME_ASSERT( (!node_in_this_list(position->list, node) && !node_in_other_list(position->list, node)) );
 
     prev = position->prev;
 
@@ -288,6 +359,7 @@ void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dlist_node *positio
     ECU_RUNTIME_ASSERT( (me && position && node) );
     ECU_RUNTIME_ASSERT( (position != node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_valid(node)) ); /* Do not assert node_valid(position) since position can be HEAD. */
     ECU_RUNTIME_ASSERT( (node_in_this_list(me, position)) );
     ECU_RUNTIME_ASSERT( (!node_in_this_list(me, node) && !node_in_other_list(me, node)) );
     ecu_dlist_insert_before(me, position->next, node);
@@ -299,6 +371,7 @@ void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node)
     struct ecu_dlist_node *prev = (struct ecu_dlist_node *)0;
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_valid(node)) ); /* node can't be HEAD. */
     ECU_RUNTIME_ASSERT( (node_in_this_list(me, node)) );
 
     next = node->next;
@@ -309,12 +382,15 @@ void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node)
     node->next = node;
     node->prev = node;
     node->list = (struct ecu_dlist *)0;
+    /* Do not reset destroy callback or ID. This is only a remove function,
+    not a destroy function. */
 }
 
 void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_valid(node)) ); /* node can't be HEAD. */
     ECU_RUNTIME_ASSERT( (!node_in_this_list(me, node) && !node_in_other_list(me, node)) );
     ecu_dlist_insert_after(me, &me->head, node);
 }
@@ -323,23 +399,24 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *node)
 {
     ECU_RUNTIME_ASSERT( (me && node ) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_valid(node)) ); /* node can't be HEAD. */
     ECU_RUNTIME_ASSERT( (!node_in_this_list(me, node) && !node_in_other_list(me, node)) );
     ecu_dlist_insert_before(me, &me->head, node);
 }
 
-size_t ecu_dlist_get_size(struct ecu_dlist *me)
+size_t ecu_dlist_get_size(const struct ecu_dlist *me)
 {
     size_t i = 0;
-    struct ecu_dlist_iterator iterator;
+    struct ecu_dlist_const_iterator citerator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
     /* Loop through entire list here instead of using a size variable in 
     ecu_dlist to prevent all add and remove functions having to keep track
     of size. Isolate this dependency to only this function. */
-    for (struct ecu_dlist_node *node = ecu_dlist_iterator_begin(&iterator, me);
-         node != ecu_dlist_iterator_end(&iterator); 
-         node = ecu_dlist_iterator_next(&iterator))
+    for (const struct ecu_dlist_node *node = ecu_dlist_const_iterator_begin(&citerator, me);
+         node != ecu_dlist_const_iterator_end(&citerator); 
+         node = ecu_dlist_const_iterator_next(&citerator))
     {
         ++i;
     }
@@ -364,8 +441,10 @@ struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, s
 {
     ECU_RUNTIME_ASSERT( (me && list) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
-    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next) || node_is_head(list, list->head.next)) );
-    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next->next) || node_is_head(list, list->head.next->next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(list->head.next) || node_is_head(list, list->head.next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next->next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(list->head.next->next) || node_is_head(list, list->head.next->next)) );
 
     me->list = list;
     me->current = list->head.next;
@@ -384,7 +463,10 @@ struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
-    ECU_RUNTIME_ASSERT( (nost_in_this_list(me->list, me->next) || node_is_head(me->list, me->next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(me->list, me->next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next) || node_is_head(me->list, me->next)) );
+    /* me->next->next does not have to be asserted here. It will be checked in
+    the me->next asserts when this function is called again. */
 
     me->current = me->next;
     me->next = me->next->next;
@@ -395,8 +477,10 @@ const struct ecu_dlist_node *ecu_dlist_const_iterator_begin(struct ecu_dlist_con
 {
     ECU_RUNTIME_ASSERT( (me && list) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
-    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next) || node_is_head(list, list->head.next)) );
-    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next->next) || node_is_head(list, list->head.next->next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(list->head.next) || node_is_head(list, list->head.next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(list, list->head.next->next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(list->head.next->next) || node_is_head(list, list->head.next->next)) );
 
     me->list = list;
     me->current = list->head.next;
@@ -408,14 +492,17 @@ const struct ecu_dlist_node *ecu_dlist_const_iterator_end(struct ecu_dlist_const
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
-    return ((const struct ecu_dlist_node *)(&me->list->head));
+    return (&me->list->head);
 }
 
 const struct ecu_dlist_node *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
-    ECU_RUNTIME_ASSERT( (nost_in_this_list(me->list, me->next) || node_is_head(me->list, me->next)) );
+    ECU_RUNTIME_ASSERT( (node_in_this_list(me->list, me->next)) );
+    ECU_RUNTIME_ASSERT( (node_valid(me->next) || node_is_head(me->list, me->next)) );
+    /* me->next->next does not have to be asserted here. It will be checked in
+    the me->next asserts when this function is called again. */
 
     me->current = me->next;
     me->next = me->next->next;

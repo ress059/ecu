@@ -88,7 +88,7 @@ TEST_GROUP(CircularDLL)
 /*---------------------------------------------------------------- TESTS ----------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
-
+!!!!! Allow HEAD to be supplied to insert_before() and insert_after()
 /*
 0. ECU_DLIST_GET_ENTRY() general test. 
 1. Constructor destructor test. One below is fine.

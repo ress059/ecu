@@ -104,7 +104,7 @@
  * @details Pass this value to @ref ecu_dlist_node_ctor() if 
  * a user-defined node destructor is not needed.
  */
-#define ECU_DLIST_NODE_DESTROY_UNUSED            ((void (*)(struct ecu_dlist_node *, enum ecu_object_id))0)
+#define ECU_DLIST_NODE_DESTROY_UNUSED            ((void (*)(struct ecu_dlist_node *, ecu_object_id))0)
 
 
 
@@ -198,8 +198,25 @@ struct ecu_dlist_iterator
  */
 struct ecu_dlist_const_iterator
 {
+    /**
+     * @private
+     * @brief PRIVATE. List that is being iterated. 
+     * @details List's HEAD is used as a delimiter.
+     */
     const struct ecu_dlist *list;
+
+    /**
+     * @private
+     * @brief PRIVATE. Current position in list.
+     */
     const struct ecu_dlist_node *current;
+
+    /**
+     * @private 
+     * @brief PRIVATE. Next position in the list. 
+     * @details Allows user to safely add and remove nodes 
+     * in the middle of an iteration.
+     */
     const struct ecu_dlist_node *next;
 };
 
@@ -274,7 +291,7 @@ extern void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
  * @details Removes node if it is in a list. Executes the user-defined 
  * destructor if one was supplied to @ref ecu_dlist_node_ctor().
  * 
- * @param me Node to destroy.
+ * @param me Node to destroy. This cannot be HEAD node in @ref ecu_dlist.
  */
 extern void ecu_dlist_node_destroy(struct ecu_dlist_node *me);
 /**@}*/
@@ -285,23 +302,65 @@ extern void ecu_dlist_node_destroy(struct ecu_dlist_node *me);
 /**@{*/
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
- * @brief Return list this node is attached to. Returns NULL if
- * node is not within a list.
- * 
- * @param me Node to check.
- */
-extern struct ecu_dlist *ecu_dlist_node_get_list(const struct ecu_dlist_node *me);
-
-/**
- * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
  * @brief Return node's ID.
  * @details The ID returned is the one set in @ref ecu_dlist_node_ctor().
  * This value can be used to differentiate between multiple types
  * stored in the same list.
  * 
- * @param me Node to check.
+ * @param me Node to check. This cannot be HEAD node in @ref ecu_dlist.
  */
 extern ecu_object_id ecu_dlist_node_get_id(const struct ecu_dlist_node *me);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
+ * @brief Add node before position node.
+ * 
+ * @param me List to add to.
+ * @param position Add @p node before this position node. This must
+ * be within the supplied list @p me.
+ * @param node Node to add. This cannot already be within the supplied
+ * list @p me or apart of another list.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
+ * can be used if you only have access to the position node.
+ * @note It is safe to use this in the middle of an iteration. The
+ * newly added node will <b>not</b> be iterated over. 
+ */
+extern void ecu_dlist_node_insert_before(struct ecu_dlist_node *position, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
+ * @brief Add node after position node.
+ * 
+ * @param me List to add to.
+ * @param position Add @p node before this position node. This must
+ * be within the supplied list @p me.
+ * @param node Node to add. This cannot already be within the supplied
+ * list @p me or apart of another list.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
+ * can be used if you only have access to the position node.
+ * @note It is safe to use this in the middle of an iteration. The
+ * newly added node will <b>not</b> be iterated over.
+ */
+extern void ecu_dlist_node_insert_after(struct ecu_dlist_node *position, struct ecu_dlist_node *node);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @brief Remove node from list. 
+ * 
+ * @p me List to remove from.
+ * @p node Node to remove. This must be within the supplied
+ * list @p me.
+ * 
+ * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(node)
+ * can be used if you only have access to the node.
+ * @note It is safe to use this in the middle of an iteration.
+ */
+extern void ecu_dlist_node_remove(struct ecu_dlist_node *node);
 /**@}*/
 
 /**
@@ -340,73 +399,15 @@ extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *nod
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
- * @brief Add node before position node.
+ * @brief Returns number of nodes in a list. Returns 0 if list
+ * is empty.
  * 
- * @param me List to add to.
- * @param position Add @p node before this position node. This must
- * be within the supplied list @p me.
- * @param node Node to add. This cannot already be within the supplied
- * list @p me or apart of another list.
- * 
- * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
- * can be used if you only have access to the position node.
- * @note It is safe to use this in the middle of an iteration. The
- * newly added node will <b>not</b> be iterated over. 
+ * @param me List to check.
  */
-extern void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node);
+extern size_t ecu_dlist_get_size(const struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
- * @brief Add node after position node.
- * 
- * @param me List to add to.
- * @param position Add @p node before this position node. This must
- * be within the supplied list @p me.
- * @param node Node to add. This cannot already be within the supplied
- * list @p me or apart of another list.
- * 
- * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(position)
- * can be used if you only have access to the position node.
- * @note It is safe to use this in the middle of an iteration. The
- * newly added node will <b>not</b> be iterated over.
- */
-extern void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node);
-
-/**
- * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
- * @brief Remove node from list. 
- * 
- * @p me List to remove from.
- * @p node Node to remove. This must be within the supplied
- * list @p me.
- * 
- * @note First member is the list for API consistency. @ref ecu_dlist_node_get_list(node)
- * can be used if you only have access to the node.
- * @note It is safe to use this in the middle of an iteration.
- */
-extern void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node);
-
-
-
-
-# warning "TODO: Stopped here. Making const iterator so we can pass in const list"
-/**
- * @pre @p me previously constructed via call to @ref ecu_dlist_ctor()
- * @brief Returns number of nodes in a list.
- * 
- * @param me List to get size of. This is not declared as pointer to const
- * since non-const iterators are used in this function.
- * 
- * @note This iterates over the entire list so this is a longer function.
- */
-extern size_t ecu_dlist_get_size(struct ecu_dlist *me);
-
-
-/**
- * @pre @p me previously constructed via call to @ref ecu_dlist_ctor()
  * @brief Returns true if list is empty. False otherwise.
  * 
  * @param me List to check.
@@ -428,7 +429,7 @@ extern bool ecu_dlist_is_empty(const struct ecu_dlist *me);
  * @pre Memory already allocated for @p me
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
  * @brief Initializes iterator and returns first node in the list.
- * @details If the list has nodes this is the first user-defined node. 
+ * @details If the list has nodes this returns the first user-defined node. 
  * If the list is empty this returns the same terminal node returned by
  * @ref ecu_dlist_iterator_end().
  * 
@@ -448,7 +449,6 @@ extern struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator
  */
 extern struct ecu_dlist_node *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me);
 
-
 /**
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
  * @brief Returns the next node in the iteration.
@@ -462,10 +462,36 @@ extern struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator 
  * @name Const Iterator
  */
 /**@{*/
+/**
+ * @pre Memory already allocated for @p me
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
+ * @brief Initializes iterator and returns first node in the list.
+ * @details If the list has nodes this returns the first user-defined node. 
+ * If the list is empty this returns the same terminal node returned by
+ * @ref ecu_dlist_const_iterator_end().
+ * 
+ * @param me Const iterator to initialize.
+ * @param list List to iterate through.
+ */
 extern const struct ecu_dlist_node *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, const struct ecu_dlist *list);
-extern const struct ecu_dlist_node *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me);
-extern const struct ecu_dlist_node *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me);
 
+/**
+ * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
+ * @brief Returns last node in the list.
+ * @details The last node is a dummy delimeter that is not apart of the
+ * user's list. Therefore it should never be used directly.
+ * 
+ * @param me Const iterator.
+ */
+extern const struct ecu_dlist_node *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me);
+
+/**
+ * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @param me Const iterator.
+ */
+extern const struct ecu_dlist_node *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me);
 /**@}*/
 
 #ifdef __cplusplus
