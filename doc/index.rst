@@ -31,6 +31,7 @@ to view in-depth documentation and APIs for each library module.
     attributes.h <attributes_h/index>
     event.h <event_h/index>
     endian.h <endian_h/index>
+    object_id.h <object_id_h/index>
 
 .. toctree::
     :maxdepth: 1

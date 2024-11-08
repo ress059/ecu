@@ -17,7 +17,7 @@ Creating An Event
 =================================================
 Follow these general steps to create an event:
 
-    #. Define your event IDs. See `Event ID Section <event_id>`. 
+    #. Define your event IDs. See `Event ID Section <defining_event_ids>`. 
 
     #. Create your custom event struct by inheriting :ecudoxygen:`ecu_event` base class
        and declaring additional data members. See `Custom Event Data <custom_event_data>`
@@ -28,8 +28,8 @@ Follow these general steps to create an event:
        and `Event Inheritance Explained <event_inheritance_explained>` sections.
 
 
-.. _event_id:
-Event ID 
+.. _defining_event_ids:
+Defining Event IDs 
 """""""""""""""""""""""""""""""""""""""""""""""""
 Every event must be assigned a unique integer ID that is greater than 
 or equal to :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN`. 
@@ -54,8 +54,11 @@ The recommended implementation is as follows:
 Some other notes:
 
     - Event IDs reserved for ECU library will always be negative.
-    - Reserved event IDs the end user can use will start at :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN`.
-      This is a placeholder for now.
+
+    - Reserved event IDs the end user can use will start at value :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN`.
+      Note that this should never be used by the application. It is used internally by ECU to know when 
+      an event ID is valid.
+      
     - :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` will always be 0 and marks the start 
       of user-defined event IDs. User-defined event IDs will always be greater than
       or equal to this value.
