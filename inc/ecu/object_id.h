@@ -43,16 +43,16 @@ enum ecu_reserved_object_ids
     /*-------------------- RESERVED OBJECT IDS SECTION -----------------*/
     /*-------- LAST MEMBER MUST EQUAL ECU_VALID_OBJECT_ID_BEGIN --------*/
     /*------------------------------------------------------------------*/
-    /* ADD FUTURE RESERVED IDS HERE */
+    /* ADD FUTURE PRIVATE AND RESERVED IDS HERE. */
     ECU_OBJECT_ID_RESERVED      = -2,   /**< PRIVATE. FOR LIBRARY USE ONLY. */
     /*******************************/
-    ECU_VALID_OBJECT_ID_BEGIN   = -1,   /**< PRIVATE. FOR LIBRARY USE ONLY. Represents start of object IDs users can pass to library functions. */
+    ECU_VALID_OBJECT_ID_BEGIN   = -1,   /**< PRIVATE. FOR LIBRARY USE ONLY. Start of reserved IDs that the user can assign to objects. */
 
     /*------------------------------------------------------------------*/
     /*-------------------- AVAILABLE OBJECT IDS SECTION ----------------*/
     /*-------- FIRST MEMBER MUST EQUAL ECU_VALID_OBJECT_ID_BEGIN -------*/
     /*------------------------------------------------------------------*/
-    ECU_OBJECT_ID_UNUSED        = ECU_VALID_OBJECT_ID_BEGIN,    /**< User sets object ID to this value if they do not want to use object ID mechanism. */
+    ECU_OBJECT_ID_UNUSED        = ECU_VALID_OBJECT_ID_BEGIN,    /**< Reserved ID. Signifies that object ID mechanism is not used. */
     ECU_USER_OBJECT_ID_BEGIN    = 0                             /**< 0. Start of user-defined IDs. Must always be 0 for future compatibility. */
 };
 

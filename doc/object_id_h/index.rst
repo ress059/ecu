@@ -13,18 +13,19 @@ Overview
 
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
-    
-Lets users identify different types stored in the same data structure.
-For example, unique IDs can be assigned to nodes in a tree. The ID values
-specify the data type stored in each tree node.
+
+Allows users to identify different types within the same data structure. 
+For example, linked list nodes can be assigned unique object IDs that 
+indicate the type of data they store.
 
 
 Defining Object IDs
 =================================================
-Users can define their own object IDs, starting at value :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN`. 
-This allows ECU library and the end user to uniquely define their own object 
-IDs without conflicts (library and user IDs won't be the same values). 
-The recommended implementation is as follows:
+IDs greater than or equal to :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` enumeration
+can be assigned to an object.
+
+Users can define their own IDs starting at :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` 
+enumeration. The recommended implementation is as follows:
 
 .. code-block:: c
 
@@ -38,18 +39,19 @@ The recommended implementation is as follows:
         TYPE3
     };
 
-Some other notes:
+This scheme ensures object ID values reserved by ECU never overlap
+with user-defined IDs. Some additional notes:
 
-    - Object IDs reserved for ECU library will always be negative.
+    - Object IDs reserved by ECU will always be negative.
 
-    - Reserved object IDs the end user can use will start at value :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN`.
-      Note that this should never be used by the application. It is used internally by ECU to know when an object 
-      ID is valid.
-      
-    - :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` will always be 0 and marks the start 
-      of user-defined object IDs. User-defined object IDs will always be greater than
-      or equal to this value.
+    + Reserved object IDs starting from the :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` 
+      enumeration can be assigned to an object. However, :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN`
+      is for internal use only and should never be used directly. **Currently**  
+      :ecudoxygen:`ECU_OBJECT_ID_RESERVED` **is the only reserved ID available for use.**
 
+    - :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` enumeration will always be 0, and marks the start 
+      of user-defined object IDs. Therefore user-defined object IDs will always be 
+      greater than or equal to :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN`.
 
 Object ID Example 
 =================================================
@@ -95,7 +97,8 @@ used to identify the type of each node.
     struct type2 type2_node;
     struct type3 type3_node;
 
-    /* Construct list and nodes. Assign object IDs to each node to identify its data type. */
+    /* Construct list and nodes. Assign object IDs to each node to identify
+    their data types. */
     ecu_dlist_ctor(&list);
     ecu_dlist_node_ctor(&type1_node.node, ECU_DLIST_NODE_DESTROY_UNUSED, TYPE1);
     ecu_dlist_node_ctor(&type2_node.node, ECU_DLIST_NODE_DESTROY_UNUSED, TYPE2);
@@ -111,7 +114,7 @@ used to identify the type of each node.
          i != ecu_dlist_iterator_end(&list);
          i = ecu_dlist_iterator_next(&list))
     {
-        switch (ecu_dlist_node_get_id())
+        switch (ecu_dlist_node_get_id(i))
         {
             case TYPE1:
             {

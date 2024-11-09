@@ -55,17 +55,15 @@ The recommended implementation is as follows:
         ERROR_EVENT
     };
 
-This scheme allows ECU library to reserve event IDs for internal use without 
-conflicting with user-defined event IDs. In other words, the two ID definitions 
-will never share the same integer values. Some other notes:
+This scheme ensures event ID values reserved by ECU never overlap
+with user-defined IDs. Some additional notes:
 
-    - Event IDs reserved by ECU library will always be negative.
+    - Event IDs reserved by ECU will always be negative.
 
-    + Reserved event IDs that start at :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` enumeration can 
-      be assigned to an event. Note that :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` should never 
-      be used directly. It is only used internally by ECU to know when a supplied event ID is 
-      valid. **There are currently no reserved IDs that can be used by the application, so this 
-      is a placeholder for now.**
+    + Reserved event IDs starting from the :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` 
+      enumeration can be assigned to an event. However, :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN`
+      is for internal use only and should never be used directly. **Currently there are no reserved 
+      IDs that can be used by the application, so this is a placeholder for now.**
       
     - :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` enumeration will always be 0, and marks the start 
       of user-defined event IDs. Therefore user-defined event IDs will always be 
