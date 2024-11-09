@@ -9,6 +9,11 @@ object_id.h
 
 Overview
 =================================================
+.. note:: 
+
+    The term :term:`ECU` in this document refers to Embedded C Utilities, 
+    the shorthand name for this project.
+    
 Lets users identify different types stored in the same data structure.
 For example, unique IDs can be assigned to nodes in a tree. The ID values
 specify the data type stored in each tree node.

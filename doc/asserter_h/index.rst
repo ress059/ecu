@@ -9,6 +9,11 @@ asserter.h
 
 Overview
 =================================================
+.. note:: 
+
+    The term :term:`ECU` in this document refers to Embedded C Utilities, 
+    the shorthand name for this project.
+    
 Provides a portable way to use static assertions across any C and C++ standard. 
 Also provides a framework for using runtime asserts on embedded platforms. 
 

@@ -9,6 +9,11 @@ endian.h
 
 Overview
 =================================================
+.. note:: 
+
+    The term :term:`ECU` in this document refers to Embedded C Utilities, 
+    the shorthand name for this project.
+    
 Provides a portable way to send and receive data in a specific endianness. 
 No edits are required if the endianness of your target hardware ever changes.
 Also provides general-purpose byte swapping macros.

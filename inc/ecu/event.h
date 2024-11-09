@@ -76,7 +76,7 @@ enum ecu_reserved_event_ids
     /* ADD FUTURE PRIVATE AND RESERVED EVENTS HERE. */
     ECU_RESERVED_EVENT_ID       = -1,   /**< PRIVATE. FOR LIBRARY USE ONLY. */
     /*******************************/
-    ECU_VALID_EVENT_ID_BEGIN    = 0,    /**< PRIVATE. FOR LIBRARY USE ONLY. Start of reserved event IDs end user can use. */
+    ECU_VALID_EVENT_ID_BEGIN    = 0,    /**< PRIVATE. FOR LIBRARY USE ONLY. Start of reserved IDs that the user can assign to events. */
 
     /*------------------------------------------------------------------*/
     /*--------------------- AVAILABLE EVENT IDS SECTION ----------------*/
