@@ -56,16 +56,21 @@ The recommended implementation is as follows:
     };
 
 This scheme ensures event ID values reserved by ECU never overlap
-with user-defined IDs. Some additional notes:
+with user-defined ID values. Some additional notes:
 
     - Event IDs reserved by ECU will always be negative.
 
-    + Reserved event IDs starting from the :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` 
-      enumeration can be assigned to an event. However, :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN`
-      is for internal use only and should never be used directly. **Currently there are no reserved 
+    + Reserved event IDs greater than or equal to :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` 
+      enumeration can be assigned to an event. **Currently there are no reserved 
       IDs that can be used by the application, so this is a placeholder for now.**
       
-    - :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` enumeration will always be 0, and marks the start 
+      .. note:: 
+
+        :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` enumeration should not be used 
+        in the application. ECU uses this value internally to know when a supplied 
+        event has a valid ID value.
+      
+    - :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` enumeration will **always be 0**, and marks the start 
       of user-defined event IDs. Therefore user-defined event IDs will always be 
       greater than or equal to :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN`.
 
@@ -168,7 +173,11 @@ Event Inheritance Explained
 :ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>` upcasts your derived
 event class pointer back to an :ecudoxygen:`ecu_event` base class pointer. 
 **This operation is always safe as long as** :ecudoxygen:`ecu_event` **base class 
-is the first member, which is how C-style inheritance works.**
+is the first member, which is how C-style inheritance works.** 
+
+The C standard specifies that the first member of a struct and the struct 
+itself always start at the same memory address. Padding of the first member 
+never occurs, allowing the casts to always be safe.
 
 .. code-block:: c 
 

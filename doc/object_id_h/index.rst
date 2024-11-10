@@ -40,16 +40,21 @@ enumeration. The recommended implementation is as follows:
     };
 
 This scheme ensures object ID values reserved by ECU never overlap
-with user-defined IDs. Some additional notes:
+with user-defined ID values. Some additional notes:
 
     - Object IDs reserved by ECU will always be negative.
 
-    + Reserved object IDs starting from the :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` 
-      enumeration can be assigned to an object. However, :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN`
-      is for internal use only and should never be used directly. **Currently**  
-      :ecudoxygen:`ECU_OBJECT_ID_RESERVED` **is the only reserved ID available for use.**
+    + Reserved object IDs greater than or equal to :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` 
+      enumeration can be assigned to an object. **Currently** :ecudoxygen:`ECU_OBJECT_ID_RESERVED` 
+      **is the only reserved ID available for use.**
+      
+      .. note:: 
 
-    - :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` enumeration will always be 0, and marks the start 
+        :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` enumeration should not be used 
+        in the application. ECU uses this value internally to know when a supplied 
+        object has a valid ID value.
+
+    - :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` enumeration will **always be 0**, and marks the start 
       of user-defined object IDs. Therefore user-defined object IDs will always be 
       greater than or equal to :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN`.
 
@@ -111,8 +116,8 @@ used to identify the type of each node.
 
     /* Iterate over list. Use object ID to identify the data type stored in each node. */
     for (struct ecu_dlist_node *i = ecu_dlist_iterator_begin(&iterator, &list);
-         i != ecu_dlist_iterator_end(&list);
-         i = ecu_dlist_iterator_next(&list))
+         i != ecu_dlist_iterator_end(&iterator);
+         i = ecu_dlist_iterator_next(&iterator))
     {
         switch (ecu_dlist_node_get_id(i))
         {
