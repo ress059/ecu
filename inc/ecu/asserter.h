@@ -191,7 +191,6 @@
          */
 #       define ECU_RUNTIME_ASSERT(check_)       ((void)0)
 #   endif
-
 #endif /* ECU_DOXYGEN */
 
 /*------------------------------------------------------------*/

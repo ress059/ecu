@@ -11,11 +11,8 @@
  * @copyright Copyright (c) 2024
  */
 
-
 #ifndef ECU_ATTRIBUTES_H_
 #define ECU_ATTRIBUTES_H_
-
-
 
 #if defined(ECU_DOXYGEN)
     /**
@@ -72,6 +69,5 @@
 #       define ECU_ATTRIBUTE_UNUSED
 #   endif
 #endif /* ECU_DOXYGEN */
-
 
 #endif /* ECU_ATTRIBUTES_H_ */
