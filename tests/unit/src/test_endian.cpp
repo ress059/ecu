@@ -136,44 +136,44 @@ TEST(CPUToLittleEndian, CompileTime)
 {
     /* Step 3: Assert. */
     /* int16_t */
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime))));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime) + 1)));
 
     /* uint16_t */
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime))));
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime) + 1)));
 
     /* int32_t */
-    SIGNED_BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime))));
-    SIGNED_BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 3)));
 
     /* uint32_t */
-    BYTES_EQUAL(0x78, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime))));
-    BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 1)));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 2)));
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 3)));
 
     /* int64_t */
-    SIGNED_BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime))));
-    SIGNED_BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 3)));
-    SIGNED_BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 4)));
-    SIGNED_BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 5)));
-    SIGNED_BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 6)));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 7)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 4)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 5)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 6)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 7)));
 
     /* uint64_t */
-    BYTES_EQUAL(0x88, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime))));
-    BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 1)));
-    BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 2)));
-    BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 3)));
-    BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 4)));
-    BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 5)));
-    BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 6)));
-    BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 7)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 4)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 5)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 6)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 7)));
 }
 
 /**
@@ -182,53 +182,53 @@ TEST(CPUToLittleEndian, CompileTime)
 TEST(CPUToLittleEndian, RunTime)
 {
     /* Step 2: Action. Make signed integers negative. */
-    m_s16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(0xFF12);
-    m_u16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(0x1234);
-    m_s32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(0xFF123456);
-    m_u32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(0x12345678);
-    m_s64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(0xFF11223344556677);
-    m_u64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(0x1122334455667788);
+    m_s16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(static_cast<std::int16_t>(0xFF12));
+    m_u16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(static_cast<std::uint16_t>(0x1234));
+    m_s32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(static_cast<std::int32_t>(0xFF123456));
+    m_u32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(static_cast<std::uint32_t>(0x12345678));
+    m_s64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(static_cast<std::int64_t>(0xFF11223344556677));
+    m_u64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(static_cast<std::uint64_t>(0x1122334455667788));
 
     /* Step 3: Assert. */
     /* int16_t */
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime))));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime) + 1)));
 
     /* uint16_t */
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime))));
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime) + 1)));
 
     /* int32_t */
-    SIGNED_BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime))));
-    SIGNED_BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 3)));
 
     /* uint32_t */
-    BYTES_EQUAL(0x78, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime))));
-    BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 1)));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 2)));
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 3)));
 
     /* int64_t */
-    SIGNED_BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime))));
-    SIGNED_BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 3)));
-    SIGNED_BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 4)));
-    SIGNED_BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 5)));
-    SIGNED_BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 6)));
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 7)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 4)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 5)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 6)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 7)));
 
     /* uint64_t */
-    BYTES_EQUAL(0x88, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime))));
-    BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 1)));
-    BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 2)));
-    BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 3)));
-    BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 4)));
-    BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 5)));
-    BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 6)));
-    BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 7)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 4)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 5)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 6)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 7)));
 }
 
 /**
@@ -238,44 +238,44 @@ TEST(CPUToBigEndian, CompileTime)
 {
     /* Step 3: Assert. */
     /* int16_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime))));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime) + 1)));
 
     /* uint16_t */
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime))));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime) + 1)));
 
     /* int32_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime))));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 3)));
 
     /* uint32_t */
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime))));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 1)));
-    BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 2)));
-    BYTES_EQUAL(0x78, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 3)));
 
     /* int64_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime))));
-    SIGNED_BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 3)));
-    SIGNED_BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 4)));
-    SIGNED_BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 5)));
-    SIGNED_BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 6)));
-    SIGNED_BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 7)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 4)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 5)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 6)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 7)));
 
     /* uint64_t */
-    BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime))));
-    BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 1)));
-    BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 2)));
-    BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 3)));
-    BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 4)));
-    BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 5)));
-    BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 6)));
-    BYTES_EQUAL(0x88, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 7)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 4)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 5)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 6)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 7)));
 }
 
 /**
@@ -284,53 +284,53 @@ TEST(CPUToBigEndian, CompileTime)
 TEST(CPUToBigEndian, RunTime)
 {
     /* Step 2: Action. Make signed integers negative. */
-    m_s16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(0xFF12);
-    m_u16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(0x1234);
-    m_s32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(0xFF123456);
-    m_u32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(0x12345678);
-    m_s64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(0xFF11223344556677);
-    m_u64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(0x1122334455667788);
+    m_s16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(static_cast<std::int16_t>(0xFF12));
+    m_u16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(static_cast<std::uint16_t>(0x1234));
+    m_s32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(static_cast<std::int32_t>(0xFF123456));
+    m_u32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(static_cast<std::uint32_t>(0x12345678));
+    m_s64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(static_cast<std::int64_t>(0xFF11223344556677));
+    m_u64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(static_cast<std::uint64_t>(0x1122334455667788));
 
     /* Step 3: Assert. */
     /* int16_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime))));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime) + 1)));
 
     /* uint16_t */
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime))));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime) + 1)));
 
     /* int32_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime))));
-    SIGNED_BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 3)));
 
     /* uint32_t */
-    BYTES_EQUAL(0x12, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime))));
-    BYTES_EQUAL(0x34, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 1)));
-    BYTES_EQUAL(0x56, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 2)));
-    BYTES_EQUAL(0x78, (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 3)));
 
     /* int64_t */
-    SIGNED_BYTES_EQUAL(0xFF, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime))));
-    SIGNED_BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 3)));
-    SIGNED_BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 4)));
-    SIGNED_BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 5)));
-    SIGNED_BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 6)));
-    SIGNED_BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 7)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime))));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 1)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 2)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 3)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 4)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 5)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 6)));
+    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 7)));
 
     /* uint64_t */
-    BYTES_EQUAL(0x11, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime))));
-    BYTES_EQUAL(0x22, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 1)));
-    BYTES_EQUAL(0x33, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 2)));
-    BYTES_EQUAL(0x44, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 3)));
-    BYTES_EQUAL(0x55, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 4)));
-    BYTES_EQUAL(0x66, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 5)));
-    BYTES_EQUAL(0x77, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 6)));
-    BYTES_EQUAL(0x88, (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 7)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime))));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 1)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 2)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 3)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 4)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 5)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 6)));
+    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 7)));
 }
 
 /**

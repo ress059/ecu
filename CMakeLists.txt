@@ -1,14 +1,18 @@
+#------------------------------------------------------------#
+#---------------- INITIAL PROJECT INVOKATION ----------------#
+#------------------------------------------------------------#
 cmake_minimum_required(VERSION 3.21)
 project(ECU_LIBRARY VERSION 0.1)
 set(ECU_SUPPORTED_COMPILERS "GNU")
 option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
 
-
 if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
     message(WARNING "Using untested compiler. Currently supported compilers = ${ECU_SUPPORTED_COMPILERS}")
 endif()
 
-
+#------------------------------------------------------------#
+#----------------------- ECU SETTINGS -----------------------#
+#------------------------------------------------------------#
 # Note this library is meant to be compiled with the target 
 # application's toolchain.
 add_library(ecu STATIC
@@ -22,7 +26,6 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
 )
 
-
 # Example include in the Application would be #include "ecu/fsm.h" 
 # in order to give larger apps some scope when including files.
 target_include_directories(ecu
@@ -30,13 +33,11 @@ target_include_directories(ecu
         ${CMAKE_CURRENT_LIST_DIR}/inc 
 )
 
-
 # ECU library requires at least C99.
 target_compile_features(ecu 
     PUBLIC 
         c_std_99    
 )
-
 
 # Target Endianness.
 if(${CMAKE_C_BYTE_ORDER} STREQUAL "LITTLE_ENDIAN")
@@ -52,7 +53,6 @@ elseif(${CMAKE_C_BYTE_ORDER} STREQUAL "BIG_ENDIAN")
 else()
     message(WARNING "Unable to detect target endianness. endian.h cannot be used.")
 endif()
-
 
 # Enable all warnings and relevant debug info. Only turn these flags on when 
 # ecu library is being compiled by an application using ecu. Do not propogate 
@@ -77,7 +77,6 @@ target_compile_options(ecu
         $<$<AND:$<CONFIG:Debug>,$<C_COMPILER_ID:GNU>>:-g3>
 )
 
-
 # Warn the user that run-time asserts are being disabled. It is
 # not recommended to disable run-time asserts but we have this
 # as an option to decrease overhead of the library.
@@ -98,7 +97,9 @@ if(${ECU_DISABLE_RUNTIME_ASSERTS})
     )
 endif()
 
-
+#------------------------------------------------------------#
+#---------------------- INTERNAL TESTS ----------------------#
+#------------------------------------------------------------#
 # CTest and enable_testing has to be in the root CMakeLists.txt. 
 # Tests will not be discovered if this is in tests/CMakeLists.txt....
 if(${ECU_ENABLE_TESTING})
