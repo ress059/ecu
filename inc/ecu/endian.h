@@ -133,6 +133,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 /*------------------------------------------------------------*/
 /*--------------------- ENDIANNESS MACROS --------------------*/
 /*------------------------------------------------------------*/
+
 #if defined(ECU_DOXYGEN)
 /**
  * @brief Read 16-bit little endian encoded data at compile-time.
