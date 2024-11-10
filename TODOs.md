@@ -104,6 +104,10 @@ so this only applies to GCC. I.e.
 7. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 
+## Unit Tests
+1. Change all class members from _ to m_. Example change event_; to m_event;
+
+
 ## Build system and syntax
 0. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
 Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.

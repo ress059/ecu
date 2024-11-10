@@ -81,7 +81,10 @@ extern "C" {
 
 /**
  * @brief Return byte-swapped copy of 16-bit variable evaluated
- * at run-time.
+ * at run-time. 
+ * @details This can handle signed 16-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint16_t ecu_swap16_runtime(uint_fast16_t val)
 {
@@ -96,6 +99,9 @@ static inline uint16_t ecu_swap16_runtime(uint_fast16_t val)
 /**
  * @brief Return byte-swapped copy of 32-bit variable evaluated
  * at run-time.
+ * @details This can handle signed 32-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint32_t ecu_swap32_runtime(uint_fast32_t val)
 {
@@ -112,6 +118,9 @@ static inline uint32_t ecu_swap32_runtime(uint_fast32_t val)
 /**
  * @brief Return byte-swapped copy of 64-bit variable evaluated
  * at run-time.
+ * @details This can handle signed 64-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 {
