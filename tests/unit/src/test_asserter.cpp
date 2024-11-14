@@ -15,7 +15,7 @@
 #warning "TODO: Uncomment files once done."
 /* Files under test. */
 #include "ecu/asserter.h"
-// #include "ecu/dlist.h"
+#include "ecu/dlist.h"
 #include "ecu/event.h"
 #include "ecu/fsm.h"
 #include "ecu/hsm.h"
@@ -102,26 +102,26 @@ TEST(Asserter, DefineNameMacro)
     }
 }
 
-// /**
-//  * @brief Verify file name is correct when assert fires
-//  * in circular_dll.c
-//  */
-// TEST(Asserter, ECUCircularDLLAssert)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/circular_dll.c");
+/**
+ * @brief Verify file name is correct when assert fires
+ * in circular_dll.c
+ */
+TEST(Asserter, ECUDListAssert)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/dlist.c");
 
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_circular_dll_ctor((struct ecu_circular_dll *)0);
-//     }
+        /* Steps 2 and 3: Action and assert. */
+        ecu_dlist_ctor((struct ecu_dlist *)0);
+    }
 
-//     catch (AssertException& e)
-//     {
-//         (void)e;
-//     }
-// }
+    catch (AssertException& e)
+    {
+        (void)e;
+    }
+}
 
 /**
  * @brief Verify file name is correct when assert fires

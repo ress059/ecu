@@ -36,7 +36,7 @@ add_executable(${ECU_BUILD_NAME}
 
     # Tests
     ${CMAKE_CURRENT_LIST_DIR}/src/test_asserter.cpp
-    # ${CMAKE_CURRENT_LIST_DIR}/src/test_circular_dll.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/test_dlist.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_endian.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_event.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_fsm.cpp
@@ -62,8 +62,8 @@ target_compile_options(${ECU_BUILD_NAME}
     PRIVATE
         # C++ compiler flags. We know unit tests will be C++ so we can use this generator expression.
         $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
-        $<$<CXX_COMPILER_ID:GNU>:-Wcast-align -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
+        $<$<CXX_COMPILER_ID:GNU>:-Wcast-align -Wstrict-overflow=2 -Wwrite-strings>
         $<$<CXX_COMPILER_ID:GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
 
         # Save debug symbols in our unit tests.

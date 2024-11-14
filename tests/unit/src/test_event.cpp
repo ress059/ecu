@@ -63,7 +63,7 @@ TEST_GROUP(Event)
  */
 TEST(Event, UserEventIDBegin)
 {
-    /* Step 3: Assert. */
+    /* Step 3: Assert. Verify ECU_USER_EVENT_ID_BEGIN is 0. */
     ENUMS_EQUAL_INT(0, ECU_USER_EVENT_ID_BEGIN);
 }
 
@@ -77,7 +77,7 @@ TEST(Event, EventCtorValidID)
         /* Step 2: Action. */
         ecu_event_ctor(&m_event, VALID_EVENT_ID);
 
-        /* Step 3: Assert. */
+        /* Step 3: Assert. Verify valid ID was assigned to event. */
         ENUMS_EQUAL_INT(VALID_EVENT_ID, m_event.id);
     }
     catch (AssertException& e)
@@ -97,6 +97,7 @@ TEST(Event, EventCtorInvalidID)
     {
         /* Step 1: Arrange. */
         m_event.id = VALID_EVENT_ID;
+        set_assert_handler(AssertResponse::OK);
 
         /* Step 2: Action. */
         ecu_event_ctor(&m_event, INVALID_EVENT_ID);
@@ -107,6 +108,6 @@ TEST(Event, EventCtorInvalidID)
         (void)e;
     }
 
-    /* Step 3: Assert ID wasn't changed. */
+    /* Step 3: Assert. Verify invalid ID was not assigned to event. */
     ENUMS_EQUAL_INT(VALID_EVENT_ID, m_event.id);
 }
