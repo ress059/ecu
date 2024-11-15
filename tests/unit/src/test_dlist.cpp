@@ -156,7 +156,40 @@ TEST_GROUP(DListCtors)
     struct ecu_dlist_node m_node1;
     struct ecu_dlist_node m_node2;
     struct ecu_dlist_node m_node3;
-    struct ecu_dlist_iterator m_iterator;
+};
+
+TEST_GROUP(DListInsert)
+{
+    void setup() override
+    {
+        set_assert_handler(AssertResponse::FAIL);
+
+        ecu_dlist_ctor(&m_list);
+        ecu_dlist_ctor(&m_other_list);
+        ecu_dlist_node_ctor(&m_node1, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dlist_node_ctor(&m_node2, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dlist_node_ctor(&m_node3, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dlist_node_ctor(&m_inserted_node, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dlist_node_ctor(&m_node_not_in_list, ECU_DLIST_NODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+        ecu_dlist_push_back(&m_list, &m_node1);
+        ecu_dlist_push_back(&m_list, &m_node2);
+        ecu_dlist_push_back(&m_list, &m_node3);
+    }
+
+    void teardown() override
+    {
+        mock().checkExpectations();
+        mock().clear();
+    }
+
+    struct ecu_dlist m_list;
+    struct ecu_dlist m_other_list;
+    struct ecu_dlist_node m_node1;
+    struct ecu_dlist_node m_node2;
+    struct ecu_dlist_node m_node3;
+    struct ecu_dlist_node m_inserted_node;
+    struct ecu_dlist_node m_node_not_in_list;
 };
 
 /*------------------------------------------------------------*/
@@ -429,28 +462,392 @@ TEST(DListCtors, ReconstructDestroyedList)
     }
 }
 
+/*------------------------------------------------------------*/
+/*------------------ TESTS - INSERT BEFORE -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Can insert_before() HEAD node. Added node should be at
+ * the end of the list.
+ */
+TEST(DListInsert, InsertBeforeHead)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_before(&m_list, &m_list.head, &m_inserted_node);
+
+        /* Step 3: Assert. Verify m_inserted_node is at the end of the list. */
+        list_iteration_mock(&m_list);
+    }
+    catch (AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief insert_before() tail node adds node before tail.
+ * It should not be at the end of the list.
+ */
+TEST(DListInsert, InsertBeforeTail)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+        EXPECT_NODE_IN_LIST(&m_node3);
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_before(&m_list, &m_node3, &m_inserted_node);
+
+        /* Step 3: Assert. Verify m_inserted_node is before the tail (m_node3). */
+        list_iteration_mock(&m_list);
+    }
+    catch (AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Cannot insert_before() if position node is not
+ * in a list.
+ */
+TEST(DListInsert, InsertBeforePositionNodeNotInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_before(&m_list, &m_node_not_in_list, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_inserted_node was not added to list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
+/**
+ * @brief Cannot insert_before() if added node is already in
+ * another list.
+ */
+TEST(DListInsert, InsertBeforeNodeAlreadyInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        ecu_dlist_push_back(&m_other_list, &m_inserted_node);
+
+        /* m_list nodes. */
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+
+        /* m_other_list nodes. */
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. Do not insert m_inserted_node before HEAD or 
+        else test will falsely pass if node is incorrectly added to 
+        m_other_list. */
+        ecu_dlist_insert_before(&m_list, &m_node1, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify lists weren't changed. m_inserted_node should
+    still be in m_other_list. m_list must be iterated over first since
+    mocks are in strict order. Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+    list_iteration_mock(&m_other_list);
+}
+
+/**
+ * @brief Cannot insert_before() when position node is HEAD
+ * of another list.
+ */
+TEST(DListInsert, InsertBeforePositionNodeHeadOfOtherList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_before(&m_list, &m_other_list.head, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_other_list.head was not added to m_list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
+/**
+ * @brief Cannot insert_before() node with an invalid ID.
+ */
+TEST(DListInsert, InsertBeforeNodeWithInvalidID)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        m_inserted_node.id = ECU_OBJECT_ID_RESERVED;
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_before(&m_list, &m_node3, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_inserted_node was not added to m_list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - INSERT AFTER -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Can insert_after() HEAD node. Added node should be 
+ * one after HEAD.
+ */
+TEST(DListInsert, InsertAfterHead)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_after(&m_list, &m_list.head, &m_inserted_node);
+
+        /* Step 3: Assert. Verify m_inserted_node is one after HEAD. */
+        list_iteration_mock(&m_list);
+    }
+    catch (AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief insert_after() tail node adds node to back of 
+ * the list.
+ */
+TEST(DListInsert, InsertAfterTail)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_after(&m_list, &m_node3, &m_inserted_node);
+
+        /* Step 3: Assert. Verify m_inserted_node is now the tail. */
+        list_iteration_mock(&m_list);
+    }
+    catch (AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Cannot insert_after() if position node is not
+ * in a list.
+ */
+TEST(DListInsert, InsertAfterPositionNodeNotInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_after(&m_list, &m_node_not_in_list, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_inserted_node was not added to list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
+/**
+ * @brief Cannot insert_after() if added node is already in
+ * another list.
+ */
+TEST(DListInsert, InsertAfterNodeAlreadyInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        ecu_dlist_push_back(&m_other_list, &m_inserted_node);
+
+        /* m_list nodes. */
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+
+        /* m_other_list nodes. */
+        EXPECT_NODE_IN_LIST(&m_inserted_node);
+
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. Do not insert m_inserted_node after m_node3 
+        or else test will falsely pass if node is incorrectly added to 
+        m_other_list. */
+        ecu_dlist_insert_after(&m_list, &m_node1, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify lists weren't changed. m_inserted_node should
+    still be in m_other_list. m_list must be iterated over first since
+    mocks are in strict order. Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+    list_iteration_mock(&m_other_list);
+}
+
+/**
+ * @brief Cannot insert_after() when position node is HEAD
+ * of another list.
+ */
+TEST(DListInsert, InsertAfterPositionNodeHeadOfOtherList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_after(&m_list, &m_other_list.head, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_other_list.head was not added to m_list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
+/**
+ * @brief Cannot insert_after() node with an invalid ID.
+ */
+TEST(DListInsert, InsertAfterNodeWithInvalidID)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_node1);
+        EXPECT_NODE_IN_LIST(&m_node2);
+        EXPECT_NODE_IN_LIST(&m_node3);
+        m_inserted_node.id = ECU_OBJECT_ID_RESERVED;
+        set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
+
+        /* Step 2: Action. */
+        ecu_dlist_insert_after(&m_list, &m_node3, &m_inserted_node);
+    }
+    catch (AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+
+    /* Step 3: Assert. Verify m_inserted_node was not added to m_list. 
+    Do this outside try-catch. */
+    list_iteration_mock(&m_list);
+}
+
 
 #warning "TODO: Stopped here"
-// /*
-// 3. insert_before() adds node BEFORE position. Verify with iterator. mock().strictOrder();
-// 4. Can insert_before() where position is HEAD. Node should be added to back of list.
-// 5. Can't insert_before() where position is not in list.
-// 6. Can't insert_before() where node is node already in another list.
-// 7. Can't insert_before() where node is HEAD node of another list.
-// 8. Can't insert_before() where node has an invalid ID (i.e. ECU_OBJECT_ID_RESERVED).
-
+// 1. push_front() adds node in front of list.
+// 2. Cannot push_front() where node is in another list.
+// 3. Cannot push_front() where node is HEAD of this list.
+// 4. Cannot push_front() where node is HEAD of another list.
+// 5. Cannot push_front() node with invalid ID.
+// 6 to 10. Repeat same tests for push_back().
 
 // 4. Test get_size() by calling push_front(), push_back(), insert_before(), insert_after() and remove(). general insert and removal test.
-// 9. insert_after() adds node AFTER position.
-// 11. Cannot insert_after() node that's already in another list.
-// 12. Cannot insert_after() node that's already in this list.
-// 13. Cannot insert_after() node when supplied position is in another list.
-// 14. insert_after() node can't be &list->head
 // 15. Cannot remove() node not in list.
 // 16. Cannot remove() node in another list.
-// 17. push_front() adds node in front of list.
-// 18. push_back() adds node in back of list.
-
 // 19. General iterator test. Verify iterator goes over all nodes in correct order. (set ids, mock strict order).
 // 20. Using push_front() in middle of iteration is OK. These nodes WON'T be iterated over.
 // 21. Using push_back() in middle of iteration is OK. These nodes WILL be iterated over.
