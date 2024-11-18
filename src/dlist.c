@@ -40,19 +40,19 @@ faults when accessed. */
  * via @ref ecu_dlist_node_ctor() or @ref ecu_dlist_ctor() if
  * supplied node is HEAD. False otherwise.
  */
-static bool node_valid(const struct ecu_dlist_node *node);
+static bool node_valid(const struct ecu_dnode *node);
 
 /**
  * @brief Returns true if node is HEAD and has been properly
  * constructed via @ref ecu_dlist_ctor(). False otherwise.
  */
-static bool node_is_valid_head(const struct ecu_dlist_node *node);
+static bool node_is_valid_head(const struct ecu_dnode *node);
 
 /**
  * @brief Returns true if node is within any list. This includes
  * the HEAD node. False otherwise.
  */
-static bool node_in_list(const struct ecu_dlist_node *node);
+static bool node_in_list(const struct ecu_dnode *node);
 
 /**
  * @brief Returns true if list has been properly constructed
@@ -66,13 +66,13 @@ static bool list_valid(const struct ecu_dlist *list);
  * Therefore this callback just asserts. This callback is also used
  * to help identify the HEAD node in a list.
  */
-static void HEAD_DESTROY_CALLBACK(struct ecu_dlist_node *me, ecu_object_id id);
+static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id);
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
-static bool node_valid(const struct ecu_dlist_node *node)
+static bool node_valid(const struct ecu_dnode *node)
 {
     bool valid = false;
     ECU_RUNTIME_ASSERT( (node) );
@@ -93,7 +93,7 @@ static bool node_valid(const struct ecu_dlist_node *node)
     return valid;
 }
 
-static bool node_is_valid_head(const struct ecu_dlist_node *node)
+static bool node_is_valid_head(const struct ecu_dnode *node)
 {
     bool is_head = false;
     ECU_RUNTIME_ASSERT( (node) );
@@ -112,7 +112,7 @@ static bool node_is_valid_head(const struct ecu_dlist_node *node)
     return is_head;
 }
 
-static bool node_in_list(const struct ecu_dlist_node *node)
+static bool node_in_list(const struct ecu_dnode *node)
 {
     bool in_list = false;
     ECU_RUNTIME_ASSERT( (node) );
@@ -139,7 +139,7 @@ static bool list_valid(const struct ecu_dlist *list)
     return node_is_valid_head(&list->head);
 }
 
-static void HEAD_DESTROY_CALLBACK(struct ecu_dlist_node *me, ecu_object_id id)
+static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
 {
     (void)me;
     (void)id;
@@ -150,8 +150,8 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dlist_node *me, ecu_object_id id)
 /*------------------ NODE MEMBER FUNCTIONS -------------------*/
 /*------------------------------------------------------------*/
 
-void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
-                         void (*destroy_0)(struct ecu_dlist_node *me, ecu_object_id id),
+void ecu_dlist_node_ctor(struct ecu_dnode *me,
+                         void (*destroy_0)(struct ecu_dnode *me, ecu_object_id id),
                          ecu_object_id id_0)
 {
     ECU_RUNTIME_ASSERT( (me) );
@@ -168,7 +168,7 @@ void ecu_dlist_node_ctor(struct ecu_dlist_node *me,
     me->id      = id_0;      /* Optional. */
 }
 
-void ecu_dlist_node_destroy(struct ecu_dlist_node *me)
+void ecu_dlist_node_destroy(struct ecu_dnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (node_valid(me) && !node_is_valid_head(me)) );
@@ -177,7 +177,7 @@ void ecu_dlist_node_destroy(struct ecu_dlist_node *me)
     me->next->prev = me->prev;
     me->prev->next = me->next;
 
-    if (me->destroy != ECU_DLIST_NODE_DESTROY_UNUSED)
+    if (me->destroy != ECU_DNODE_DESTROY_UNUSED)
     {
         (*me->destroy)(me, me->id);
     }
@@ -185,13 +185,13 @@ void ecu_dlist_node_destroy(struct ecu_dlist_node *me)
     /* Setting to NULL values forces user to reconstruct the node if they
     want to use it again, assuming asserts are enabled. Important to reset 
     destroy callback and ID only after the destroy callback executes. */
-    me->next    = (struct ecu_dlist_node *)0;
-    me->prev    = (struct ecu_dlist_node *)0;
-    me->destroy = ECU_DLIST_NODE_DESTROY_UNUSED;
+    me->next    = (struct ecu_dnode *)0;
+    me->prev    = (struct ecu_dnode *)0;
+    me->destroy = ECU_DNODE_DESTROY_UNUSED;
     me->id      = ECU_OBJECT_ID_RESERVED;
 }
 
-ecu_object_id ecu_dlist_node_get_id(const struct ecu_dlist_node *me)
+ecu_object_id ecu_dlist_node_get_id(const struct ecu_dnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (node_valid(me) && !node_is_valid_head(me)) );
@@ -226,7 +226,7 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
-    for (struct ecu_dlist_node *node = ecu_dlist_iterator_begin(&iterator, me);
+    for (struct ecu_dnode *node = ecu_dlist_iterator_begin(&iterator, me);
          node != ecu_dlist_iterator_end(&iterator); 
          node = ecu_dlist_iterator_next(&iterator))
     {
@@ -235,13 +235,13 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
 
     /* Setting to NULL values forces user to reconstruct the list if they
     want to use it again, assuming asserts are enabled. */
-    me->head.next    = (struct ecu_dlist_node *)0;
-    me->head.prev    = (struct ecu_dlist_node *)0;
+    me->head.next    = (struct ecu_dnode *)0;
+    me->head.prev    = (struct ecu_dnode *)0;
     me->head.destroy = &HEAD_DESTROY_CALLBACK;
     me->head.id      = ECU_OBJECT_ID_RESERVED;
 }
 
-void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node)
+void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dnode *position, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && position && node) );
     ECU_RUNTIME_ASSERT( (position != node) );
@@ -255,7 +255,7 @@ void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dlist_node *positi
     position->prev       = node;
 }
 
-void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dlist_node *position, struct ecu_dlist_node *node)
+void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dnode *position, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && position && node) );
     ECU_RUNTIME_ASSERT( (position != node) );
@@ -265,7 +265,7 @@ void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dlist_node *positio
     ecu_dlist_insert_before(me, position->next, node);
 }
 
-void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *node)
+void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
@@ -274,7 +274,7 @@ void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dlist_node *node)
     ecu_dlist_insert_after(me, &me->head, node);
 }
 
-void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *node)
+void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
@@ -283,7 +283,7 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dlist_node *node)
     ecu_dlist_insert_before(me, &me->head, node);
 }
 
-void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dlist_node *node)
+void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
@@ -308,7 +308,7 @@ size_t ecu_dlist_get_size(const struct ecu_dlist *me)
     /* Loop through entire list here instead of using a size variable in 
     ecu_dlist to prevent all add and remove functions having to keep track
     of size. Isolate this dependency to only this function. */
-    for (const struct ecu_dlist_node *node = ecu_dlist_const_iterator_begin(&citerator, me);
+    for (const struct ecu_dnode *node = ecu_dlist_const_iterator_begin(&citerator, me);
          node != ecu_dlist_const_iterator_end(&citerator); 
          node = ecu_dlist_const_iterator_next(&citerator))
     {
@@ -329,7 +329,7 @@ bool ecu_dlist_is_empty(const struct ecu_dlist *me)
 /*----------- NON-CONST ITERATOR MEMBER FUNCTIONS ------------*/
 /*------------------------------------------------------------*/
 
-struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list)
+struct ecu_dnode *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list)
 {
     ECU_RUNTIME_ASSERT( (me && list) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
@@ -344,14 +344,14 @@ struct ecu_dlist_node *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, s
     return (me->current);
 }
 
-struct ecu_dlist_node *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me)
+struct ecu_dnode *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
     return (&me->list->head);
 }
 
-struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
+struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
@@ -369,7 +369,7 @@ struct ecu_dlist_node *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 /*------------- CONST ITERATOR MEMBER FUNCTIONS --------------*/
 /*------------------------------------------------------------*/
 
-const struct ecu_dlist_node *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, const struct ecu_dlist *list)
+const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, const struct ecu_dlist *list)
 {
     ECU_RUNTIME_ASSERT( (me && list) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
@@ -384,14 +384,14 @@ const struct ecu_dlist_node *ecu_dlist_const_iterator_begin(struct ecu_dlist_con
     return (me->current);
 }
 
-const struct ecu_dlist_node *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me)
+const struct ecu_dnode *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
     return (&me->list->head);
 }
 
-const struct ecu_dlist_node *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me)
+const struct ecu_dnode *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );

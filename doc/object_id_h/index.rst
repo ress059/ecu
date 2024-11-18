@@ -81,19 +81,19 @@ used to identify the type of each node.
     struct type1 
     {
         int a;
-        struct ecu_dlist_node node;
+        struct ecu_dnode node;
     };
 
     struct type2 
     {
-        struct ecu_dlist_node node;
+        struct ecu_dnode node;
         int b;
     };
 
     struct type3 
     {
         int c;
-        struct ecu_dlist_node node;
+        struct ecu_dnode node;
     };
 
     struct ecu_dlist_iterator iterator;
@@ -105,9 +105,9 @@ used to identify the type of each node.
     /* Construct list and nodes. Assign object IDs to each node to identify
     their data types. */
     ecu_dlist_ctor(&list);
-    ecu_dlist_node_ctor(&type1_node.node, ECU_DLIST_NODE_DESTROY_UNUSED, TYPE1);
-    ecu_dlist_node_ctor(&type2_node.node, ECU_DLIST_NODE_DESTROY_UNUSED, TYPE2);
-    ecu_dlist_node_ctor(&type3_node.node, ECU_DLIST_NODE_DESTROY_UNUSED, TYPE3);
+    ecu_dlist_node_ctor(&type1_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
+    ecu_dlist_node_ctor(&type2_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
+    ecu_dlist_node_ctor(&type3_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
 
     /* Add nodes to list. */
     ecu_dlist_push_back(&list, &type2_node.node);
@@ -115,7 +115,7 @@ used to identify the type of each node.
     ecu_dlist_push_back(&list, &type1_node.node);
 
     /* Iterate over list. Use object ID to identify the data type stored in each node. */
-    for (struct ecu_dlist_node *i = ecu_dlist_iterator_begin(&iterator, &list);
+    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
          i != ecu_dlist_iterator_end(&iterator);
          i = ecu_dlist_iterator_next(&iterator))
     {
