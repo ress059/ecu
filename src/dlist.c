@@ -31,13 +31,13 @@ ECU_ASSERT_DEFINE_NAME("ecu/dlist.c")
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
 /*------------------------------------------------------------*/
 /* NOTE: All functions require node and list to be previously constructed
-via calls to ecu_dlist_node_ctor() and ecu_dlist_ctor(). Otherwise
+via calls to ecu_dnode_ctor() and ecu_dlist_ctor(). Otherwise
 next and prev pointers can be garbage non-NULL values, leading to seg
 faults when accessed. */
 
 /**
  * @brief Returns true if node has been properly constructed
- * via @ref ecu_dlist_node_ctor() or @ref ecu_dlist_ctor() if
+ * via @ref ecu_dnode_ctor() or @ref ecu_dlist_ctor() if
  * supplied node is HEAD. False otherwise.
  */
 static bool node_valid(const struct ecu_dnode *node);
@@ -147,12 +147,12 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
 }
 
 /*------------------------------------------------------------*/
-/*------------------ NODE MEMBER FUNCTIONS -------------------*/
+/*------------------ DNODE MEMBER FUNCTIONS ------------------*/
 /*------------------------------------------------------------*/
 
-void ecu_dlist_node_ctor(struct ecu_dnode *me,
-                         void (*destroy_0)(struct ecu_dnode *me, ecu_object_id id),
-                         ecu_object_id id_0)
+void ecu_dnode_ctor(struct ecu_dnode *me,
+                    void (*destroy_0)(struct ecu_dnode *me, ecu_object_id id),
+                    ecu_object_id id_0)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (destroy_0 != &HEAD_DESTROY_CALLBACK) );
@@ -168,7 +168,7 @@ void ecu_dlist_node_ctor(struct ecu_dnode *me,
     me->id      = id_0;      /* Optional. */
 }
 
-void ecu_dlist_node_destroy(struct ecu_dnode *me)
+void ecu_dnode_destroy(struct ecu_dnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (node_valid(me) && !node_is_valid_head(me)) );
@@ -191,7 +191,50 @@ void ecu_dlist_node_destroy(struct ecu_dnode *me)
     me->id      = ECU_OBJECT_ID_RESERVED;
 }
 
-ecu_object_id ecu_dlist_node_get_id(const struct ecu_dnode *me)
+void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *position)
+{
+    ECU_RUNTIME_ASSERT( (me && position) );
+    ECU_RUNTIME_ASSERT( (me != position) );
+    ECU_RUNTIME_ASSERT( (node_valid(me) && node_valid(position)) );
+    ECU_RUNTIME_ASSERT( (!node_in_list(me) && node_in_list(position)) );
+
+    me->next                = position;
+    me->prev                = position->prev;
+    position->prev->next    = me;
+    position->prev          = me;
+}
+
+void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *position)
+{
+    ECU_RUNTIME_ASSERT( (me && position) );
+    ECU_RUNTIME_ASSERT( (me != position) );
+    ECU_RUNTIME_ASSERT( (node_valid(me) && node_valid(position)) );
+    ECU_RUNTIME_ASSERT( (!node_in_list(me) && node_in_list(position)) );
+    ecu_dnode_insert_before(me, position->next);
+}
+
+void ecu_dnode_remove(struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (node_in_list(me) && !node_is_valid_head(me)) );
+
+    me->next->prev = me->prev;
+    me->prev->next = me->next;
+    me->next       = me;
+    me->prev       = me;
+    /* Do not reset destroy callback or ID. This is only a remove function,
+    not a destroy function. */
+}
+
+bool ecu_dnode_in_list(const struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    return (node_in_list(me));
+}
+
+ecu_object_id ecu_dnode_get_id(const struct ecu_dnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (node_valid(me) && !node_is_valid_head(me)) );
@@ -209,7 +252,7 @@ void ecu_dlist_ctor(struct ecu_dlist *me)
     initialized to garbage non-NULL values before a constructor call. It is 
     the user's responsibility to not construct an active list, which is clearly 
     outlined in the warning directive of this function description. Also do not
-    use ecu_dlist_node_ctor(HEAD) since a reserved destroy callback and ID are
+    use ecu_dnode_ctor(HEAD) since a reserved destroy callback and ID are
     assigned. */
 
     me->head.next    = &me->head;
@@ -220,8 +263,6 @@ void ecu_dlist_ctor(struct ecu_dlist *me)
 
 void ecu_dlist_destroy(struct ecu_dlist *me)
 {
-    /* Do not use ecu_dlist_node_destroy() in this function since we 
-    know for sure that all nodes are within this list. */
     struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
@@ -230,7 +271,7 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
          node != ecu_dlist_iterator_end(&iterator); 
          node = ecu_dlist_iterator_next(&iterator))
     {
-        ecu_dlist_node_destroy(node);
+        ecu_dnode_destroy(node);
     }
 
     /* Setting to NULL values forces user to reconstruct the list if they
@@ -241,37 +282,13 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
     me->head.id      = ECU_OBJECT_ID_RESERVED;
 }
 
-void ecu_dlist_insert_before(struct ecu_dlist *me, struct ecu_dnode *position, struct ecu_dnode *node)
-{
-    ECU_RUNTIME_ASSERT( (me && position && node) );
-    ECU_RUNTIME_ASSERT( (position != node) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) );
-    ECU_RUNTIME_ASSERT( (node_valid(position) && node_valid(node)) );
-    ECU_RUNTIME_ASSERT( (node_in_list(position) && !node_in_list(node)) );
-
-    node->next           = position;
-    node->prev           = position->prev;
-    position->prev->next = node;
-    position->prev       = node;
-}
-
-void ecu_dlist_insert_after(struct ecu_dlist *me, struct ecu_dnode *position, struct ecu_dnode *node)
-{
-    ECU_RUNTIME_ASSERT( (me && position && node) );
-    ECU_RUNTIME_ASSERT( (position != node) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) );
-    ECU_RUNTIME_ASSERT( (node_valid(position) && node_valid(node)) );
-    ECU_RUNTIME_ASSERT( (node_in_list(position) && !node_in_list(node)) );
-    ecu_dlist_insert_before(me, position->next, node);
-}
-
 void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dlist_insert_after(me, &me->head, node);
+    ecu_dnode_insert_after(&me->head, node);
 }
 
 void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
@@ -280,22 +297,182 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dlist_insert_before(me, &me->head, node);
+    ecu_dnode_insert_before(&me->head, node);
 }
 
-void ecu_dlist_remove(struct ecu_dlist *me, struct ecu_dnode *node)
+// TODO Debating whether condition should take in pointer to const or not. 
+void ecu_dlist_insert_before(struct ecu_dlist *me, 
+                             struct ecu_dnode *node,
+                             bool (*condition)(struct ecu_dnode *current, void *data),
+                             void *data)
 {
-    ECU_RUNTIME_ASSERT( (me && node) );
+    bool inserted = false;
+    struct ecu_dlist_iterator iterator;
+    ECU_RUNTIME_ASSERT( (me && node && condition) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
-    ECU_RUNTIME_ASSERT( (node_in_list(node) && !node_is_valid_head(node)) );
+    ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
 
-    node->next->prev = node->prev;
-    node->prev->next = node->next;
-    node->next       = node;
-    node->prev       = node;
-    /* Do not reset destroy callback or ID. This is only a remove function,
-    not a destroy function. */
+    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, me);
+         i = ecu_dlist_iterator_end(&iterator);
+         i = ecu_dlist_iterator_next(&iterator))
+    {
+        if ((*condition)(i, data))
+        {
+            ecu_dnode_insert_before(node, i);
+            inserted = true;
+            break;
+        }
+    }
+
+    if (!inserted)
+    {
+        /* Enters if list is empty or condition failed all nodes. This is 
+        faster and less verbose than checking for empty list at beginning. */
+        ecu_dlist_push_back(me, node);
+    }
+}
+
+void ecu_dlist_sort(struct ecu_dlist *me, 
+                    bool (*lhs_less_than_rhs)(struct ecu_dnode *lhs, struct ecu_dnode *rhs, void *data),
+                    void *data)
+{
+    /**
+     * This file is copyright 2001 Simon Tatham.
+     *  
+     * Permission is hereby granted, free of charge, to any person
+     * obtaining a copy of this software and associated documentation
+     * files (the "Software"), to deal in the Software without
+     * restriction, including without limitation the rights to use,
+     * copy, modify, merge, publish, distribute, sublicense, and/or
+     * sell copies of the Software, and to permit persons to whom the
+     * Software is furnished to do so, subject to the following
+     * conditions:
+     * 
+     * The above copyright notice and this permission notice shall be
+     * included in all copies or substantial portions of the Software.
+     * 
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+     * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+     * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+     * NONINFRINGEMENT.  IN NO EVENT SHALL SIMON TATHAM BE LIABLE FOR
+     * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+     * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+     * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+     * SOFTWARE.
+     */
+    ECU_RUNTIME_ASSERT( (me && lhs_less_than_rhs) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
+
+    bool merge, swap_q = false;
+    size_t K = 1;
+    size_t qsize, psize, nmerges = 0;
+    struct ecu_dnode *e, *p, *q = (struct ecu_dnode *)0;
+    const struct ecu_dnode *HEAD = &me->head; /* Must be after list is asserted. */
+
+    while (1)
+    {
+        p = me->head.next;
+        ECU_RUNTIME_ASSERT( (node_valid(p)) );
+
+        while (p != HEAD)
+        {
+            nmerges++;
+            q = p;
+            psize = 0;
+
+            /* Step q by K increments or until the end of the list is reached. */
+            for (size_t i = 0; i < K; i++)
+            {
+                psize++;
+                q = q->next;
+                ECU_RUNTIME_ASSERT( (node_valid(q)) );
+                if (q == HEAD)
+                {
+                    break;
+                }
+            }
+            qsize = K;
+            
+            while ((psize > 0) || (qsize > 0 && q != HEAD))
+            {
+                /* p and/or q are non-empty lists so we have lists to merge 
+                sort. Decide whether next element of merge comes from p or q. */
+                if (psize == 0) 
+                {
+                    /* p is empty. e must come from q. Do not set swap_q here. 
+                    List doesn't have to be edited if p list is empty. */
+                    e = q;
+                    q = q->next;
+                    ECU_RUNTIME_ASSERT( (node_valid(q)) );
+                    qsize--;
+                }
+                else if (qsize == 0 || q == HEAD) /* qsize is always set to K but qlist can be empty!! Must OR with q == HEAD. */
+                {
+                    /* q is empty. e must come from p. */
+                    e = p;
+                    p = p->next;
+                    ECU_RUNTIME_ASSERT( (node_valid(p)) );
+                    psize--;
+                }
+                else if ((*lhs_less_than_rhs)(q, p, data))
+                {
+                    /* First element of q is less than p. e must come from q. */
+                    swap_q = true;
+                    e = q; 
+                    q = q->next;
+                    ECU_RUNTIME_ASSERT( (node_valid(q)) );
+                    qsize--;
+                } 
+                else 
+                {
+                    /* First element of p is less than or equal to q. e must come from p. */
+                    e = p;
+                    p = p->next;
+                    ECU_RUNTIME_ASSERT( (node_valid(p)) );
+                    psize--;
+                }
+
+                /* We only have to swap elements if the target node e is in 
+                the qlist. Otherwise the p node can be left untouched. */
+                if (swap_q)
+                {
+                    swap_q = false;
+                    ecu_dnode_remove(e); /* Must remove before swapping. API requires added nodes to not be in a list. */
+                    ecu_dnode_insert_before(p, q);
+                }
+            }
+
+            p = q;
+        }
+
+        /* If we have done only one merge, we're finished. */
+        if (nmerges <= 1)   /* Allow for nmerges==0, the empty list case. */
+        {
+            break;
+        }
+        else
+        {
+            K *= 2U;
+        }
+    }
+}
+
+void ecu_dlist_clear(struct ecu_dlist *me)
+{
+    struct ecu_dlist_iterator iterator;
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
+
+    for (struct ecu_dnode *node = ecu_dlist_iterator_begin(&iterator, me);
+         node != ecu_dlist_iterator_end(&iterator); 
+         node = ecu_dlist_iterator_next(&iterator))
+    {
+        ecu_dnode_remove(node);
+    }
+
+    /* Reset list values back to default. */
+    ecu_dlist_ctor(me);
 }
 
 size_t ecu_dlist_get_size(const struct ecu_dlist *me)

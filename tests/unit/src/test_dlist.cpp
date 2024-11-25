@@ -836,6 +836,10 @@ TEST(DListInsert, InsertAfterNodeWithInvalidID)
     list_iteration_mock(&m_list);
 }
 
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - PUSH FRONT -------------------*/
+/*------------------------------------------------------------*/
+
 
 #warning "TODO: Stopped here"
 // 1. push_front() adds node in front of list.
@@ -844,6 +848,11 @@ TEST(DListInsert, InsertAfterNodeWithInvalidID)
 // 4. Cannot push_front() where node is HEAD of another list.
 // 5. Cannot push_front() node with invalid ID.
 // 6 to 10. Repeat same tests for push_back().
+
+
+// remove() does not change dnode's destroy function or ID.
+// Cannot remove() HEAD.
+// Cannot remove() node not in a list.
 
 // 4. Test get_size() by calling push_front(), push_back(), insert_before(), insert_after() and remove(). general insert and removal test.
 // 15. Cannot remove() node not in list.
