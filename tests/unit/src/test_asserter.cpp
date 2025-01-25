@@ -114,7 +114,7 @@ TEST(Asserter, ECUDListAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/dlist.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_dlist_ctor((struct ecu_dlist *)0);
+        ecu_dlist_ctor(reinterpret_cast<ecu_dlist *>(0));
     }
 
     catch (AssertException& e)
@@ -135,7 +135,7 @@ TEST(Asserter, ECUEventAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_event_ctor((struct ecu_event *)0, 0);
+        ecu_event_ctor(reinterpret_cast<ecu_event *>(0), 0);
     }
 
     catch (AssertException& e)
@@ -156,7 +156,7 @@ TEST(Asserter, ECUFsmAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/fsm.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_fsm_ctor((struct ecu_fsm *)0, (const struct ecu_fsm_state *)0);
+        ecu_fsm_ctor(reinterpret_cast<ecu_fsm *>(0), reinterpret_cast<const ecu_fsm_state *>(0));
     }
 
     catch (AssertException& e)
@@ -186,7 +186,7 @@ TEST(Asserter, ECUHsmAssert)
 //         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
 //         /* Steps 2 and 3: Action and assert. */
-//         ecu_timer_ctor((struct ecu_timer *)0, (void *)0, (bool (*)(void *))0);
+//         ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), (void *)0, (bool (*)(void *))0);
 //     }
 
 //     catch (AssertException& e)
@@ -207,7 +207,7 @@ TEST(Asserter, ECUTreeAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_tree_node_ctor((struct ecu_tree_node *)0, (void (*)(struct ecu_tree_node *))0, 0);
+        ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
     }
 
     catch (AssertException& e)

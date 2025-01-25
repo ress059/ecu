@@ -51,7 +51,7 @@ TEST_GROUP(Event)
         mock().clear();
     }
 
-    struct ecu_event m_event;
+    ecu_event m_event;
 };
 
 /*------------------------------------------------------------*/

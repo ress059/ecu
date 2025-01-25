@@ -38,7 +38,7 @@
  *      i = ecu_dlist_iterator_next(&iterator))
  * {
  *      // Retrieving and using user-defined data type stored in list.
- *      struct user_data *element = ecu_dlist_GET_ENTRY(i, struct user_data, node);
+ *      struct user_data *element = ECU_DNODE_GET_ENTRY(i, struct user_data, node);
  *      element->x = 10;
  *      element->y = 10;
  * }
@@ -81,7 +81,7 @@
  * never const struct my_type.
  * @param member Member name of the dlist node that @p ptr points to.
  */
-#define ECU_DLIST_GET_ENTRY(ptr, type, member)   ((type *)((uint8_t *)(ptr) - offsetof(type, member)))
+#define ECU_DNODE_GET_ENTRY(ptr, type, member)   ((type *)((uint8_t *)(ptr) - offsetof(type, member)))
 
 /**
  * @brief Retrieve const user-defined data stored in a dlist node. 
@@ -93,7 +93,7 @@
  * never const struct my_type.
  * @param member Member name of the dlist node that @p ptr points to.
  */
-#define ECU_DLIST_GET_CONST_ENTRY(ptr, type, member)    ((const type *)((const uint8_t *)(ptr) - offsetof(type, member)))
+#define ECU_DNODE_GET_CONST_ENTRY(ptr, type, member)    ((const type *)((const uint8_t *)(ptr) - offsetof(type, member)))
 
 /**
  * @brief Convience macro for @ref ecu_dlist_node_ctor().
@@ -241,7 +241,7 @@ extern "C" {
  * @param me Node to construct. This cannot be NULL.
  * @param destroy_0 Optional callback that defines additional cleanup 
  * needed to destroy your user-defined data stored in this node. 
- * @ref ecu_dlist_node_get_id() and @ref ECU_DLIST_GET_ENTRY() can
+ * @ref ecu_dlist_node_get_id() and @ref ECU_DNODE_GET_ENTRY() can
  * be used in your callback to retrieve your user-defined data. This
  * function is called when this node is apart of a list that is 
  * destroyed by @ref ecu_dlist_destroy(). This function also executes 
@@ -286,6 +286,8 @@ extern void ecu_dnode_destroy(struct ecu_dnode *me);
  * @note It is safe to use this in the middle of an iteration. The
  * newly added node will <b>not</b> be iterated over. 
  */
+
+// inserting before a HEAD node will make the node the new TAIL, not a new HEAD.!
 extern void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *position);
 
 /**
@@ -378,6 +380,13 @@ extern void ecu_dlist_destroy(struct ecu_dlist *me);
  */
 /**@{*/
 /**
+ * @brief TODO. Removes all dnodes from list but does not destroy them.
+ * 
+ * @param me 
+ */
+extern void ecu_dlist_clear(struct ecu_dlist *me);
+
+/**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
  * @brief Add node to front of the list.
@@ -410,11 +419,9 @@ extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node);
 // insert node at position
 // Insert a node in a location depending on a external condition. The cond() function 
 // checks if the node is to be inserted before the current node against which it is checked.
-// callback is not pointer to const to give user as much flexility as possible however
-// behavior is undefined if current node is removed/inserted elsewhere in the list.
 extern void ecu_dlist_insert_before(struct ecu_dlist *me, 
                                     struct ecu_dnode *node,
-                                    bool (*condition)(struct ecu_dnode *current, void *data),
+                                    bool (*condition)(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data),
                                     void *data);
 
 // TODO Add sort function.
@@ -425,15 +432,8 @@ extern void ecu_dlist_insert_before(struct ecu_dlist *me,
 // behavior undefined if supplied nodes to compare callback
 // are removed/added to list.
 extern void ecu_dlist_sort(struct ecu_dlist *me, 
-                           bool (*lhs_less_than_rhs)(struct ecu_dnode *lhs, struct ecu_dnode *rhs, void *data),
+                           bool (*lhs_less_than_rhs)(const struct ecu_dnode *lhs, const struct ecu_dnode *rhs, void *data),
                            void *data);
-
-/**
- * @brief TODO. Removes all dnodes from list but does not destroy them.
- * 
- * @param me 
- */
-extern void ecu_dlist_clear(struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().

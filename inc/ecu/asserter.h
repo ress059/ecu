@@ -36,7 +36,7 @@
      * used when compiling. Serves as a common interface that the application can use to
      * remain backwards compatible across various standards.
      * 
-     * 1. Expands to this when compiling with C++11 and greater or C23 and greater. 
+     * 1. Expands to this when compiling with C++11 and greater. 
      * Uses static_assert() natively supported by this standard.
      * @code{.c}
      * #define ECU_STATIC_ASSERT(check_, msg_)              static_assert((check_), msg_)

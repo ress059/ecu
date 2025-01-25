@@ -123,21 +123,21 @@ used to identify the type of each node.
         {
             case TYPE1:
             {
-                struct type1 *me = ECU_DLIST_GET_ENTRY(i, struct type1, node);
+                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type1, node);
                 me->a = 5;
                 break;
             }
 
             case TYPE2:
             {
-                struct type2 *me = ECU_DLIST_GET_ENTRY(i, struct type2, node);
+                struct type2 *me = ECU_DNODE_GET_ENTRY(i, struct type2, node);
                 me->b = 5;
                 break;
             }
 
             case TYPE3:
             {
-                struct type1 *me = ECU_DLIST_GET_ENTRY(i, struct type3, node);
+                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
                 me->c = 5;
                 break;
             }

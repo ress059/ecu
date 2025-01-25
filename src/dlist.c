@@ -37,7 +37,7 @@ faults when accessed. */
 
 /**
  * @brief Returns true if node has been properly constructed
- * via @ref ecu_dnode_ctor() or @ref ecu_dlist_ctor() if
+ * via @ref ecu_dnode_ctor(), or @ref ecu_dlist_ctor() if
  * supplied node is HEAD. False otherwise.
  */
 static bool node_valid(const struct ecu_dnode *node);
@@ -282,13 +282,30 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
     me->head.id      = ECU_OBJECT_ID_RESERVED;
 }
 
+void ecu_dlist_clear(struct ecu_dlist *me)
+{
+    struct ecu_dlist_iterator iterator;
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (list_valid(me)) );
+
+    for (struct ecu_dnode *node = ecu_dlist_iterator_begin(&iterator, me);
+         node != ecu_dlist_iterator_end(&iterator); 
+         node = ecu_dlist_iterator_next(&iterator))
+    {
+        ecu_dnode_remove(node);
+    }
+
+    /* Reset list values back to default. */
+    ecu_dlist_ctor(me);
+}
+
 void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
 {
     ECU_RUNTIME_ASSERT( (me && node) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dnode_insert_after(&me->head, node);
+    ecu_dnode_insert_after(node, &me->head);
 }
 
 void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
@@ -297,13 +314,13 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dnode_insert_before(&me->head, node);
+    ecu_dnode_insert_before(node, &me->head);
 }
 
 // TODO Debating whether condition should take in pointer to const or not. 
 void ecu_dlist_insert_before(struct ecu_dlist *me, 
                              struct ecu_dnode *node,
-                             bool (*condition)(struct ecu_dnode *current, void *data),
+                             bool (*condition)(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data),
                              void *data)
 {
     bool inserted = false;
@@ -314,10 +331,10 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
 
     for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, me);
-         i = ecu_dlist_iterator_end(&iterator);
+         i != ecu_dlist_iterator_end(&iterator);
          i = ecu_dlist_iterator_next(&iterator))
     {
-        if ((*condition)(i, data))
+        if ((*condition)(node, i, data))
         {
             ecu_dnode_insert_before(node, i);
             inserted = true;
@@ -334,7 +351,7 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
 }
 
 void ecu_dlist_sort(struct ecu_dlist *me, 
-                    bool (*lhs_less_than_rhs)(struct ecu_dnode *lhs, struct ecu_dnode *rhs, void *data),
+                    bool (*lhs_less_than_rhs)(const struct ecu_dnode *lhs, const struct ecu_dnode *rhs, void *data),
                     void *data)
 {
     /**
@@ -360,11 +377,14 @@ void ecu_dlist_sort(struct ecu_dlist *me,
      * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
      * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
      * SOFTWARE.
+     * 
+     * See https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html 
+     * for algorithm used.
      */
     ECU_RUNTIME_ASSERT( (me && lhs_less_than_rhs) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
-    bool merge, swap_q = false;
+    bool swap_q = false;
     size_t K = 1;
     size_t qsize, psize, nmerges = 0;
     struct ecu_dnode *e, *p, *q = (struct ecu_dnode *)0;
@@ -439,6 +459,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                 {
                     swap_q = false;
                     ecu_dnode_remove(e); /* Must remove before swapping. API requires added nodes to not be in a list. */
+                    !!!! assert firing here 
                     ecu_dnode_insert_before(p, q);
                 }
             }
@@ -456,23 +477,6 @@ void ecu_dlist_sort(struct ecu_dlist *me,
             K *= 2U;
         }
     }
-}
-
-void ecu_dlist_clear(struct ecu_dlist *me)
-{
-    struct ecu_dlist_iterator iterator;
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (list_valid(me)) );
-
-    for (struct ecu_dnode *node = ecu_dlist_iterator_begin(&iterator, me);
-         node != ecu_dlist_iterator_end(&iterator); 
-         node = ecu_dlist_iterator_next(&iterator))
-    {
-        ecu_dnode_remove(node);
-    }
-
-    /* Reset list values back to default. */
-    ecu_dlist_ctor(me);
 }
 
 size_t ecu_dlist_get_size(const struct ecu_dlist *me)

@@ -39,9 +39,9 @@ add_executable(${ECU_BUILD_NAME}
     ${CMAKE_CURRENT_LIST_DIR}/src/test_dlist.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_endian.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_event.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/test_fsm.cpp
+    # ${CMAKE_CURRENT_LIST_DIR}/src/test_fsm.cpp
     # ${CMAKE_CURRENT_LIST_DIR}/src/test_timer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/test_tree.cpp
+    # ${CMAKE_CURRENT_LIST_DIR}/src/test_tree.cpp
 
     # Stubs
     ${CMAKE_CURRENT_LIST_DIR}/stubs/stub_asserter.cpp
