@@ -584,7 +584,7 @@ TEST(DListDNodeCtors, NodeDestroy)
         /* Step 3: Assert. Verify only node2 was removed from list. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -613,7 +613,7 @@ TEST(DListDNodeCtors, ReconstructDestroyedNode)
         to the list. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -638,7 +638,7 @@ TEST(DListDNodeCtors, ListDestroy)
 
         /* Step 3: Assert. Fails if all node destroy callbacks are not called. */
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -666,7 +666,7 @@ TEST(DListDNodeCtors, ReconstructDestroyedList)
         should be re-added to the list. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -698,7 +698,7 @@ TEST(DNode, InsertBeforeHead)
         /* Step 3: Assert. Verify m_inserted_node is at the end of the list. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -726,7 +726,7 @@ TEST(DNode, InsertBeforeTail)
         /* Step 3: Assert. Verify m_inserted_node is before the tail (m_node3). */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -752,7 +752,7 @@ TEST(DNode, InsertBeforePositionNodeNotInList)
         /* Step 2: Action. */
         ecu_dnode_insert_before(&m_inserted_node, &m_node_not_in_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -766,7 +766,7 @@ TEST(DNode, InsertBeforePositionNodeNotInList)
         ecu_dnode_insert_before(&m_inserted_node, &m_list.head);
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -798,7 +798,7 @@ TEST(DNode, InsertBeforeAddNodeInList)
         /* Step 2: Action. Attempt to insert node from listA into listB. */
         ecu_dnode_insert_before(&m_node1, &m_inserted_node);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -829,7 +829,7 @@ TEST(DNode, InsertBeforeAddDestroyedNode)
         ecu_dnode_destroy(&m_inserted_node);
         ecu_dnode_insert_before(&m_inserted_node, &m_node3);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -858,7 +858,7 @@ TEST(DNode, InsertBeforeAddHeadNode)
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
         ecu_dnode_insert_before(&m_other_list.head, &m_node3);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -894,7 +894,7 @@ TEST(DNode, InsertAfterHead)
         /* Step 3: Assert. Verify m_inserted_node is one after HEAD. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -921,7 +921,7 @@ TEST(DNode, InsertAfterTail)
         /* Step 3: Assert. Verify m_inserted_node is now the tail. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -947,7 +947,7 @@ TEST(DNode, InsertAfterPositionNodeNotInList)
         /* Step 2: Action. */
         ecu_dnode_insert_after(&m_inserted_node, &m_node_not_in_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -961,7 +961,7 @@ TEST(DNode, InsertAfterPositionNodeNotInList)
         ecu_dnode_insert_after(&m_inserted_node, &m_node3);
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -993,7 +993,7 @@ TEST(DNode, InsertAfterAddNodeInList)
         /* Step 2: Action. Attempt to insert node from listA into listB. */
         ecu_dnode_insert_after(&m_node1, &m_inserted_node);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1024,7 +1024,7 @@ TEST(DNode, InsertAfterAddDestroyedNode)
         ecu_dnode_destroy(&m_inserted_node);
         ecu_dnode_insert_after(&m_inserted_node, &m_node3);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1053,7 +1053,7 @@ TEST(DNode, InsertAfterAddHeadNode)
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
         ecu_dnode_insert_after(&m_other_list.head, &m_node3);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1087,7 +1087,7 @@ TEST(DNode, Remove)
         /* Step 3: Assert. Verify list intact. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1116,7 +1116,7 @@ TEST(DNode, RemoveAndReAddNode)
         list_order_check_expectations(&m_list);
         list_order_check_expectations(&m_other_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1151,7 +1151,7 @@ TEST(DNode, RemoveHeadNode)
         /* Step 2: Action. */
         ecu_dnode_remove(&m_list.head);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1177,7 +1177,7 @@ TEST(DNode, GetID)
         /* Steps 2 and 3: Action and assert. */
         LONGS_EQUAL(TEST_OBJECT_ID, ecu_dnode_get_id(&m_node1));
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1203,7 +1203,7 @@ TEST(DNode, InList)
         CHECK_FALSE( (ecu_dnode_in_list(&m_inserted_node)) );
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1221,7 +1221,7 @@ TEST(DNode, InListHead)
         CHECK_TRUE( (ecu_dnode_in_list(&m_list.head)) );
         CHECK_TRUE( (ecu_dnode_in_list(&m_other_list.head)) );
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1253,7 +1253,7 @@ TEST(DList, Clear)
         list_order_check_expectations(&m_list);
         list_order_check_expectations(&m_other_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1284,7 +1284,7 @@ TEST(DList, PushFront)
         /* Step 3: Assert. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1316,7 +1316,7 @@ TEST(DList, PushFrontAddNodeInList)
         /* Step 2: Action. Attempt to insert node from listA into listB. */
         ecu_dlist_push_front(&m_other_list, &m_node1);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1347,7 +1347,7 @@ TEST(DList, PushFrontAddDestroyedNode)
         ecu_dnode_destroy(&m_inserted_node);
         ecu_dlist_push_front(&m_list, &m_inserted_node);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1376,7 +1376,7 @@ TEST(DList, PushFrontAddHeadNode)
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
         ecu_dlist_push_front(&m_list, &m_other_list.head);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1411,7 +1411,7 @@ TEST(DList, PushBack)
         /* Step 3: Assert. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1443,7 +1443,7 @@ TEST(DList, PushBackAddNodeInList)
         /* Step 2: Action. Attempt to insert node from listA into listB. */
         ecu_dlist_push_back(&m_other_list, &m_node1);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1474,7 +1474,7 @@ TEST(DList, PushBackAddDestroyedNode)
         ecu_dnode_destroy(&m_inserted_node);
         ecu_dlist_push_back(&m_list, &m_inserted_node);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1503,7 +1503,7 @@ TEST(DList, PushBackAddHeadNode)
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
         ecu_dlist_push_back(&m_list, &m_other_list.head);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1540,7 +1540,7 @@ TEST(DListInsertBefore, MiddleConditionPasses)
         /* Step 3: Assert. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1568,7 +1568,7 @@ TEST(DListInsertBefore, FirstConditionPasses)
         /* Step 3: Assert. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1595,7 +1595,7 @@ TEST(DListInsertBefore, AllConditionsFalse)
         /* Step 3: Assert. */
         list_order_check_expectations(&m_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1624,7 +1624,7 @@ TEST(DListInsertBefore, ConditionParameters)
 
         /* Step 3: Assert. Fails if condition function not called on all nodes. */
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1650,7 +1650,7 @@ TEST(DListInsertBefore, EmptyList)
         condition function ever called. */
         list_order_check_expectations(&m_other_list);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1682,7 +1682,7 @@ TEST(DListInsertBefore, AddNodeInList)
         /* Step 2: Action. Attempt to insert node from listA into listB. */
         ecu_dlist_insert_before(&m_other_list, &m_node1, &condition_stub_false, nullptr);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1712,7 +1712,7 @@ TEST(DListInsertBefore, AddDestroyedNode)
         ecu_dnode_destroy(&m_inserted_node);
         ecu_dlist_insert_before(&m_list, &m_inserted_node, &condition_stub_false, nullptr);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1740,7 +1740,7 @@ TEST(DListInsertBefore, AddHeadNode)
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
         ecu_dlist_insert_before(&m_list, &m_other_list.head, &condition_stub_false, nullptr);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* OK. */
         (void)e;
@@ -1786,7 +1786,7 @@ TEST(DListSort, UniqueSortEven)
         /* Step 3: Assert. Verify list correctly sorted. */
         list_sort_check_expectations();
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1822,7 +1822,7 @@ TEST(DListSort, UniqueSortOdd)
         /* Step 3: Assert. Verify list correctly sorted. */
         list_sort_check_expectations();
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1868,7 +1868,7 @@ TEST(DListSort, NonUniqueSortEven)
         /* Step 3: Assert. Verify list correctly sorted. */
         list_sort_check_expectations();
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -1916,7 +1916,7 @@ TEST(DListSort, NonUniqueSortOdd)
         /* Step 3: Assert. Verify list correctly sorted. */
         list_sort_check_expectations();
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;

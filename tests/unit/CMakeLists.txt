@@ -22,7 +22,7 @@ FetchContent_MakeAvailable(CppUTest)
 target_compile_options(CppUTest
     PRIVATE 
         # Save debug symbols for CppUTest.
-        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-g3>
+        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
 )
 
 #------------------------------------------------------------#
@@ -61,13 +61,13 @@ target_include_directories(${ECU_BUILD_NAME}
 target_compile_options(${ECU_BUILD_NAME}
     PRIVATE
         # C++ compiler flags. We know unit tests will be C++ so we can use this generator expression.
-        $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
-        $<$<CXX_COMPILER_ID:GNU>:-Wcast-align -Wstrict-overflow=2 -Wwrite-strings>
-        $<$<CXX_COMPILER_ID:GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wcast-align -Wstrict-overflow=2 -Wwrite-strings>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
 
         # Save debug symbols in our unit tests.
-        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-g3>
+        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
 )
 
 #------------------------------------------------------------#

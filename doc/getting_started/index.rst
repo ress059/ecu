@@ -172,13 +172,13 @@ named "ecu" to give scope to your #include directives.
     .. code-block:: c 
 
         /* ecu directory adds scope to avoid potential file name clashes. */
-        #include "ecu/circular_dll.h" 
+        #include "ecu/dlist.h" 
 
         /* All public types are appended with 'ecu_' to avoid polluting the global namespace. */
-        static struct ecu_circular_dll_node my_node; 
+        static struct ecu_dnode my_node; 
 
         /* All public functions are appended with 'ecu_' to avoid polluting the global namespace. */
-        ecu_circular_dll_node_ctor(&my_node, .....);
+        ecu_dnode_ctor(&my_node, .....);
 
 
 Next Steps

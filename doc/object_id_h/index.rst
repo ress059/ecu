@@ -45,7 +45,7 @@ with user-defined ID values. Some additional notes:
     - Object IDs reserved by ECU will always be negative.
 
     + Reserved object IDs greater than or equal to :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` 
-      enumeration can be assigned to an object. **Currently** :ecudoxygen:`ECU_OBJECT_ID_RESERVED` 
+      enumeration can be assigned to an object. **Currently** :ecudoxygen:`ECU_OBJECT_ID_UNUSED` 
       **is the only reserved ID available for use.**
       
       .. note:: 
@@ -105,9 +105,9 @@ used to identify the type of each node.
     /* Construct list and nodes. Assign object IDs to each node to identify
     their data types. */
     ecu_dlist_ctor(&list);
-    ecu_dlist_node_ctor(&type1_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
-    ecu_dlist_node_ctor(&type2_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
-    ecu_dlist_node_ctor(&type3_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
+    ecu_dnode_ctor(&type1_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
+    ecu_dnode_ctor(&type2_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
+    ecu_dnode_ctor(&type3_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
 
     /* Add nodes to list. */
     ecu_dlist_push_back(&list, &type2_node.node);
@@ -119,7 +119,7 @@ used to identify the type of each node.
          i != ecu_dlist_iterator_end(&iterator);
          i = ecu_dlist_iterator_next(&iterator))
     {
-        switch (ecu_dlist_node_get_id(i))
+        switch (ecu_dnode_get_id(i))
         {
             case TYPE1:
             {

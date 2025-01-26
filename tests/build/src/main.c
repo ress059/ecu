@@ -133,8 +133,8 @@ int main(void)
     /* Call some API functions */
     ECU_RUNTIME_ASSERT( (3 == 3) );
     ecu_dlist_ctor(&app_list);
-    ecu_dlist_node_ctor(&app_node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dlist_node_ctor(&app_node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&app_node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&app_node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
     ecu_fsm_ctor((struct ecu_fsm *)&app_fsm, &app_fsm_state);
     

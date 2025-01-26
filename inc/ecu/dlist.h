@@ -1,55 +1,15 @@
 /**
  * @file
- * @brief Circular doubly linked list without dynamic memory allocation. Provides list addition, 
- * removal, status, and iterators. Private class members denoted by 'PRIVATE' in descriptions 
- * are exposed to the Application so memory can easily be allocated at compile-time. Example use:
- * 
- * @code{.c}
- * #include <ecu/circular_dll.h>
- * 
- * struct user_data
- * {
- *     int x;
- *     struct ecu_dnode node;
- *     int y;
- * };
- * 
- * struct user_data data1;
- * struct user_data data2;
- * struct user_data data3;
- * 
- * struct ecu_dlist list;
- * 
- * // Constructing list and nodes. Not using node id or destroy callbacks in this example.
- * ecu_dlist_ctor(&list);
- * ecu_dlist_node_ctor(&data1.node, (void (*)(struct ecu_dnode *))0, ECU_OBJECT_ID_UNUSED);
- * ecu_dlist_node_ctor(&data2.node, (void (*)(struct ecu_dnode *))0, ECU_OBJECT_ID_UNUSED);
- * ecu_dlist_node_ctor(&data3.node, (void (*)(struct ecu_dnode *))0, ECU_OBJECT_ID_UNUSED);
- * 
- * // Adding nodes to list.
- * ecu_dlist_push_back(&list, &data1.node);
- * ecu_dlist_push_back(&list, &data2.node);
- * ecu_dlist_push_back(&list, &data3.node);
- * 
- * // Iterating through a list.
- * struct ecu_dlist_iterator iterator;
- * for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
- *      i != ecu_dlist_iterator_end(&iterator); 
- *      i = ecu_dlist_iterator_next(&iterator))
- * {
- *      // Retrieving and using user-defined data type stored in list.
- *      struct user_data *element = ECU_DNODE_GET_ENTRY(i, struct user_data, node);
- *      element->x = 10;
- *      element->y = 10;
- * }
- * @endcode
+ * @brief 
+ * @rst
+ * See :ref:`dlist.h section <dlist_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
  * @date 2024-04-05
  * @copyright Copyright (c) 2024
  */
-// intrusive linked list. data structure stored dlist and dlist_node.
 
 #ifndef ECU_DLIST_H_
 #define ECU_DLIST_H_
@@ -96,8 +56,8 @@
 #define ECU_DNODE_GET_CONST_ENTRY(ptr, type, member)    ((const type *)((const uint8_t *)(ptr) - offsetof(type, member)))
 
 /**
- * @brief Convience macro for @ref ecu_dlist_node_ctor().
- * @details Pass this value to @ref ecu_dlist_node_ctor() if 
+ * @brief Convience macro for @ref ecu_dnode_ctor().
+ * @details Pass this value to @ref ecu_dnode_ctor() if 
  * a user-defined node destructor is not needed.
  */
 #define ECU_DNODE_DESTROY_UNUSED            ((void (*)(struct ecu_dnode *, ecu_object_id))0)
@@ -127,7 +87,7 @@ struct ecu_dnode
      * @private
      * @brief PRIVATE. Optional user-defined node destructor.
      * @details Executes when @ref ecu_dlist_destroy() or 
-     * @ref ecu_dlist_node_destroy() is called.
+     * @ref ecu_dnode_destroy() is called.
      */
     void (*destroy)(struct ecu_dnode *me, ecu_object_id id);
 
@@ -232,7 +192,7 @@ extern "C" {
  * 
  * @warning @p me must not be an active node within a list, 
  * otherwise behavior is undefined.
- * @warning Do not call any list API functions (i.e. @ref ecu_dlist_node_destroy())
+ * @warning Do not call any list API functions (i.e. @ref ecu_dlist_destroy())
  * within your @p destroy_0 callback, otherwise behavior is undefined.
  * This callback should define any <b>additional</b> cleanup needed 
  * to destroy your user-defined data stored in this node. Cleanup of
@@ -241,11 +201,11 @@ extern "C" {
  * @param me Node to construct. This cannot be NULL.
  * @param destroy_0 Optional callback that defines additional cleanup 
  * needed to destroy your user-defined data stored in this node. 
- * @ref ecu_dlist_node_get_id() and @ref ECU_DNODE_GET_ENTRY() can
+ * @ref ecu_dnode_get_id() and @ref ECU_DNODE_GET_ENTRY() can
  * be used in your callback to retrieve your user-defined data. This
  * function is called when this node is apart of a list that is 
  * destroyed by @ref ecu_dlist_destroy(). This function also executes 
- * when @ref ecu_dlist_node_destroy() is called on this node. Supply 
+ * when @ref ecu_dnode_destroy() is called on this node. Supply 
  * @ref ECU_DNODE_DESTROY_UNUSED if unused.
  * @param id_0 Optional ID user can assign to each node to identify
  * different types stored in the same list. Supply @ref ECU_OBJECT_ID_UNUSED
@@ -256,10 +216,10 @@ extern void ecu_dnode_ctor(struct ecu_dnode *me,
                            ecu_object_id id_0);
 
 /**
- * @pre @p me previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Node destructor.
  * @details Removes node if it is in a list. Executes the user-defined 
- * destructor if one was supplied to @ref ecu_dlist_node_ctor().
+ * destructor if one was supplied to @ref ecu_dnode_ctor().
  * 
  * @param me Node to destroy. This cannot be HEAD node in @ref ecu_dlist.
  */
@@ -272,7 +232,7 @@ extern void ecu_dnode_destroy(struct ecu_dnode *me);
 /**@{*/
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p position and @p node previously constructed via calls to @ref ecu_dlist_node_ctor().
+ * @pre @p position and @p node previously constructed via calls to @ref ecu_dnode_ctor().
  * @brief Add node before position node.
  * 
  * @param me List to add to.

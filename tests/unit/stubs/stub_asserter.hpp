@@ -16,7 +16,7 @@
  *     {
  *         test_some_ecu_code();
  *     }
- *     catch (AssertException& e)
+ *     catch (const AssertException& e)
  *     {
  *         // Allows control to jump back here if test code in try 
  *         // block causes an ECU assert to fire.

@@ -394,6 +394,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
     {
         p = me->head.next;
         ECU_RUNTIME_ASSERT( (node_valid(p)) );
+        nmerges = 0;
 
         while (p != HEAD)
         {
@@ -459,8 +460,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                 {
                     swap_q = false;
                     ecu_dnode_remove(e); /* Must remove before swapping. API requires added nodes to not be in a list. */
-                    !!!! assert firing here 
-                    ecu_dnode_insert_before(p, q);
+                    ecu_dnode_insert_before(e, p);
                 }
             }
 

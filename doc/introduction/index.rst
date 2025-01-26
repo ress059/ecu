@@ -87,7 +87,7 @@ to give your application additional scope when using #include directives. For ex
     .. code-block:: c
 
         /* ecu directory adds scope to your include paths. */
-        #include "ecu/circular_dll.h"
+        #include "ecu/dlist.h"
 
 ``src/``: ECU source code. This should be compiled with your project's toolchain. If you are 
 using CMake, ECU's build system assists with this.

@@ -96,7 +96,7 @@ TEST(Asserter, DefineNameMacro)
         ECU_RUNTIME_ASSERT( (false) );
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
@@ -104,7 +104,7 @@ TEST(Asserter, DefineNameMacro)
 
 /**
  * @brief Verify file name is correct when assert fires
- * in circular_dll.c
+ * in dlist.c
  */
 TEST(Asserter, ECUDListAssert)
 {
@@ -117,7 +117,7 @@ TEST(Asserter, ECUDListAssert)
         ecu_dlist_ctor(reinterpret_cast<ecu_dlist *>(0));
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
@@ -138,7 +138,7 @@ TEST(Asserter, ECUEventAssert)
         ecu_event_ctor(reinterpret_cast<ecu_event *>(0), 0);
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
@@ -159,7 +159,7 @@ TEST(Asserter, ECUFsmAssert)
         ecu_fsm_ctor(reinterpret_cast<ecu_fsm *>(0), reinterpret_cast<const ecu_fsm_state *>(0));
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
@@ -189,7 +189,7 @@ TEST(Asserter, ECUHsmAssert)
 //         ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), (void *)0, (bool (*)(void *))0);
 //     }
 
-//     catch (AssertException& e)
+//     catch (const AssertException& e)
 //     {
 //         (void)e;
 //     }
@@ -210,7 +210,7 @@ TEST(Asserter, ECUTreeAssert)
         ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
     }
 
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }

@@ -80,7 +80,7 @@ TEST(Event, EventCtorValidID)
         /* Step 3: Assert. Verify valid ID was assigned to event. */
         ENUMS_EQUAL_INT(VALID_EVENT_ID, m_event.id);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;
@@ -102,7 +102,7 @@ TEST(Event, EventCtorInvalidID)
         /* Step 2: Action. */
         ecu_event_ctor(&m_event, INVALID_EVENT_ID);
     }
-    catch (AssertException& e)
+    catch (const AssertException& e)
     {
         /* FAIL. */
         (void)e;

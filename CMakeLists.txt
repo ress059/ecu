@@ -68,13 +68,13 @@ endif()
 target_compile_options(ecu 
     PRIVATE
         # C compiler flags. We know ECU is a C library so we can use this generator expression.
-        $<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fstack-usage -fno-common>
-        $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
-        $<$<C_COMPILER_ID:GNU>:-Wcast-align -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
-        $<$<C_COMPILER_ID:GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fstack-usage -fno-common>
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-align -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
 
         # Compiler flags specific to Debug builds
-        $<$<AND:$<CONFIG:Debug>,$<C_COMPILER_ID:GNU>>:-g3>
+        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
 )
 
 # Warn the user that run-time asserts are being disabled. It is
@@ -93,7 +93,7 @@ if(${ECU_DISABLE_RUNTIME_ASSERTS})
     # assert macros. Use -Wno to suppress these warnings.
     target_compile_options(ecu
         PRIVATE
-            $<$<C_COMPILER_ID:GNU>:-Wno-unused-function>
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function>
     )
 endif()
 

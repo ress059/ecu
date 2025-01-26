@@ -51,10 +51,9 @@ if any parameters have to change but that is the same case for run-time function
 
 
 ## Circular DLL
-0. **Add a const iterator**
+0. Cleanup dlist.h/.c. Finish unit tests.
 
-1. Allow node to be added/removed anywhere in the list...that's the point of a linked list...
-Currently only support push_back(). Add tests for this.
+1. Rewrite entire doxygen documentation.
 
 2. Refactor timer since it uses old linked list.
 
@@ -106,6 +105,8 @@ so this only applies to GCC. I.e.
 
 ## Unit Tests
 1. Change all class members from _ to m_. Example change event_; to m_event;
+2. In all unit tests do catch a const exception instead of nonconst exception.
+I.e. catch (const AssertException&) instead of catch (AssertException&)
 
 
 ## Build system and syntax
