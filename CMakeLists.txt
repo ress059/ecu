@@ -90,7 +90,7 @@ if(${ECU_DISABLE_RUNTIME_ASSERTS})
     )
 
     # Some functions will now be unused because they are called within 
-    # assert macros. Use -Wno to suppress these warnings.
+    # assert macros. Use -Wno-unused-function to suppress these warnings.
     target_compile_options(ecu
         PRIVATE
             $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function>

@@ -80,6 +80,8 @@ so this only applies to GCC. I.e.
 1. When adding a new timer, order list nodes by timeout ticks (timer closest to timing
 out is at HEAD). This way ecu_timer_collection_tick() only has to check HEAD instead of
 iterating through entire list.
+2. When applicable use the ECU_DLIST_FOR_EACH() macros intead of manually iterating
+through list.
 
 
 

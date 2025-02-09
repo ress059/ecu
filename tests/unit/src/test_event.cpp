@@ -1,6 +1,17 @@
 /**
  * @file
  * @brief Unit tests for public API functions in @ref event.h. 
+ * Test Summary:
+ * 
+ * enum ecu_reserved_event_ids
+ *      - TEST(Event, UserEventIDBegin)
+ * 
+ * ECU_EVENT_IS_BASE_OF()
+ *      - TEST(Event, IsBaseOfMacro)
+ * 
+ * ecu_event_ctor()
+ *      - TEST(Event, EventCtorValidID)
+ *      - TEST(Event, EventCtorInvalidID)
  * 
  * @author Ian Ress 
  * @version 0.1
@@ -40,6 +51,20 @@ TEST_GROUP(Event)
         VALID_EVENT_ID = ECU_USER_EVENT_ID_BEGIN
     };
 
+    struct valid_event
+    {
+        ecu_event base;
+        int a;
+        int b;
+    };
+
+    struct invalid_event
+    {
+        int a;
+        ecu_event base;
+        int b;
+    };
+
     void setup() override 
     {
         set_assert_handler(AssertResponse::FAIL);
@@ -65,6 +90,17 @@ TEST(Event, UserEventIDBegin)
 {
     /* Step 3: Assert. Verify ECU_USER_EVENT_ID_BEGIN is 0. */
     ENUMS_EQUAL_INT(0, ECU_USER_EVENT_ID_BEGIN);
+}
+
+/**
+ * @brief Only verifies C-style inhertiance. C++ inheritance not
+ * supported since type traits can be used instead.
+ */
+TEST(Event, IsBaseOfMacro)
+{
+    /* Step 3: Assert. */
+    CHECK_TRUE( (ECU_EVENT_IS_BASE_OF(base, valid_event)) );
+    CHECK_FALSE( (ECU_EVENT_IS_BASE_OF(base, invalid_event)) );
 }
 
 TEST(Event, EventCtorValidID)

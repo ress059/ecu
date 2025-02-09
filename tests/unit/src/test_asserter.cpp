@@ -2,6 +2,16 @@
  * @file
  * @brief Unit tests for public API functions in @ref asserter.h. ECU_DISABLE_RUNTIME_ASSERTS
  * must NOT be defined.
+ * Test Summary:
+ * 
+ * ECU_ASSERT_DEFINE_NAME(), ECU_RUNTIME_ASSERT(), ecu_assert_handler()
+ *      - TEST(Asserter, DefineNameMacro)
+ *      - TEST(Asserter, ECUDListAssert)
+ *      - TEST(Asserter, ECUEventAssert)
+ *      - TEST(Asserter, ECUFsmAssert)
+ *      - TEST(Asserter, ECUHsmAssert)
+ *      - TEST(Asserter, ECUTimerAssert)
+ *      - TEST(Asserter, ECUTreeAssert)
  * 
  * @author Ian Ress
  * @version 0.1

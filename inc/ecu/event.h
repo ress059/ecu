@@ -29,25 +29,27 @@
 
 /**
  * @brief Verify user-defined event correctly inherits @ref ecu_event.
- * @details Returns true if @ref ecu_event is a base class of @p derived.
+ * @details Returns true if @ref ecu_event is a base class of @p derived_.
  * False otherwise. This macro is meant to be used at compile-time.
  * 
- * @param base Name of @ref ecu_event member declared in user's @p derived type.
- * @param derived User-defined event type that inherits @ref ecu_event base class.
+ * @param base_ Name of @ref ecu_event member declared in user's @p derived_ type.
+ * @param derived_ User-defined event type that inherits @ref ecu_event base class.
  * I.e. struct derived_event.
  */
-#define ECU_EVENT_IS_BASE_OF(base, derived)     ((bool)(offsetof(derived, base) == (size_t)(0)))
+#define ECU_EVENT_IS_BASE_OF(base_, derived_) \
+    ((bool)(offsetof(derived_, base_) == (size_t)(0)))
 
 /**
- * @brief Upcasts derived event class pointer @p e to an @ref ecu_event 
+ * @brief Upcasts derived event class pointer @p e_ to an @ref ecu_event 
  * base class pointer.
  * @details This macro should be used when dispatching derived events to 
  * ECU library functions.
  * 
- * @param e Pointer to user-defined event that inherits @ref ecu_event. 
+ * @param e_ Pointer to user-defined event that inherits @ref ecu_event. 
  * This can be a pointer to const or non-const.
  */
-#define ECU_EVENT_BASE_CAST(e)                  ((const struct ecu_event *)(e))
+#define ECU_EVENT_BASE_CAST(e_) \
+    ((const struct ecu_event *)(e_))
 
 /*------------------------------------------------------------*/
 /*------------------------ EVENT IDS -------------------------*/

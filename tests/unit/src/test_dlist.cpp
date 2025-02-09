@@ -1,114 +1,99 @@
 /**
  * @file
- * @brief Unit tests for public API functions in @ref ecu_dlist.h
+ * @brief Unit tests for public API functions in @ref ecu_dlist.h.
+ * Test Summary:
+ * 
+ * ECU_DNODE_GET_ENTRY() and ECU_DNODE_GET_CONST_ENTRY()
+ *      - TEST(DListMacros, GetEntryRead)
+ *      - TEST(DListMacros, GetEntryWrite)
+ *      - TEST(DListMacros, GetConstEntry)
+ * 
+ * ecu_dnode_ctor(), ecu_dnode_destroy(), ecu_dlist_ctor(), ecu_dlist_destroy()
+ *      - TEST(DListDNodeCtors, NodeDestroy)
+ *      - TEST(DListDNodeCtors, ReconstructDestroyedNode)
+ *      - TEST(DListDNodeCtors, ListDestroy)
+ *      - TEST(DListDNodeCtors, ReconstructDestroyedList)
+ * 
+ * ecu_dnode_insert_before()
+ *      - TEST(DNode, InsertBeforeHead)
+ *      - TEST(DNode, InsertBeforeTail)
+ *      - TEST(DNode, InsertBeforePositionNodeNotInList)
+ *      - TEST(DNode, InsertBeforeAddNodeInList)
+ *      - TEST(DNode, InsertBeforeAddDestroyedNode)
+ *      - TEST(DNode, InsertBeforeAddHeadNode)
+ * 
+ * ecu_dnode_insert_after()
+ *      - TEST(DNode, InsertAfterHead)
+ *      - TEST(DNode, InsertAfterTail)
+ *      - TEST(DNode, InsertAfterPositionNodeNotInList)
+ *      - TEST(DNode, InsertAfterAddNodeInList)
+ *      - TEST(DNode, InsertAfterAddDestroyedNode)
+ *      - TEST(DNode, InsertAfterAddHeadNode)
+ * 
+ * ecu_dnode_remove()
+ *      - TEST(DNode, Remove)
+ *      - TEST(DNode, RemoveAndReAddNode)
+ *      - TEST(DNode, RemoveNodeNotInList)
+ *      - TEST(DNode, RemoveHeadNode)
+ * 
+ * ecu_dnode_in_list()
+ *      - TEST(DNode, InList)
+ *      - TEST(DNode, InListHead)
+ * 
+ * ecu_dnode_get_id()
+ *      - TEST(DNode, GetID)
+ * 
+ * ecu_dlist_clear()
+ *      - TEST(DList, Clear)
+ * 
+ * ecu_dlist_push_front()
+ *      - TEST(DList, PushFront)
+ *      - TEST(DList, PushFrontAddNodeInList)
+ *      - TEST(DList, PushFrontAddDestroyedNode)
+ *      - TEST(DList, PushFrontAddHeadNode)
+ * 
+ * ecu_dlist_push_back()
+ *      - TEST(DList, PushBack)
+ *      - TEST(DList, PushBackAddNodeInList)
+ *      - TEST(DList, PushBackAddDestroyedNode)
+ *      - TEST(DList, PushBackAddHeadNode)
+ * 
+ * ecu_dlist_insert_before()
+ *      - TEST(DListInsertBefore, MiddleConditionPasses)
+ *      - TEST(DListInsertBefore, FirstConditionPasses)
+ *      - TEST(DListInsertBefore, AllConditionsFalse)
+ *      - TEST(DListInsertBefore, ConditionParameters)
+ *      - TEST(DListInsertBefore, EmptyList)
+ *      - TEST(DListInsertBefore, AddNodeInList)
+ *      - TEST(DListInsertBefore, AddDestroyedNode)
+ *      - TEST(DListInsertBefore, AddHeadNode)
+ * 
+ * ecu_dlist_sort()
+ *      - TEST(DListSort, UniqueSortEven)
+ *      - TEST(DListSort, UniqueSortOdd)
+ *      - TEST(DListSort, NonUniqueSortEven)
+ *      - TEST(DListSort, NonUniqueSortOdd)
+ * 
+ * ecu_dlist_get_size()
+ *      - TEST(DListBase, GetSizeGeneralTest)
+ * 
+ * ecu_dlist_is_empty()
+ *      - TEST(DListBase, IsEmptyGeneralTest)
+ * 
+ * ECU_DLIST_FOR_EACH(), ECU_DLIST_CONST_FOR_EACH(), ecu_dlist_iterator_begin(),
+ * ecu_dlist_iterator_end(), ecu_dlist_iterator_next(), ecu_dlist_const_iterator_begin(),
+ * ecu_dlist_const_iterator_end(), ecu_dlist_const_iterator_next()
+ *      - TEST(DList, IteratorGeneralTest)
+ *      - TEST(DList, CIteratorGeneralTest)
+ *      - TEST(DList, IterateOverEmptyList)
+ *      - TEST(DList, CIterateOverEmptyList)
+ *      - TEST(DList, RemoveNodesInMiddleOfIteration)
  * 
  * @author Ian Ress
  * @version 0.1
  * @date 2024-03-02
  * @copyright Copyright (c) 2024
  */
-
-
-/*
-TESTS ADDED AFTER REFACTORING
-1. ECU_DNODE_GET_ENTRY(), ECU_DNODE_GET_CONST_ENTRY()
-- DONE 
-
-2. ecu_dnode_ctor(), ecu_dnode_destroy(), ecu_dlist_ctor(), ecu_dlist_destroy() 
-DONE
-- NodeDestroy: node's destroy callback called.
-- ReconstructDestroyedNode: reconstructing destroyed node allows it to be readded to a list (used again). 
-- ReconstructDestroyedList: reconstructing destroyed list makes it useable again. 
-
-3. ecu_dnode_insert_before()
-DONE
-- InsertBeforeHead: can insert node before head. added node should be TAIL. 
-- InsertBeforeTail: can insert node before tail. added node should be one before TAIL. 
-- InsertBeforePositionNodeNotInList: can't insert if position node not in list. 
-- InsertBeforeAddNodeInList: can't insert if node already in list. 
-- InsertBeforeAddDestroyedNode: Can't insert destroyed node. 
-- InsertBeforeAddHeadNode: Node can't be HEAD.
-
-4. ecu_dnode_insert_after()
-DONE
-- InsertAfterHead: can insert node after head. added node should be one after HEAD. 
-- InsertAfterTail: can insert node after TAIL. added node should be the new TAIL.
-- InsertAfterPositionNodeNotInList: can't insert if position node not in list. 
-- InsertAfterAddNodeInList: can't insert if node is already in list. 
-- InsertAfterAddDestroyedNode: Can't insert destroyed node. 
-- InsertAfterAddHeadNode: Node can't be HEAD.
-
-5. ecu_dnode_remove()
-DONE
-- Remove node in middle of list. Verify list still intact.
-- Can re-add a removed node. Remove node from listA and add node to listB. Verify with iterators.
-- Can't remove node not in list. 
-- Can't remove HEAD node. 
-
-6. ecu_dnode_in_list()
-DONE
-- Just add and remove node from list and verify function returns true/false. 
-- Returns true if HEAD is supplied.
-
-7. ecu_dnode_get_id() 
-DONE. Did trivial test mainly for code coverage.
-- Dont think I need to test this..trivial.. 
-
-12. ecu_dlist_clear()
-DONE
-- All nodes removed from list but nodes can be re-used. 
-- Node destroy callbacks are NOT called.
-
-8. ecu_dlist_push_front() 
-DONE
-- Adds node one after HEAD. 
-- Can't add destroyed node. 
-- Node can't be HEAD. 
-- Node can't be in a list.
-
-9. ecu_dlist_push_back() 
-DONE
-- Makes node the new TAIL. 
-- Can't add destroyed node. 
-- Node can't be HEAD. 
-- Node can't be in a list. 
-
-10. ecu_dlist_insert_before() 
-DONE
-- Verify node placed right before condition passes. Only make condition for one node pass. 
-- Verify node is new TAIL if condition fails for all nodes. 
-- Verify node is new TAIL if list is empty.
-- Verify all nodes in linked list are passed to condition function (besides HEAD). Use mock to verify (struct ecu_dnode *current) 
-  for each node iteration. 
-- Have multiple condition functions pass. Verify node is added before the first condition pass ( 
-  all other passed conditions do not matter).
-- Node can't be HEAD. 
-- Node can't be in a list. 
-
-11. ecu_dlist_sort()
-TODO
-- List is sorted correctly. 
-
-13. ecu_dlist_get_size()
-- Just add/remove nodes and verify size is correct. 
-TODO
-
-14. ecu_dlist_is_empty()
-TODO 
-- Just add/remove nodes and verify function returns correct status.
-
-15. non-const iterator 
-TODO
-- General iterator test. Verify iterator goes over all nodes in correct order. 
-- Verify it is safe to remove nodes in middle of iteration. 
-- Iterating over empty list is OK and immediately returns (doesn't go over any nodes).
-- It is OK to use ecu_dnode_insert_after() and ecu_dnode_insert_before() in the middle of an iteration. 
-    After adding, iterate over the list again and just verify nodes are in proper place and list still intact.
-
-16. const iterator 
-TODO
-- General iterator test. Verify iterator goes over all nodes in correct order. 
-*/
 
 /*------------------------------------------------------------*/
 /*------------------------- INCLUDES -------------------------*/
@@ -186,9 +171,14 @@ static void EXPECT_NODE_DESTROYED(ecu_dnode *node);
 static void EXPECT_NODE_IN_LIST(const ecu_dlist *list, const ecu_dnode *node);
 
 /**
- * @brief Mock to assign to node's destroy callback.
+ * @brief Actual mock call to node's destroy callback.
  */
 static void node_destroy_mock(ecu_dnode *node, ecu_object_id id);
+
+/**
+ * @brief Actual mock call that node is in the list.
+ */
+static void node_in_list_mock(const ecu_dlist *list, const ecu_dnode *node);
 
 /**
  * @brief Iterates over all nodes in a list and calls 
@@ -219,8 +209,14 @@ static void EXPECT_NODE_IN_LIST(const ecu_dlist *list, const ecu_dnode *node)
 static void node_destroy_mock(ecu_dnode *node, ecu_object_id id)
 {
     (void)id;
-    assert( (node) );
     mock().actualCall(__func__)
+          .withParameter("node", node);
+}
+
+static void node_in_list_mock(const ecu_dlist *list, const ecu_dnode *node)
+{
+    mock().actualCall("node_in_list_mock")
+          .withParameter("list", list)
           .withParameter("node", node);
 }
 
@@ -233,9 +229,7 @@ static void list_order_check_expectations(const ecu_dlist *list)
          i != ecu_dlist_const_iterator_end(&citerator);
          i = ecu_dlist_const_iterator_next(&citerator))
     {
-        mock().actualCall("node_in_list_mock")
-              .withParameter("list", list)
-              .withParameter("node", i);
+        node_in_list_mock(list, i);
     }
 }
 
@@ -289,7 +283,7 @@ TEST_GROUP(DListDNodeCtors)
     ecu_dnode m_node3;
 };
 
-TEST_GROUP(DNode)
+TEST_GROUP(DListBase)
 {
     void setup() override
     {
@@ -302,12 +296,6 @@ TEST_GROUP(DNode)
         ecu_dnode_ctor(&m_node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_inserted_node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_node_not_in_list, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-        /* HEAD, 1, 2, 3. Use dnode_insert() functions instead of push_back()
-        since this module tests insert() functions. Avoids dependencies. */
-        ecu_dnode_insert_after(&m_node1, &m_list.head);
-        ecu_dnode_insert_after(&m_node2, &m_node1);
-        ecu_dnode_insert_after(&m_node3, &m_node2);
     }
 
     void teardown() override
@@ -316,6 +304,8 @@ TEST_GROUP(DNode)
         mock().clear();
     }
 
+    ecu_dlist_iterator m_iterator;
+    ecu_dlist_const_iterator m_citerator;
     ecu_dlist m_list;
     ecu_dlist m_other_list;
     ecu_dnode m_node1;
@@ -325,38 +315,30 @@ TEST_GROUP(DNode)
     ecu_dnode m_node_not_in_list;
 };
 
-TEST_GROUP(DList)
+TEST_GROUP_BASE(DNode, TEST_GROUP_CppUTestGroupDListBase)
 {
     void setup() override
     {
-        set_assert_handler(AssertResponse::FAIL);
+        TEST_GROUP_CppUTestGroupDListBase::setup();
 
-        ecu_dlist_ctor(&m_list);
-        ecu_dlist_ctor(&m_other_list);
-        ecu_dnode_ctor(&m_node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        ecu_dnode_ctor(&m_node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        ecu_dnode_ctor(&m_node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        ecu_dnode_ctor(&m_inserted_node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        ecu_dnode_ctor(&m_node_not_in_list, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        /* HEAD, 1, 2, 3. Use dnode_insert() functions instead of push_back()
+        since this module tests insert() functions. Avoids dependencies. */
+        ecu_dnode_insert_after(&m_node1, &m_list.head);
+        ecu_dnode_insert_after(&m_node2, &m_node1);
+        ecu_dnode_insert_after(&m_node3, &m_node2);
+    }
+};
+
+TEST_GROUP_BASE(DList, TEST_GROUP_CppUTestGroupDListBase)
+{
+    void setup() override
+    {
+        TEST_GROUP_CppUTestGroupDListBase::setup();
 
         ecu_dlist_push_back(&m_list, &m_node1);
         ecu_dlist_push_back(&m_list, &m_node2);
         ecu_dlist_push_back(&m_list, &m_node3);
     }
-
-    void teardown() override
-    {
-        mock().checkExpectations();
-        mock().clear();
-    }
-
-    ecu_dlist m_list;
-    ecu_dlist m_other_list;
-    ecu_dnode m_node1;
-    ecu_dnode m_node2;
-    ecu_dnode m_node3;
-    ecu_dnode m_inserted_node;
-    ecu_dnode m_node_not_in_list;
 };
 
 TEST_GROUP(DListInsertBefore)
@@ -1130,7 +1112,6 @@ TEST(DNode, RemoveAndReAddNode)
  */
 // TEST(DNode, RemoveNodeNotInList)
 // {
-
 // }
 
 /**
@@ -1159,29 +1140,6 @@ TEST(DNode, RemoveHeadNode)
 
     /* Step 3: Assert. Verify list intact. */
     list_order_check_expectations(&m_list);
-}
-
-/*------------------------------------------------------------*/
-/*-------------------- TESTS - DNODE GET ID ------------------*/
-/*------------------------------------------------------------*/
-
-TEST(DNode, GetID)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        static constexpr int TEST_OBJECT_ID = 2;
-        ecu_dlist_destroy(&m_list);
-        ecu_dnode_ctor(&m_node1, ECU_DNODE_DESTROY_UNUSED, TEST_OBJECT_ID);
-
-        /* Steps 2 and 3: Action and assert. */
-        LONGS_EQUAL(TEST_OBJECT_ID, ecu_dnode_get_id(&m_node1));
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
 }
 
 /*------------------------------------------------------------*/
@@ -1220,6 +1178,29 @@ TEST(DNode, InListHead)
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dnode_in_list(&m_list.head)) );
         CHECK_TRUE( (ecu_dnode_in_list(&m_other_list.head)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*-------------------- TESTS - DNODE GET ID ------------------*/
+/*------------------------------------------------------------*/
+
+TEST(DNode, GetID)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        static constexpr int TEST_OBJECT_ID = 2;
+        ecu_dlist_destroy(&m_list);
+        ecu_dnode_ctor(&m_node1, ECU_DNODE_DESTROY_UNUSED, TEST_OBJECT_ID);
+
+        /* Steps 2 and 3: Action and assert. */
+        LONGS_EQUAL(TEST_OBJECT_ID, ecu_dnode_get_id(&m_node1));
     }
     catch (const AssertException& e)
     {
@@ -1923,689 +1904,209 @@ TEST(DListSort, NonUniqueSortOdd)
     }
 }
 
-
-
-
-
-// 1. push_front() adds node in front of list.
-// 2. Cannot push_front() where node is in another list.
-// 3. Cannot push_front() where node is HEAD of this list.
-// 4. Cannot push_front() where node is HEAD of another list.
-// 5. Cannot push_front() node with invalid ID.
-// 6 to 10. Repeat same tests for push_back().
-
-
-// remove() does not change dnode's destroy function or ID.
-// Cannot remove() HEAD.
-// Cannot remove() node not in a list.
-
-// 4. Test get_size() by calling push_front(), push_back(), dnode_insert_before(), dnode_insert_after() and remove(). general insert and removal test.
-// 15. Cannot remove() node not in list.
-// 16. Cannot remove() node in another list.
-// 19. General iterator test. Verify iterator goes over all nodes in correct order. (set ids, mock strict order).
-// 20. Using push_front() in middle of iteration is OK. These nodes WON'T be iterated over.
-// 21. Using push_back() in middle of iteration is OK. These nodes WILL be iterated over.
-// 22. Using dnode_insert_before() in middle of iteration is OK. These nodes WON'T be iterated over.
-// 23. Using dnode_insert_after() in middle of iteration is OK. These nodes WON'T be itreated over.
-// 24. Using remove() in middle of iteration is OK if it is on nodes BEFORE and AT current.
-
-// 25. Using remove() in middle of iteration on nodes AFTER current is NOT ok.
-// 26. Iterating over empty list is ok. verify begin() == end() == next()
-// 27. General is_empty() test. Can just do one call of push_front() and remove(). Don't overcomplicate it.
-// */
-
-
-
-// TEST(??, EcuDListGetEntryMacro)
-// {
-
-// }
-
-
-// TEST(??, ConstructorDestructorTest)
-// {
-
-// }
-
-// TEST(??, NodeDestructorCallbacks)
-// {
-
-// }
-
-// // general test for insert(), remove(), push_back(), push_front(), and get_size().
-// TEST(??, GetSize)
-// {
-
-// }
-
-// TEST(??, NodeIDsAvailableInDestructor)
-// {
-
-// }
-
-// TEST(??, InsertAddsNodeBeforePosition)
-// {
-
-// }
-
-// // cant insert node that is in another list.
-// TEST(??, CannotInsertNodeInAnotherList)
-// {
-
-// }
-
-// TEST(??, CannotInsertNodeAlreadyInThisList)
-// {
-
-// }
-
-// // cannnot insert node when position is a node from another list.
-// TEST(??, CannotInsertNodeToAnotherList)
-// {
-
-// }
-
-// TEST(??, CannotRemoveNodeNotInList)
-// {
-
-// }
-
-// TEST(??, CannotRemoveNodeFromAnotherList)
-// {
-
-// }
-
-// // push front adds node to front of list.
-// TEST(??, PushFront)
-// {
-
-// }
-
-// // push back adds node to back of list.
-// TEST(??, PushBack)
-// {
-
-// }
-
-// // verify iterator goes over all nodes
-// TEST(??, GeneralIteratorTest)
-// {
-
-// }
-
-// // it is OK to do push front. These nodes WONT be iterated over.
-// TEST(??, PushFrontDuringIteration)
-// {
-
-// }
-
-// // it is OK to do push back.
-// TEST(??, PushBackDuringIteration)
-// {
-
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * @brief Construct list and nodes, add nodes to list, and call list destructor.
-//  * Repeat process multiple times in a row and verify no assert fires since this
-//  * should be defined behavior.
-//  */
-// TEST(CircularDLL, ConstructorDestructorTest)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. Done in setup(). */
-
-//         /* Steps 2 and 3: Action and assert. */
-//         /* First sequence. */
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         ecu_circular_dll_destroy(&list_);
-
-//         /* Second sequence. */
-//         ecu_circular_dll_ctor(&list_);
-//         ecu_circular_dll_node_ctor(&node1_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node2_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node3_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         ecu_circular_dll_destroy(&list_);
-
-//         /* Third sequence. */
-//         ecu_circular_dll_ctor(&list_);
-//         ecu_circular_dll_node_ctor(&node1_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node2_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node3_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         ecu_circular_dll_destroy(&list_);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL */
-//     }
-// }
-
-
-// TEST(CircularDLL, AllNodeDestructorCallbacksCalled)
-// {
-//     struct NodeDestroyMock dnode1_;
-//     struct NodeDestroyMock dnode2_;
-//     struct NodeDestroyMock dnode3_;
-
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         mock().expectOneCall("NodeDestroyMock::destroy")
-//               .onObject(static_cast<struct ecu_circular_dll_node *>(&dnode1_));
-
-//         mock().expectOneCall("NodeDestroyMock::destroy")
-//               .onObject(static_cast<struct ecu_circular_dll_node *>(&dnode2_));
-
-//         mock().expectOneCall("NodeDestroyMock::destroy")
-//               .onObject(static_cast<struct ecu_circular_dll_node *>(&dnode3_));   
-
-//         ecu_circular_dll_node_ctor(static_cast<struct ecu_circular_dll_node *>(&dnode1_), 
-//                                    &NodeDestroyMock::destroy,
-//                                    ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(static_cast<struct ecu_circular_dll_node *>(&dnode2_), 
-//                                    &NodeDestroyMock::destroy,
-//                                    ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(static_cast<struct ecu_circular_dll_node *>(&dnode3_), 
-//                                    &NodeDestroyMock::destroy,
-//                                    ECU_OBJECT_ID_UNUSED);
-
-//         ecu_circular_dll_push_back(&list_, static_cast<struct ecu_circular_dll_node *>(&dnode1_));
-//         ecu_circular_dll_push_back(&list_, static_cast<struct ecu_circular_dll_node *>(&dnode2_));
-//         ecu_circular_dll_push_back(&list_, static_cast<struct ecu_circular_dll_node *>(&dnode3_));
-
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_circular_dll_destroy(&list_);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL */
-//     }
-// }
-
-
-// /**
-//  * @brief Some nodes have destroy callbacks and other nodes have NULL node 
-//  * destroy callbacks. Verify this is OK.
-//  */
-// TEST(CircularDLL, NodeDestroyNullCallbacks)
-// {
-//     struct NodeDestroyMock dnode2_;
-
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         mock().expectOneCall("NodeDestroyMock::destroy")
-//               .onObject(static_cast<struct ecu_circular_dll_node *>(&dnode2_));
-
-//         ecu_circular_dll_node_ctor(&node1_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(static_cast<struct ecu_circular_dll_node *>(&dnode2_), 
-//                                    &NodeDestroyMock::destroy,
-//                                    ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node3_.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, static_cast<struct ecu_circular_dll_node *>(&dnode2_));
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_circular_dll_destroy(&list_);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL */
-//     }
-// }
-
-
-// /**
-//  * @brief Verify nodes are in correct order by directly comparing 
-//  * node pointer to elements returned by iterator.
-//  */
-// TEST(CircularDLL, NodeAdditionAndRemoval)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         (void)ecu_circular_dll_iterator_begin(&iterator_, &list_); /* Initialize iterator at beginning so any iterator call can be safely used. */
-
-//         /* Steps 2 and 3: Action and assert. */
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_begin(&iterator_, &list_));
-
-//         /* [1] */
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         /* [1, 2] */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         /* [1, 2, 3] */
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         /* [1, 3] */
-//         ecu_circular_dll_remove_node(&node2_.node);
-//         POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         /* [3] */
-//         ecu_circular_dll_remove_node(&node1_.node);
-//         POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-        
-//         /* [] */
-//         ecu_circular_dll_remove_node(&node3_.node);
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_begin(&iterator_, &list_));
-
-//         /* [2] */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         /* [] */
-//         ecu_circular_dll_remove_node(&node2_.node);
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
-
-
-// TEST(CircularDLL, CannotAddNodeAlreadyInSameList)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         stubs::set_assert_handler(stubs::AssertResponse::OK);
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-
-//         /* Step 2: Action. */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* OK. */
-//     }
-
-//     /* Step 3: Assert. */
-//     CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
-//     POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//     POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
-//     POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-// }
-
-
-// TEST(CircularDLL, CannotAddNodeFromAnotherList)
-// {
-//     struct ecu_circular_dll extra_list;
-
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_circular_dll_ctor(&extra_list);
-//         stubs::set_assert_handler(stubs::AssertResponse::OK);
-        
-//         /* list_ = [1, 2]. extra_list = [3] */
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&extra_list, &node3_.node);
-
-//         /* Step 2: Action. */
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* OK. */
-//     }
-
-//     /* Step 3: Assert. */
-//     /* list_ = [1, 2] */
-//     CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
-//     POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//     POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
-//     POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//     /* extra_list = [3] */
-//     CHECK_EQUAL(1, ecu_circular_dll_get_size(&extra_list));
-//     POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_begin(&iterator_, &extra_list));
-//     POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-// }
-
-
-// /* Purposefully not done since no way of directly verifying by inspecting the list.
-// Can only verify by checking if an assert fired but do not want to do that since that
-// is more implementation-defined. */
-// // TEST(CircularDLL, CannotRemoveNodeNotInList)
-// // {
-// // }
-
-
-// TEST(CircularDLL, CorrectSizeReturned)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. Done in setup(). */
-        
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
-
-//         /* [1] */
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
-
-//         /* [1, 2] */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
-
-//         /* [1, 2, 3] */
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         CHECK_EQUAL(3, ecu_circular_dll_get_size(&list_));
-
-//         /* [1, 3] */
-//         ecu_circular_dll_remove_node(&node2_.node);
-//         CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
-
-//         /* [3] */
-//         ecu_circular_dll_remove_node(&node1_.node);
-//         CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
-        
-//         /* [] */
-//         ecu_circular_dll_remove_node(&node3_.node);
-//         CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
-
-//         /* [2] */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         CHECK_EQUAL(1, ecu_circular_dll_get_size(&list_));
-
-//         /* [] */
-//         ecu_circular_dll_remove_node(&node2_.node);
-//         CHECK_EQUAL(0, ecu_circular_dll_get_size(&list_));
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
-
-
-// /**
-//  * @brief Test function returning true means list is empty.
-//  */
-// TEST(CircularDLL, IsEmpty)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. Done in setup(). */
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE(ecu_circular_dll_is_empty(&list_));
-
-//         /* [1] */
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         CHECK_FALSE(ecu_circular_dll_is_empty(&list_));
-
-//         /* [1, 2] */
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         CHECK_FALSE(ecu_circular_dll_is_empty(&list_));
-
-//         /* [2] */
-//         ecu_circular_dll_remove_node(&node1_.node);
-//         CHECK_FALSE(ecu_circular_dll_is_empty(&list_));
-
-//         /* [] */
-//         ecu_circular_dll_remove_node(&node2_.node);
-//         CHECK_TRUE(ecu_circular_dll_is_empty(&list_));
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
-
-
-// /**
-//  * @brief Edit data of nodes through iterator. Verify all data was
-//  * changed, showing we can iterate over the entire list.
-//  */
-// TEST(CircularDLL, IterateOverListAndEditAllNodes)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         node1_.x = 5;
-//         node1_.y = 5;
-//         node2_.x = 5;
-//         node2_.y = 5;
-//         node3_.x = 5;
-//         node3_.y = 5;
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-
-//         /* Step 2: Action. */
-//         for (struct ecu_circular_dll_node *i = ecu_circular_dll_iterator_begin(&iterator_, &list_);
-//              i != ecu_circular_dll_iterator_end(&iterator_);
-//              i = ecu_circular_dll_iterator_next(&iterator_))
-//         {
-//             struct user_data *data = ECU_CIRCULAR_DLL_GET_ENTRY(i, struct user_data, node);
-//             data->x = 10;
-//             data->y = 10;
-//         }
-
-//         /* Step 3: Assert. */
-//         CHECK_EQUAL(10, node1_.x);
-//         CHECK_EQUAL(10, node1_.y);
-//         CHECK_EQUAL(10, node2_.x);
-//         CHECK_EQUAL(10, node2_.y);
-//         CHECK_EQUAL(10, node3_.x);
-//         CHECK_EQUAL(10, node3_.y);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
-
-
-// /**
-//  * @brief Only edit data of nodes we aren't removing. Verify correct
-//  * nodes removed and their data was not edited, showing we can safely
-//  * iterate over the list while removing nodes.
-//  */
-// TEST(CircularDLL, IterateOverListAndRemoveSomeNodes)
-// {
-//     struct user_data node4;
-//     struct user_data node5;
-
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         node1_.x = 5;
-//         node1_.y = 5;
-//         node2_.x = 5;
-//         node2_.y = 5;
-//         node3_.x = 5;
-//         node3_.y = 5;
-//         node4.x = 5;
-//         node4.y = 5;
-//         node5.x = 5;
-//         node5.y = 5;
-
-//         ecu_circular_dll_node_ctor(&node4.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node5.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-//         ecu_circular_dll_push_back(&list_, &node4.node);
-//         ecu_circular_dll_push_back(&list_, &node5.node);
-
-//         /* Step 2: Action. */
-//         for (struct ecu_circular_dll_node *i = ecu_circular_dll_iterator_begin(&iterator_, &list_);
-//              i != ecu_circular_dll_iterator_end(&iterator_);
-//              i = ecu_circular_dll_iterator_next(&iterator_))
-//         {
-//             /* Selectively remove some nodes. 1 and 5 chosen since this is the start and end of list. */
-//             if (i == &node1_.node || i == &node2_.node || i == &node5.node)
-//             {
-//                 ecu_circular_dll_remove_node(i);
-//             }
-//             else
-//             {
-//                 struct user_data *data = ECU_CIRCULAR_DLL_GET_ENTRY(i, struct user_data, node);
-//                 data->x = 10;
-//                 data->y = 10;
-//             }
-//         }
-
-//         /* Step 3: Assert. */
-//         /* [3, 4] */
-//         CHECK_EQUAL(2, ecu_circular_dll_get_size(&list_));
-//         POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(&node4.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         CHECK_EQUAL(5, node1_.x);
-//         CHECK_EQUAL(5, node1_.y);
-//         CHECK_EQUAL(5, node2_.x);
-//         CHECK_EQUAL(5, node2_.y);
-//         CHECK_EQUAL(10, node3_.x);
-//         CHECK_EQUAL(10, node3_.y);
-//         CHECK_EQUAL(10, node4.x);
-//         CHECK_EQUAL(10, node4.y);
-//         CHECK_EQUAL(5, node5.x);
-//         CHECK_EQUAL(5, node5.y);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
-
-
-// /**
-//  * @brief Iterator also goes through nodes that were added to
-//  * end of list via @ref ecu_circular_dll_push_back().
-//  */
-// TEST(CircularDLL, AddNodesInIteratorPushBack)
-// {
-//     struct user_data node4;
-//     struct user_data node5;
-
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_circular_dll_node_ctor(&node4.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-//         ecu_circular_dll_node_ctor(&node5.node, (void (*)(struct ecu_circular_dll_node *))0, ECU_OBJECT_ID_UNUSED);
-
-//         node1_.x = 5;
-//         node1_.y = 5;
-//         node2_.x = 5;
-//         node2_.y = 5;
-//         node3_.x = 5;
-//         node3_.y = 5;
-//         node4.x = 5;
-//         node4.y = 5;
-//         node5.x = 5;
-//         node5.y = 5;
-
-//         ecu_circular_dll_push_back(&list_, &node1_.node);
-//         ecu_circular_dll_push_back(&list_, &node2_.node);
-//         ecu_circular_dll_push_back(&list_, &node3_.node);
-
-//         /* Step 2: Action. */
-//         for (struct ecu_circular_dll_node *i = ecu_circular_dll_iterator_begin(&iterator_, &list_);
-//              i != ecu_circular_dll_iterator_end(&iterator_);
-//              i = ecu_circular_dll_iterator_next(&iterator_))
-//         {
-//             /* [1, 2, 3, 4, 5] */
-//             if (i == &node2_.node)
-//             {
-//                 ecu_circular_dll_push_back(&list_, &node4.node);
-//                 ecu_circular_dll_push_back(&list_, &node5.node);
-//             }
-//             struct user_data *data = ECU_CIRCULAR_DLL_GET_ENTRY(i, struct user_data, node);
-//             data->x = 10;
-//             data->y = 10;
-//         }
-
-//         /* Step 3: Assert. */
-//         CHECK_EQUAL(5, ecu_circular_dll_get_size(&list_));
-//         POINTERS_EQUAL(&node1_.node, ecu_circular_dll_iterator_begin(&iterator_, &list_));
-//         POINTERS_EQUAL(&node2_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(&node3_.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(&node4.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(&node5.node, ecu_circular_dll_iterator_next(&iterator_));
-//         POINTERS_EQUAL(ecu_circular_dll_iterator_end(&iterator_), ecu_circular_dll_iterator_next(&iterator_));
-
-//         CHECK_EQUAL(10, node1_.x);
-//         CHECK_EQUAL(10, node1_.y);
-//         CHECK_EQUAL(10, node2_.x);
-//         CHECK_EQUAL(10, node2_.y);
-//         CHECK_EQUAL(10, node3_.x);
-//         CHECK_EQUAL(10, node3_.y);
-//         CHECK_EQUAL(10, node4.x);
-//         CHECK_EQUAL(10, node4.y);
-//         CHECK_EQUAL(10, node5.x);
-//         CHECK_EQUAL(10, node5.y);
-//     }
-//     catch (stubs::AssertException& e)
-//     {
-//         (void)e;
-//         /* FAIL. */
-//     }
-// }
+/*------------------------------------------------------------*/
+/*------------------- TESTS - DLIST GET SIZE -----------------*/
+/*------------------------------------------------------------*/
+
+TEST(DListBase, GetSizeGeneralTest)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)0);
+        ecu_dlist_push_back(&m_list, &m_node1);
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)1);
+        ecu_dlist_push_back(&m_list, &m_node2);
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)2);
+        ecu_dlist_push_front(&m_list, &m_node3);
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)3);
+        ecu_dnode_remove(&m_node2);
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)2);
+        ecu_dlist_clear(&m_list);
+        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)0);
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - DLIST IS EMPTY -----------------*/
+/*------------------------------------------------------------*/
+
+TEST(DListBase, IsEmptyGeneralTest)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE(ecu_dlist_is_empty(&m_list));
+        ecu_dlist_push_back(&m_list, &m_node1);
+        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        ecu_dlist_push_back(&m_list, &m_node2);
+        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        ecu_dnode_remove(&m_node1);
+        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        ecu_dnode_remove(&m_node2);
+        CHECK_TRUE(ecu_dlist_is_empty(&m_list));
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - DLIST ITERATORS ----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Verify nonconst iterator iterates over all nodes in list.
+ * Also use FOR_EACH() macro.
+ */
+TEST(DList, IteratorGeneralTest)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 Action. */
+        ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify const iterator iterates over all nodes in list.
+ * Also use FOR_EACH() macro.
+ */
+TEST(DList, CIteratorGeneralTest)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 Action. */
+        ECU_DLIST_CONST_FOR_EACH(i, &m_citerator, &m_list)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iterating over an empty list immediately returns.
+ * Also use FOR_EACH() macro.
+ */
+TEST(DList, IterateOverEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_other_list)) );
+
+        /* Step 2: Action. */
+        ECU_DLIST_FOR_EACH(i, &m_iterator, &m_other_list)
+        {
+            /* Step 3: Assert. This should never be called since empty list. */
+            node_in_list_mock(&m_other_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Const iterating over an empty list immediately returns.
+ * Also use FOR_EACH() macro.
+ */
+TEST(DList, CIterateOverEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_other_list)) );
+
+        /* Step 2: Action. */
+        ECU_DLIST_CONST_FOR_EACH(i, &m_citerator, &m_other_list)
+        {
+            /* Step 3: Assert. This should never be called since empty list. */
+            node_in_list_mock(&m_other_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify it is OK to remove nodes in the middle of an iteration.
+ * Also use FOR_EACH() macro.
+ */
+TEST(DList, RemoveNodesInMiddleOfIteration)
+{
+    try
+    {
+        /* Step 1: Arrange. First list iteration. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Step 1: Arrange. Second list iteration. */
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Step 2: Action. */
+        ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+
+            if (i == &m_node2)
+            {
+                ecu_dnode_remove(i);
+            }
+        }
+
+        /* Step 3: Assert. Iterate over list again. */
+        ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
+        {
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}

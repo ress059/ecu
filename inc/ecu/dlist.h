@@ -27,40 +27,68 @@
 #include "ecu/object_id.h"
 
 /*------------------------------------------------------------*/
-/*-------------------------- MACROS --------------------------*/
+/*---------------------- DEFINES AND MACROS ------------------*/
 /*------------------------------------------------------------*/
+
+/**
+ * @brief Convience define for @ref ecu_dnode_ctor().
+ * @details Pass this value to @ref ecu_dnode_ctor() if 
+ * a user-defined node destructor is not needed.
+ */
+#define ECU_DNODE_DESTROY_UNUSED \
+    ((void (*)(struct ecu_dnode *, ecu_object_id))0)
 
 /**
  * @brief Retrieve non-const user-defined data stored in a dlist node.
  * 
- * @param ptr Address of dlist node within your user-defined @p type.
+ * @param ptr_ Address of dlist node within your user-defined @p type_.
  * This should always be of type (struct ecu_dnode *), never
  * (const struct ecu_dnode *).
- * @param type User-defined type that contains the dlist node that @p ptr 
+ * @param type_ User-defined type that contains the dlist node that @p ptr_ 
  * points to. This should always be non-const. I.e. struct my_type,
  * never const struct my_type.
- * @param member Member name of the dlist node that @p ptr points to.
+ * @param member_ Member name of the dlist node that @p ptr_ points to.
  */
-#define ECU_DNODE_GET_ENTRY(ptr, type, member)   ((type *)((uint8_t *)(ptr) - offsetof(type, member)))
+#define ECU_DNODE_GET_ENTRY(ptr_, type_, member_) \
+    ((type_ *)((uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
  * @brief Retrieve const user-defined data stored in a dlist node. 
  * 
- * @param ptr Address of dlist node within your user-defined @p type.
+ * @param ptr_ Address of dlist node within your user-defined @p type_.
  * This can be of type (struct ecu_dnode *) or (const struct ecu_dnode *).
- * @param type User-defined type that contains the dlist node that @p ptr 
+ * @param type_ User-defined type that contains the dlist node that @p ptr_ 
  * points to. This should always be non-const. I.e. struct my_type,
  * never const struct my_type.
- * @param member Member name of the dlist node that @p ptr points to.
+ * @param member_ Member name of the dlist node that @p ptr_ points to.
  */
-#define ECU_DNODE_GET_CONST_ENTRY(ptr, type, member)    ((const type *)((const uint8_t *)(ptr) - offsetof(type, member)))
+#define ECU_DNODE_GET_CONST_ENTRY(ptr_, type_, member_) \
+    ((const type_ *)((const uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
- * @brief Convience macro for @ref ecu_dnode_ctor().
- * @details Pass this value to @ref ecu_dnode_ctor() if 
- * a user-defined node destructor is not needed.
+ * @brief todo
+ * 
+ * @param var_
+ * @param list_
+ * @param iter_
  */
-#define ECU_DNODE_DESTROY_UNUSED            ((void (*)(struct ecu_dnode *, ecu_object_id))0)
+#define ECU_DLIST_FOR_EACH(var_, iter_, list_)                              \
+    for (struct ecu_dnode *var_ = ecu_dlist_iterator_begin(iter_, list_);   \
+         var_ != ecu_dlist_iterator_end(iter_);                             \
+         var_ = ecu_dlist_iterator_next(iter_))
+
+/**
+ * @brief todo
+ * also recommended to use this in case the API naming changes
+ * 
+ * @param var_
+ * @param list_
+ * @param citer_
+ */
+#define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                                   \
+    for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_begin(citer_, list_);  \
+         var_ != ecu_dlist_const_iterator_end(citer_);                                  \
+         var_ = ecu_dlist_const_iterator_next(citer_))
 
 /*------------------------------------------------------------*/
 /*-------------------------- DLIST ---------------------------*/
