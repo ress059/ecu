@@ -1,7 +1,9 @@
 /**
  * @file
- * @brief See @ref object_id.h. This file is only used for static assertions of
- * code within @ref object_id.h.
+ * @brief Primarily used for static assertions of code within @ref object_id.h.
+ * @rst
+ * See :ref:`object_id.h section <object_id_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1

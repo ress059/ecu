@@ -1,7 +1,9 @@
 /**
  * @file
- * @brief See @ref event.h. This file is only used for static assertions of
- * code within @ref event.h.
+ * @brief Primarily used for static assertions of code within @ref event.h.
+ * @rst
+ * See :ref:`event.h section <event_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1

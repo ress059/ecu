@@ -1,6 +1,9 @@
 /**
  * @file
- * @brief See @ref dlist.h
+ * @brief
+ * @rst
+ * See :ref:`dlist.h section <dlist_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress 
  * @version 0.1
@@ -317,7 +320,6 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
     ecu_dnode_insert_before(node, &me->head);
 }
 
-// TODO Debating whether condition should take in pointer to const or not. 
 void ecu_dlist_insert_before(struct ecu_dlist *me, 
                              struct ecu_dnode *node,
                              bool (*condition)(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data),

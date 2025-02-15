@@ -1,6 +1,9 @@
 /**
  * @file 
- * @brief See @ref asserter.h
+ * @brief
+ * @rst
+ * See :ref:`asserter.h section <asserter_h>` in Sphinx documentation. 
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
