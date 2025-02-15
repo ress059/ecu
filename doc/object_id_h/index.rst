@@ -67,7 +67,6 @@ used to identify the type of each node.
 .. code-block:: c
 
     #include "ecu/dlist.h"
-    #include "ecu/object_id.h"
 
     /* User-defined object IDs. */
     enum user_object_ids
@@ -94,30 +93,29 @@ used to identify the type of each node.
     {
         int c;
         struct ecu_dnode node;
+        int d;
     };
 
     struct ecu_dlist_iterator iterator;
     struct ecu_dlist list;
-    struct type1 type1_node;
-    struct type2 type2_node;
-    struct type3 type3_node;
+    struct type1 node1;
+    struct type2 node2;
+    struct type3 node3;
 
     /* Construct list and nodes. Assign object IDs to each node to identify
     their data types. */
     ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&type1_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
-    ecu_dnode_ctor(&type2_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
-    ecu_dnode_ctor(&type3_node.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
+    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
+    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
+    ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
 
     /* Add nodes to list. */
-    ecu_dlist_push_back(&list, &type2_node.node);
-    ecu_dlist_push_back(&list, &type3_node.node);
-    ecu_dlist_push_back(&list, &type1_node.node);
+    ecu_dlist_push_back(&list, &node1.node);
+    ecu_dlist_push_back(&list, &node2.node);
+    ecu_dlist_push_back(&list, &node3.node);
 
     /* Iterate over list. Use object ID to identify the data type stored in each node. */
-    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
-         i != ecu_dlist_iterator_end(&iterator);
-         i = ecu_dlist_iterator_next(&iterator))
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
     {
         switch (ecu_dnode_get_id(i))
         {
@@ -131,14 +129,15 @@ used to identify the type of each node.
             case TYPE2:
             {
                 struct type2 *me = ECU_DNODE_GET_ENTRY(i, struct type2, node);
-                me->b = 5;
+                me->b = 10;
                 break;
             }
 
             case TYPE3:
             {
-                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
-                me->c = 5;
+                struct type3 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
+                me->c = 15;
+                me->d = 20;
                 break;
             }
         }

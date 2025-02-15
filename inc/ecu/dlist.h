@@ -233,10 +233,10 @@ extern "C" {
  * 
  * @param me Node to construct. This cannot be NULL.
  * @param destroy_0 Optional callback. Defines any <b>additional</b> cleanup
- * needed to fully destroy this user-defined node. Do not use dlist API in this callback
- * as cleanup of the @ref ecu_dnode is already done by this module. Doing so is 
- * undefined behavior. Executes when node is destroyed via @ref ecu_dnode_destroy().
- * Also executes when node is in list that is destroyed via @ref ecu_dlist_destroy().
+ * needed to fully destroy this user-defined node. Do not use API calls that edit
+ * the ecu_dnode (node insert, remove, etc) within this callback. Doing so is undefined 
+ * behavior. Executes when node is destroyed via @ref ecu_dnode_destroy(). Also 
+ * executes when node is in list that is destroyed via @ref ecu_dlist_destroy(). 
  * Supply @ref ECU_DNODE_DESTROY_UNUSED if unused.
  * @param id_0 Optional ID to assign to node. Used to identify different user-defined
  * types stored in the same list. Supply @ref ECU_OBJECT_ID_UNUSED if unused. This 
@@ -357,7 +357,7 @@ extern void ecu_dlist_clear(struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node to front of list.
  * 
  * @param me List to add to.
@@ -368,7 +368,7 @@ extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node to back of list.
  * 
  * @param me List to add to.
@@ -379,7 +379,7 @@ extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @pre @p node previously constructed via call to @ref ecu_dlist_node_ctor().
+ * @pre @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node before position specified by condition function. 
  * @details Starting from HEAD, all nodes within the list are iterated over. Each 
  * node is passed as the position parameter to the condition function. User specifies

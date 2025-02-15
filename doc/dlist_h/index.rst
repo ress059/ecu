@@ -21,17 +21,14 @@ same list using :ecudoxygen:`a node ID <ecu_dnode::id>`.
 
 List And Node Structure
 =================================================
-Lists are delimeter HEAD nodes that do not contain any user data.
-They are represented by the :ecudoxygen:`ecu_dlist` structure.
+Lists are represented by the :ecudoxygen:`ecu_dlist` struct. Nodes are represented by
+the :ecudoxygen:`ecu_dnode` struct.
 
-Nodes are user-defined and are attached to lists. They are represented
-by the :ecudoxygen:`ecu_dnode` structure. 
-
-Therefore a list consists of only one :ecudoxygen:`ecu_dlist` and any 
-number of :ecudoxygen:`ecu_dnodes <ecu_dnode>`.
+Lists are dummy delimeters used as anchors. Therefore :ecudoxygen:`ecu_dlist::head` is 
+not apart of the user's list. Nodes are user-defined and inserted into lists. 
 
 .. figure:: /images/dlist/dlist_empty_list.svg
-  :width: 400
+  :width: 300
   :align: center
   
   Empty List
@@ -54,8 +51,8 @@ Storing Node Data
 .. _dlist_storing_node_data:
 
 Lists are intrusive. Custom data is stored within the node by containing 
-an :ecudoxygen:`ecu_dnode` member in a user-defined type. This 
-:ecudoxygen:`ecu_dnode` member is passed to the API.
+an :ecudoxygen:`ecu_dnode` member in a user-defined type. This :ecudoxygen:`ecu_dnode` 
+member is passed to the API. For example:
 
 .. code-block:: c 
 
@@ -79,7 +76,7 @@ an :ecudoxygen:`ecu_dnode` member in a user-defined type. This
     struct user_node node1;
     struct user_node node2;
 
-    /* Pass ecu_dnode member to API to add/remove your node from a list. */
+    /* Pass ecu_dnode member to API to add/remove a node from a list. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
@@ -168,7 +165,7 @@ user-defined type. Consider the following:
         int c;
     };
 
-    /* Pseudocode. For this example define a user_node called 'me'. 
+    /* Pseudocode. For this example, define a user_node called 'me'. 
     &me.node would be supplied to API functions. &me.node would be
     the pointer value returned by iterators. */
     struct user_node me;
@@ -193,7 +190,7 @@ This offset is determined at compile-time using `offsetof() <https://en.cpprefer
 offset() is mandated by the C standard since C99, so this is guaranteed to be 
 a portable solution.
 
-The supplied pointer is casted to (uint8_t \*) so it is propertly decremented. The
+The supplied pointer is casted to (uint8_t \*) so it is properly decremented. The
 expression becomes:
 
 .. math:: 
@@ -209,67 +206,292 @@ complete the conversion.
 
 Casting a memory address represented as a (uint8_t \*) back to a (struct user_node \*) will 
 always be a safe operation in this use case. The value of 'addr' will always be properly aligned
-according to the alignment requirements of (struct user_node).
+according to the alignment requirements of (struct user_node) because the compiler will properly 
+align the (struct user_node) object when it is defined.
 
-
-!!!!!!!!!! TODO STOPPED HERE
-.. math:: 
-
-    (struct user_node \*)addr == &me;
-
-The raw memory address points to an object of type (struct user_node \*). In this case:
-
-When an object of type (struct user_node) is defined, the compiler will always align its 
-memory address according to the alignment requirements of (struct user_node).
-
-.. code-block:: c
-
-    /* &me is always aligned according to the alignment requirements of (struct user_node). */
-    struct user_node me;
-
-    &me == ECU_DNODE_GET_ENTRY(&me.node, struct user_node, node)
-
-
-This same logic applied for any user-defined type, which makes :ecudoxygen:`ECU_DNODE_GET_ENTRY() <ECU_DNODE_GET_ENTRY>`
-and :ecudoxygen:`ECU_DNODE_GET_CONST_ENTRY() <ECU_DNODE_GET_CONST_ENTRY>` always safe, assuming
-the supplied parameters are correct.
-
-
-!!!! TODO
-ECU_DNODE_GET_CONST_ENTRY() does the same thing, but all casts are const qualified.
-
-
-
-
-
-Explain how node ID can be used to identify different type stored in the same list.
+:ecudoxygen:`ECU_DNODE_GET_CONST_ENTRY() <ECU_DNODE_GET_CONST_ENTRY>` performs the same operations
+but all casts are const qualified. A const-qualified type is also returned.
 
 
 Node Insert and Removal
 =================================================
-nodes cannot be shared across multiple lists.
-Nodes must be apart of a list.
+:ecudoxygen:`ecu_dnode_insert_before() <ecu_dnode_insert_before>` and 
+:ecudoxygen:`ecu_dnode_insert_after() <ecu_dnode_insert_after>` allow nodes to be 
+inserted into a list, without needed the list object.
 
-Allows nodes to be inserted at specific locations within the list.
+The code example below initializes a list of 2 nodes. 2 more nodes are added using the
+node insert functions.
 
-TODO show example with picture of insert_before() and insert_after().
+.. code-block:: c 
 
-The position node must be within a list. TODO show pic of illegal behavior (position node not in list).
+    #include "ecu/dlist.h"
+
+    /* User-defined data is apart of the dlist node. */
+    struct user_node
+    {
+        /* User data. */
+        int a;
+        int b;
+
+        /* Dlist node. */
+        struct ecu_dnode node;
+
+        /* More user data. */
+        int c;
+    };
+
+    struct ecu_dlist list;
+    struct user_node node1;
+    struct user_node node2;
+    struct user_node node3;
+    struct user_node node4;
+
+    /* Iniitalize list of 2 nodes. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node4.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_push_back(&list, &node1.node);
+    ecu_dlist_push_back(&list, &node3.node);
+
+    /* ..... */
+    /* ..... */
+
+    /* Insert more nodes to list. */
+    ecu_dnode_insert_before(&node2.node, &node3.node);
+    ecu_dnode_insert_after(&node4.node, &node3.node);
+
+.. figure:: /images/dlist/dnode_insert.svg
+  :width: 600
+  :align: center
+
+Similarly, nodes can be removed using :ecudoxygen:`ecu_dnode_remove() <ecu_dnode_remove>`.
+Building off the previous code example, node1 is removed:
+
+.. code-block:: c 
+
+    ecu_dnode_remove(&node1.node);
+
+.. figure:: /images/dlist/dnode_remove.svg
+  :width: 600
+  :align: center
+
+Inserting a node requires the following:
+
+- Node cannot be within a list.
+- Specified position node must be within a list.
+
+Thus the following are illegal operations:
+
+.. figure:: /images/dlist/dnode_illegal_insert_remove.svg
+  :width: 600
+  :align: center
+
+Node1 is already in a list and Node2 is not within a list, making the attempted
+insert illegal. The attempted removal is illegal since Node2 is not within a list.
 
 
-List Insert and Remove
+Node ID
 =================================================
+An ID can be assigned to a node when it is constructed. It allows different 
+user-defined types to be stored and identified in the same list. For example:
+
+.. code-block:: c
+
+    #include "ecu/dlist.h"
+
+    /* User-defined object IDs. */
+    enum user_object_ids
+    {
+        TYPE1 = ECU_USER_OBJECT_ID_BEGIN,
+        TYPE2,
+        TYPE3
+    };
+
+    /* Data types of nodes stored in linked list. */
+    struct type1 
+    {
+        int a;
+        struct ecu_dnode node;
+    };
+
+    struct type2 
+    {
+        struct ecu_dnode node;
+        int b;
+    };
+
+    struct type3 
+    {
+        int c;
+        struct ecu_dnode node;
+        int d;
+    };
+
+    struct ecu_dlist_iterator iterator;
+    struct ecu_dlist list;
+    struct type1 node1;
+    struct type2 node2;
+    struct type3 node3;
+
+    /* Construct list and nodes. Assign object IDs to each node to identify
+    their data types. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
+    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
+    ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
+
+    /* Add nodes to list. */
+    ecu_dlist_push_back(&list, &node1.node);
+    ecu_dlist_push_back(&list, &node2.node);
+    ecu_dlist_push_back(&list, &node3.node);
+
+    /* Iterate over list. Use object ID to identify the data type stored in each node. */
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
+    {
+        switch (ecu_dnode_get_id(i))
+        {
+            case TYPE1:
+            {
+                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type1, node);
+                me->a = 5;
+                break;
+            }
+
+            case TYPE2:
+            {
+                struct type2 *me = ECU_DNODE_GET_ENTRY(i, struct type2, node);
+                me->b = 10;
+                break;
+            }
+
+            case TYPE3:
+            {
+                struct type3 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
+                me->c = 15;
+                me->d = 20;
+                break;
+            }
+        }
+    }
+
+
+Node Destruction
+=================================================
+A node is destroyed when it is passed to :ecudoxygen:`ecu_dnode_destroy() <ecu_dnode_destroy>` or 
+when the node is within a list that is destroyed by :ecudoxygen:`ecu_dlist_destroy() <ecu_dlist_destroy>`.
+
+Additional cleanup that is application-specific may be necessary for a user-defined node.
+For example a node may contain data that is on the heap, requiring it to be explicitly
+freed when the node is destroyed.
+
+An optional destroy callback can be suplied to the node's constructor in order to define
+this behavior. This callback will execute when the node is destroyed. For example:
+
+.. code-block:: c
+
+    #include <stdlib.h>
+    #include "ecu/asserter.h"
+    #include "ecu/dlist.h"
+
+    struct user_node 
+    {
+        ecu_dnode node;
+        void *heap_obj;
+    };
+
+    static void destroy(struct ecu_dnode *n, ecu_object_id id)
+    {
+        /* Define additional cleanup for user_node type. DO NOT USE API CALLS
+        THAT EDIT THE ECU_DNODE (node insert, remove, etc). */
+        ECU_RUNTIME_ASSERT( (n) );
+        (void)id;
+
+        struct user_node *me = ECU_DNODE_GET_ENTRY(n, struct user_node, node);
+        free(me->heap_obj);
+    }
+
+    /* Construct node. Supply custom destroy callback and allocate heap. */
+    struct user_node node1;
+    ecu_dnode_ctor(&node1.node, &destroy, ECU_OBJECT_ID_UNUSED);
+    node1.heap_obj = malloc(20);
+
+    /* ..... */
+    /* ..... */
+
+    /* At a later time node is destroyed. Node destructor calls destroy() 
+    function, freeing heap_obj. No additional intervention needed. */
+    ecu_dnode_destroy(&node1);
+
+.. warning:: 
+
+    This module cleans up the :ecudoxygen:`ecu_dnode` and removes it from the list.
+    Do not use API calls that edit the ecu_dnode (node insert, remove, etc) within the 
+    destroy callback. Doing so is undefined. 
+
+This mechanism applies to many other scenarios besides heap allocation. For example,
+a linked list of LEDs. When the node is destroyed, the LED can be turned off:
+
+.. code-block:: c
+
+    #include <stdlib.h>
+    #include "ecu/asserter.h"
+    #include "ecu/dlist.h"
+
+    struct led 
+    {
+        ecu_dnode node;
+        struct 
+        {
+            uint32_t port;
+            uint32_t pin;
+        } gpio;
+    };
+
+    static void led_destroy(struct ecu_dnode *n, ecu_object_id id)
+    {
+        /* Turn off LED when node is destroyed. */
+        ECU_RUNTIME_ASSERT( (n) );
+        (void)id;
+
+        struct led *me = ECU_DNODE_GET_ENTRY(n, struct led, node);
+        gpio_set_low(me->gpio.port, me->gpio.pin);
+    }
+
+    /* Construct node. Supply custom destroy callback. Turn LED on. */
+    struct led led1;
+    ecu_dnode_ctor(&led1.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
+    led1.gpio.port = PORTA;
+    led1.gpio.pin = 5;
+    gpio_set_high(led1.gpio.port, led1.gpio.pin);
+
+    /* ..... */
+    /* ..... */
+
+    /* At a later time node is destroyed. Node destructor calls led_destroy() 
+    function, turning LED off. No additional intervention needed. */
+    ecu_dnode_destroy(&node1);
+
+
+List Insert and Removal
+=================================================
+!!!!!!!!!!!!!!!!!! TODO Stopped here !!!!!
+list_insert_before(), push_front(), push_back(), list_clear().
 
 
 List Sort
 =================================================
 
+List Destruction
+=================================================
+
+
+
 
 Iterators
 =================================================
-Iterators belong to a list rather than an individual node. TODO
-Differs from STL as having an iterator to a node not in a list invalidates
-the iterator. Attempting to use it causes an assertion.
+Talk about DLIST_FOR_EACH() and DLIST_CONST_FOR_EACH().
 
 
 API
