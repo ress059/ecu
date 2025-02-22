@@ -1,7 +1,7 @@
 Completed.
 1. asserter.h/.c DONE. TODO clang-format
 2. attributes.h. DONE. TODO clang-format
-3. circular_dll.h/.c. Tests done. TODO new features and documentation.
+3. dlist.h/.c. DONE. TODO proofread docs. TODO clang-format
 4. endian.h. DONE. TODO clang-format
 5. event.h/.c TODO Documentation.
 6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
@@ -50,39 +50,26 @@ if any parameters have to change but that is the same case for run-time function
 ```
 
 
-## Circular DLL
-0. Cleanup dlist.h/.c. Finish unit tests.
-
-1. Rewrite entire doxygen documentation.
-
-2. Refactor timer since it uses old linked list.
-
-3. Change names from ecu_circular_dll to just ecu_dll. Applies to everything (file name,
-struct names, function names, etc). **If you do change name update sphinx documentation**
-**that uses circular_dll stuff in code blocks.**
-
-4. Add sphinx documentation for using ecu_dlist_insert_before(), ecu_dlist_insert_after(),
-and ecu_dlist_remove() in the middle of an iteration.
-
-5. In ECU_CIRCULAR_DLL_GET_ENTRY() macro call, getting warning about how cast from char*
+## DList
+1. In ECU_DNODE_GET_ENTRY() macro call, getting warning about how cast from char*
 to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
 THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
 so this only applies to GCC. I.e.
 ```C
 #ifdef GCC
 #pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
-#define ECU_CIRCULAR_DLL_GET_ENTRY() ....
+#define ECU_DNODE_GET_ENTRY() ....
 #end pragma
 #endif
 ```
 
 # Timer
+0. Update to use new dlist.h API.
 1. When adding a new timer, order list nodes by timeout ticks (timer closest to timing
 out is at HEAD). This way ecu_timer_collection_tick() only has to check HEAD instead of
 iterating through entire list.
 2. When applicable use the ECU_DLIST_FOR_EACH() macros intead of manually iterating
 through list.
-
 
 
 ## Tree
