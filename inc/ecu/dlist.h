@@ -253,6 +253,11 @@ extern void ecu_dnode_ctor(struct ecu_dnode *me,
  * destructor if one was supplied to @ref ecu_dnode_ctor(). Node must
  * be reconstructed via @ref ecu_dnode_ctor() in order to be used again.
  * 
+ * @warning Memory is not freed since ECU is meant to be used without
+ * dynamic memory allocation. If the supplied node was allocated on the
+ * heap user must free it themselves. It is recommended to do this
+ * inside the user-defined destroy callback passed to @ref ecu_dnode_ctor().
+ * 
  * @param me Node to destroy. This cannot be @ref ecu_dlist.head
  */
 extern void ecu_dnode_destroy(struct ecu_dnode *me);
@@ -280,7 +285,7 @@ extern void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *posi
  * @param me Node to insert in the list. Node cannot already be in a list. This
  * cannot be @ref ecu_dlist.head.
  * @param position Insert after this position. @p position must be within a list.
- * Node will be new HEAD if this is @ref ecu_dlist.head.
+ * Node will be at the front of the list if this is @ref ecu_dlist.head.
  */
 extern void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *position);
 
@@ -289,7 +294,7 @@ extern void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *posit
  * @brief Removes node from list. Node can be reused and added to another 
  * list without reconstruction.
  * 
- * @param me Node to remove. this must be within a list. This cannot 
+ * @param me Node to remove. This must be within a list. This cannot 
  * be @ref ecu_dlist.head.
  */
 extern void ecu_dnode_remove(struct ecu_dnode *me);
@@ -337,6 +342,12 @@ extern void ecu_dlist_ctor(struct ecu_dlist *me);
  * @details Destroys list and all nodes within the list. List and nodes
  * must be reconstructed in order to be used again.
  * 
+ * @warning Memory is not freed since ECU is meant to be used without
+ * dynamic memory allocation. If the supplied list or any nodes within the
+ * list were allocated on the heap, user must free it themselves. It is
+ * recommended to free the nodes inside the destroy callbacks passed to
+ * @ref ecu_dnode_ctor(). The list must be freed elsewhere.
+ * 
  * @param me List to destroy.
  */
 extern void ecu_dlist_destroy(struct ecu_dlist *me);
@@ -361,8 +372,8 @@ extern void ecu_dlist_clear(struct ecu_dlist *me);
  * @brief Insert node to front of list.
  * 
  * @param me List to add to.
- * @param node Node to add. This will be the new HEAD. Node cannot already 
- * be within a list. This cannot be @ref ecu_dlist.head.
+ * @param node Node to add. This cannot already be within a list. 
+ * This cannot be @ref ecu_dlist.head.
  */
 extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node);
 

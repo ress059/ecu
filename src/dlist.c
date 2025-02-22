@@ -176,22 +176,27 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (node_valid(me) && !node_is_valid_head(me)) );
 
+    /* Save entries since they are reset before destroy callback executes. */
+    void (*destroy)(struct ecu_dnode *, ecu_object_id) = me->destroy;
+    ecu_object_id id = me->id;
+
     /* Remove node from list. OK if node is not in list. */
     me->next->prev = me->prev;
     me->prev->next = me->next;
 
-    if (me->destroy != ECU_DNODE_DESTROY_UNUSED)
-    {
-        (*me->destroy)(me, me->id);
-    }
-
-    /* Setting to NULL values forces user to reconstruct the node if they
-    want to use it again, assuming asserts are enabled. Important to reset 
-    destroy callback and ID only after the destroy callback executes. */
+    /* Destroy object by setting to NULL values. Forces user to reconstruct
+    node if they want to use it again, assuming asserts are enabled. 
+    IMPORTANT: These values are reset before the destroy callback in case
+    the user frees their entire node (including ecu_dnode). */
     me->next    = (struct ecu_dnode *)0;
     me->prev    = (struct ecu_dnode *)0;
     me->destroy = ECU_DNODE_DESTROY_UNUSED;
     me->id      = ECU_OBJECT_ID_RESERVED;
+
+    if (destroy != ECU_DNODE_DESTROY_UNUSED)
+    {
+        (*destroy)(me, id);
+    }
 }
 
 void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *position)
