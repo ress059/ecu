@@ -376,6 +376,7 @@ Node Destruction
 
 A node is destroyed when it is passed to :ecudoxygen:`ecu_dnode_destroy() <ecu_dnode_destroy>` or 
 when the node is within a list that is destroyed by :ecudoxygen:`ecu_dlist_destroy() <ecu_dlist_destroy>`.
+Both nodes in lists and not in lists can be destroyed.
 
 .. warning:: 
 
@@ -384,9 +385,9 @@ when the node is within a list that is destroyed by :ecudoxygen:`ecu_dlist_destr
     allocated on the heap, they can be freed within their destroy callbacks (explained in 
     this Section).
 
-If the destroyed :ecudoxygen:`ecu_dnode` is within a list, it is removed. Its values are 
-then reset such that the node requires reconstruction in order to be used again. Note that 
-nodes not in a list can also be destroyed:
+When the node is destroyed, its values within the :ecudoxygen:`ecu_dnode` struct are reset 
+such that the node requires reconstruction in order to be used again. If the destroyed node 
+was previously in a list, it is removed.
 
 .. code-block:: c
 
@@ -465,7 +466,7 @@ on the heap, requiring it to be explicitly freed when the node is destroyed:
 
     /* At a later time node is destroyed. Node destructor calls destroy() 
     function, freeing heap_obj. No additional intervention needed. */
-    ecu_dnode_destroy(&node1);
+    ecu_dnode_destroy(&node1.node);
 
 If the entire node including the :ecudoxygen:`ecu_dnode` was allocated on the heap,
 everything can be freed:
@@ -504,7 +505,7 @@ everything can be freed:
 
     /* At a later time node is destroyed. Node destructor calls destroy() 
     function, freeing all of node1. No additional intervention needed. */
-    ecu_dnode_destroy(node1);
+    ecu_dnode_destroy(&node1->node);
 
 Note that this feature can be applied to many other scenarios besides heap allocation.
 For example, a linked list of LEDs. When an LED node is destroyed, it can be turned off:
@@ -546,7 +547,7 @@ For example, a linked list of LEDs. When an LED node is destroyed, it can be tur
 
     /* At a later time node is destroyed. Node destructor calls led_destroy() 
     function, turning LED off. No additional intervention needed. */
-    ecu_dnode_destroy(&node1);
+    ecu_dnode_destroy(&led1.node);
 
 
 List Insert
@@ -562,9 +563,11 @@ of the list.
     struct ecu_dnode node1;
     struct ecu_dnode node2;
 
-    /* starting list = [node1] */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* starting list = [node1] */
     ecu_dlist_push_back(&list, &node1);
 
     /* new list = [node2, node1] */
@@ -590,9 +593,11 @@ of the list, making it the new TAIL.
     struct ecu_dnode node1;
     struct ecu_dnode node2;
 
-    /* starting list = [node1]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* starting list = [node1]. */
     ecu_dlist_push_back(&list, &node1);
 
     /* new list = [node1, node2]. */
@@ -996,7 +1001,7 @@ to the code snippet above:
 
     /* This expands to the long-handed for-loop used in the previous example. They
     are exactly the same. */
-    ECU_DLIST_FOR_EACH(i, iterator, list)
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
     {
         struct user_node *n = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
         n->val = idx;
@@ -1031,7 +1036,7 @@ be removed with non-const iterators:
     ecu_dlist_push_back(&list, &node3);
 
     /* list after iteration = [node1, node3] */
-    ECU_DLIST_FOR_EACH(i, iterator, list)
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
     {
         if (i == &node2)
         {

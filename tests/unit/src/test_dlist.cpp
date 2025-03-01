@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Unit tests for public API functions in @ref ecu_dlist.h.
+ * @brief Unit tests for public API functions in @ref dlist.h.
  * Test Summary:
  * 
  * ECU_DNODE_GET_ENTRY() and ECU_DNODE_GET_CONST_ENTRY()
@@ -494,10 +494,12 @@ TEST(DListMacros, GetEntryRead)
     composite_node *me2 = ECU_DNODE_GET_ENTRY(&m_node.node2, struct composite_node, node2);
 
     /* Step 3: Assert. */
+    POINTERS_EQUAL(&m_node, me);
     UNSIGNED_LONGS_EQUAL(m_node.a, me->a);
     UNSIGNED_LONGS_EQUAL(m_node.b, me->b);
     UNSIGNED_LONGS_EQUAL(m_node.c, me->c);
 
+    POINTERS_EQUAL(&m_node, me2);
     UNSIGNED_LONGS_EQUAL(m_node.a, me2->a);
     UNSIGNED_LONGS_EQUAL(m_node.b, me2->b);
     UNSIGNED_LONGS_EQUAL(m_node.c, me2->c);
@@ -532,10 +534,12 @@ TEST(DListMacros, GetConstEntry)
     const composite_node *me2 = ECU_DNODE_GET_CONST_ENTRY(&m_node.node2, struct composite_node, node2);
 
     /* Step 3: Assert. */
+    POINTERS_EQUAL(&m_node, me);
     UNSIGNED_LONGS_EQUAL(m_node.a, me->a);
     UNSIGNED_LONGS_EQUAL(m_node.b, me->b);
     UNSIGNED_LONGS_EQUAL(m_node.c, me->c);
 
+    POINTERS_EQUAL(&m_node, me2);
     UNSIGNED_LONGS_EQUAL(m_node.a, me2->a);
     UNSIGNED_LONGS_EQUAL(m_node.b, me2->b);
     UNSIGNED_LONGS_EQUAL(m_node.c, me2->c);
