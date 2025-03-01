@@ -9,6 +9,11 @@ asserter.h
 
 Overview
 =================================================
+.. note:: 
+
+    The term :term:`ECU` in this document refers to Embedded C Utilities, 
+    the shorthand name for this project.
+    
 Provides a portable way to use static assertions across any C and C++ standard. 
 Also provides a framework for using runtime asserts on embedded platforms. 
 
@@ -21,11 +26,10 @@ Example usage:
 
 .. code-block:: c
 
-    /*----------------------- file.c -----------------------*/
     #include "ecu/asserter.h"
 
-    ECU_STATIC_ASSERT( (sizeof(int) == (size_t)4), "int must be 4 bytes." ); /* Assert condition at compile-time. */
-
+    /* Assert condition at compile-time. */
+    ECU_STATIC_ASSERT( (sizeof(int) == (size_t)4), "int must be 4 bytes." ); 
 
 This is useful since the implementation of static assert across language standards is not consistent:
 For C++:
@@ -61,7 +65,8 @@ handler in a more memory-efficient manner. Example use:
     /*----------------------- file.c -----------------------*/
     #include "ecu/asserter.h"
 
-    ECU_ASSERT_DEFINE_NAME("file.c") /* File name passed into handler if any runtime assert fires in this file. */
+    /* File name passed into handler if any runtime assert fires in this file. */
+    ECU_ASSERT_DEFINE_NAME("file.c") 
 
     void foo(int *ptr)
     {
@@ -149,22 +154,26 @@ can remain unchanged.
     /*---------------- ECU_DISABLE_RUNTIME_ASSERTS NOT defined so asserts are active. ----------*/
     #include "ecu/asserter.h"
 
-    ECU_ASSERT_DEFINE_NAME("foo.c") /* Macro is active. */
+    /* Macro is active. */
+    ECU_ASSERT_DEFINE_NAME("foo.c") 
 
     static void foo(int *ptr)
     {
-        ECU_RUNTIME_ASSERT( (ptr) ); /* Asserts are active in this case. */
+        /* Asserts are active in this case. */
+        ECU_RUNTIME_ASSERT( (ptr) ); 
     }
 
 
     /*---------------- ECU_DISABLE_RUNTIME_ASSERTS defined so asserts are NOT active. ----------*/
     #include "ecu/asserter.h"
 
-    ECU_ASSERT_DEFINE_NAME("foo.c") /* Macro expands to nothing. */
+    /* Macro expands to nothing. */
+    ECU_ASSERT_DEFINE_NAME("foo.c") 
 
     static void foo(int *ptr)
     {
-        ECU_RUNTIME_ASSERT( (ptr) ); /* Macro expands to ((void)0) so it does nothing. NULL pointer is possible. */
+        /* Macro expands to ((void)0) so it does nothing. NULL pointer is possible. */
+        ECU_RUNTIME_ASSERT( (ptr) ); 
     }
 
 .. warning:: 

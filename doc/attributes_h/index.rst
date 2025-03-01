@@ -9,6 +9,11 @@ attributes.h
 
 Overview
 =================================================
+.. note:: 
+
+    The term :term:`ECU` in this document refers to Embedded C Utilities, 
+    the shorthand name for this project.
+    
 Provides wrappers for compiler-specific attributes so they can be modularly used within
 application code. The benefits of using these wrappers can be seen below:
 

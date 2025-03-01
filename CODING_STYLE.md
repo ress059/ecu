@@ -32,7 +32,7 @@ static void private_function(void);
 
 
 # Include Paths
-1. Include paths for publicly-exposed headers will always begin with ecu in order for larger apps to have scope for include files. For example <ecu/asserter.h>, <ecu/fsm.h>, etc.
+1. Include paths for publicly-exposed headers will always begin with ecu in order for larger apps to have scope for include files. For example "ecu/asserter.h", "ecu/fsm.h", etc.
 
 # Doxygen Style comments
 1. @brief and @details directives never separated by a line. Example:
@@ -56,17 +56,6 @@ allowed are @warning and @code
  * @copyright Copyright (c) 2024
  */
 ```
-
-# Formatting
-1. All public function declaration parameters separated out by new line. Note this rule does not apply
-for any code calling a pubilc function.
-```C
-void public_foo(int a, int b); /* Incorrect */
-
-void public_foo(int a,
-                int b); /* Correct */
-```
-
 
 # Other
 1. Same typedef rules as linux kernel. Essentially no typedefs unless absolutely necessary.

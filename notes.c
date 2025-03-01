@@ -66,3 +66,5 @@ enum ecu_hsm_status STARTING_STATE(struct ecu_hsm *me, struct my_event *e)
 pip install sphinx_rtd_theme
 pip install doxysphinx
 pip install sphinxcontrib-doxylink
+pip install sphinx-tabs
+pip install sphinx-hoverxref

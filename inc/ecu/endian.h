@@ -11,24 +11,19 @@
  * @copyright Copyright (c) 2024
  */
 
-
 #ifndef ECU_ENDIAN_H_
 #define ECU_ENDIAN_H_
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------------ INCLUDES -----------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*------------------------- INCLUDES -------------------------*/
+/*------------------------------------------------------------*/
 
 /* STDLib. */
 #include <stdint.h>
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ COMPILE TIME BYTE SWAPS --------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*------------------ COMPILE TIME BYTE SWAPS -----------------*/
+/*------------------------------------------------------------*/
 
 /**
  * @brief Swap bytes of 16-bit variable at compile-time. 
@@ -36,9 +31,9 @@
  * fixed-width types since these standards mandate size 
  * of int is at least 2 bytes and uint16_t is defined.
  */
-#define ECU_SWAP16_COMPILETIME(x)           (uint16_t)( (((x) & 0xFF00) >> 8) | \
-                                                        (((x) & 0x00FF) << 8) )
-
+#define ECU_SWAP16_COMPILETIME(x_) \
+    (uint16_t)((((x_) & 0xFF00) >> 8) | \
+               (((x_) & 0x00FF) << 8))
 
 /**
  * @brief Swap bytes of 32-bit variable at compile-time. 
@@ -47,11 +42,11 @@
  * of unsigned long (UL) is at least 4 bytes and uint32_t 
  * is defined.
  */
-#define ECU_SWAP32_COMPILETIME(x)           (uint32_t)( (((x) & 0xFF000000UL) >> 24) | \
-                                                        (((x) & 0x00FF0000UL) >> 8)  | \
-                                                        (((x) & 0x0000FF00UL) << 8)  | \
-                                                        (((x) & 0x000000FFUL) << 24) )
-
+#define ECU_SWAP32_COMPILETIME(x_) \
+    (uint32_t)((((x_) & 0xFF000000UL) >> 24) | \
+               (((x_) & 0x00FF0000UL) >> 8)  | \
+               (((x_) & 0x0000FF00UL) << 8)  | \
+               (((x_) & 0x000000FFUL) << 24))
 
 /**
  * @brief Swap bytes of 64-bit variable at compile-time. 
@@ -60,20 +55,19 @@
  * of unsigned long long (ULL) is at least 8 bytes and 
  * uint64_t is defined.
  */
-#define ECU_SWAP64_COMPILETIME(x)           (uint64_t)( (((x) & 0xFF00000000000000ULL) >> 56) | \
-                                                        (((x) & 0x00FF000000000000ULL) >> 40) | \
-                                                        (((x) & 0x0000FF0000000000ULL) >> 24) | \
-                                                        (((x) & 0x000000FF00000000ULL) >> 8)  | \
-                                                        (((x) & 0x00000000FF000000ULL) << 8)  | \
-                                                        (((x) & 0x0000000000FF0000ULL) << 24) | \
-                                                        (((x) & 0x000000000000FF00ULL) << 40) | \
-                                                        (((x) & 0x00000000000000FFULL) << 56) )
+#define ECU_SWAP64_COMPILETIME(x_) \
+    (uint64_t)((((x_) & 0xFF00000000000000ULL) >> 56) | \
+               (((x_) & 0x00FF000000000000ULL) >> 40) | \
+               (((x_) & 0x0000FF0000000000ULL) >> 24) | \
+               (((x_) & 0x000000FF00000000ULL) >> 8)  | \
+               (((x_) & 0x00000000FF000000ULL) << 8)  | \
+               (((x_) & 0x0000000000FF0000ULL) << 24) | \
+               (((x_) & 0x000000000000FF00ULL) << 40) | \
+               (((x_) & 0x00000000000000FFULL) << 56))
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------------- RUN TIME BYTE SWAPS ----------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*-------------------- RUNTIME BYTE SWAPS --------------------*/
+/*------------------------------------------------------------*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +75,10 @@ extern "C" {
 
 /**
  * @brief Return byte-swapped copy of 16-bit variable evaluated
- * at run-time.
+ * at run-time. 
+ * @details This can handle signed 16-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint16_t ecu_swap16_runtime(uint_fast16_t val)
 {
@@ -92,10 +89,12 @@ static inline uint16_t ecu_swap16_runtime(uint_fast16_t val)
     return ( ((val & 0xFF00) >> 8) | ((val & 0x00FF) << 8) );
 }
 
-
 /**
  * @brief Return byte-swapped copy of 32-bit variable evaluated
  * at run-time.
+ * @details This can handle signed 32-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint32_t ecu_swap32_runtime(uint_fast32_t val)
 {
@@ -108,10 +107,12 @@ static inline uint32_t ecu_swap32_runtime(uint_fast32_t val)
              ((val & (uint_fast32_t)0x000000FF) << 24) );
 }
 
-
 /**
  * @brief Return byte-swapped copy of 64-bit variable evaluated
  * at run-time.
+ * @details This can handle signed 64-bit values since this function
+ * only cares about the binary representation of a number, not its
+ * actual value.
  */
 static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 {
@@ -132,11 +133,9 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
 }
 #endif
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------------- ENDIANNESS MACROS ------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*--------------------- ENDIANNESS MACROS --------------------*/
+/*------------------------------------------------------------*/
 
 #if defined(ECU_DOXYGEN)
 /**
@@ -146,7 +145,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE16_TO_CPU_COMPILETIME(x)
+#define ECU_LE16_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 16-bit little endian encoded data at run-time.
@@ -155,7 +154,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE16_TO_CPU_RUNTIME(x)
+#define ECU_LE16_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Read 32-bit little endian encoded data at compile-time.
@@ -164,7 +163,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE32_TO_CPU_COMPILETIME(x)
+#define ECU_LE32_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 32-bit little endian encoded data at run-time.
@@ -173,7 +172,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE32_TO_CPU_RUNTIME(x)
+#define ECU_LE32_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Read 64-bit little endian encoded data at compile-time.
@@ -182,7 +181,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE64_TO_CPU_COMPILETIME(x)
+#define ECU_LE64_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 64-bit little endian encoded data at run-time.
@@ -191,7 +190,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_LE64_TO_CPU_RUNTIME(x)
+#define ECU_LE64_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Read 16-bit big endian encoded data at compile-time.
@@ -200,7 +199,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE16_TO_CPU_COMPILETIME(x)
+#define ECU_BE16_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 16-bit big endian encoded data at run-time.
@@ -209,7 +208,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE16_TO_CPU_RUNTIME(x)
+#define ECU_BE16_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Read 32-bit big endian encoded data at compile-time.
@@ -218,7 +217,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE32_TO_CPU_COMPILETIME(x)
+#define ECU_BE32_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 32-bit big endian encoded data at run-time.
@@ -227,7 +226,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE32_TO_CPU_RUNTIME(x)
+#define ECU_BE32_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Read 64-bit big endian encoded data at compile-time.
@@ -236,7 +235,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE64_TO_CPU_COMPILETIME(x)
+#define ECU_BE64_TO_CPU_COMPILETIME(x_)
 
 /**
  * @brief Read 64-bit big endian encoded data at run-time.
@@ -245,7 +244,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_BE64_TO_CPU_RUNTIME(x)
+#define ECU_BE64_TO_CPU_RUNTIME(x_)
 
 /**
  * @brief Store 16-bit data in little endian encoded format at compile-time.
@@ -254,7 +253,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE16_COMPILETIME(x)
+#define ECU_CPU_TO_LE16_COMPILETIME(x_)
 
 /**
  * @brief Store 16-bit data in little endian encoded format at run-time.
@@ -263,7 +262,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE16_RUNTIME(x)
+#define ECU_CPU_TO_LE16_RUNTIME(x_)
 
 /**
  * @brief Store 32-bit data in little endian encoded format at compile-time.
@@ -272,7 +271,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE32_COMPILETIME(x)
+#define ECU_CPU_TO_LE32_COMPILETIME(x_)
 
 /**
  * @brief Store 32-bit data in little endian encoded format at run-time.
@@ -281,7 +280,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE32_RUNTIME(x)
+#define ECU_CPU_TO_LE32_RUNTIME(x_)
 
 /**
  * @brief Store 64-bit data in little endian encoded format at compile-time.
@@ -290,7 +289,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE64_COMPILETIME(x)
+#define ECU_CPU_TO_LE64_COMPILETIME(x_)
 
 /**
  * @brief Store 64-bit data in little endian encoded format at run-time.
@@ -299,7 +298,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_LE64_RUNTIME(x)
+#define ECU_CPU_TO_LE64_RUNTIME(x_)
 
 /**
  * @brief Store 16-bit data in big endian encoded format at compile-time.
@@ -308,7 +307,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE16_COMPILETIME(x)
+#define ECU_CPU_TO_BE16_COMPILETIME(x_)
 
 /**
  * @brief Store 16-bit data in big endian encoded format at run-time.
@@ -317,7 +316,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE16_RUNTIME(x)
+#define ECU_CPU_TO_BE16_RUNTIME(x_)
 
 /**
  * @brief Store 32-bit data in big endian encoded format at compile-time.
@@ -326,7 +325,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE32_COMPILETIME(x)
+#define ECU_CPU_TO_BE32_COMPILETIME(x_)
 
 /**
  * @brief Store 32-bit data in big endian encoded format at run-time.
@@ -335,7 +334,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE32_RUNTIME(x)
+#define ECU_CPU_TO_BE32_RUNTIME(x_)
 
 /**
  * @brief Store 64-bit data in big endian encoded format at compile-time.
@@ -344,7 +343,7 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE64_COMPILETIME(x)
+#define ECU_CPU_TO_BE64_COMPILETIME(x_)
 
 /**
  * @brief Store 64-bit data in big endian encoded format at run-time.
@@ -353,64 +352,64 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
  * Sphinx documentation.
  * @endrst
  */
-#define ECU_CPU_TO_BE64_RUNTIME(x)
+#define ECU_CPU_TO_BE64_RUNTIME(x_)
 #else
 #   if defined(ECU_LITTLE_ENDIAN) /* Defined by CMake build system. */
-#       define ECU_LE16_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_LE16_TO_CPU_RUNTIME(x)               (x)
-#       define ECU_LE32_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_LE32_TO_CPU_RUNTIME(x)               (x)
-#       define ECU_LE64_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_LE64_TO_CPU_RUNTIME(x)               (x)
+#       define ECU_LE16_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_LE16_TO_CPU_RUNTIME(x_)               (x_)
+#       define ECU_LE32_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_LE32_TO_CPU_RUNTIME(x_)               (x_)
+#       define ECU_LE64_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_LE64_TO_CPU_RUNTIME(x_)               (x_)
 
-#       define ECU_BE16_TO_CPU_COMPILETIME(x)           ECU_SWAP16_COMPILETIME(x)
-#       define ECU_BE16_TO_CPU_RUNTIME(x)               ecu_swap16_runtime(x)
-#       define ECU_BE32_TO_CPU_COMPILETIME(x)           ECU_SWAP32_COMPILETIME(x)
-#       define ECU_BE32_TO_CPU_RUNTIME(x)               ecu_swap32_runtime(x)
-#       define ECU_BE64_TO_CPU_COMPILETIME(x)           ECU_SWAP64_COMPILETIME(x)
-#       define ECU_BE64_TO_CPU_RUNTIME(x)               ecu_swap64_runtime(x)
+#       define ECU_BE16_TO_CPU_COMPILETIME(x_)           ECU_SWAP16_COMPILETIME(x_)
+#       define ECU_BE16_TO_CPU_RUNTIME(x_)               ecu_swap16_runtime(x_)
+#       define ECU_BE32_TO_CPU_COMPILETIME(x_)           ECU_SWAP32_COMPILETIME(x_)
+#       define ECU_BE32_TO_CPU_RUNTIME(x_)               ecu_swap32_runtime(x_)
+#       define ECU_BE64_TO_CPU_COMPILETIME(x_)           ECU_SWAP64_COMPILETIME(x_)
+#       define ECU_BE64_TO_CPU_RUNTIME(x_)               ecu_swap64_runtime(x_)
 
-#       define ECU_CPU_TO_LE16_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_LE16_RUNTIME(x)               (x)
-#       define ECU_CPU_TO_LE32_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_LE32_RUNTIME(x)               (x)
-#       define ECU_CPU_TO_LE64_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_LE64_RUNTIME(x)               (x)
+#       define ECU_CPU_TO_LE16_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_LE16_RUNTIME(x_)               (x_)
+#       define ECU_CPU_TO_LE32_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_LE32_RUNTIME(x_)               (x_)
+#       define ECU_CPU_TO_LE64_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_LE64_RUNTIME(x_)               (x_)
 
-#       define ECU_CPU_TO_BE16_COMPILETIME(x)           ECU_SWAP16_COMPILETIME(x)
-#       define ECU_CPU_TO_BE16_RUNTIME(x)               ecu_swap16_runtime(x)
-#       define ECU_CPU_TO_BE32_COMPILETIME(x)           ECU_SWAP32_COMPILETIME(x)
-#       define ECU_CPU_TO_BE32_RUNTIME(x)               ecu_swap32_runtime(x)
-#       define ECU_CPU_TO_BE64_COMPILETIME(x)           ECU_SWAP64_COMPILETIME(x)
-#       define ECU_CPU_TO_BE64_RUNTIME(x)               ecu_swap64_runtime(x)
+#       define ECU_CPU_TO_BE16_COMPILETIME(x_)           ECU_SWAP16_COMPILETIME(x_)
+#       define ECU_CPU_TO_BE16_RUNTIME(x_)               ecu_swap16_runtime(x_)
+#       define ECU_CPU_TO_BE32_COMPILETIME(x_)           ECU_SWAP32_COMPILETIME(x_)
+#       define ECU_CPU_TO_BE32_RUNTIME(x_)               ecu_swap32_runtime(x_)
+#       define ECU_CPU_TO_BE64_COMPILETIME(x_)           ECU_SWAP64_COMPILETIME(x_)
+#       define ECU_CPU_TO_BE64_RUNTIME(x_)               ecu_swap64_runtime(x_)
 #   elif defined(ECU_BIG_ENDIAN) /* Defined by CMake build system. */
-#       define ECU_LE16_TO_CPU_COMPILETIME(x)           ECU_SWAP16_COMPILETIME(x)
-#       define ECU_LE16_TO_CPU_RUNTIME(x)               ecu_swap16_runtime(x)
-#       define ECU_LE32_TO_CPU_COMPILETIME(x)           ECU_SWAP32_COMPILETIME(x)
-#       define ECU_LE32_TO_CPU_RUNTIME(x)               ecu_swap32_runtime(x)
-#       define ECU_LE64_TO_CPU_COMPILETIME(x)           ECU_SWAP64_COMPILETIME(x)
-#       define ECU_LE64_TO_CPU_RUNTIME(x)               ecu_swap64_runtime(x)
+#       define ECU_LE16_TO_CPU_COMPILETIME(x_)           ECU_SWAP16_COMPILETIME(x_)
+#       define ECU_LE16_TO_CPU_RUNTIME(x_)               ecu_swap16_runtime(x_)
+#       define ECU_LE32_TO_CPU_COMPILETIME(x_)           ECU_SWAP32_COMPILETIME(x_)
+#       define ECU_LE32_TO_CPU_RUNTIME(x_)               ecu_swap32_runtime(x_)
+#       define ECU_LE64_TO_CPU_COMPILETIME(x_)           ECU_SWAP64_COMPILETIME(x_)
+#       define ECU_LE64_TO_CPU_RUNTIME(x_)               ecu_swap64_runtime(x_)
 
-#       define ECU_BE16_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_BE16_TO_CPU_RUNTIME(x)               (x)
-#       define ECU_BE32_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_BE32_TO_CPU_RUNTIME(x)               (x)
-#       define ECU_BE64_TO_CPU_COMPILETIME(x)           (x)
-#       define ECU_BE64_TO_CPU_RUNTIME(x)               (x)
+#       define ECU_BE16_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_BE16_TO_CPU_RUNTIME(x_)               (x_)
+#       define ECU_BE32_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_BE32_TO_CPU_RUNTIME(x_)               (x_)
+#       define ECU_BE64_TO_CPU_COMPILETIME(x_)           (x_)
+#       define ECU_BE64_TO_CPU_RUNTIME(x_)               (x_)
 
-#       define ECU_CPU_TO_LE16_COMPILETIME(x)           ECU_SWAP16_COMPILETIME(x)
-#       define ECU_CPU_TO_LE16_RUNTIME(x)               ecu_swap16_runtime(x)
-#       define ECU_CPU_TO_LE32_COMPILETIME(x)           ECU_SWAP32_COMPILETIME(x)
-#       define ECU_CPU_TO_LE32_RUNTIME(x)               ecu_swap32_runtime(x)
-#       define ECU_CPU_TO_LE64_COMPILETIME(x)           ECU_SWAP64_COMPILETIME(x)
-#       define ECU_CPU_TO_LE64_RUNTIME(x)               ecu_swap64_runtime(x)
+#       define ECU_CPU_TO_LE16_COMPILETIME(x_)           ECU_SWAP16_COMPILETIME(x_)
+#       define ECU_CPU_TO_LE16_RUNTIME(x_)               ecu_swap16_runtime(x_)
+#       define ECU_CPU_TO_LE32_COMPILETIME(x_)           ECU_SWAP32_COMPILETIME(x_)
+#       define ECU_CPU_TO_LE32_RUNTIME(x_)               ecu_swap32_runtime(x_)
+#       define ECU_CPU_TO_LE64_COMPILETIME(x_)           ECU_SWAP64_COMPILETIME(x_)
+#       define ECU_CPU_TO_LE64_RUNTIME(x_)               ecu_swap64_runtime(x_)
 
-#       define ECU_CPU_TO_BE16_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_BE16_RUNTIME(x)               (x)
-#       define ECU_CPU_TO_BE32_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_BE32_RUNTIME(x)               (x)
-#       define ECU_CPU_TO_BE64_COMPILETIME(x)           (x)
-#       define ECU_CPU_TO_BE64_RUNTIME(x)               (x)
+#       define ECU_CPU_TO_BE16_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_BE16_RUNTIME(x_)               (x_)
+#       define ECU_CPU_TO_BE32_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_BE32_RUNTIME(x_)               (x_)
+#       define ECU_CPU_TO_BE64_COMPILETIME(x_)           (x_)
+#       define ECU_CPU_TO_BE64_RUNTIME(x_)               (x_)
 #   else 
 #       error "CMake build system unable to detect target endianness from CMAKE_C_BYTE_ORDER variable. "
               "Manually define ECU_LITTLE_ENDIAN or ECU_BIG_ENDIAN to use this module."

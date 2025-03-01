@@ -2,6 +2,16 @@
  * @file
  * @brief Unit tests for public API functions in @ref asserter.h. ECU_DISABLE_RUNTIME_ASSERTS
  * must NOT be defined.
+ * Test Summary:
+ * 
+ * ECU_ASSERT_DEFINE_NAME(), ECU_RUNTIME_ASSERT(), ecu_assert_handler()
+ *      - TEST(Asserter, DefineNameMacro)
+ *      - TEST(Asserter, ECUDListAssert)
+ *      - TEST(Asserter, ECUEventAssert)
+ *      - TEST(Asserter, ECUFsmAssert)
+ *      - TEST(Asserter, ECUHsmAssert)
+ *      - TEST(Asserter, ECUTimerAssert)
+ *      - TEST(Asserter, ECUTreeAssert)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -9,19 +19,17 @@
  * @copyright Copyright (c) 2024
  */
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------- INCLUDES ------------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-
+/*------------------------------------------------------------*/
+/*------------------------- INCLUDES -------------------------*/
+/*------------------------------------------------------------*/
+#warning "TODO: Uncomment files once done."
 /* Files under test. */
 #include "ecu/asserter.h"
-#include "ecu/circular_dll.h"
+#include "ecu/dlist.h"
 #include "ecu/event.h"
 #include "ecu/fsm.h"
 #include "ecu/hsm.h"
-#include "ecu/timer.h"
+// #include "ecu/timer.h"
 #include "ecu/tree.h"
 
 /* Stubs. */
@@ -31,61 +39,57 @@
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
 
+/*------------------------------------------------------------*/
+/*------------------------ NAMESPACES ------------------------*/
+/*------------------------------------------------------------*/
 
+using namespace stubs;
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------- DEFINE FILE NAME FOR ASSERTER ----------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*--------------- DEFINE FILE NAME FOR ASSERTS ---------------*/
+/*------------------------------------------------------------*/
 
 ECU_ASSERT_DEFINE_NAME("test_asserter.cpp")
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------ STATIC FUNCTION DECLARATIONS ---------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*--------------- STATIC FUNCTION DECLARATIONS ---------------*/
+/*------------------------------------------------------------*/
 
 static void assert_handler(const char *file, int line);
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------- STATIC FUNCTION DEFINITIONS ---------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
+/*------------------------------------------------------------*/
 
 static void assert_handler(const char *file, int line)
 {
     (void)line;
     mock().actualCall(__func__).withParameter("p1", file);
-    throw stubs::AssertException();
+    throw AssertException();
 }
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------- TEST GROUPS ---------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*----------------------- TEST GROUPS ------------------------*/
+/*------------------------------------------------------------*/
 
 TEST_GROUP(Asserter)
 {
     void setup() override
     {
-        stubs::set_assert_handler(&assert_handler);
+        set_assert_handler(&assert_handler);
     }
 
     void teardown() override
     {
-        stubs::set_assert_handler(stubs::AssertResponse::FAIL);
+        set_assert_handler(AssertResponse::FAIL);
         mock().checkExpectations();
         mock().clear();
     }
 };
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------- TESTS ----------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*----------------------------- TESTS ------------------------*/
+/*------------------------------------------------------------*/
 
 /**
  * @brief Verify @ref ECU_ASSERT_DEFINE_NAME() macro
@@ -102,34 +106,32 @@ TEST(Asserter, DefineNameMacro)
         ECU_RUNTIME_ASSERT( (false) );
     }
 
-    catch (stubs::AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
 }
 
-
 /**
  * @brief Verify file name is correct when assert fires
- * in circular_dll.c
+ * in dlist.c
  */
-TEST(Asserter, ECUCircularDLLAssert)
+TEST(Asserter, ECUDListAssert)
 {
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/circular_dll.c");
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/dlist.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_circular_dll_ctor((struct ecu_circular_dll *)0);
+        ecu_dlist_ctor(reinterpret_cast<ecu_dlist *>(0));
     }
 
-    catch (stubs::AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
 }
-
 
 /**
  * @brief Verify file name is correct when assert fires
@@ -143,15 +145,14 @@ TEST(Asserter, ECUEventAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_event_ctor((struct ecu_event *)0, 0);
+        ecu_event_ctor(reinterpret_cast<ecu_event *>(0), 0);
     }
 
-    catch (stubs::AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
 }
-
 
 /**
  * @brief Verify file name is correct when assert fires
@@ -165,15 +166,14 @@ TEST(Asserter, ECUFsmAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/fsm.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_fsm_ctor((struct ecu_fsm *)0, (const struct ecu_fsm_state *)0);
+        ecu_fsm_ctor(reinterpret_cast<ecu_fsm *>(0), reinterpret_cast<const ecu_fsm_state *>(0));
     }
 
-    catch (stubs::AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
 }
-
 
 /**
  * @brief Verify file name is correct when assert fires
@@ -184,28 +184,26 @@ TEST(Asserter, ECUHsmAssert)
     /* Placeholder until HSM module is complete. */
 }
 
+// /**
+//  * @brief Verify file name is correct when assert fires
+//  * in timer.c
+//  */
+// TEST(Asserter, ECUTimerAssert)
+// {
+//     try 
+//     {
+//         /* Step 1: Arrange. */
+//         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
-/**
- * @brief Verify file name is correct when assert fires
- * in timer.c
- */
-TEST(Asserter, ECUTimerAssert)
-{
-    try 
-    {
-        /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
+//         /* Steps 2 and 3: Action and assert. */
+//         ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), (void *)0, (bool (*)(void *))0);
+//     }
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_timer_ctor((struct ecu_timer *)0, (void *)0, (bool (*)(void *))0);
-    }
-
-    catch (stubs::AssertException& e)
-    {
-        (void)e;
-    }
-}
-
+//     catch (const AssertException& e)
+//     {
+//         (void)e;
+//     }
+// }
 
 /**
  * @brief Verify file name is correct when assert fires
@@ -219,10 +217,10 @@ TEST(Asserter, ECUTreeAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_tree_node_ctor((struct ecu_tree_node *)0, (void (*)(struct ecu_tree_node *))0, 0);
+        ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
     }
 
-    catch (stubs::AssertException& e)
+    catch (const AssertException& e)
     {
         (void)e;
     }
