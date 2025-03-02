@@ -1,7 +1,7 @@
 Completed.
 1. asserter.h/.c DONE. TODO clang-format
 2. attributes.h. DONE. TODO clang-format
-3. dlist.h/.c. DONE. TODO proofread docs. TODO clang-format
+3. dlist.h/.c. DONE. TODO clang-format
 4. endian.h. DONE. TODO clang-format
 5. event.h/.c TODO Documentation.
 6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
@@ -9,7 +9,6 @@ Completed.
 8. object_id.h/.c. TODO documentation.
 9. timer.h/.c done. Tests done. TODO Documentation.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation.
-
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
@@ -99,15 +98,20 @@ I.e. catch (const AssertException&) instead of catch (AssertException&)
 
 
 ## Build system and syntax
-0. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
+0. Add doxygen, doxysphinx, and sphinx documentation build steps to CMake. Fail build
+if any error codes returned.
+
+1. Add -Werror. Makes CI pipeline fail if any warnings present.
+
+2. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
 Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
 
-1. Print "cannot use endian.h" warning only at build-time NOT configuration time.
+3. Print "cannot use endian.h" warning only at build-time NOT configuration time.
 Otherwise message is always printed
 - Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?
 - Note the if() elseif() stuff is evaluated at configuration time.
 
-2. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
+4. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
 
 # Clang-format
