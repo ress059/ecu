@@ -6,16 +6,10 @@ from pathlib import Path
 
 ECU_BASE_DIR = Path(__file__).resolve().parents[1]
 
-
-# sys.path.append("/home/me/docproj/ext/breathe/") !!!! TODO Need to add breathe executable to path!!! How to do this in a non-jank way???
-
-
-
 # -------------------------- Project information --------------------------
 project = "Embedded C Utilities (ECU)"
-copyright = "2024, Ian Ress"
+copyright = "2025, Ian Ress"
 author = "Ian Ress"
-
 
 # -------------------------- General configuration --------------------------
 
@@ -70,7 +64,6 @@ html_css_files = [
     "css/custom.css",
 ]
 
-
 # -------------------------- Doxylink setup --------------------------
 doxylink = {
     # "ecudoxygen" is the role name that you can later use in sphinx to reference this doxygen documentation.
@@ -80,11 +73,3 @@ doxylink = {
     # of the symbol you want to link and then prefix it with this path to generate html links (<a>-tags).
     "ecudoxygen": (str(ECU_BASE_DIR / "doc" / "doxygen" / "html" / "tagfile.xml"), "doxygen/html")
 }
-
-
-# -- Breathe configuration -------------------------------------------------
-# breathe_projects = {
-#     "ECU": str(ECU_BASE_DIR / "doc" / "doxygen" / "xml")
-# }
-
-# breathe_default_project = "ECU"
