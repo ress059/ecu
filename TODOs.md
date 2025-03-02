@@ -99,7 +99,8 @@ I.e. catch (const AssertException&) instead of catch (AssertException&)
 
 ## Build system and syntax
 0. Add doxygen, doxysphinx, and sphinx documentation build steps to CMake. Fail build
-if any error codes returned.
+if any error codes returned. !!!in readthedocs.yaml return error code 183 if any doxygen
+or doxysphinx warnings/errors occur!!!.
 
 1. Add -Werror. Makes CI pipeline fail if any warnings present.
 

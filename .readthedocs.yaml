@@ -4,12 +4,13 @@ build:
   os: ubuntu-22.04
   apt_packages:
     - doxygen
+    - graphviz
   tools:
     python: "3.10"
   jobs:
     pre_build:
       - doxygen
-      - doxysphinx build doc/ doc/build Doxyfile
+      - doxysphinx build doc/ $READTHEDOCS_OUTPUT/html Doxyfile
 
 sphinx:
   builder: html
