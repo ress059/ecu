@@ -12,10 +12,10 @@ build:
       - doxysphinx build doc/ doc/build Doxyfile
 
 sphinx:
-   builder: html
-   configuration: doc/conf.py
-   fail_on_warning: true
+  builder: html
+  configuration: doc/conf.py
+  fail_on_warning: true
 
 python:
-   install:
-   - requirements: docs/requirements.txt
+  install:
+    - requirements: docs/requirements.txt
