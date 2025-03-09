@@ -23,7 +23,7 @@ add_library(ecu STATIC
     # ${CMAKE_CURRENT_LIST_DIR}/src/hsm.c
     ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
     # ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
+    # ${CMAKE_CURRENT_LIST_DIR}/src/tree.c
 )
 
 # Example include in the Application would be #include "ecu/fsm.h" 
@@ -52,21 +52,18 @@ elseif(${CMAKE_C_BYTE_ORDER} STREQUAL "BIG_ENDIAN")
     )
 else()
     message(WARNING "Unable to detect target endianness. endian.h cannot be used.")
-endif()
+endif() 
 
-# Enable all warnings and relevant debug info. Only turn these flags on when 
-# ecu library is being compiled by an application using ecu. Do not propogate 
-# these flags to the remaining application source code. Generator expressions
-# ensures flags are always compatible with the target application's compiler.
-# Currently only support GCC but it is OK if application is not using GCC. 
-# In this case no flags will be used since we cannot assume anything about 
-# which compiler the application will be using. ALSO NOTE: An optimization 
-# flag is not specified on purpose so it can be defined by the application. 
-# I.e. after importing ecu the application can do: target_compile_options(ecu PRIVATE -O2).
-# It is OK if the application does not specify an optimization level - GCC
-# will default it to -O0.
-target_compile_options(ecu 
-    PRIVATE
+# Store ECU-specific warning flags in an interface target in case it is
+# also needed by test builds. Enable all warnings and relevant debug info.
+# An optimization flag is not specified on purpose so it can be defined by 
+# the application. I.e. after importing ecu the application can do: 
+# target_compile_options(ecu PRIVATE -O2). It is OK if the application does 
+# not specify an optimization level - GCC will default it to -O0.
+# Note that -Werror will only be passed for build tests.
+add_library(ecu_warning_flags INTERFACE)
+target_compile_options(ecu_warning_flags 
+    INTERFACE 
         # C compiler flags. We know ECU is a C library so we can use this generator expression.
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fstack-usage -fno-common>
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
@@ -91,19 +88,29 @@ if(${ECU_DISABLE_RUNTIME_ASSERTS})
 
     # Some functions will now be unused because they are called within 
     # assert macros. Use -Wno-unused-function to suppress these warnings.
-    target_compile_options(ecu
-        PRIVATE
+    target_compile_options(ecu_warning_flags
+        INTERFACE
             $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function>
     )
 endif()
 
+# Note how ECU-specific warning flags are private so it is not propogated
+# to the user's application. However our internal tests can still use 
+# ecu_warning_flags target to get all of the warning flags.
+target_link_libraries(ecu 
+    PRIVATE
+        ecu_warning_flags
+)
+
 #------------------------------------------------------------#
 #---------------------- INTERNAL TESTS ----------------------#
 #------------------------------------------------------------#
-# CTest and enable_testing has to be in the root CMakeLists.txt. 
-# Tests will not be discovered if this is in tests/CMakeLists.txt....
-if(${ECU_ENABLE_TESTING})
+if(${ECU_ENABLE_UNIT_TESTING})
+    # CTest and enable_testing has to be in the root CMakeLists.txt. 
+    # Tests will not be discovered if this is in tests/CMakeLists.txt....
     include(CTest)
     enable_testing()
-    add_subdirectory(tests)
+    add_subdirectory(tests/unit)
+elseif(${ECU_ENABLE_BUILD_TESTING})
+    add_subdirectory(tests/build)
 endif()
