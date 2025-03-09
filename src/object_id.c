@@ -4,7 +4,7 @@
  * @rst
  * See :ref:`object_id.h section <object_id_h>` in Sphinx documentation.
  * @endrst
- * 
+ *
  * @author Ian Ress
  * @version 0.1
  * @date 2024-04-07
