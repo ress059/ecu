@@ -1,168 +1,13 @@
 /**
  * @file
- * @brief Hardware-independent timer module that also handles tick-counter wraparound.
- * For each timer, a user-defined callback executes on timeout. This callback, along with the
- * timeout period and other properties are assigned by calling @ref ecu_timer_ctor(). This module
- * is meant to run multiple timers at once. This is done by adding timers to a linked list, whose
- * HEAD is represented by @ref ecu_timer_collection. Timers can be added or removed from a list
- * by calling @ref ecu_timer_arm() and @ref ecu_timer_disarm() functions respectively.
- * @image html timer-structure.png "Timer List Structure"
- * \n
- *
- * All timers within a list are updated by a single function, @ref ecu_timer_collection_tick(),
- * which must be called periodically by the application. Each timer collection (list) is
- * independent from one another, so @ref ecu_timer_collection_tick() must be called separately
- * on each @ref ecu_timer_collection that you have. It is also important to note that an
- * @ref ecu_timer object can only be in one collection at any time. It CANNOT be in multiple
- * collections at the same time.
- * \n
- *
- * This module remains hardware-independent by providing an <b>interface</b> for the necessary
- * hardware drivers. These drivers must be supplied to this module by calling the
- * @ref ecu_timer_collection_ctor() function. This module also only uses <b>clock ticks</b> as
- * a unit of measurement, NOT seconds, microseconds, milliseconds, etc. This is because conversion
- * from clock ticks to units of time is a property of the target harware.
- * @image html timer-hardware-drivers.png "Hardware Driver Interface"
- * \n
- *
- * The hardware driver interface consists of:
- * 1. An @ref ecu_timer_collection.get_ticks() function, where the user returns the raw
- * number of clock ticks. You do not have to calculate elapsed ticks or handle tick-counter
- * wraparound. This module takes care of this automatically.
- * 2. An optional object to pass into the @ref ecu_timer_collection.get_ticks() function.
- * 3. @ref ecu_timer_collection.tick_width_bytes which specifies the width, in bytes, of
- * the timer you are using. For example if you are using a 32-bit timer this would be 4.
- * 4. Optionally define a conversion between clock-ticks and units of time for easier
- * use of this module in your application.
- *
- * \n
- * Below is a bare-bones example of defining a hardware timer driver, supplying it to
- * this module, and using this module in an application. A 32-bit systick is used for
- * the hardware driver, which is then supplied to this module. Two one-shot timers and
- * one periodic timer are then added to a timer collection and ran. For simplicity, no
- * (void *) objects are passed into our timer callbacks or hardware drivers but they can
- * be in order to give the application more flexibility.
- * @code{.c}
- * #include <stdint.h>
- * #include "ecu/timer.h"
- *
- *
- *
- * /------------------------------------------------------------/
- * /--------------------------- Defines ------------------------/
- * /------------------------------------------------------------/
- *
- * // For this example 1 clock tick = 1 millisecond.
- * #define MS_TO_CLOCK_TICKS(x)                 (x)
- *
- *
- *
- * /------------------------------------------------------------/
- * /-------------------- File-scope variables ------------------/
- * /------------------------------------------------------------/
- *
- * /----------------------- Harware drivers --------------------/
- * static volatile uint32_t ticks = 0;
- *
- *
- * /------------------------- Timer module ---------------------/
- * static struct ecu_timer_collection collection;
- * static struct ecu_timer timer1;
- * static struct ecu_timer timer2;
- * static struct ecu_timer timer3;
- *
- *
- *
- * /------------------------------------------------------------/
- * /---------------- Static function declarations --------------/
- * /------------------------------------------------------------/
- *
- * /----------------------- Harware drivers --------------------/
- * // Systick interrupt that increments tick counter. Fires every 1ms.
- * static void systick_isr(void);
- *
- * // Returns number of raw clock ticks of our systick.
- * static ecu_max_tick_size_t get_ticks(void *obj);
- *
- *
- * /------------------------- Timer module ---------------------/
- * static bool timer1_timeout_callback(void *obj);
- * static bool timer2_timeout_callback(void *obj);
- * static bool timer3_timeout_callback(void *obj);
- *
- *
- *
- * /------------------------------------------------------------/
- * /----------------- Static function definitions --------------/
- * /------------------------------------------------------------/
- *
- * /----------------------- Harware drivers --------------------/
- * static void systick_isr(void)
- * {
- *     ticks++;
- * }
- *
- * static ecu_max_tick_size_t get_ticks(void *obj)
- * {
- *     // NOTE: this would normally be guarded in a critical section since 'ticks' is
- *     // incremented inside an interrupt. This is not done here for simplicity and
- *     // to just get the point across.
- *     (void)obj;
- *     return ticks;
- * }
- *
- *
- * /------------------------- Timer module ---------------------/
- * // User-defined callbacks that run when timers expire. You can return false to run a
- * // callback again on the next call to ecu_timer_collection_tick(). This means the callback
- * // "failed". An example "failure" could be you tried to post to a queue but it was full.
- *
- * static bool timer1_timeout_callback(void *obj)
- * {
- *     (void)obj;
- *     return true;
- * }
- *
- * static bool timer2_timeout_callback(void *obj)
- * {
- *     (void)obj;
- *     return true;
- * }
- *
- * static bool timer3_timeout_callback(void *obj)
- * {
- *     (void)obj;
- *     return true;
- * }
- *
- *
- *
- * /------------------------------------------------------------/
- * /------------------- Initialize and use module --------------/
- * /------------------------------------------------------------/
- *
- * // Construct all timer objects.
- * ecu_timer_collection_ctor(&collection, &get_ticks, (void *)0, sizeof(uint32_t));
- * ecu_timer_ctor(&timer1, (void *)0, &timer1_timeout_callback);
- * ecu_timer_ctor(&timer2, (void *)0, &timer2_timeout_callback);
- * ecu_timer_ctor(&timer3, (void *)0, &timer3_timeout_callback);
- *
- * // Arm and start the timers. Timers 1 and 2 are one-shot and expire once after 500
- * // ms. Timer 3 is periodic and expires periodically after 800 ms.
- * ecu_timer_arm(&collection, &timer1, false, MS_TO_CLOCK_TICKS(500));
- * ecu_timer_arm(&collection, &timer2, false, MS_TO_CLOCK_TICKS(500));
- * ecu_timer_arm(&collection, &timer3, true, MS_TO_CLOCK_TICKS(800));
- *
- * void inside_timer_thread_or_main_loop(void)
- * {
- *     // Call this function periodically to update the timers.
- *     ecu_timer_collection_tick(&collection);
- * }
- * @endcode
- *
+ * @brief
+ * @rst
+ * See :ref:`dlist.h section <dlist_h>` in Sphinx documentation.
+ * @endrst
+ * 
  * @author Ian Ress
  * @version 0.1
- * @date 2025-04-04
+ * @date 2025-04-05
  * @copyright Copyright (c) 2025
  */
 
@@ -296,7 +141,7 @@ struct ecu_tlist
         /// of ticks from the hardware timer.
         ecu_timer_tick_t (*get_tick_count)(void *obj);
 
-        /// @brief Optional object to pass into @ref ecu_tlist.api.get_tick_count().
+        /// @brief Optional object to pass into get_tick_count() callback.
         void *obj;
     } api;
 };
