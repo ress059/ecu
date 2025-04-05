@@ -1,9 +1,9 @@
 Completed.
 1. asserter.h/.c DONE.
 2. attributes.h. DONE.
-3. dlist.h/.c. DONE.
+3. dlist.h/.c. TODO. See dlist entry below.
 4. endian.h. DONE.
-5. event.h/.c DONE.
+5. event.h/.c DONE. TODO May delete this.
 6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
@@ -62,13 +62,20 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
+2. TEST ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
+ecu_dlist_back(), ecu_dlist_cback(), and ecu_dlist_pop_back(). Add these new functions to Sphinx documentation. 
+
+3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
+not allowed to remove it unless node was in list. Now we remove it
+regardless (no need to check).
+
+4. clang-format.
+
 # Timer
-0. Update to use new dlist.h API.
-1. When adding a new timer, order list nodes by timeout ticks (timer closest to timing
-out is at HEAD). This way ecu_timer_collection_tick() only has to check HEAD instead of
-iterating through entire list.
-2. When applicable use the ECU_DLIST_FOR_EACH() macros intead of manually iterating
-through list.
+0. Add new tests for updated timer module.
+1. Add Sphinx documentation.
+2. Clang-format.
+3. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree
@@ -117,6 +124,39 @@ Otherwise message is always printed
 
 5. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+# Clang-format
+1. One line max now.
+2. Braces (if, while, for, etc).
+3. Pointer location. I.e. void* vs void *
+4. Limit PRIVATE documentation to just on struct documentation and put it in warning, 
+Don't do on individual members. Use one-line doxygen syntax for struct members. I.e.
+```C
+/**
+ * @brief Single node within list. User-defined 
+ * nodes contain this object.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all 
+ * members can only be edited via the public API.
+ */
+struct ecu_dnode
+{
+    /// @brief Next node in list.
+    struct ecu_dnode *next;
+
+    /// @brief Previous node in list.
+    struct ecu_dnode *prev;
+
+    /// @brief Optional user-defined node destructor. Executes 
+    /// when @ref ecu_dlist_destroy() or @ref ecu_dnode_destroy() 
+    /// are called.
+    void (*destroy)(struct ecu_dnode *me, ecu_object_id id);
+
+    /// @brief Optional node ID. Helps user identify 
+    /// different types stored in the same list.
+    ecu_object_id id;
+};
+```
 
 
 ## CI Pipeline Steps:

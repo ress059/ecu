@@ -81,10 +81,9 @@ enum ecu_reserved_event_ids
 };
 
 /**
- * @private
- * @brief PRIVATE. Generic type that represents an event ID.
- * @details Used so the library can implicitly typecast between this
- * value, @ref ecu_reserved_event_ids enumerations, and user-defined
+ * @brief PRIVATE. Generic type that represents an event ID. 
+ * @details Used so the library can implicitly typecast between this 
+ * value, @ref ecu_reserved_event_ids enumerations, and user-defined 
  * event ID enumerations.
  *
  * @warning This must be a signed integer type in order to
@@ -106,9 +105,7 @@ typedef int32_t ecu_event_id;
  */
 struct ecu_event
 {
-    /**
-     * @brief Identifies the type of event that was dispatched.
-     */
+    /// @brief Identifies the type of event that was dispatched.
     ecu_event_id id;
 };
 
