@@ -72,5 +72,23 @@
 			"configurePreset": "stm32l432xc-build-test",
 			"verbose": true
 		}
-	]
+	],
+    "testPresets": [
+        {
+            "name": "unit-test",
+            "displayName": "unit-test",
+            "description": "Run unit tests. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
+            "configurePreset": "unit-test",
+            "configuration": "Debug",
+            "output": 
+            {
+                "outputOnFailure": true
+            },
+            "execution": 
+            {
+                "noTestsAction": "error", 
+                "stopOnFailure": true
+            }
+        }
+    ]
 }
