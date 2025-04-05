@@ -230,9 +230,9 @@ bool ecu_timer_is_active(const struct ecu_timer *me)
     return ecu_dnode_in_list(&me->dnode);
 }
 
-#warning "TODO: Want a timer reset capability without coupling it to tlist. \
+#pragma message("TODO: Want a timer reset capability without coupling it to tlist. \
     Reset = stop timer but do not restart its timer. When its readded it counts down \
-    from its old saved value."
+    from its old saved value.")
 
 /*------------------------------------------------------------*/
 /*-------------------- TLIST MEMBER FUNCTIONS ----------------*/
