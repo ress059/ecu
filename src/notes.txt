@@ -1,0 +1,3 @@
+timer tests:
+
+1. Adding and resetting timer within expired callback.

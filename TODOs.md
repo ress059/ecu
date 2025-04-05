@@ -1,14 +1,14 @@
 Completed.
-1. asserter.h/.c DONE. TODO clang-format
-2. attributes.h. DONE. TODO clang-format
-3. dlist.h/.c. DONE. TODO clang-format
-4. endian.h. DONE. TODO clang-format
-5. event.h/.c TODO Documentation.
-6. fsm.h/.c. Tests done. TODO - Possibly new features. TODO Documentation.
-7. hsm.h/.c. TODO.
-8. object_id.h/.c. TODO documentation.
-9. timer.h/.c done. Tests done. TODO Documentation.
-10. tree.h/.c. Tests done. TODO Code cleanup and Documentation.
+1. asserter.h/.c DONE.
+2. attributes.h. DONE.
+3. dlist.h/.c. TODO. See dlist entry below.
+4. endian.h. DONE.
+5. event.h/.c DONE. TODO May delete this.
+6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
+7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
+8. object_id.h/.c. DONE.
+9. timer.h/.c. TODO. Refactor with new dlist. Refactor to use list sort. Update tests, clang-format, documentation.
+10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
@@ -62,13 +62,17 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
+2. TEST ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
+ecu_dlist_back(), ecu_dlist_cback(), and ecu_dlist_pop_back(). Add these new functions to Sphinx documentation. 
+
+3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
+not allowed to remove it unless node was in list. Now we remove it
+regardless (no need to check).
+
 # Timer
-0. Update to use new dlist.h API.
-1. When adding a new timer, order list nodes by timeout ticks (timer closest to timing
-out is at HEAD). This way ecu_timer_collection_tick() only has to check HEAD instead of
-iterating through entire list.
-2. When applicable use the ECU_DLIST_FOR_EACH() macros intead of manually iterating
-through list.
+0. Add new tests for updated timer module.
+1. Add Sphinx documentation.
+3. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree
@@ -97,28 +101,59 @@ so this only applies to GCC. I.e.
 I.e. catch (const AssertException&) instead of catch (AssertException&)
 
 
-## Build system and syntax
-0. Add doxygen, doxysphinx, and sphinx documentation build steps to CMake. Fail build
+## Build system and syntax, CI, etc
+0. Still need to clang-format fsm, hsm, timer, and tree.
+
+1. Add doxygen, doxysphinx, and sphinx documentation build steps to CMake. Fail build
 if any error codes returned. !!!in readthedocs.yaml return error code 183 if any doxygen
 or doxysphinx warnings/errors occur!!!.
 
-1. Add -Werror. Makes CI pipeline fail if any warnings present.
+2. Add clang-format to CMake build tests. Do not auto-format the code. Instead return
+error if diff is different before and after formatting.
 
-2. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
+3. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
 Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
 
-3. Print "cannot use endian.h" warning only at build-time NOT configuration time.
+4. Print "cannot use endian.h" warning only at build-time NOT configuration time.
 Otherwise message is always printed
 - Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?
 - Note the if() elseif() stuff is evaluated at configuration time.
 
-4. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
+5. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
 
 # Clang-format
 1. One line max now.
 2. Braces (if, while, for, etc).
 3. Pointer location. I.e. void* vs void *
+4. Limit PRIVATE documentation to just on struct documentation and put it in warning, 
+Don't do on individual members. Use one-line doxygen syntax for struct members. I.e.
+```C
+/**
+ * @brief Single node within list. User-defined 
+ * nodes contain this object.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all 
+ * members can only be edited via the public API.
+ */
+struct ecu_dnode
+{
+    /// @brief Next node in list.
+    struct ecu_dnode *next;
+
+    /// @brief Previous node in list.
+    struct ecu_dnode *prev;
+
+    /// @brief Optional user-defined node destructor. Executes 
+    /// when @ref ecu_dlist_destroy() or @ref ecu_dnode_destroy() 
+    /// are called.
+    void (*destroy)(struct ecu_dnode *me, ecu_object_id id);
+
+    /// @brief Optional node ID. Helps user identify 
+    /// different types stored in the same list.
+    ecu_object_id id;
+};
+```
 
 
 ## CI Pipeline Steps:
@@ -130,17 +165,5 @@ If any step fails do not move on.
 
 - cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
 - cmake --build --preset linux-gnu-build
-
-3. static analysis. clang-tidy
-4. run unit tests.
-5. generate documentation. doxygen
-
-
-## All:
-0. All declarations are max 1 line now. I.e.
-extern void foo(void);
-// only one line in between.
-extern void bar(void);
-
-1. Possible include file comments about PRIVATE members for restof source files (like the description in circular_dll.h).
-2. Remove all @ref file in doxygen comments. I.e. "See @ref endian.h for more details", "see @ref circular_dll.h for more details", etc.
+3. run unit tests.
+4. generate documentation. doxygen

@@ -13,19 +13,35 @@
 			/* VSCode extensions to install when container is first created. */
 			"extensions": 
 			[
+                /* C and C++. */
+                "ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+
+                /* Doxygen comment generator. */
 				"cschlosser.doxdocgen",
+
+                /* Python intellisense. */
 				"ms-python.python",
-				"redhat.vscode-yaml",
-				"marus25.cortex-debug",
-				"ms-azuretools.vscode-docker"
+
+                /* Restructured text intellisense. */
+                "lextudio.restructuredtext",
+                "trond-snekvik.simple-rst",
+                "swyddfa.esbonio",
+
+                /* yaml intellisense. */
+                "redhat.vscode-yaml"
 			],
 			/* Make bash default terminal. Set up intellisense. */
 			"settings": 
 			{
-				"terminal.integrated.defaultProfile.linux": "bash",
-				"C_Cpp.default.compileCommands": "${config:cmake.buildDirectory}/compile_commands.json",
 				"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+				"editor.detectIndentation": false,
+				"editor.insertSpaces": true,
+				"editor.tabSize": 4,
+                "telemetry.enableTelemetry": false,
+                "telemetry.telemetryLevel": "off",
+				"terminal.integrated.defaultProfile.linux": "bash",
 				"workbench.editor.enablePreview": false
 			}
 		}

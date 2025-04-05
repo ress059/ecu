@@ -28,9 +28,9 @@
 #include "ecu/dlist.h"
 #include "ecu/event.h"
 #include "ecu/fsm.h"
-#include "ecu/hsm.h"
-// #include "ecu/timer.h"
-#include "ecu/tree.h"
+// #include "ecu/hsm.h"
+#include "ecu/timer.h"
+// #include "ecu/tree.h"
 
 /* Stubs. */
 #include "stubs/stub_asserter.hpp"
@@ -184,40 +184,19 @@ TEST(Asserter, ECUHsmAssert)
     /* Placeholder until HSM module is complete. */
 }
 
-// /**
-//  * @brief Verify file name is correct when assert fires
-//  * in timer.c
-//  */
-// TEST(Asserter, ECUTimerAssert)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
-
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), (void *)0, (bool (*)(void *))0);
-//     }
-
-//     catch (const AssertException& e)
-//     {
-//         (void)e;
-//     }
-// }
-
 /**
  * @brief Verify file name is correct when assert fires
- * in tree.c
+ * in timer.c
  */
-TEST(Asserter, ECUTreeAssert)
+TEST(Asserter, ECUTimerAssert)
 {
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
+        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), 0, ECU_TIMER_ONE_SHOT, nullptr, nullptr);
     }
 
     catch (const AssertException& e)
@@ -225,3 +204,24 @@ TEST(Asserter, ECUTreeAssert)
         (void)e;
     }
 }
+
+// /**
+//  * @brief Verify file name is correct when assert fires
+//  * in tree.c
+//  */
+// TEST(Asserter, ECUTreeAssert)
+// {
+//     try 
+//     {
+//         /* Step 1: Arrange. */
+//         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
+
+//         /* Steps 2 and 3: Action and assert. */
+//         ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
+//     }
+
+//     catch (const AssertException& e)
+//     {
+//         (void)e;
+//     }
+// }

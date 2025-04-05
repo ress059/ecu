@@ -4,7 +4,7 @@
  * @rst
  * See :ref:`event.h section <event_h>` in Sphinx documentation.
  * @endrst
- * 
+ *
  * @author Ian Ress
  * @version 0.1
  * @date 2024-04-07
@@ -41,7 +41,7 @@ ECU_STATIC_ASSERT( (ECU_USER_EVENT_ID_BEGIN == 0), "ECU_USER_EVENT_ID_BEGIN must
 /*--------------------- PUBLIC FUNCTIONS ---------------------*/
 /*------------------------------------------------------------*/
 
-void ecu_event_ctor(struct ecu_event *me, 
+void ecu_event_ctor(struct ecu_event *me,
                     ecu_event_id id_0)
 {
     ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_EVENT_ID_BEGIN)) );
