@@ -33,7 +33,6 @@
  * ecu_dnode_remove()
  *      - TEST(DNode, Remove)
  *      - TEST(DNode, RemoveAndReAddNode)
- *      - TEST(DNode, RemoveNodeNotInList)
  *      - TEST(DNode, RemoveHeadNode)
  * 
  * ecu_dnode_in_list()
@@ -1108,15 +1107,6 @@ TEST(DNode, RemoveAndReAddNode)
         (void)e;
     }
 }
-
-/**
- * @brief Intentionally commented out. No way to portably
- * test this without direct member access of mocking an
- * assert fired. 
- */
-// TEST(DNode, RemoveNodeNotInList)
-// {
-// }
 
 /**
  * @brief The reserved HEAD node can never be removed from

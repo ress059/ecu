@@ -140,7 +140,7 @@ int main(void)
     
     ecu_dlist_push_back(&app_list, &app_node1.node);
     ecu_dlist_push_front(&app_list, &app_node2.node);
-    ecu_dlist_remove(&app_list, &app_node2.node);
+    ecu_dnode_remove(&app_node2.node);
 
     ecu_fsm_dispatch((struct ecu_fsm *)&app_fsm, ECU_EVENT_BASE_CAST(&app_event));
 

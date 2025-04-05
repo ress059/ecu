@@ -52,7 +52,6 @@ enum ecu_reserved_object_ids
 };
 
 /**
- * @private 
  * @brief PRIVATE. Generic type that represents an object ID. 
  * @details Used so the library can implicitly typecast between this 
  * value, @ref ecu_reserved_object_ids enumerations, and user-defined 
