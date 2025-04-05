@@ -69,12 +69,9 @@ ecu_dlist_back(), ecu_dlist_cback(), and ecu_dlist_pop_back(). Add these new fun
 not allowed to remove it unless node was in list. Now we remove it
 regardless (no need to check).
 
-4. clang-format.
-
 # Timer
 0. Add new tests for updated timer module.
 1. Add Sphinx documentation.
-2. Clang-format.
 3. When timer and FSM done, use it in main.c build test to verify linkage.
 
 

@@ -231,8 +231,8 @@ void ecu_dnode_remove(struct ecu_dnode *me)
     {
         me->next->prev = me->prev;
         me->prev->next = me->next;
-        me->next       = me;
-        me->prev       = me;
+        me->next = me;
+        me->prev = me;
         /* Do not reset destroy callback or ID. This is only a remove function,
         not a destroy function. */
     }

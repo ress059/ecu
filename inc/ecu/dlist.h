@@ -106,10 +106,10 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief Single node within list. User-defined 
+ * @brief Single node within list. User-defined
  * nodes contain this object.
- * 
- * @warning PRIVATE. Unless otherwise specified, all 
+ *
+ * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_dnode
@@ -120,20 +120,20 @@ struct ecu_dnode
     /// @brief Previous node in list.
     struct ecu_dnode *prev;
 
-    /// @brief Optional user-defined node destructor. Executes 
-    /// when @ref ecu_dlist_destroy() or @ref ecu_dnode_destroy() 
+    /// @brief Optional user-defined node destructor. Executes
+    /// when @ref ecu_dlist_destroy() or @ref ecu_dnode_destroy()
     /// are called.
     void (*destroy)(struct ecu_dnode *me, ecu_object_id id);
 
-    /// @brief Optional node ID. Helps user identify 
+    /// @brief Optional node ID. Helps user identify
     /// different types stored in the same list.
     ecu_object_id id;
 };
 
 /**
  * @brief Intrusive, doubly-linked list.
- * 
- * @warning PRIVATE. Unless otherwise specified, all 
+ *
+ * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_dlist
@@ -149,42 +149,42 @@ struct ecu_dlist
 
 /**
  * @brief Non-const list iterator.
- * 
- * @warning PRIVATE. Unless otherwise specified, all 
+ *
+ * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_dlist_iterator
 {
-    /// @brief List that is being iterated. List's 
+    /// @brief List that is being iterated. List's
     /// HEAD is used as a delimiter.
     struct ecu_dlist *list;
 
     /// @brief Current position in list.
     struct ecu_dnode *current;
 
-    /// @brief Next position in the list. Allows user to 
-    /// safely add and remove nodes in the middle of an 
+    /// @brief Next position in the list. Allows user to
+    /// safely add and remove nodes in the middle of an
     /// iteration.
     struct ecu_dnode *next;
 };
 
 /**
  * @brief Const list iterator.
- * 
- * @warning PRIVATE. Unless otherwise specified, all 
+ *
+ * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_dlist_const_iterator
 {
-    /// @brief List that is being iterated. List's 
+    /// @brief List that is being iterated. List's
     /// HEAD is used as a delimiter.
     const struct ecu_dlist *list;
 
     /// @brief Current position in list.
     const struct ecu_dnode *current;
 
-    /// @brief Next position in the list. Allows user to 
-    /// safely add and remove nodes in the middle of an 
+    /// @brief Next position in the list. Allows user to
+    /// safely add and remove nodes in the middle of an
     /// iteration.
     const struct ecu_dnode *next;
 };
@@ -268,9 +268,9 @@ extern void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *posit
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
- * @brief If node is in list, it is removed. Node can be reused and 
+ * @brief If node is in list, it is removed. Node can be reused and
  * added to another list without reconstruction.
- * 
+ *
  * @param me Node to remove. This cannot be @ref ecu_dlist.head.
  */
 extern void ecu_dnode_remove(struct ecu_dnode *me);
@@ -346,7 +346,7 @@ extern void ecu_dlist_clear(struct ecu_dlist *me);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, returns a pointer to the front node.
  * If list is empty, returns NULL.
- * 
+ *
  * @param me List to check.
  */
 extern struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me);
@@ -355,7 +355,7 @@ extern struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, returns a pointer to the front node.
  * If list is empty, returns NULL.
- * 
+ *
  * @param me List to check.
  */
 extern const struct ecu_dnode *ecu_dlist_cfront(const struct ecu_dlist *me);
@@ -375,7 +375,7 @@ extern void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, removes the front node and returns
  * a pointer to it. If list is empty, returns NULL.
- * 
+ *
  * @param me List to pop.
  */
 extern struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me);
@@ -384,7 +384,7 @@ extern struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, returns a pointer to the tail node.
  * If list is empty, returns NULL.
- * 
+ *
  * @param me List to check.
  */
 extern struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me);
@@ -393,7 +393,7 @@ extern struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, returns a pointer to the tail node.
  * If list is empty, returns NULL.
- * 
+ *
  * @param me List to check.
  */
 extern const struct ecu_dnode *ecu_dlist_cback(const struct ecu_dlist *me);
@@ -413,7 +413,7 @@ extern void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief If list is not empty, removes the tail node and returns
  * a pointer to it. If list is empty, returns NULL.
- * 
+ *
  * @param me List to pop.
  */
 extern struct ecu_dnode *ecu_dlist_pop_back(struct ecu_dlist *me);
