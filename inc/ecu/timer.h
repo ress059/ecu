@@ -217,8 +217,8 @@ typedef size_t ecu_timer_tick_t;
  */
 enum ecu_timer_type
 {
-    ECU_TIMER_ONE_SHOT, /**< Once timer expires it is stopped. */
-    ECU_TIMER_PERIODIC, /**< Once the timer expires it is automatically restarted. */
+    ECU_TIMER_TYPE_ONE_SHOT, /**< Once timer expires it is stopped. */
+    ECU_TIMER_TYPE_PERIODIC, /**< Once the timer expires it is automatically restarted. */
     /********************/
     ECU_TIMER_TYPES_COUNT
 };
@@ -413,7 +413,9 @@ extern void ecu_tlist_ctor(struct ecu_tlist *me,
  * @brief Starts the timer if it is stopped. If the timer is
  * already running it is reset. I.e. if the timer period is 20
  * seconds and is set to expire in 10 seconds, the timer is
- * restarted and will expire 20 seconds later.
+ * restarted and will expire 20 seconds later. If the timer is
+ * in another tlist it will be removed from the old one and 
+ * added to this one.
  *
  * @param me List of timers that are running.
  * @param timer Timer to add.

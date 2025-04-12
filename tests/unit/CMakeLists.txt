@@ -25,6 +25,12 @@ target_compile_options(CppUTest
         $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
 )
 
+target_compile_options(CppUTestExt
+    PRIVATE 
+        # Save debug symbols for CppUTest.
+        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-g3>
+)
+
 #------------------------------------------------------------#
 #---------------------- UNIT TEST SETTINGS ------------------#
 #------------------------------------------------------------#
@@ -38,7 +44,7 @@ add_executable(ECU_UNIT_TEST
     ${CMAKE_CURRENT_LIST_DIR}/src/test_endian.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_event.cpp
     # ${CMAKE_CURRENT_LIST_DIR}/src/test_fsm.cpp
-    # ${CMAKE_CURRENT_LIST_DIR}/src/test_timer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/test_timer2.cpp
     # ${CMAKE_CURRENT_LIST_DIR}/src/test_tree.cpp
 
     # Stubs
@@ -66,6 +72,9 @@ target_compile_options(ECU_UNIT_TEST
 
         # Save debug symbols in our unit tests.
         $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
+
+        # See https://cpputest.github.io/manual.html "Resolving conflicts with STL" section.
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-include${CMAKE_CURRENT_LIST_DIR}/inc/cpputest_stdlib.hpp>
 )
 
 #------------------------------------------------------------#

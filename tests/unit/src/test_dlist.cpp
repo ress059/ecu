@@ -3,18 +3,18 @@
  * @brief Unit tests for public API functions in @ref dlist.h.
  * Test Summary:
  * 
- * ECU_DNODE_GET_ENTRY() and ECU_DNODE_GET_CONST_ENTRY()
+ * @ref ECU_DNODE_GET_ENTRY() and @ref ECU_DNODE_GET_CONST_ENTRY()
  *      - TEST(DListMacros, GetEntryRead)
  *      - TEST(DListMacros, GetEntryWrite)
  *      - TEST(DListMacros, GetConstEntry)
  * 
- * ecu_dnode_ctor(), ecu_dnode_destroy(), ecu_dlist_ctor(), ecu_dlist_destroy()
+ * @ref ecu_dnode_ctor(), @ref ecu_dnode_destroy(), @ref ecu_dlist_ctor(), @ref ecu_dlist_destroy()
  *      - TEST(DListDNodeCtors, NodeDestroy)
  *      - TEST(DListDNodeCtors, ReconstructDestroyedNode)
  *      - TEST(DListDNodeCtors, ListDestroy)
  *      - TEST(DListDNodeCtors, ReconstructDestroyedList)
  * 
- * ecu_dnode_insert_before()
+ * @ref ecu_dnode_insert_before()
  *      - TEST(DNode, InsertBeforeHead)
  *      - TEST(DNode, InsertBeforeTail)
  *      - TEST(DNode, InsertBeforePositionNodeNotInList)
@@ -22,7 +22,7 @@
  *      - TEST(DNode, InsertBeforeAddDestroyedNode)
  *      - TEST(DNode, InsertBeforeAddHeadNode)
  * 
- * ecu_dnode_insert_after()
+ * @ref ecu_dnode_insert_after()
  *      - TEST(DNode, InsertAfterHead)
  *      - TEST(DNode, InsertAfterTail)
  *      - TEST(DNode, InsertAfterPositionNodeNotInList)
@@ -30,34 +30,53 @@
  *      - TEST(DNode, InsertAfterAddDestroyedNode)
  *      - TEST(DNode, InsertAfterAddHeadNode)
  * 
- * ecu_dnode_remove()
+ * @ref ecu_dnode_remove()
  *      - TEST(DNode, Remove)
  *      - TEST(DNode, RemoveAndReAddNode)
  *      - TEST(DNode, RemoveHeadNode)
  * 
- * ecu_dnode_in_list()
+ * @ref ecu_dnode_in_list()
  *      - TEST(DNode, InList)
  *      - TEST(DNode, InListHead)
  * 
- * ecu_dnode_get_id()
+ * @ref ecu_dnode_get_id()
  *      - TEST(DNode, GetID)
  * 
- * ecu_dlist_clear()
+ * @ref ecu_dlist_clear()
+ *      - TEST(DListBase, ClearEmptyList)
  *      - TEST(DList, Clear)
  * 
- * ecu_dlist_push_front()
+ * @ref ecu_dlist_front(), @ref ecu_dlist_cfront()
+ *      - TEST(DList, FrontEmptyList)
+ *      - TEST(DList, FrontNonEmptyList)
+ * 
+ * @ref ecu_dlist_push_front()
  *      - TEST(DList, PushFront)
  *      - TEST(DList, PushFrontAddNodeInList)
  *      - TEST(DList, PushFrontAddDestroyedNode)
  *      - TEST(DList, PushFrontAddHeadNode)
  * 
- * ecu_dlist_push_back()
+ * @ref ecu_dlist_pop_front()
+ *      - TEST(DList, PopFrontEmptyList)
+ *      - TEST(DList, PopFrontListWithOneNode)
+ *      - TEST(DList, PopFrontListWithMultipleNodes)
+ * 
+ * @ref ecu_dlist_back(), ecu_dlist_cback()
+ *      - TEST(DList, BackEmptyList)
+ *      - TEST(DList, BackNonEmptyList)
+ * 
+ * @ref ecu_dlist_push_back()
  *      - TEST(DList, PushBack)
  *      - TEST(DList, PushBackAddNodeInList)
  *      - TEST(DList, PushBackAddDestroyedNode)
  *      - TEST(DList, PushBackAddHeadNode)
  * 
- * ecu_dlist_insert_before()
+ * @ref ecu_dlist_pop_back()
+ *      - TEST(DList, PopBackEmptyList)
+ *      - TEST(DList, PopBackListWithOneNode)
+ *      - TEST(DList, PopBackListWithMultipleNodes)
+ * 
+ * @ref ecu_dlist_insert_before()
  *      - TEST(DListInsertBefore, MiddleConditionPasses)
  *      - TEST(DListInsertBefore, FirstConditionPasses)
  *      - TEST(DListInsertBefore, AllConditionsFalse)
@@ -67,21 +86,21 @@
  *      - TEST(DListInsertBefore, AddDestroyedNode)
  *      - TEST(DListInsertBefore, AddHeadNode)
  * 
- * ecu_dlist_sort()
+ * @ref ecu_dlist_sort()
  *      - TEST(DListSort, UniqueSortEven)
  *      - TEST(DListSort, UniqueSortOdd)
  *      - TEST(DListSort, NonUniqueSortEven)
  *      - TEST(DListSort, NonUniqueSortOdd)
  * 
- * ecu_dlist_get_size()
+ * @ref ecu_dlist_get_size()
  *      - TEST(DListBase, GetSizeGeneralTest)
  * 
- * ecu_dlist_is_empty()
+ * @ref ecu_dlist_is_empty()
  *      - TEST(DListBase, IsEmptyGeneralTest)
  * 
- * ECU_DLIST_FOR_EACH(), ECU_DLIST_CONST_FOR_EACH(), ecu_dlist_iterator_begin(),
- * ecu_dlist_iterator_end(), ecu_dlist_iterator_next(), ecu_dlist_const_iterator_begin(),
- * ecu_dlist_const_iterator_end(), ecu_dlist_const_iterator_next()
+ * @ref ECU_DLIST_FOR_EACH(), @ref ECU_DLIST_CONST_FOR_EACH(), @ref ecu_dlist_iterator_begin(),
+ * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_const_iterator_begin(),
+ * @ref ecu_dlist_const_iterator_end(), @ref ecu_dlist_const_iterator_next()
  *      - TEST(DList, IteratorGeneralTest)
  *      - TEST(DList, CIteratorGeneralTest)
  *      - TEST(DList, IterateOverEmptyList)
@@ -1208,6 +1227,30 @@ TEST(DNode, GetID)
 /*------------------------------------------------------------*/
 
 /**
+ * @brief Assertion should not fire. Operation is valid to 
+ * do on an empty list.
+ */
+TEST(DListBase, ClearEmptyList)
+{
+    try 
+    {
+        /* Step 1: Arrange. Precondition must be true to produce useful results. */
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        
+        /* Step 2: Action. */
+        ecu_dlist_clear(&m_list);
+
+        /* Step 3: Assert. */
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
  * @brief All nodes removed from list but their destructors
  * are not called. Removed nodes can be re-added without
  * having to be reconstructed.
@@ -1234,6 +1277,57 @@ TEST(DList, Clear)
         (void)e;
     }
 };
+
+/*------------------------------------------------------------*/
+/*------------------ TESTS - DLIST FRONT CFRONT --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief NULL returned on empty list.
+ */
+TEST(DList, FrontEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Precondition must be true to produce useful results. */
+        ecu_dlist_clear(&m_list);
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_front(&m_list) == nullptr) );
+        CHECK_TRUE( (ecu_dlist_cfront(&m_list) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Front node returned. Front node is not popped.
+ */
+TEST(DList, FrontNonEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_front(&m_list) == &m_node1) );
+        CHECK_TRUE( (ecu_dlist_cfront(&m_list) == &m_node1) );
+        list_order_check_expectations(&m_list); /* Front node not popped. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
 /*------------------------------------------------------------*/
 /*------------------ TESTS - DLIST PUSH FRONT ----------------*/
@@ -1363,6 +1457,129 @@ TEST(DList, PushFrontAddHeadNode)
 }
 
 /*------------------------------------------------------------*/
+/*-------------------- TESTS - DLIST POP FRONT ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief NULL returned.
+ */
+TEST(DList, PopFrontEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Precondition must be true to produce useful results. */
+        ecu_dlist_clear(&m_list);
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == nullptr) );
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list is now empty.
+ */
+TEST(DList, PopFrontListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_clear(&m_list);
+        ecu_dlist_push_back(&m_list, &m_node1);
+        CHECK_TRUE( (ecu_dlist_get_size(&m_list) == 1) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == &m_node1) );
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list remains intact.
+ */
+TEST(DList, PopFrontListWithMultipleNodes)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == &m_node1) );
+        list_order_check_expectations(&m_list);
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - DLIST BACK CBACK ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief NULL returned on empty list.
+ */
+TEST(DList, BackEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Precondition must be true to produce useful results. */
+        ecu_dlist_clear(&m_list);
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_back(&m_list) == nullptr) );
+        CHECK_TRUE( (ecu_dlist_cback(&m_list) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Tail node returned. Tail node is not popped.
+ */
+TEST(DList, BackNonEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_back(&m_list) == &m_node3) );
+        CHECK_TRUE( (ecu_dlist_cback(&m_list) == &m_node3) );
+        list_order_check_expectations(&m_list); /* Tail node not popped. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
 /*------------------ TESTS - DLIST PUSH BACK -----------------*/
 /*------------------------------------------------------------*/
 
@@ -1487,6 +1704,78 @@ TEST(DList, PushBackAddHeadNode)
     /* Step 3: Assert. Verify HEAD of listB was not added to listA. 
     Do this outside try-catch. */
     list_order_check_expectations(&m_list);
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST POP BACK ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief NULL returned.
+ */
+TEST(DList, PopBackEmptyList)
+{
+    try
+    {
+        /* Step 1: Arrange. Precondition must be true to produce useful results. */
+        ecu_dlist_clear(&m_list);
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == nullptr) );
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list is now empty.
+ */
+TEST(DList, PopBackListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_clear(&m_list);
+        ecu_dlist_push_back(&m_list, &m_node1);
+        CHECK_TRUE( (ecu_dlist_get_size(&m_list) == 1) );
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == &m_node1) );
+        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list remains intact.
+ */
+TEST(DList, PopBackListWithMultipleNodes)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == &m_node3) );
+        list_order_check_expectations(&m_list);
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
 }
 
 /*------------------------------------------------------------*/

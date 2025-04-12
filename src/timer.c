@@ -299,8 +299,12 @@ void ecu_tlist_timer_arm(struct ecu_tlist *me, struct ecu_timer *timer)
     ECU_RUNTIME_ASSERT( (me && timer) );
     ECU_RUNTIME_ASSERT( (tlist_is_constructed(me)) );
     ECU_RUNTIME_ASSERT( (timer_is_set(timer)) );
+    ECU_RUNTIME_ASSERT( (me->overflow_mask >= timer->period) ); /* Timer's period cannot exceed the max resolution of the harware timer. */
 
-    ecu_timer_disarm(timer); /* If user's timer was previously running it is rearmed. */
+    /* If user's timer was previously running it is rearmed. Note how getting
+    the ticks allows timers to be used between tlists of varying resolutions 
+    (8-bit, 16-bit, etc). */
+    ecu_timer_disarm(timer);
     timer->starting_ticks = get_ticks(me);
     info.current_ticks = timer->starting_ticks;
     info.overflow_mask = me->overflow_mask;
@@ -346,13 +350,20 @@ void ecu_tlist_service(struct ecu_tlist *me)
             {
                 /* Timer expired. */
                 ECU_RUNTIME_ASSERT( (t->callback) );
-                ecu_timer_disarm(t); /* Disarm here to allow one-shot timer to be readded in user callback. */
 
-                if ((*t->callback)(t->obj) == CALLBACK_SUCCESSFUL)
+                if (t->type == ECU_TIMER_TYPE_ONE_SHOT)
                 {
-                    if (t->type == ECU_TIMER_PERIODIC)
+                    /* Disarming here BEFORE callback allows one-shot timer to be rearmed in user callback. Do 
+                    NOT disarm periodic timers so we can check if user disarmed periodic timer in their callback. */
+                    ecu_timer_disarm(t);
+                }
+
+                if ((*t->callback)(t->obj) == CALLBACK_SUCCESSFUL) /* Execute callback. */
+                {
+                    if (t->type == ECU_TIMER_TYPE_PERIODIC && 
+                        ecu_timer_is_active(t))
                     {
-                        ecu_timer_disarm(t); /* Disarm here in case user armed periodic timer in their callback for some reason. */
+                        /* Only rearm the timer if it is periodic and user did NOT disarm it in their callback. */
                         ecu_tlist_timer_arm(me, t);
                     }
                 }

@@ -4,7 +4,7 @@
  * must NOT be defined.
  * Test Summary:
  * 
- * ECU_ASSERT_DEFINE_NAME(), ECU_RUNTIME_ASSERT(), ecu_assert_handler()
+ * @ref ECU_ASSERT_DEFINE_NAME(), @ref ECU_RUNTIME_ASSERT(), @ref ecu_assert_handler()
  *      - TEST(Asserter, DefineNameMacro)
  *      - TEST(Asserter, ECUDListAssert)
  *      - TEST(Asserter, ECUEventAssert)
@@ -196,7 +196,7 @@ TEST(Asserter, ECUTimerAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), 0, ECU_TIMER_ONE_SHOT, nullptr, nullptr);
+        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), 0, ECU_TIMER_TYPE_ONE_SHOT, nullptr, nullptr);
     }
 
     catch (const AssertException& e)
