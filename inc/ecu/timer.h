@@ -254,8 +254,12 @@ struct ecu_timer
     /// @brief Timer expires once elapsed ticks exceeds this value.
     ecu_timer_tick_t period;
 
-    /// @brief Absolute timestamp of when timer first started.
-    ecu_timer_tick_t starting_ticks;
+    /// @brief Temporary storage of @ref ecu_timer.period when timer 
+    /// callback returns false.
+    ecu_timer_tick_t prev_period;
+
+    /// @brief Absolute timestamp, in ticks, of when timer first started.
+    ecu_timer_tick_t start;
 
     /// @brief Single shot, periodic, etc.
     enum ecu_timer_type type;

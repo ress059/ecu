@@ -74,6 +74,9 @@ regardless (no need to check).
 # Timer
 0. Add new tests for updated timer module.
 1. Add Sphinx documentation.
+2. Timer service resolution has to be much greater than 1/255 ticks.
+    Timers with large periods and large service times (u8_list.service(200), etc)
+    show this.
 3. When timer and FSM done, use it in main.c build test to verify linkage.
 4. In documentation note that ecu_timer_set() DISARMS the timer and removes it from list.
 5. In documentation note that calling ecu_timer_set() in expire callback will remove it.

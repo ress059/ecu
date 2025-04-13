@@ -36,7 +36,7 @@ ECU_ASSERT_DEFINE_NAME("ecu/timer.c")
  */
 struct tlist_info
 {
-    ecu_timer_tick_t current_ticks;
+    ecu_timer_tick_t current;
     ecu_timer_tick_t overflow_mask;
 };
 
@@ -133,15 +133,15 @@ static bool tlist_is_constructed(const struct ecu_tlist *list)
 
 static ecu_timer_tick_t get_ticks(struct ecu_tlist *list)
 {
-    ecu_timer_tick_t current_ticks = 0;
+    ecu_timer_tick_t current = 0;
     ECU_RUNTIME_ASSERT( (list) );
     ECU_RUNTIME_ASSERT( (tlist_is_constructed(list)) );
 
     /* Get current tick count. It should not be possible for returned
     value to be greater than the maximum resolution of the timer. */
-    current_ticks = (*list->api.get_tick_count)(list->api.obj);
-    ECU_RUNTIME_ASSERT( (current_ticks <= list->overflow_mask) );
-    return current_ticks;
+    current = (*list->api.get_tick_count)(list->api.obj);
+    ECU_RUNTIME_ASSERT( (current <= list->overflow_mask) );
+    return current;
 }
 
 static bool tlist_insert_condition(const struct ecu_dnode *node,
@@ -162,13 +162,13 @@ static bool tlist_insert_condition(const struct ecu_dnode *node,
 
     Example: sizeof(ecu_tick_type_t) == sizeof(uint32_t),
     hardware timer = ECU_TIMER_RESOLUTION_8BIT,
-    current_ticks = 1, starting_ticks = 255.
+    current = 1, start = 255.
 
     overflow_mask = 0x000000FF
-    elapsed_ticks = (current_ticks - starting_ticks) & overflow_mask
+    elapsed_ticks = (current - start) & overflow_mask
     elapsed_ticks = (1 - 255) & 0x000000FF
     elapsed_ticks = 0xFFFFFF02 & 0x000000FF = 2 */
-    ecu_timer_tick_t elapsed_ticks = (info->current_ticks - tlist_element->starting_ticks) & info->overflow_mask;
+    ecu_timer_tick_t elapsed_ticks = (info->current - tlist_element->start) & info->overflow_mask;
 
     /* Edge case is elapsed_ticks >= tlist_element->period. Means
     tlist_element timer already expired so obviously return false. */
@@ -201,6 +201,7 @@ void ecu_timer_ctor(struct ecu_timer *me,
 
     ecu_dnode_ctor(&me->dnode, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     me->period = period;
+    me->prev_period = 0;
     me->type = type;
     me->callback = callback;
     me->obj = obj;
@@ -305,8 +306,8 @@ void ecu_tlist_timer_arm(struct ecu_tlist *me, struct ecu_timer *timer)
     the ticks allows timers to be used between tlists of varying resolutions 
     (8-bit, 16-bit, etc). */
     ecu_timer_disarm(timer);
-    timer->starting_ticks = get_ticks(me);
-    info.current_ticks = timer->starting_ticks;
+    timer->start = get_ticks(me);
+    info.current = timer->start;
     info.overflow_mask = me->overflow_mask;
 
     /* Ordered list insertion. Ordered by time remaining until expiration. O(n). */
@@ -319,14 +320,12 @@ void ecu_tlist_service(struct ecu_tlist *me)
     ECU_RUNTIME_ASSERT( (tlist_is_constructed(me)) );
     static const bool CALLBACK_SUCCESSFUL = true;
     struct ecu_dlist_iterator iterator;
-    ecu_timer_tick_t current_ticks = 0;
+    ecu_timer_tick_t current = 0;
     ecu_timer_tick_t elapsed_ticks = 0;
-    ecu_timer_tick_t prev_period = 0;
-    ecu_timer_tick_t prev_starting_ticks = 0;
 
     if (!ecu_dlist_is_empty(&me->dlist))
     {
-        current_ticks = get_ticks(me);
+        current = get_ticks(me);
 
         ECU_DLIST_FOR_EACH(node, &iterator, &me->dlist)
         {
@@ -335,16 +334,14 @@ void ecu_tlist_service(struct ecu_tlist *me)
 
             Example: sizeof(ecu_tick_type_t) == sizeof(uint32_t),
             hardware timer = ECU_TIMER_RESOLUTION_8BIT,
-            current_ticks = 1, starting_ticks = 255.
+            current = 1, start = 255.
 
             overflow_mask = 0x000000FF
-            elapsed_ticks = (current_ticks - starting_ticks) & overflow_mask
+            elapsed_ticks = (current - start) & overflow_mask
             elapsed_ticks = (1 - 255) & 0x000000FF
             elapsed_ticks = 0xFFFFFF02 & 0x000000FF = 2 */
             struct ecu_timer *t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
-            prev_period = t->period;                 /* Save to re-expire timer in case callback returns false. */
-            prev_starting_ticks = t->starting_ticks; /* Save to re-expire timer in case callback returns false. */
-            elapsed_ticks = (current_ticks - t->starting_ticks) & me->overflow_mask;
+            elapsed_ticks = (current - t->start) & me->overflow_mask;
 
             if (elapsed_ticks >= t->period)
             {
@@ -369,15 +366,20 @@ void ecu_tlist_service(struct ecu_tlist *me)
                 }
                 else
                 {
+        #warning "TODO: Need to handle long calls between timer service (tick wraparound)."
                     /* User callback failed so we need to reattempt it on next service by re-expiring
                     the timer. Add timer to front since it has already expired, and will expire on next
                     service. Ensure timer's period and starting ticks are their original values in case
                     user set them in their callback for some reason. This guarantees the timer will
                     re-expire on the next service. */
-                    ecu_timer_disarm(t); /* Disarm in case user armed timer in their callback for some reason. */
-                    t->period = prev_period;
-                    t->starting_ticks = prev_starting_ticks;
-                    ecu_dlist_push_front(&me->dlist, &t->dnode);
+
+                    /* Callback failed by returning false. Timer must always re-expire on next service
+                    so callback always reattempted. Do this by setting the period to 0. A copy of the
+                    most recent period is saved so it can*/
+                    // ecu_timer_disarm(t); /* Disarm in case user armed timer in their callback for some reason. */
+                    // t->prev_period = t->period;
+                    // t->period = 0;
+                    // ecu_dlist_push_front(&me->dlist, &t->dnode);
                 }
             }
             else

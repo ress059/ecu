@@ -117,22 +117,32 @@ struct test_timer : public ecu_timer
         ecu_timer_ctor(this, timer_period, timer_type, &callback, this);
     }
 
+    /**
+     * @brief Allows unit test to inject function call in timer's
+     * expire callback.
+     * 
+     * @param func Function to call. Must be callable and return void.
+     * @param args Arguments to pass into @p func. Must match signature
+     * of @p func.
+     */
     template<class F, class... Args>
     requires std::invocable<F, Args...> && std::is_void_v<std::invoke_result_t<F, Args...>>
     void inject(F&& func, Args&&... args)
     {
         injection = std::bind(std::forward<F>(func), std::forward<Args>(args)...);
-#warning "TODO: Test code...Parmaeters aligned here but misaligned once called in timer callback.."
-        // if constexpr(sizeof...(Args) == 4)
-        // {
-        //     TESTPARAMS(args...);
-        // }
     }
 
-    // void TESTPARAMS(ecu_tlist& tlist, test_timer& t, ecu_timer_tick_t period, ecu_timer_type type)
-    // {
-    //     ;
-    // }
+    /**
+     * @brief Make timer's expire callback return either true or false. 
+     * True = callback successful. False = callback retried on next
+     * service.
+     * 
+     * @param status Timer's expire callback returns this value.
+     */
+    void callback_successful(bool status)
+    {
+        callback_successul = status;
+    }
 
     /**
      * @brief Executes when timer expires.
@@ -143,7 +153,7 @@ struct test_timer : public ecu_timer
         test_timer *me = static_cast<test_timer *>(obj);
 
         mock().actualCall("timer_expired")
-              .withParameter("timer", me);
+              .withParameter("timer", static_cast<const void *>(me));
 
         /* Allows timer to set, armed, disarmed, etc to be injected within expire callback. */
         if (me->injection)
@@ -151,11 +161,11 @@ struct test_timer : public ecu_timer
             me->injection();
         }
 
-        return me->callback_return_val;
+        return me->callback_successul;
     }
 
     std::function<void()> injection;
-    bool callback_return_val{true};
+    bool callback_successul{true};
     static constexpr ecu_timer_tick_t DEFAULT_PERIOD = 20;
     static constexpr ecu_timer_type DEFAULT_TYPE = ECU_TIMER_TYPE_ONE_SHOT;
 };
@@ -176,23 +186,16 @@ struct test_tlist : public ecu_tlist
      * order does not determine timer order. This is handled internally
      * by function under test (@ref ecu_tlist_timer_arm()).
      */
-    void arm(test_timer& t)
-    {
-        ecu_tlist_timer_arm(this, &t);
-    }
-
-    /**
-     * @brief Helper around @ref ecu_tlist_timer_arm() that allows
-     * multiple timers to be armed at once. Note that function parameter
-     * order does not determine timer order. This is handled internally
-     * by function under test (@ref ecu_tlist_timer_arm()).
-     */
     template<typename... Timers>
     requires (std::is_same_v<test_timer, Timers> && ...)
     void arm(test_timer& t1, Timers&... timers)
     {
-        arm(t1);
-        (arm(timers), ...); /* Never empty since arm(test_timer& t) overload. */
+        ecu_tlist_timer_arm(this, &t1);
+
+        if constexpr(sizeof...(Timers) > 0)
+        {
+            (ecu_tlist_timer_arm(this, &timers), ...);
+        }
     }
 
     /**
@@ -225,26 +228,9 @@ struct test_tlist : public ecu_tlist
         ecu_tlist_service(this);
     }
 
-    void CHECK_TIMER_ORDER()
-    {
-        std::size_t tnumber = 1;
-        ecu_dlist_const_iterator citerator;
-
-        ECU_DLIST_CONST_FOR_EACH(tnode, &citerator, &dlist)
-        {
-            /* CppUTest stores names in memory so we can pass temporary strings. */
-            SimpleString name = SimpleString("t") + SimpleString(std::to_string(tnumber).c_str()); /* t1, t2, t3, etc. */
-            tnumber++;
-
-            const test_timer *actual = static_cast<const test_timer *>(ECU_DNODE_GET_CONST_ENTRY(tnode, ecu_timer, dnode));
-            mock("timer_order").actualCall(name)
-                               .withParameter("timer", actual);
-
-        }
-    }
-
     /**
      * @brief Returns tick count from the "hardware timer".
+     * API for ecu_tlist under test.
      */
     static ecu_timer_tick_t get_tick_count(void *obj)
     {
@@ -269,10 +255,7 @@ TEST_GROUP(Timers)
 
     void teardown() override
     {
-        mock("timer_order").checkExpectations();
         mock().checkExpectations();
-
-        mock("timer_order").clear();
         mock().clear();
     }
 
@@ -285,29 +268,70 @@ TEST_GROUP(Timers)
     requires (std::is_same_v<test_timer, Timers> && ...)
     static void EXPECT_TIMER_ORDER(test_timer& t1, Timers&... timers)
     {
-        mock("timer_order").strictOrder();
-        EXPECT_TIMER_ORDER(std::index_sequence_for<test_timer, Timers...>{}, t1, timers...);
+        mock().strictOrder();
+        mock().expectOneCall("timer_arm_order")
+              .withParameter("timer", static_cast<const void *>(&t1));
+
+        if constexpr(sizeof...(Timers) > 0)
+        {
+            (mock().expectOneCall("timer_arm_order")
+                   .withParameter("timer", static_cast<const void *>(&timers)), ...);
+        }
     }
 
+    /**
+     * @brief Verifies expectation set in EXPECT_TIMER_ORDER().
+     * 
+     * @param tlist Check order of timers in this list.
+     */
+    template<ecu_timer_resolution T>
+    static void CHECK_TIMER_ORDER(test_tlist<T> &tlist)
+    {
+        ecu_dlist_const_iterator citerator;
+
+        ECU_DLIST_CONST_FOR_EACH(tnode, &citerator, &tlist.dlist)
+        {
+            const test_timer *actual = static_cast<const test_timer *>(ECU_DNODE_GET_CONST_ENTRY(tnode, ecu_timer, dnode));
+            mock().actualCall("timer_arm_order")
+                  .withParameter("timer", actual);
+        }
+    }
+
+    /**
+     * @brief Expect one timer to be expired multiple times.
+     * 
+     * @param t Timer expected to expire.
+     * @param n Number of times @p t is expected to expire. 
+     */
+    static void EXPECT_TIMER_EXPIRED(test_timer& t, unsigned int n)
+    {
+        mock().expectNCalls(n, "timer_expired")
+              .withParameter("timer", static_cast<const void *>(&t));
+    }
+
+    /**
+     * @brief Expect multiple timers to expire. I.e. t1, t2, t1, t3
+     * means t1 expected to expire twice, t2 expecte to expire once,
+     * and t3 expected to expire once. Order does not matter.
+     */
     template<typename... Timers>
     requires (std::is_same_v<test_timer, Timers> && ...)
     static void EXPECT_TIMER_EXPIRED(test_timer& t, Timers&... timers)
     {
         mock().expectOneCall("timer_expired")
-              .withParameter("timer", &t);
+              .withParameter("timer", static_cast<const void *>(&t));
 
         if constexpr(sizeof...(Timers) > 0)
         {
-            (EXPECT_TIMER_EXPIRED(timers), ...);
+            (mock().expectOneCall("timer_expired")
+                   .withParameter("timer", static_cast<const void *>(&timers)), ...);
         }
     }
 
-    static void EXPECT_TIMER_EXPIRED(test_timer& t, unsigned int n)
-    {
-        mock().expectNCalls(n, "timer_expired")
-              .withParameter("timer", &t);
-    }
-
+    /**
+     * @brief Expect multiple timers to expire in specified order.
+     * I.e. t1, t2, t1, t3 means timers must expire in this order.
+     */
     template<typename... Timers>
     requires (std::is_same_v<test_timer, Timers> && ...)
     static void EXPECT_TIMER_EXPIRED_IN_ORDER(test_timer &t, Timers&... timers)
@@ -316,22 +340,17 @@ TEST_GROUP(Timers)
         EXPECT_TIMER_EXPIRED(t, timers...);
     }
 
-    template<typename... Timers>
-    requires (std::is_same_v<test_timer, Timers> && ...)
-    static void set_callback_return_val(bool callback_return_val, test_timer& t1, Timers&... timers)
-    {
-        t1.callback_return_val = callback_return_val;
-
-        if constexpr(sizeof...(Timers) > 0)
-        {
-            (set_callback_return_val(callback_return_val, timers), ...);
-        }
-    }
-
+    /**
+     * @brief Method injected into test_timer::inject for testing purposes.
+     * Runs in timer's callback. Sets timer to new value and rearms it.
+     */
     static void reset_and_rearm(ecu_tlist *tlist, ecu_timer *t, ecu_timer_tick_t period, ecu_timer_type type)
     {
-        ecu_timer_set(t, period, type);
-        ecu_tlist_timer_arm(tlist, t);
+        if (t->type != type || t->period != period)
+        {
+            ecu_timer_set(t, period, type);
+            ecu_tlist_timer_arm(tlist, t);
+        }
     }
 
     test_timer t1; /* Start at 1 because that is what CppUTest starts its mock call ordering at. */
@@ -342,15 +361,6 @@ TEST_GROUP(Timers)
     test_tlist<ECU_TIMER_RESOLUTION_8BIT> u8_list;
     test_tlist<ECU_TIMER_RESOLUTION_16BIT> u16_list;
     test_tlist<ECU_TIMER_RESOLUTION_32BIT> u32_list;
-
-private:
-    template<std::size_t... I, typename... Timers>
-    static void EXPECT_TIMER_ORDER(std::index_sequence<I...>&&, Timers&... timers)
-    {
-        (mock("timer_order")
-             .expectOneCall(("t" + std::to_string(I + 1)).c_str()) /* t1, t2, t3, etc. */
-             .withParameter("timer", static_cast<const void*>(&timers)), ...);
-    }
 };
 
 /*------------------------------------------------------------*/
@@ -434,7 +444,7 @@ TEST(Timers, TimerArmSameTimestampsAscendingPeriods)
         u8_list.arm(t3, t1, t2);
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -468,7 +478,7 @@ TEST(Timers, TimerArmDifferentTimestampsAndPeriods)
         u8_list.arm(t3);
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -507,7 +517,7 @@ TEST(Timers, TimerArmExpiredTimerInList)
         u8_list.arm(t4);
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -542,7 +552,7 @@ TEST(Timers, TimerArmAddU16TimerToU8ListPeriodInRange)
         u8_list.arm(t3);
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -580,11 +590,11 @@ TEST(Timers, TimerArmAddU16TimerToU8ListPeriodOutOfRange)
 
     /* Step 3: Assert. Verify t1 was not added to u8_list. Do this outside 
     try-catch since control flow jumps to catch after Step 2. */
-    u8_list.CHECK_TIMER_ORDER();
+    CHECK_TIMER_ORDER(u8_list);
 }
 
 /**
- * @brief Timers's current ticks wraps around. List should
+ * @brief Timer's current ticks wraps around. List should
  * handle this and maintain proper order.
  */
 TEST(Timers, TimerArmTickWraparound)
@@ -607,7 +617,7 @@ TEST(Timers, TimerArmTickWraparound)
         u8_list.arm(t2, t3);
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -638,7 +648,7 @@ TEST(Timers, TimerRearm)
         u8_list.arm(t1); /* Rearming t1 should reset it. */
 
         /* Step 3: Assert. */
-        u8_list.CHECK_TIMER_ORDER();
+        CHECK_TIMER_ORDER(u8_list);
     }
     catch (const AssertException& e)
     {
@@ -661,17 +671,18 @@ TEST(Timers, ServiceOneShotTimeout)
     {
         /* Step 1: Arrange. */
         ecu_timer_set(&t1, 10, ECU_TIMER_TYPE_ONE_SHOT);
-        ecu_timer_set(&t2, 10, ECU_TIMER_TYPE_ONE_SHOT);
+        ecu_timer_set(&t2, 15, ECU_TIMER_TYPE_ONE_SHOT);
         ecu_timer_set(&t3, 50, ECU_TIMER_TYPE_ONE_SHOT);
-        u8_list.arm(t1, t2);
-        EXPECT_TIMER_EXPIRED(t1, t2);
+        ecu_timer_set(&t4, 250, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t1, t2, t3);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t3, t4);
 
-        /* Step 2: Action. 20ms elapsed. 
-        t1 = expire only once.
-        t2 = expire only once.
-        t3 = should not expire. */
-        u8_list.service(10); /* Both timers should expire. */
-        u8_list.service(10); /* Verify both timer do not expire again since they are one-shot. */
+        /* Step 2: Action. */
+        u8_list.service(10);  /* t1 = expire. t2 = 5 left. t3 = 40 left. t4 = 240 left. */
+        u8_list.service(10);  /* t2 = expire. t3 = 30 left. t4 = 230 left. */
+        u8_list.service(40);  /* t3 = expire. t4 = 190 left. */
+        u8_list.service(150); /* t4 = 40 left. */
+        u8_list.service(200); /* Tick wraparound. t4 = expire. */
 
         /* Step 3: Assert. Test fails if expected timers don't expire. */
     }
@@ -690,21 +701,20 @@ TEST(Timers, ServicePeriodicTimeout)
     try
     {
         /* Step 1: Arrange. */
-        ecu_timer_set(&t1, 10, ECU_TIMER_TYPE_PERIODIC);
-        ecu_timer_set(&t2, 20, ECU_TIMER_TYPE_PERIODIC);
-        ecu_timer_set(&t3, 100, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t1, 5, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t2, 14, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t3, 22, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t4, 250, ECU_TIMER_TYPE_PERIODIC);
         u8_list.arm(t1, t2, t3);
-        EXPECT_TIMER_EXPIRED(t1, 4);
-        EXPECT_TIMER_EXPIRED(t2, 2);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t1, t3, t1, t2, t1, t3, t1, t2, t3, t1, t2, t4, t3);
 
-        /* Step 2: Action. 40ms elapsed.
-        t1 = expire 4 times.
-        t2 = expire 2 times.
-        t3 = should not expire. */
-        u8_list.service(10);
-        u8_list.service(10);
-        u8_list.service(10);
-        u8_list.service(10);
+        /* Step 2: Action. */
+        u8_list.service(10);  /* t1 = expire. t2 = 4 left. t3 = 12 left. t4 = 240 left. */
+        u8_list.service(11);  /* t2 = expire then t1 = expire. t3 = 1 left. t4 = 229 left. */
+        u8_list.service(13);  /* t3 = expire then t1 = expire. t2 = 1 left. t4 = 216 left. */
+        u8_list.service(50);  /* t2 = expire then t1 = expire then t3 = expire. t4 = 166 left. */
+        u8_list.service(150); /* t1 = expire then t2 = expire then t3 = expire. t4 = 16 left. */
+        u8_list.service(200); /* t1 = expire then t2 = expire then t4 = expire then t3 = expire. */
 
         /* Step 3: Assert. Test fails if expected timers don't expire. */
     }
@@ -728,16 +738,51 @@ TEST(Timers, ServiceOneShotAndPeriodicTimeoutOrder)
         ecu_timer_set(&t3, 15, ECU_TIMER_TYPE_PERIODIC);
         ecu_timer_set(&t4, 32, ECU_TIMER_TYPE_ONE_SHOT);
         u8_list.arm(t1, t2, t3, t4);
-        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t3, t2, t4, t3, t5, t2, t3);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t3, t2, t4, t3, t2, t3);
 
         /* Step 2: Action. */
         u8_list.service(10); /* t1 = expire. t2 = 1 left. t3 = 5 left. t4 = 22 left. */
         u8_list.service(10); /* t2 = expire then t3 = expire. t4 = 12 left. */
         u8_list.service(10); /* t2 = 1 left. t3 = 5 left. t4 = 2 left. */
-        ecu_timer_set(&t5, 10, ECU_TIMER_TYPE_ONE_SHOT);
-        u8_list.arm(t5);
         u8_list.service(10); /* t2 = expire then t4 = expire then t3 = expire then t5 = expire. */
         u8_list.service(40); /* t2 = expire then t3 = expire. */
+
+        /* Step 3: Assert. Test fails if expected timers don't expire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Timers should be added and expire in proper order.
+ */
+TEST(Timers, ServiceArmTimersInMiddleOfService)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_timer_set(&t1, 7, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t2, 13, ECU_TIMER_TYPE_ONE_SHOT);
+        ecu_timer_set(&t3, 17, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t1, t2, t3);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t4, t3, t1, t4, t1, t2, t1, t4);
+
+        /* Step 2: Action. */
+        u8_list.service(6);  /* t1 = 1 left. t2 = 7 left. t3 = 11 left. */
+        u8_list.service(6);  /* t1 = expire. t2 = 1 left. t3 = 5 left. */
+        ecu_timer_set(&t4, 4, ECU_TIMER_TYPE_PERIODIC);
+        u8_list.arm(t4);
+        u8_list.service(4);  /* t2 = expire then t4 = expire. t1 = 3 left. t3 = 1 left. */
+        u8_list.service(10); /* t3 expire then t1 = expire then t4 = expire. */
+        u8_list.service(3);  /* t1 = 4 left. t4 = 1 left. */
+        ecu_timer_set(&t4, 10, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t2, t4); /* t1 = 4 left. t2 = 13 left. t4 = 10 left. */
+        u8_list.service(9);  /* t1 = expire. t2 = 4 left. t4 = 1 left. */
+        u8_list.arm(t4);     /* t1 = 7 left. t2 = 4 left. t4 = 10 left. */
+        u8_list.service(10); /* t2 expire then t1 expire then t4 expire. */
 
         /* Step 3: Assert. Test fails if expected timers don't expire. */
     }
@@ -759,7 +804,7 @@ TEST(Timers, ServiceOneShotTimerCallbackReturnValue)
     {
         /* Step 1: Arrange. */
         ecu_timer_set(&t1, 10, ECU_TIMER_TYPE_ONE_SHOT);
-        set_callback_return_val(false, t1);
+        t1.callback_successful(false);
         u8_list.arm(t1);
         EXPECT_TIMER_EXPIRED(t1, 5);
 
@@ -768,7 +813,7 @@ TEST(Timers, ServiceOneShotTimerCallbackReturnValue)
         u8_list.service(0);     /* Expire. */
         u8_list.service(0);     /* Expire. */
         u8_list.service(0);     /* Expire. */
-        set_callback_return_val(true, t1);
+        t1.callback_successful(true);
         u8_list.service(0);     /* Last expiration. */
         u8_list.service(0);     /* t1 should be removed at this point. */
         u8_list.service(0);     /* t1 should be removed at this point. */
@@ -793,7 +838,7 @@ TEST(Timers, ServicePeriodicTimerCallbackReturnValue)
     {
         /* Step 1: Arrange. */
         ecu_timer_set(&t1, 10, ECU_TIMER_TYPE_PERIODIC);
-        set_callback_return_val(false, t1);
+        t1.callback_successful(false);
         u8_list.arm(t1);
         EXPECT_TIMER_EXPIRED(t1, 7);
 
@@ -802,7 +847,7 @@ TEST(Timers, ServicePeriodicTimerCallbackReturnValue)
         u8_list.service(0);     /* Expire. */
         u8_list.service(0);     /* Expire. */
         u8_list.service(0);     /* Expire. */
-        set_callback_return_val(true, t1);
+        t1.callback_successful(true);
         u8_list.service(0);     /* Expire. */
         u8_list.service(5);
         u8_list.service(5);     /* Expire. */
@@ -978,7 +1023,7 @@ TEST(Timers, ServiceResetAndRearmPeriodicToOneShotTimerInCallback)
         u8_list.service(10); /* Expire. Timer period set to 25. Timer set to one-shot. */
         u8_list.service(10);
         u8_list.service(10);
-        u8_list.service(10); /* Expire. Timer removed since now one-shot. */
+        u8_list.service(10); /* Expire. Timer removed since now one-shot !!if handled correctly in callback!! */
         u8_list.service(10);
         u8_list.service(10);
         u8_list.service(10);
@@ -992,48 +1037,40 @@ TEST(Timers, ServiceResetAndRearmPeriodicToOneShotTimerInCallback)
     }
 }
 
-
-
-
-
-
-
-
-
-
-// timer shouldn't be readded.
-TEST(Timers, ServiceSetPeriodicTimerAsOneShotInCallback)
+/**
+ * @brief Callback returns false and user resets timer
+ * with different values. Once callback returns true
+ * timer with most updated values should be used.
+ */
+TEST(Timers, ServiceCallbackFalseRearmTimer)
 {
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+
 }
 
-// timer should be added.
-TEST(Timers, ServiceSetOneShotTimerAsPeriodicInCallback)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
+/**
+ * @brief Tick wraparound should be handled via
+ * unsigned overflow.
+ */
 TEST(Timers, ServiceTickWraparound)
 {
     try
     {
-        /* code */
+        /* Step 1: Arrange. */
+        ecu_timer_set(&t1, 20, ECU_TIMER_TYPE_ONE_SHOT);
+        ecu_timer_set(&t2, 22, ECU_TIMER_TYPE_ONE_SHOT);
+        ecu_timer_set(&t3, 27, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.set_time(250);
+        u8_list.arm(t1, t2, t3);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t4, t2, t3);
+
+        /* Step 2: Action. */
+        u8_list.service(10); /* Tick wraparound. t1 = 10 left. t2 = 12 left. t3 = 17 left. */
+        ecu_timer_set(&t4, 11, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t4);     /* t1 = 10 left. t2 = 12 left. t3 = 17 left. t4 = 11 left. */
+        u8_list.service(10); /* t1 = expire. t2 = 2 left. t3 = 7 left. t4 = 1 left. */
+        u8_list.service(7);  /* t4 = expire then t2 = expire then t3 = expire. */
+
+        /* Step 3: Assert. Test fails if expected timers don't expire. */
     }
     catch (const AssertException& e)
     {
@@ -1042,38 +1079,43 @@ TEST(Timers, ServiceTickWraparound)
     }
 }
 
+/**
+ * @brief Combine periodic, one-shot, tick wraparound, 
+ * false callbacks, in service test.
+ */
+TEST(Timers, ServiceGeneralExpireOrderTest)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_timer_set(&t1, 7, ECU_TIMER_TYPE_ONE_SHOT);
+        ecu_timer_set(&t2, 13, ECU_TIMER_TYPE_PERIODIC);
+        ecu_timer_set(&t3, 20, ECU_TIMER_TYPE_ONE_SHOT);
+        t3.callback_successful(false);
+        u8_list.set_time(230);
+        u8_list.arm(t1, t2, t3);
+        EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t2, t3, t3, t2, t3, t3, t3, t1, t2, t2, t4);
 
+        /* Step 2: Action. */
+        u8_list.service(15);  /* t1 = expire then t2 = expire. t3 = 5 left. */
+        ecu_timer_set(&t1, 22, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t1);      /* t1 = 22 left. t2 = 13 left. t3 = 5 left. */
+        u8_list.service(10);  /* t3 = expire. t1 = 12 left. t2 = 3 left. */
+        u8_list.service(3);   /* Tick wraparound. t3 = expire then t2 = expire. t1 = 9 left. */
+        u8_list.service(5);   /* t3 = expire. t1 = 4 left. t2 = 7 left. */
+        u8_list.service(0);   /* t3 = expire. t1 = 4 left. t2 = 7 left. */
+        t3.callback_successful(true);
+        u8_list.service(240); /* t3 = expire then t1 = expire then t2 = expire. */
+        ecu_timer_set(&t4, 40, ECU_TIMER_TYPE_ONE_SHOT);
+        u8_list.arm(t4);      /* t2 = 13 left. t4 = 40 left. */
+        u8_list.service(35);  /* Tick wraparound. t2 = expire. t4 = 5 left. */
+        u8_list.service(10);  /* t4 = expire. t2 = 3 left. */
 
-// General order test will be the massive one. combine periodic, one-shot, tick wraparound, bad callbacks, etc. 
-// /**
-//  * @brief API should be able to handle this. Timer rearmed
-//  * in correct order.
-//  */
-// TEST(Timers, ServiceRearmTimerInCallbackCorrectOrder)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_timer_set(&t1, 10, ECU_TIMER_TYPE_PERIODIC);
-//         ecu_timer_set(&t2, 21, ECU_TIMER_TYPE_ONE_SHOT); /* Will rearm in callback. */
-//         ecu_timer_set(&t3, 31, ECU_TIMER_TYPE_PERIODIC);
-//         u8_list.arm(t1, t2, t3);
-//         t2.inject(&ecu_tlist_timer_arm, &u8_list, &t2);
-//         EXPECT_TIMER_EXPIRED_IN_ORDER(t1, t1, t2, t1, t3, t1, t1, t2, t1);
-
-//         /* Step 2: Action. */
-//         u8_list.service(10); /* Elapsed = 10. t1 = expire. t2 = 10 left. t3 = 20 left. */
-//         u8_list.service(10); /* Elapsed = 20. t1 = expire. t2 = 1 left. t3 = 11 left. */
-//         u8_list.service(10); /* Elapsed = 30. t2 = expire. t1 = expire. t3 = 1 left. */
-//         u8_list.service(10); /* Elapsed = 40. t3 = expire. t1 = expire. t2 = 11 left. */
-//         u8_list.service(10); /* Elapsed = 50. t1 = expire. t2 = 1 left. t3 = 21 left. */
-//         u8_list.service(10); /* Elapsed = 60. t2 = expire. t1 = expire. t3 = 11 left. */
-
-//         /* Step 3: Assert. Test fails if expected timers don't expire. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Step 3: Assert. Test fails if expected timers don't expire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
