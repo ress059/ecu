@@ -142,6 +142,10 @@ extern "C" {
 #endif
 
 /**
+ * @name Fsm Constructor
+ */
+/**@{*/
+/**
  * @pre Memory already allocated for @p me.
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
  * @brief Fsm constructor.
@@ -150,7 +154,12 @@ extern "C" {
  * @param state Fsm's initial state. 
  */
 extern void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state);
+/**@}*/
 
+/**
+ * @name Fsm Member Functions
+ */
+/**@{*/
 /**
  * @pre @p me constructed via @ref ecu_fsm_ctor().
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
@@ -194,6 +203,7 @@ extern void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state 
  * @param event Event to dispatch.
  */
 extern void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event);
+/**@}*/
 
 #ifdef __cplusplus
 }
