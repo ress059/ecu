@@ -92,20 +92,37 @@
  *      - TEST(DListSort, NonUniqueSortEven)
  *      - TEST(DListSort, NonUniqueSortOdd)
  * 
- * @ref ecu_dlist_get_size()
- *      - TEST(DListBase, GetSizeGeneralTest)
+ * @ref ecu_dlist_swap()
+ *      - TEST(DListBase, SwapBothListsNonEmpty)
+ *      - TEST(DListBase, SwapMeListEmptyOtherListNonEmpty)
+ *      - TEST(DListBase, SwapMeListNonEmptyOtherListEmpty)
+ *      - TEST(DListBase, SwapBothListsEmpty)
+ *      - TEST(DListBase, SwapSameListsSupplied)
  * 
- * @ref ecu_dlist_is_empty()
- *      - TEST(DListBase, IsEmptyGeneralTest)
+ * @ref ecu_dlist_size()
+ *      - TEST(DListBase, SizeGeneralTest)
+ * 
+ * @ref ecu_dlist_empty()
+ *      - TEST(DListBase, EmptyGeneralTest)
  * 
  * @ref ECU_DLIST_FOR_EACH(), @ref ECU_DLIST_CONST_FOR_EACH(), @ref ecu_dlist_iterator_begin(),
  * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_const_iterator_begin(),
  * @ref ecu_dlist_const_iterator_end(), @ref ecu_dlist_const_iterator_next()
  *      - TEST(DList, IteratorGeneralTest)
- *      - TEST(DList, CIteratorGeneralTest)
- *      - TEST(DList, IterateOverEmptyList)
- *      - TEST(DList, CIterateOverEmptyList)
- *      - TEST(DList, RemoveNodesInMiddleOfIteration)
+ *      - TEST(DList, ConstIteratorGeneralTest)
+ *      - TEST(DList, IteratorOverEmptyList)
+ *      - TEST(DList, ConstIteratorOverEmptyList)
+ *      - TEST(DList, IteratorRemoveNodesInMiddleOfIteration)
+ * 
+ * @ref ECU_DLIST_AT_FOR_EACH(), @ref ECU_DLIST_CONST_AT_FOR_EACH(), @ref ecu_dlist_iterator_at(),
+ * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_const_iterator_at(),
+ * @ref ecu_dlist_const_iterator_end(), @ref ecu_dlist_const_iterator_next()
+ *      - TEST(DList, AtIteratorGeneralTest)
+ *      - TEST(DList, ConstAtIteratorGeneralTest)
+ *      - TEST(DList, AtIteartorOverNodeNotInList)
+ *      - TEST(DList, AtIteratorOverListWithOneNode)
+ *      - TEST(DList, AtIteratorStartAtTailNode)
+ *      - TEST(DList, AtIteratorRemoveNodesInMiddleOfIteration)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -243,9 +260,7 @@ static void list_order_check_expectations(const ecu_dlist *list)
     assert( (list) );
     ecu_dlist_const_iterator citerator;
 
-    for (const ecu_dnode *i = ecu_dlist_const_iterator_begin(&citerator, list);
-         i != ecu_dlist_const_iterator_end(&citerator);
-         i = ecu_dlist_const_iterator_next(&citerator))
+    ECU_DLIST_CONST_FOR_EACH(i, &citerator, list)
     {
         node_in_list_mock(list, i);
     }
@@ -312,6 +327,8 @@ TEST_GROUP(DListBase)
         ecu_dnode_ctor(&m_node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dnode_ctor(&m_node4, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+        ecu_dnode_ctor(&m_node5, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_inserted_node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
         ecu_dnode_ctor(&m_node_not_in_list, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     }
@@ -329,6 +346,8 @@ TEST_GROUP(DListBase)
     ecu_dnode m_node1;
     ecu_dnode m_node2;
     ecu_dnode m_node3;
+    ecu_dnode m_node4;
+    ecu_dnode m_node5;
     ecu_dnode m_inserted_node;
     ecu_dnode m_node_not_in_list;
 };
@@ -481,9 +500,7 @@ TEST_GROUP(DListSort)
     {
         ecu_dlist_const_iterator citerator;
 
-        for (const ecu_dnode *i = ecu_dlist_const_iterator_begin(&citerator, &m_list);
-             i != ecu_dlist_const_iterator_end(&citerator);
-             i = ecu_dlist_const_iterator_next(&citerator))
+        ECU_DLIST_CONST_FOR_EACH(i, &citerator, &m_list)
         {
             const test_node *n = static_cast<const test_node *>(i);
             mock().actualCall("node_value_mock")
@@ -1235,13 +1252,13 @@ TEST(DListBase, ClearEmptyList)
     try 
     {
         /* Step 1: Arrange. Precondition must be true to produce useful results. */
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
         
         /* Step 2: Action. */
         ecu_dlist_clear(&m_list);
 
         /* Step 3: Assert. */
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
     }
     catch (const AssertException& e)
     {
@@ -1291,7 +1308,7 @@ TEST(DList, FrontEmptyList)
     {
         /* Step 1: Arrange. Precondition must be true to produce useful results. */
         ecu_dlist_clear(&m_list);
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_front(&m_list) == nullptr) );
@@ -1469,11 +1486,11 @@ TEST(DList, PopFrontEmptyList)
     {
         /* Step 1: Arrange. Precondition must be true to produce useful results. */
         ecu_dlist_clear(&m_list);
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == nullptr) );
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
     }
     catch (const AssertException& e)
     {
@@ -1492,11 +1509,11 @@ TEST(DList, PopFrontListWithOneNode)
         /* Step 1: Arrange. */
         ecu_dlist_clear(&m_list);
         ecu_dlist_push_back(&m_list, &m_node1);
-        CHECK_TRUE( (ecu_dlist_get_size(&m_list) == 1) );
+        CHECK_TRUE( (ecu_dlist_size(&m_list) == 1) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == &m_node1) );
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
     }
     catch (const AssertException& e)
     {
@@ -1541,7 +1558,7 @@ TEST(DList, BackEmptyList)
     {
         /* Step 1: Arrange. Precondition must be true to produce useful results. */
         ecu_dlist_clear(&m_list);
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_back(&m_list) == nullptr) );
@@ -1719,11 +1736,11 @@ TEST(DList, PopBackEmptyList)
     {
         /* Step 1: Arrange. Precondition must be true to produce useful results. */
         ecu_dlist_clear(&m_list);
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == nullptr) );
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
     }
     catch (const AssertException& e)
     {
@@ -1742,11 +1759,11 @@ TEST(DList, PopBackListWithOneNode)
         /* Step 1: Arrange. */
         ecu_dlist_clear(&m_list);
         ecu_dlist_push_back(&m_list, &m_node1);
-        CHECK_TRUE( (ecu_dlist_get_size(&m_list) == 1) );
+        CHECK_TRUE( (ecu_dlist_size(&m_list) == 1) );
 
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == &m_node1) );
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
     }
     catch (const AssertException& e)
     {
@@ -2188,25 +2205,174 @@ TEST(DListSort, NonUniqueSortOdd)
 }
 
 /*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST SWAP -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Normal swap.
+ */
+TEST(DListBase, SwapBothListsNonEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. me = [1, 2, 3]. other = [4, 5]. */
+        ecu_dlist_push_back(&m_list, &m_node1);
+        ecu_dlist_push_back(&m_list, &m_node2);
+        ecu_dlist_push_back(&m_list, &m_node3);
+        ecu_dlist_push_back(&m_other_list, &m_node4);
+        ecu_dlist_push_back(&m_other_list, &m_node5);
+
+        /* Step 1: Arrange. Expected lists after swap. me = [4, 5]. other = [1, 2, 3]. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node4);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node5);
+        EXPECT_NODE_IN_LIST(&m_other_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_other_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_other_list, &m_node3);
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&m_list, &m_other_list);
+
+        /* Step 3: Assert. */
+        list_order_check_expectations(&m_list);
+        list_order_check_expectations(&m_other_list);
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Me list gets other's contents. Other list 
+ * becomes empty.
+ */
+TEST(DListBase, SwapMeListEmptyOtherListNonEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. me = []. other = [1, 2]. */
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) ); /* Precondition. */
+        ecu_dlist_push_back(&m_other_list, &m_node1);
+        ecu_dlist_push_back(&m_other_list, &m_node2);
+
+        /* Step 1: Arrange. Expected lists after swap. me = [1, 2]. other = []. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&m_list, &m_other_list);
+
+        /* Step 3: Assert. */
+        list_order_check_expectations(&m_list);
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Me list becomes empty. Other list gets
+ * me's contents.
+ */
+TEST(DListBase, SwapMeListNonEmptyOtherListEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. me = [1, 2]. other = []. */
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) ); /* Precondition. */
+        ecu_dlist_push_back(&m_list, &m_node1);
+        ecu_dlist_push_back(&m_list, &m_node2);
+
+        /* Step 1: Arrange. Expected lists after swap. me = []. other = [1, 2]. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_other_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_other_list, &m_node2);
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&m_list, &m_other_list);
+
+        /* Step 3: Assert. */
+        list_order_check_expectations(&m_other_list);
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Allowed. Nothing should happen.
+ */
+TEST(DListBase, SwapBothListsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&m_list, &m_other_list);
+
+        /* Step 3: Assert. */
+        CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Assertion should fire.
+ */
+TEST(DListBase, SwapSameListsSupplied)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_dlist_swap(&m_list, &m_list);
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
 /*------------------- TESTS - DLIST GET SIZE -----------------*/
 /*------------------------------------------------------------*/
 
-TEST(DListBase, GetSizeGeneralTest)
+TEST(DListBase, SizeGeneralTest)
 {
     try
     {
         /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)0);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)0);
         ecu_dlist_push_back(&m_list, &m_node1);
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)1);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)1);
         ecu_dlist_push_back(&m_list, &m_node2);
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)2);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)2);
         ecu_dlist_push_front(&m_list, &m_node3);
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)3);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)3);
         ecu_dnode_remove(&m_node2);
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)2);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)2);
         ecu_dlist_clear(&m_list);
-        CHECK_TRUE(ecu_dlist_get_size(&m_list) == (std::size_t)0);
+        CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)0);
     }
     catch (const AssertException& e)
     {
@@ -2219,20 +2385,20 @@ TEST(DListBase, GetSizeGeneralTest)
 /*------------------- TESTS - DLIST IS EMPTY -----------------*/
 /*------------------------------------------------------------*/
 
-TEST(DListBase, IsEmptyGeneralTest)
+TEST(DListBase, EmptyGeneralTest)
 {
     try
     {
         /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE(ecu_dlist_is_empty(&m_list));
+        CHECK_TRUE(ecu_dlist_empty(&m_list));
         ecu_dlist_push_back(&m_list, &m_node1);
-        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        CHECK_FALSE(ecu_dlist_empty(&m_list));
         ecu_dlist_push_back(&m_list, &m_node2);
-        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        CHECK_FALSE(ecu_dlist_empty(&m_list));
         ecu_dnode_remove(&m_node1);
-        CHECK_FALSE(ecu_dlist_is_empty(&m_list));
+        CHECK_FALSE(ecu_dlist_empty(&m_list));
         ecu_dnode_remove(&m_node2);
-        CHECK_TRUE(ecu_dlist_is_empty(&m_list));
+        CHECK_TRUE(ecu_dlist_empty(&m_list));
     }
     catch (const AssertException& e)
     {
@@ -2277,7 +2443,7 @@ TEST(DList, IteratorGeneralTest)
  * @brief Verify const iterator iterates over all nodes in list.
  * Also use FOR_EACH() macro.
  */
-TEST(DList, CIteratorGeneralTest)
+TEST(DList, ConstIteratorGeneralTest)
 {
     try
     {
@@ -2305,12 +2471,12 @@ TEST(DList, CIteratorGeneralTest)
  * @brief Iterating over an empty list immediately returns.
  * Also use FOR_EACH() macro.
  */
-TEST(DList, IterateOverEmptyList)
+TEST(DList, IteratorOverEmptyList)
 {
     try
     {
         /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_other_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
 
         /* Step 2: Action. */
         ECU_DLIST_FOR_EACH(i, &m_iterator, &m_other_list)
@@ -2330,12 +2496,12 @@ TEST(DList, IterateOverEmptyList)
  * @brief Const iterating over an empty list immediately returns.
  * Also use FOR_EACH() macro.
  */
-TEST(DList, CIterateOverEmptyList)
+TEST(DList, ConstIteratorOverEmptyList)
 {
     try
     {
         /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
-        CHECK_TRUE( (ecu_dlist_is_empty(&m_other_list)) );
+        CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
 
         /* Step 2: Action. */
         ECU_DLIST_CONST_FOR_EACH(i, &m_citerator, &m_other_list)
@@ -2355,7 +2521,7 @@ TEST(DList, CIterateOverEmptyList)
  * @brief Verify it is OK to remove nodes in the middle of an iteration.
  * Also use FOR_EACH() macro.
  */
-TEST(DList, RemoveNodesInMiddleOfIteration)
+TEST(DList, IteratorRemoveNodesInMiddleOfIteration)
 {
     try
     {
@@ -2386,6 +2552,182 @@ TEST(DList, RemoveNodesInMiddleOfIteration)
         {
             node_in_list_mock(&m_list, i);
         }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------ TESTS - DLIST AT ITERATORS --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Iteration begins at start position and terminates
+ * at list end.
+ */
+TEST(DList, AtIteratorGeneralTest)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 Action. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node2)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration begins at start position and terminates
+ * at list end.
+ */
+TEST(DList, ConstAtIteratorGeneralTest)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Steps 2 Action. */
+        ECU_DLIST_CONST_AT_FOR_EACH(i, &m_citerator, &m_list, &m_node2)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Assertion should fire.
+ */
+TEST(DList, AtIteartorOverNodeNotInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dnode_remove(&m_node1);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node1)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration should only be over the starting node.
+ */
+TEST(DList, AtIteratorOverListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_clear(&m_list);
+        ecu_dlist_push_back(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node1)
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration should only be over the tail node.
+ */
+TEST(DList, AtIteratorStartAtTailNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        CHECK_TRUE( (ecu_dlist_size(&m_list) > 1) ); /* Precondition. */
+        EXPECT_NODE_IN_LIST(&m_list, ecu_dlist_cback(&m_list));
+
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_back(&m_list))
+        {
+            /* Step 3: Assert. */
+            node_in_list_mock(&m_list, i);
+        }
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief It is OK to remove nodes in the middle of an iteration.
+ */
+TEST(DList, AtIteratorRemoveNodesInMiddleOfIteration)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        mock().strictOrder();
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node2);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+        EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_front(&m_list))
+        {
+            /* Step 3: Assert. */
+            if (i == &m_node2)
+            {
+                ecu_dnode_remove(i);
+            }
+            node_in_list_mock(&m_list, i);
+        }
+
+        /* Step 3: Assert. Iterate over list again. */
+        ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_front(&m_list))
+        {
+            node_in_list_mock(&m_list, i);
+        }
+
     }
     catch (const AssertException& e)
     {

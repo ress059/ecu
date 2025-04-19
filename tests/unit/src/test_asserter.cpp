@@ -196,7 +196,7 @@ TEST(Asserter, ECUTimerAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), 0, ECU_TIMER_TYPE_ONE_SHOT, nullptr, nullptr);
+        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), nullptr, nullptr);
     }
 
     catch (const AssertException& e)
