@@ -35,17 +35,41 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
-2. TEST ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
-ecu_dlist_back(), ecu_dlist_cback(), and ecu_dlist_pop_back(). Add these new functions to Sphinx documentation. 
+2. Add ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
+ecu_dlist_back(), ecu_dlist_cback(), ecu_dlist_pop_back(), and ecu_dlist_swap() to Sphinx documentation. 
 
 3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
 not allowed to remove it unless node was in list. Now we remove it
 regardless (no need to check).
 
+4. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
+
+5. Changed ecu_dlist_get_size() to ecu_dlist_size() and Changed ecu_dlist_is_empty() to
+ecu_dlist_empty() to emulate stdlib. Don't think these were ever in Sphinx documentation 
+Add them to Sphinx documentation!!!
+
+6. Make sphinx documentation headers similar to stdlib.  I.e.
+    List Modifiers Section
+        - ecu_dlist_clear
+        - ecu_dlist_insert_before
+        - ...
+    
+    List Operations
+        - ecu_dlist_clear
+        - ecu_dlist_sort
+        - ecu_dlist_swap
+        - ....
+
+7. Add sphinx documentation for ECU_DLIST_AT_FOR_EACH(), and ECU_DLIST_CONST_AT_FOR_EACH().
+
 # Timer
-0. Add new tests for updated timer module.
 1. Add Sphinx documentation.
 3. When timer and FSM done, use it in main.c build test to verify linkage.
+4. In documentation note that ecu_timer_set() DISARMS the timer and removes it from list.
+5. In documentation note that calling ecu_timer_set() in expire callback will remove it.
+   User has to readd timer to reactivate it.
+6. In documentation note that disarming/rearming timer is valid. Talk about cases with
+one-shot and periodic timers.
 
 
 ## Tree
@@ -68,6 +92,24 @@ so this only applies to GCC. I.e.
 7. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
 
 
+## Unit Tests
+1. Prefix all **helper** class members with m_. TEST_GROUP classes do not have to follow this. 
+Example: 
+```C
+TEST_GROUP(TestClass)
+{
+    int a;
+};
+
+class helper_class
+{
+    int m_a;
+};
+```
+2. In all unit tests do catch a const exception instead of nonconst exception.
+I.e. catch (const AssertException&) instead of catch (AssertException&)
+
+
 ## Build system and syntax, CI, etc
 0. Still need to clang-format fsm, hsm, timer, and tree.
 
@@ -88,6 +130,13 @@ Otherwise message is always printed
 
 5. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+6. Use #pragma message() instead of #warning for TODO messages. I.e.
+```C
+#pragma message("TODO: Want a timer reset capability without coupling it to tlist. \
+    Reset = stop timer but do not restart its timer. When its readded it counts down \
+    from its old saved value.")
+```
 
 # Clang-format
 1. One line max now.
