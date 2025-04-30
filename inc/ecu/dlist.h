@@ -76,8 +76,9 @@
     ((const type_ *)((const uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
- * @brief Helper macro that iterates over an entire list. Use of
- * this macro also protects the application from iterator API changes.
+ * @brief Helper macro that iterates over an entire list, starting 
+ * at HEAD. Use of this macro also protects the application from 
+ * iterator API changes.
  *
  * @param var_ Loop variable name. This will store pointers to @ref ecu_dnode.
  * @param iter_ Pointer to @ref ecu_dlist_iterator.
@@ -87,6 +88,20 @@
     for (struct ecu_dnode *var_ = ecu_dlist_iterator_begin(iter_, list_); \
          var_ != ecu_dlist_iterator_end(iter_);                           \
          var_ = ecu_dlist_iterator_next(iter_))
+
+/**
+ * @brief Helper macro that const iterates over an entire list, 
+ * starting at HEAD. Use of this macro also protects the application 
+ * from iterator API changes.
+ *
+ * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
+ * @param citer_ Pointer to @ref ecu_dlist_const_iterator.
+ * @param list_ Pointer to @ref ecu_dlist to iterate over.
+ */
+#define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                                  \
+    for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_begin(citer_, list_); \
+         var_ != ecu_dlist_const_iterator_end(citer_);                                 \
+         var_ = ecu_dlist_const_iterator_next(citer_))
 
 /**
  * @brief Helper macro that iterates over an entire list, starting
@@ -105,19 +120,6 @@
          var_ = ecu_dlist_iterator_next(iter_))
 
 /**
- * @brief Helper macro that iterates over an entire list. Use of
- * this macro also protects the application from iterator API changes.
- *
- * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
- * @param citer_ Pointer to @ref ecu_dlist_const_iterator.
- * @param list_ Pointer to @ref ecu_dlist to iterate over.
- */
-#define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                                  \
-    for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_begin(citer_, list_); \
-         var_ != ecu_dlist_const_iterator_end(citer_);                                 \
-         var_ = ecu_dlist_const_iterator_next(citer_))
-
-/**
  * @brief Helper macro that iterates over an entire list, starting
  * at the specified position. Use of this macro also protects the
  * application from iterator API changes.
@@ -130,7 +132,7 @@
  */
 #define ECU_DLIST_CONST_AT_FOR_EACH(var_, citer_, list_, start_)                            \
     for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_at(citer_, list_, start_); \
-         var_ != ecu_dlist_const_iterator_end(citer_);                                       \
+         var_ != ecu_dlist_const_iterator_end(citer_);                                      \
          var_ = ecu_dlist_const_iterator_next(citer_))
 
 /*------------------------------------------------------------*/

@@ -62,41 +62,11 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
-2. Add ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
-ecu_dlist_back(), ecu_dlist_cback(), ecu_dlist_pop_back(), and ecu_dlist_swap() to Sphinx documentation. 
-
-3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
-not allowed to remove it unless node was in list. Now we remove it
-regardless (no need to check).
-
-4. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
-
-5. Changed ecu_dlist_get_size() to ecu_dlist_size() and Changed ecu_dlist_is_empty() to
-ecu_dlist_empty() to emulate stdlib. Don't think these were ever in Sphinx documentation 
-Add them to Sphinx documentation!!!
-
-6. Make sphinx documentation headers similar to stdlib.  I.e.
-    List Modifiers Section
-        - ecu_dlist_clear
-        - ecu_dlist_insert_before
-        - ...
-    
-    List Operations
-        - ecu_dlist_clear
-        - ecu_dlist_sort
-        - ecu_dlist_swap
-        - ....
-
-7. Add sphinx documentation for ECU_DLIST_AT_FOR_EACH(), and ECU_DLIST_CONST_AT_FOR_EACH().
+2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
 
 # Timer
-1. Add Sphinx documentation.
+1. Finished first pass of documentation. Proofread rendered Sphinx documentation.
 3. When timer and FSM done, use it in main.c build test to verify linkage.
-4. In documentation note that ecu_timer_set() DISARMS the timer and removes it from list.
-5. In documentation note that calling ecu_timer_set() in expire callback will remove it.
-   User has to readd timer to reactivate it.
-6. In documentation note that disarming/rearming timer is valid. Talk about cases with
-one-shot and periodic timers.
 
 
 ## Tree

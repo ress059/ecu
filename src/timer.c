@@ -57,6 +57,13 @@ static bool insert_here(const struct ecu_dnode *node,
 static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
 
 /*------------------------------------------------------------*/
+/*---------------------- STATIC ASSERTS ----------------------*/
+/*------------------------------------------------------------*/
+
+/* Produce compilation error if ecu_tick_t is a signed type. */
+ECU_STATIC_ASSERT( (((ecu_tick_t)-1) > ((ecu_tick_t)0)), "ecu_tick_t must be an unsigned type." );
+
+/*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
@@ -137,7 +144,7 @@ void ecu_timer_ctor(struct ecu_timer *me,
 }
 
 void ecu_timer_set(struct ecu_timer *me,
-                   size_t period,
+                   ecu_tick_t period,
                    enum ecu_timer_type type)
 {
     ECU_RUNTIME_ASSERT( (me) );
@@ -177,7 +184,7 @@ void ecu_tlist_ctor(struct ecu_tlist *me)
 
 void ecu_tlist_timer_arm(struct ecu_tlist *me, 
                          struct ecu_timer *timer, 
-                         size_t period, 
+                         ecu_tick_t period, 
                          enum ecu_timer_type type)
 {
     ECU_RUNTIME_ASSERT( (me && timer) );
@@ -222,9 +229,9 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
     }
 }
 
-void ecu_tlist_service(struct ecu_tlist *me, size_t elapsed)
+void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 {
-    size_t prev = 0;
+    ecu_tick_t prev = 0;
     struct ecu_dlist_iterator iterator;
     struct ecu_timer *t = (struct ecu_timer *)0;
     struct ecu_dnode *tstart = (struct ecu_dnode *)0;

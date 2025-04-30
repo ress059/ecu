@@ -78,7 +78,7 @@ struct test_timer : public ecu_timer
         ecu_timer_set(this, M_DEFAULT_PERIOD, M_DEFAULT_TYPE);
     }
 
-    test_timer(std::size_t timer_period, ecu_timer_type timer_type = ECU_TIMER_TYPE_ONE_SHOT)
+    test_timer(ecu_tick_t timer_period, ecu_timer_type timer_type = ECU_TIMER_TYPE_ONE_SHOT)
     {
         ecu_timer_ctor(this, &callback, nullptr);
         ecu_timer_set(this, timer_period, timer_type);
@@ -134,7 +134,7 @@ struct test_timer : public ecu_timer
 
     std::function<void()> m_injection;
     bool m_callback_successul{true};
-    static constexpr std::size_t M_DEFAULT_PERIOD = 20;
+    static constexpr ecu_tick_t M_DEFAULT_PERIOD = 20;
     static constexpr ecu_timer_type M_DEFAULT_TYPE = ECU_TIMER_TYPE_ONE_SHOT;
 };
 
@@ -169,7 +169,7 @@ struct test_tlist : public ecu_tlist
      * @brief Helper around @ref ecu_tlist_service() that automatically 
      * passes in the ecu_tlist object under test.
      */
-    void service(std::size_t elapsed)
+    void service(ecu_tick_t elapsed)
     {
         ecu_tlist_service(this, elapsed);
     }
@@ -228,7 +228,7 @@ TEST_GROUP(Timers)
      * Runs in timer's callback. Only rearms timer if supplied values are 
      * different.
      */
-    static void rearm_if_different(ecu_tlist *tlist, ecu_timer *t, std::size_t period, ecu_timer_type type)
+    static void rearm_if_different(ecu_tlist *tlist, ecu_timer *t, ecu_tick_t period, ecu_timer_type type)
     {
         assert( (tlist && t) );
         if (t->period != period || t->type != type)
@@ -245,7 +245,7 @@ TEST_GROUP(Timers)
     test_tlist tlist;
 
     /// @brief Max value tlist's current tick counter can hold before wrapping around.
-    static constexpr std::size_t MAX{SIZE_MAX};
+    static constexpr ecu_tick_t MAX{ECU_TICK_MAX};
 };
 
 /*------------------------------------------------------------*/
