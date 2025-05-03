@@ -90,7 +90,7 @@ of the execution environment. In other words, it suggests that int is the word-s
 of the target. 
 
 This module is driven by a user's hardware timer. Its elapsed ticks is fed into
-:ecudoxygen:`ecu_tlist_service() ecu_tlist_service`.
+:ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>`.
 On almost all microcontrollers, a timer's tick width is less than or equal to 
 its word-size. I.e. a 32-bit microcontroller may have 
 8-bit timers, 16-bit timers, and 32-bit timers, but usually not 64-bit timers.
@@ -227,7 +227,7 @@ and the next timer is checked. Otherwise the function can immediately exit, as
 an ordered list guarantees the remaining timers have also not expired.
 
 To maintain this order, every :ecudoxygen:`ecu_tlist` stores an **absolute** timestamp 
-(:ecudoxygen:`ecu_tlist.current`) to keep track of time. This stored value is incremented by the 
+(:ecudoxygen:`ecu_tlist::current`) to keep track of time. This stored value is incremented by the 
 number of elapsed ticks passed to :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>`. Therefore 
 it is updated in every call to :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>`:
 
@@ -244,7 +244,7 @@ it is updated in every call to :ecudoxygen:`ecu_tlist_service() <ecu_tlist_servi
 
 A timer's **absolute expiration date** is calculated using this timestamp:
 
-    Absolute expiration date = ecu_tlist.current + ecu_timer.period
+    Absolute expiration date = ecu_tlist::current + ecu_timer::period
 
 This ensures proper order when a new timer is added to an :ecudoxygen:`ecu_tlist`
 that already contains active timers:
@@ -300,9 +300,9 @@ callbacks are required**.
 Since the current timestamp is stored in the :ecudoxygen:`ecu_tlist` object, timers being 
 used across different :ecudoxygen:`ecu_tlist` objects are also automatically handled. Recall
 
-    Absolute expiration date = ecu_tlist.current + ecu_timer.period
+    Absolute expiration date = ecu_tlist::current + ecu_timer::period
 
-where ecu_tlist.current is **unique** to each :ecudoxygen:`ecu_tlist` instance. For example:
+where ecu_tlist::current is **unique** to each :ecudoxygen:`ecu_tlist` instance. For example:
 
 .. code-block:: c
 
@@ -332,9 +332,9 @@ eventually overflow:
     ecu_tlist_service(&tlist, ECU_TICK_MAX); /* ecu_tlist::current = ECU_TICK_MAX. About to wraparound. */
     ecu_tlist_service(&tlist, 1); /* ecu_tlist::current = 0. Wraparound! */
 
-This edge case is handled by a :ecudoxygen:`wraparounds linked list (ecu_tlist.wraparounds) <ecu_tlist.wraparounds>`.
-Timers that are running but expire after an :ecudoxygen:`ecu_tlist.current` overflow are stored
-in this list. Otherwise :ecudoxygen:`ecu_tlist.wraparounds` acts the exact same as :ecudoxygen:`ecu_tlist.timers`.
+This edge case is handled by a :ecudoxygen:`wraparounds linked list (ecu_tlist::wraparounds) <ecu_tlist::wraparounds>`.
+Timers that are running but expire after an :ecudoxygen:`ecu_tlist::current` overflow are stored
+in this list. Otherwise :ecudoxygen:`ecu_tlist::wraparounds` acts the exact same as :ecudoxygen:`ecu_tlist::timers`.
 The following example shows how overflow is handled. For simplicity, the counter overflows once it 
 exceeds 255. I.e. 255 + 1 = 0.
 
@@ -369,22 +369,22 @@ exceeds 255. I.e. 255 + 1 = 0.
 
 The steps in the figure above are taken to handle overflow in the service call:
 
-#. :ecudoxygen:`ecu_tlist.current` is updated. Since it's maximum value is 255 
+#. :ecudoxygen:`ecu_tlist::current` is updated. Since it's maximum value is 255 
    it overflows back to 5. 
         
         current = 245 + 16 = (uint8_t)261 = 5
 
-#. Since the counter overflowed, it is guaranteed that all timers in the :ecudoxygen:`ecu_tlist.timers`
+#. Since the counter overflowed, it is guaranteed that all timers in the :ecudoxygen:`ecu_tlist::timers`
    list have expired. This condition does not have to be checked - all timers in this list 
    are just expired.
 
-#. The contents of :ecudoxygen:`ecu_tlist.wraparounds` are swapped into :ecudoxygen:`ecu_tlist.timers`
-   so normal behavior can continue until the next overflow. I.e. :ecudoxygen:`ecu_tlist.timers` list
+#. The contents of :ecudoxygen:`ecu_tlist::wraparounds` are swapped into :ecudoxygen:`ecu_tlist::timers`
+   so normal behavior can continue until the next overflow. I.e. :ecudoxygen:`ecu_tlist::timers` list
    acts the same. If timers with periods between 251-255 are armed at this point (current = 5), they 
-   would be inserted into :ecudoxygen:`ecu_tlist.wraparounds`.
+   would be inserted into :ecudoxygen:`ecu_tlist::wraparounds`.
 
-#. The remaining timers in the updated :ecudoxygen:`ecu_tlist.timers` list are serviced like normal.
-   :ecudoxygen:`ecu_tlist.current` is 5, so only t2 expires.
+#. The remaining timers in the updated :ecudoxygen:`ecu_tlist::timers` list are serviced like normal.
+   :ecudoxygen:`ecu_tlist::current` is 5, so only t2 expires.
 
 #. List iteration has reached a non-expired timer (t2) so function immediately exits.
 
@@ -743,7 +743,7 @@ ecu_tlist_service()
 Services all timers in the passed :ecudoxygen:`ecu_tlist`. Must be called periodically by 
 the application. This function is explained in detail in the 
 :ref:`Timer List Representation Section <timer_list_representation>`. Also see the 
-:ecudoxygen:`API <ecu_tlist_service>.`
+:ecudoxygen:`API <ecu_tlist_service>`.
 
 .. warning::
 
