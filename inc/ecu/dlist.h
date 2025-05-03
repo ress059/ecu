@@ -76,8 +76,9 @@
     ((const type_ *)((const uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
- * @brief Helper macro that iterates over an entire list. Use of
- * this macro also protects the application from iterator API changes.
+ * @brief Helper macro that iterates over an entire list, starting 
+ * at HEAD. Use of this macro also protects the application from 
+ * iterator API changes.
  *
  * @param var_ Loop variable name. This will store pointers to @ref ecu_dnode.
  * @param iter_ Pointer to @ref ecu_dlist_iterator.
@@ -89,8 +90,9 @@
          var_ = ecu_dlist_iterator_next(iter_))
 
 /**
- * @brief Helper macro that iterates over an entire list. Use of
- * this macro also protects the application from iterator API changes.
+ * @brief Helper macro that const iterates over an entire list, 
+ * starting at HEAD. Use of this macro also protects the application 
+ * from iterator API changes.
  *
  * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
  * @param citer_ Pointer to @ref ecu_dlist_const_iterator.
@@ -99,6 +101,38 @@
 #define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                                  \
     for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_begin(citer_, list_); \
          var_ != ecu_dlist_const_iterator_end(citer_);                                 \
+         var_ = ecu_dlist_const_iterator_next(citer_))
+
+/**
+ * @brief Helper macro that iterates over an entire list, starting
+ * at the specified position. Use of this macro also protects the
+ * application from iterator API changes.
+ * 
+ * @param var_ Loop variable name. This will store pointers to @ref ecu_dnode.
+ * @param iter_ Pointer to @ref ecu_dlist_iterator.
+ * @param list_ Pointer to @ref ecu_dlist to iterate over.
+ * @param start_ Pointer to @ref ecu_dnode. Iteration is started at this
+ * position. This node must be within @p list_.
+ */
+#define ECU_DLIST_AT_FOR_EACH(var_, iter_, list_, start_)                       \
+    for (struct ecu_dnode *var_ = ecu_dlist_iterator_at(iter_, list_, start_);  \
+         var_ != ecu_dlist_iterator_end(iter_);                                 \
+         var_ = ecu_dlist_iterator_next(iter_))
+
+/**
+ * @brief Helper macro that iterates over an entire list, starting
+ * at the specified position. Use of this macro also protects the
+ * application from iterator API changes.
+ *
+ * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
+ * @param citer_ Pointer to @ref ecu_dlist_const_iterator.
+ * @param list_ Pointer to @ref ecu_dlist to iterate over.
+ * @param start_ Pointer to @ref ecu_dnode. Iteration is started at this
+ * position. This node must be within @p list_.
+ */
+#define ECU_DLIST_CONST_AT_FOR_EACH(var_, citer_, list_, start_)                            \
+    for (const struct ecu_dnode *var_ = ecu_dlist_const_iterator_at(citer_, list_, start_); \
+         var_ != ecu_dlist_const_iterator_end(citer_);                                      \
          var_ = ecu_dlist_const_iterator_next(citer_))
 
 /*------------------------------------------------------------*/
@@ -458,6 +492,20 @@ extern void ecu_dlist_sort(struct ecu_dlist *me,
                            void *data);
 
 /**
+ * @pre @p me and @p other previously constructed via call to @ref ecu_dlist_ctor().
+ * @brief Swaps the two lists. I.e. if @p me == [0, 1] and @p other == [2, 3], 
+ * then @p me == [2, 3] and @p other == [0, 1] after this operation.
+ * If one list is empty and one list is nonempty, they will also be swapped.
+ * I.e. if @p me == [] and @p other == [4, 5], then @p me == [4, 5] and
+ * @p other == [] after this operation. If both lists are empty this
+ * function does nothing.
+ * 
+ * @param me Swap this list with @p other. This cannot equal @p other.
+ * @param other Swap this list with @p me. This cannot equal @p me.
+ */
+extern void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other);
+
+/**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief Returns number of nodes in a list. Returns 0 if list is empty.
  *
@@ -467,7 +515,7 @@ extern void ecu_dlist_sort(struct ecu_dlist *me,
  *
  * @param me List to check.
  */
-extern size_t ecu_dlist_get_size(const struct ecu_dlist *me);
+extern size_t ecu_dlist_size(const struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
@@ -478,7 +526,7 @@ extern size_t ecu_dlist_get_size(const struct ecu_dlist *me);
  *
  * @param me List to check.
  */
-extern bool ecu_dlist_is_empty(const struct ecu_dlist *me);
+extern bool ecu_dlist_empty(const struct ecu_dlist *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -502,6 +550,22 @@ extern bool ecu_dlist_is_empty(const struct ecu_dlist *me);
  * @param list List to iterate over.
  */
 extern struct ecu_dnode *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list);
+
+/**
+ * @pre Memory already allocated for @p me
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p start node is in @p list.
+ * @brief Initializes iterator at the supplied starting node's position. 
+ * The starting node is returned.
+ * 
+ * @param me Non-const iterator to initialize.
+ * @param list List to iterate over.
+ * @param start Starting position of the iteration. This node must be
+ * within @p list.
+ */
+extern struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me, 
+                                               struct ecu_dlist *list, 
+                                               struct ecu_dnode *start);
 
 /**
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
@@ -539,10 +603,28 @@ extern struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me);
  * @param me Const iterator to initialize.
  * @param list List to iterate over.
  */
-extern const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, const struct ecu_dlist *list);
+extern const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, 
+                                                              const struct ecu_dlist *list);
 
 /**
- * @pre @p me previously initialized via call to @ref ecu_dlist_const_iterator_begin().
+ * @pre Memory already allocated for @p me
+ * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
+ * @pre @p start node is in @p list.
+ * @brief Initializes iterator at the supplied starting node's position. 
+ * The starting node is returned.
+ * 
+ * @param me Const iterator to initialize.
+ * @param list List to iterate over.
+ * @param start Starting position of the iteration. This node must be
+ * within @p list.
+ */
+extern const struct ecu_dnode *ecu_dlist_const_iterator_at(struct ecu_dlist_const_iterator *me, 
+                                                           const struct ecu_dlist *list, 
+                                                           const struct ecu_dnode *start);
+
+/**
+ * @pre @p me previously initialized via call to @ref ecu_dlist_const_iterator_begin()
+ * or @ref ecu_dlist_const_iterator_at().
  * @brief Returns list's terminal node, which is @ref ecu_dlist.head. This
  * is a dummy delimeter.
  *
@@ -551,7 +633,8 @@ extern const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_c
 extern const struct ecu_dnode *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me);
 
 /**
- * @pre @p me previously initialized via call to @ref ecu_dlist_const_iterator_begin().
+ * @pre @p me previously initialized via call to @ref ecu_dlist_const_iterator_begin()
+ * or @ref ecu_dlist_const_iterator_at().
  * @brief Returns the next node in the iteration.
  *
  * @param me Const iterator.

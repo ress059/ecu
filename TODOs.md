@@ -1,13 +1,13 @@
 Completed.
 1. asserter.h/.c DONE.
 2. attributes.h. DONE.
-3. dlist.h/.c. TODO. See dlist entry below.
+3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
 6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
-9. timer.h/.c. TODO. Refactor with new dlist. Refactor to use list sort. Update tests, clang-format, documentation.
+9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
 
 ## Ring buffer
@@ -62,17 +62,10 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
-2. TEST ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
-ecu_dlist_back(), ecu_dlist_cback(), and ecu_dlist_pop_back(). Add these new functions to Sphinx documentation. 
-
-3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
-not allowed to remove it unless node was in list. Now we remove it
-regardless (no need to check).
+2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
 
 # Timer
-0. Add new tests for updated timer module.
-1. Add Sphinx documentation.
-3. When timer and FSM done, use it in main.c build test to verify linkage.
+1. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree
@@ -96,7 +89,19 @@ so this only applies to GCC. I.e.
 
 
 ## Unit Tests
-1. Change all class members from _ to m_. Example change event_; to m_event;
+1. Prefix all **helper** class members with m_. TEST_GROUP classes do not have to follow this. 
+Example: 
+```C
+TEST_GROUP(TestClass)
+{
+    int a;
+};
+
+class helper_class
+{
+    int m_a;
+};
+```
 2. In all unit tests do catch a const exception instead of nonconst exception.
 I.e. catch (const AssertException&) instead of catch (AssertException&)
 
@@ -121,6 +126,13 @@ Otherwise message is always printed
 
 5. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
 It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
+
+6. Use #pragma message() instead of #warning for TODO messages. I.e.
+```C
+#pragma message("TODO: Want a timer reset capability without coupling it to tlist. \
+    Reset = stop timer but do not restart its timer. When its readded it counts down \
+    from its old saved value.")
+```
 
 # Clang-format
 1. One line max now.

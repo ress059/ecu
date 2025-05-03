@@ -3,13 +3,13 @@
  * @brief Unit tests for public API functions in @ref event.h. 
  * Test Summary:
  * 
- * enum ecu_reserved_event_ids
+ * @ref ecu_reserved_event_ids
  *      - TEST(Event, UserEventIDBegin)
  * 
- * ECU_EVENT_IS_BASE_OF()
+ * @ref ECU_EVENT_IS_BASE_OF()
  *      - TEST(Event, IsBaseOfMacro)
  * 
- * ecu_event_ctor()
+ * @ref ecu_event_ctor()
  *      - TEST(Event, EventCtorValidID)
  *      - TEST(Event, EventCtorInvalidID)
  * 
