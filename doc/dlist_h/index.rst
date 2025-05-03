@@ -16,24 +16,28 @@ Overview
 
 Intrusive, doubly-linked list. Lists can store any user-defined types without 
 dynamic memory allocation. Different types can be stored and identified in the 
-same list using :ref:`a node ID <dlist_node_id>`.
+same list using :ref:`a node ID <dlist_ecu_dnode_get_id>`.
 
 Theory 
 =================================================
+This section explains how lists and nodes are represented. It is recommended 
+to read this before using the API.
 
-List And Node Structure
+List And Node Representation
 -------------------------------------------------
+.. _dlist_list_and_node_representation:
+
 Lists are represented by the :ecudoxygen:`ecu_dlist` struct. Nodes are represented by
 the :ecudoxygen:`ecu_dnode` struct.
 
 Lists are dummy delimeters used as anchors. Therefore :ecudoxygen:`ecu_dlist::head` is 
 not apart of the user's list. Nodes are user-defined and inserted into lists. 
 
-.. figure:: /images/dlist/dlist_dnode_structure.svg
+.. figure:: /images/dlist/list_and_node_representation.svg
   :width: 600
   :align: center
   
-  List and Node Structure
+  List and Node Representation
 
 
 Storing Node Data 
@@ -45,8 +49,6 @@ an :ecudoxygen:`ecu_dnode` member in a user-defined type. This :ecudoxygen:`ecu_
 member is passed to the API. For example:
 
 .. code-block:: c 
-
-    #include "ecu/dlist.h"
 
     /* User-defined data is apart of the dlist node. */
     struct user_node
@@ -63,8 +65,7 @@ member is passed to the API. For example:
     };
 
     struct ecu_dlist list;
-    struct user_node node1;
-    struct user_node node2;
+    struct user_node node1, node2;
 
     /* Pass ecu_dnode member to API to add/remove user_node from a list. */
     ecu_dlist_ctor(&list);
@@ -91,16 +92,13 @@ allowing custom data to be retrieved:
 
 .. code-block:: c 
 
-    #include "ecu/dlist.h"
-
-    /* User-defined data is apart of the dlist node. */
     struct user_node
     {
         /* User data. */
         int a;
         int b;
 
-        /* Dlist node. */
+        /* Dnode. */
         struct ecu_dnode node;
 
         /* More user data. */
@@ -108,27 +106,20 @@ allowing custom data to be retrieved:
     };
 
     struct ecu_dlist list;
-    struct ecu_dlist_iterator iterator;
     struct user_node node1;
-    struct user_node node2;
-
-    /* Create list of user_node types. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dlist_push_back(&list, &node1.node);
-    ecu_dlist_push_back(&list, &node2.node);
+    ecu_dlist_push_back(&list, &node1.node); /* Nodes are intrusive. */
 
     /* ..... */
     /* ..... */
 
-    /* At a later time iterate over list. API returns (struct ecu_dnode *).
+    /* At a later time retrieve user data stored in front node. API returns (struct ecu_dnode *).
     This can be converted back into (struct user_node *) to retrieve custom data. */
-    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
-         i != ecu_dlist_iterator_end(&itertor);
-         i = ecu_dlist_iterator_next(&iterator))
+    struct ecu_dnode *n = ecu_dlist_front(&list);
+    if (n)
     {
-        struct user_node *me = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
+        struct user_node *me = ECU_DNODE_GET_ENTRY(n, struct user_node, node);
         me->a = 5;
         me->b = 5;
         me->c = 5;
@@ -137,11 +128,11 @@ allowing custom data to be retrieved:
 :ecudoxygen:`ECU_DNODE_GET_ENTRY() <ECU_DNODE_GET_ENTRY>` and 
 :ecudoxygen:`ECU_DNODE_GET_CONST_ENTRY() <ECU_DNODE_GET_CONST_ENTRY>` take in three parameters:
 
-    1. ``ptr_`` = Pointer to ecu_dnode returned by API. In this case, ``i``.
+    1. ``ptr_`` = Pointer to ecu_dnode returned by API. In this case, ``n``.
     2. ``type_`` = User-defined node type. In this case, ``struct user_node``.
     3. ``member_`` = Name of ecu_dnode member within the user-defined type. In this case, ``node``.
 
-.. figure:: /images/dlist/dnode_get_entry.svg
+.. figure:: /images/dlist/getting_node_data_ecu_dnode_get_entry.svg
   :width: 500
   :align: center
   
@@ -160,11 +151,11 @@ pointer to convert it back into the original user-defined type. Consider the fol
         int c;
     };
 
-    /* &me.node supplied and returned by API functions. GET_ENTRY() macros convert
-    this back into (struct user_node *)&me. */
+    /* (struct ecu_dnode *)&me.node supplied and returned by API functions. 
+    GET_ENTRY() macros convert this back into (struct user_node *)&me. */
     struct user_node me;
 
-.. figure:: /images/dlist/dnode_get_entry_offset.svg
+.. figure:: /images/dlist/getting_node_data_get_entry_offset.svg
   :width: 600
   :align: center
 
@@ -212,7 +203,7 @@ the same operations explained above, but all casts are const qualified. A const-
 is also returned.
 
 
-ecu_dnode Class
+ecu_dnode
 =================================================
 
 
@@ -241,9 +232,9 @@ Constructor. Initializes the :ecudoxygen:`ecu_dnode` data structure for use.
 
 An optional destroy function and node ID can be assigned in the constructor. The destroy
 function defines any **additional** cleanup required when the node is destroyed, and is 
-explained in detail in the :ref:`ecu_dnode_destroy() Section <dlist_ecu_dnode_destroy>`.
+explained in detail in :ref:`ecu_dnode_destroy() <dlist_ecu_dnode_destroy>`.
 The node ID allows different types to be stored and identified in the same list. This 
-is explained in detail in the :ref:`ecu_dnode_get_id() Section <dlist_ecu_dnode_get_id>`.
+is explained in detail in :ref:`ecu_dnode_get_id() <dlist_ecu_dnode_get_id>`.
 
 :ecudoxygen:`ECU_DNODE_DESTROY_UNUSED` and :ecudoxygen:`ECU_OBJECT_ID_UNUSED` should be
 passed if these optional features are unused.
@@ -286,21 +277,21 @@ in order to reuse the node.
     ecu_dnode_ctor(&node1, &custom_destroy, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_remove(&node1);  /* Ok. */
 
-Destroying an individual node within a list keeps the list intact:
+Destroying an individual node within a list removes it while keeping the remaining the list intact:
 
 .. code-block:: c
 
     struct ecu_dlist list;
     struct ecu_dnode node1, node2;
 
-    /* list = [node1, node2]. */
+    /* Before. list = [node1, node2]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dlist_push_back(&list, &node1);
     ecu_dlist_push_back(&list, &node2);
 
-    /* list = [node2]. */
+    /* After. list = [node2]. */
     ecu_dnode_destroy(&node1);
 
 .. figure:: /images/dlist/ecu_dnode_destroy.svg
@@ -331,13 +322,13 @@ via :ref:`ecu_dlist_destroy() <dlist_ecu_dlist_destroy>`:
     ecu_dnode_remove(&node3); /* node3 was not destroyed so still usable. */
 
 The node's optional destroy callback defines additional cleanup. This API
-will pass a pointer to the node being destroyed and its ID to the callback.
+will pass a pointer to the node being destroyed and its ID into the callback.
 
 .. warning:: 
 
     The :ecudoxygen:`ecu_dnode` struct is reset before the destroy callback executes.
     Therefore the only API calls allowed in the callback are :ref:`ECU_DNODE_GET_ENTRY() <dlist_ecu_dnode_get_entry>` 
-    and :ecudoxygen:`ECU_DNODE_GET_CONST_ENTRY() <dlist_ecu_dnode_get_const_entry>`.
+    and :ref:`ECU_DNODE_GET_CONST_ENTRY() <dlist_ecu_dnode_get_const_entry>`.
     Violating this rule is undefined behavior.
 
 In this example the destroy callback is used to free the node's memory:
@@ -369,7 +360,7 @@ In this example the destroy callback is used to free the node's memory:
     node1->heap_obj = malloc(20);
     ecu_dnode_ctor(&node1->node, &destroy, USER_NODE_ID);
 
-    /* destroy() called, freeing memory. */
+    /* destroy() called, automatically freeing memory. */
     ecu_dnode_destroy(&node1->node);
 
 Note that this feature can be applied to many other scenarios besides heap allocation.
@@ -401,7 +392,7 @@ For example, a linked list of LEDs. When an LED node is destroyed, it can be tur
 
     /* Construct node. Supply custom destroy callback. Turn LED on. */
     struct led led1;
-    ecu_dnode_ctor(&led1.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&led1.node, &led_destroy, LED_ID);
     led1.gpio.port = PORTA;
     led1.gpio.pin = 5;
     turn_led_on(led1.gpio.port, led1.gpio.pin);
@@ -433,20 +424,29 @@ and :ref:`Getting Node Data Section <dlist_getting_node_data>` for more details.
 
         /* Dnode. */
         struct ecu_dnode node;
+
+        /* More user data. */
+        int c;
     };
 
     struct ecu_dlist list;
-    struct user_node me;
+    struct user_node node1;
     ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&me.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dlist_push_back(&list, &me.node); /* Nodes are intrusive. */
+    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_push_back(&list, &node1.node); /* Nodes are intrusive. */
 
-    /* Retrieve user data stored in front node. */
-    if (!ecu_dlist_empty(&list))
+    /* ..... */
+    /* ..... */
+
+    /* At a later time retrieve user data stored in front node. API returns (struct ecu_dnode *).
+    This can be converted back into (struct user_node *) to retrieve custom data. */
+    struct ecu_dnode *n = ecu_dlist_front(&list);
+    if (n)
     {
-        struct user_node *u = ECU_DNODE_GET_ENTRY(ecu_dlist_front(&list), struct user_node, node);
-        u->a = 5;
-        u->b = 5;
+        struct user_node *me = ECU_DNODE_GET_ENTRY(n, struct user_node, node);
+        me->a = 5;
+        me->b = 5;
+        me->c = 5;
     }
 
 
@@ -455,12 +455,13 @@ ECU_DNODE_GET_CONST_ENTRY()
 .. _dlist_ecu_dnode_get_const_entry:
 
 Const-qualified version of :ref:`ECU_DNODE_GET_ENTRY() <dlist_ecu_dnode_get_entry>`. 
-All user data is read-only.
+The returned node is read-only.
 
 
 ecu_dnode_insert_before()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Inserts node before specified position.
+Inserts node before specified position. The node being inserted cannot already
+be in a list.
 
 .. code-block:: c 
 
@@ -471,11 +472,11 @@ Inserts node before specified position.
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* Starting list = [node1, node3]. */ 
+    /* Before. list = [node1, node3]. */ 
     ecu_dlist_push_back(&list, &node1);
     ecu_dlist_push_back(&list, &node3);
 
-    /* Insert node2 before node3. New list = [node1, node2, node3]. */
+    /* After. Insert node2 before node3. list = [node1, node2, node3]. */
     ecu_dnode_insert_before(&node2, &node3);
 
 .. figure:: /images/dlist/ecu_dnode_insert_before.svg
@@ -487,7 +488,16 @@ Inserts node before specified position.
 The position node **must** be within a list. Other this operation 
 is illegal:
 
-.. figure:: /images/dlist/illegal_ecu_dnode_insert_before.svg
+.. code-block:: c 
+
+    struct ecu_dnode node2, node3;
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* ILLEGAL. Position node (node3) not in a list. */
+    ecu_dnode_insert_before(&node2, &node3);
+
+.. figure:: /images/dlist/ecu_dnode_insert_before_illegal.svg
   :width: 600
   :align: center
 
@@ -496,7 +506,8 @@ is illegal:
 
 ecu_dnode_insert_after()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Inserts node after specified position.
+Inserts node after specified position. The node being inserted cannot already
+be in a list.
 
 .. code-block:: c 
 
@@ -507,11 +518,11 @@ Inserts node after specified position.
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* Starting list = [node1, node3]. */ 
+    /* Before. list = [node1, node3]. */ 
     ecu_dlist_push_back(&list, &node1);
     ecu_dlist_push_back(&list, &node3);
 
-    /* Insert node2 after node1. New list = [node1, node2, node3]. */
+    /* After. Insert node2 after node1. list = [node1, node2, node3]. */
     ecu_dnode_insert_after(&node2, &node1);
 
 .. figure:: /images/dlist/ecu_dnode_insert_after.svg
@@ -523,7 +534,7 @@ Inserts node after specified position.
 The position node **must** be within a list. Other this operation 
 is illegal:
 
-.. figure:: /images/dlist/illegal_ecu_dnode_insert_after.svg
+.. figure:: /images/dlist/ecu_dnode_insert_after_illegal.svg
   :width: 600
   :align: center
 
@@ -537,16 +548,16 @@ Removes a node from a list.
 .. code-block:: c 
 
     struct ecu_dlist list;
-    struct ecu_dnode node1, node2, node3;
+    struct ecu_dnode node1, node2;
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* Starting list = [node1, node2] */
-    ecu_dlist_push_back(&list, &node1, &node2);
+    /* Before. list = [node1, node2]. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node2);
 
-    /* New list = [node2] */
+    /* After. list = [node2]. */
     ecu_dnode_remove(&node1);
 
 .. figure:: /images/dlist/ecu_dnode_remove.svg
@@ -681,7 +692,7 @@ same list:
     }
 
 
-ecu_dlist Class
+ecu_dlist
 =================================================
 
 
@@ -691,12 +702,158 @@ Constructors
 
 ecu_dlist_ctor()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
+Constructor. Initializes the :ecudoxygen:`ecu_dlist` data structure for use.
+
+.. warning:: 
+
+    Must be called once on startup before the list is used. User is also responsible 
+    for allocating memory since ECU does not use dynamic memory allocation.
+
+.. code-block:: c 
+
+    struct ecu_dlist list;  /* User must allocate memory before constructor. */
+    ecu_dlist_empty(&list); /* ILLEGAL. Must construct before using. */
+
+    ecu_dlist_ctor(&list);
+    ecu_dlist_empty(&list); /* Ok. */
 
 
 ecu_dlist_destroy()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
+.. _dlist_ecu_dlist_destroy:
+
+List destructor. All nodes within the list are also destroyed by calling
+:ref:`ecu_dnode_destroy() <dlist_ecu_dnode_destroy>` on them. 
+Destroyed list and nodes must be reconstructed in order to be used again.
+
+.. warning:: 
+
+    Memory is **not** freed memory in this destructor since ECU library is meant to be 
+    used without dynamic memory allocation. If :ecudoxygen:`ecu_dnodes <ecu_dnode>` are 
+    allocated on the heap, they can be freed within their destroy callbacks (see 
+    :ref:`ecu_dnode_destroy() <dlist_ecu_dnode_destroy>`). If the :ecudoxygen:`ecu_dlist` 
+    is allocated on the heap, it must be freed elsewhere, **after** calling this function.
+
+.. code-block:: c 
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2, node3;
+
+    /* Before. list = [node1, node2, node3]. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node2);
+    ecu_dlist_push_back(&list, &node3);
+
+    /* After. list = []. */
+    ecu_dlist_destroy(&list);
+
+    /* ILLEGAL. List and nodes must be reconstructed in order to be used again. */
+    ecu_dlist_push_back(&list, &node1); 
+
+.. figure:: /images/dlist/ecu_dlist_destroy.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_destroy()
+
+An optional destroy callback can be supplied to each node's constructor that allows
+users to define additional, application-specific cleanup. When each node in the list 
+is destroyed, its destroy callback executes if one was supplied. This is explained 
+in detail in :ref:`ecu_dnode_destroy() <dlist_ecu_dnode_destroy>`.
+
+In the following example the :ecudoxygen:`ecu_dlist` and each :ecudoxygen:`ecu_dnode` 
+is allocated on the heap. Each node is freed within its destroy callback. The list 
+is freed **after** the destructor is called.
+
+.. code-block:: c
+
+    static void destroy(struct ecu_dnode *n, ecu_object_id id)
+    {
+        /* Define additional cleanup for node. DO NOT USE DNODE
+        MEMBER FUNCTIONS IN THE DESTROY CALLBACK. */
+        ECU_RUNTIME_ASSERT( (n) );
+        (void)id;
+        free(me); /* Node was allocated on heap so we must free it here. */
+    }
+
+    /* Construct list and nodes. Put them all on heap. Supply custom destroy
+    callback to node constructors. */
+    struct ecu_dlist *list = malloc(sizeof(struct ecu_dlist));
+    struct ecu_dnode *node1 = malloc(sizeof(struct ecu_dnode));
+    struct ecu_dnode *node2 = malloc(sizeof(struct ecu_dnode));
+    struct ecu_dnode *node3 = malloc(sizeof(struct ecu_dnode));
+    ecu_dlist_ctor(list);
+    ecu_dnode_ctor(node1, &destroy, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(node2, &destroy, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(node3, &destroy, ECU_OBJECT_ID_UNUSED);
+
+    /* Before. list = [node1, node2, node3] */
+    ecu_dlist_push_back(list, node1);
+    ecu_dlist_push_back(list, node2);
+    ecu_dlist_push_back(list, node3);
+
+    /* After. list = [].
+    destroy() is called on node1, node2, and node3, freeing them. 
+    No additional intervention required for node cleanup. */
+    ecu_dlist_destroy(list);
+    free(list); /* NOTE THAT LIST MUST STILL BE EXPLICITLY FREED. */
+
+Note that this feature can be applied to many other scenarios besides heap allocation. 
+For example, a linked list of LEDs. When the list is destroyed, all LED nodes can be 
+turned off:
+
+.. code-block:: c
+
+    struct led 
+    {
+        struct ecu_dnode node;
+        struct 
+        {
+            uint32_t port;
+            uint32_t pin;
+        } gpio;
+    };
+
+    static void led_destroy(struct ecu_dnode *n, ecu_object_id id)
+    {
+        /* Turn off LED when node is destroyed. */
+        ECU_RUNTIME_ASSERT( (n) );
+        (void)id;
+
+        struct led *me = ECU_DNODE_GET_ENTRY(n, struct led, node);
+        gpio_set_low(me->gpio.port, me->gpio.pin);
+    }
+
+    struct ecu_dlist list;
+    struct led led1, led2, led3;
+
+    /* Construct nodes. Supply custom destroy callback. */
+    ecu_dnode_ctor(&led1.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&led2.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&led3.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
+    led1.gpio.port = PORTA;
+    led1.gpio.pin = 5;
+    led2.gpio.port = PORTC;
+    led2.gpio.pin = 2;
+    led3.gpio.port = PORTD;
+    led3.gpio.pin = 8;
+
+    /* Before. list = [led1, led2, led3]. Turn all LEDs on. */
+    gpio_set_high(led1.gpio.port, led1.gpio.pin);
+    gpio_set_high(led2.gpio.port, led2.gpio.pin);
+    gpio_set_high(led3.gpio.port, led3.gpio.pin);
+    ecu_dlist_push_back(&list, &led1.node);
+    ecu_dlist_push_back(&list, &led2.node);
+    ecu_dlist_push_back(&list, &led3.node);
+
+    /* After. list = [].
+    led_destroy() is called on led1, led2, and led3, turning them off. 
+    No additional intervention needed. */
+    ecu_dlist_destroy(&list);
 
 
 Member Functions
@@ -713,7 +870,7 @@ can be reused without reconstruction:
     struct ecu_dlist list;
     struct ecu_dnode node1, node2, node3;
 
-    /* List = [node1, node2, node3]. */
+    /* Before. list = [node1, node2, node3]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
@@ -722,7 +879,7 @@ can be reused without reconstruction:
     ecu_dlist_push_back(&list, &node2);
     ecu_dlist_push_back(&list, &node3);
 
-    /* List = []. */
+    /* After. list = []. */
     ecu_dlist_clear(&list);
 
 .. figure:: /images/dlist/ecu_dlist_clear.svg
@@ -736,7 +893,7 @@ ecu_dlist_front()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. _dlist_ecu_dlist_front:
 
-Returns front node in list. If list is empty, returns NULL.
+Returns front node in list but does not remove it. If list is empty, returns NULL.
 
 .. code-block:: c
 
@@ -749,11 +906,12 @@ Returns front node in list. If list is empty, returns NULL.
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list1 = [node1, node2]. list2 = []. */
+    /* Before. list1 = [node1, node2]. list2 = []. */
     ecu_dlist_push_back(&list1, &node1);
     ecu_dlist_push_back(&list1, &node2);
 
-    pos = ecu_dlist_front(&list1); /* &node1 returned. list1 = [node1, node2]. */
+    /* After. Lists unchanged. list1 = [node1, node2]. list2 = []. */
+    pos = ecu_dlist_front(&list1); /* &node1 returned. */
     pos = ecu_dlist_front(&list2); /* NULL returned. */
 
 
@@ -772,13 +930,13 @@ Inserts node to the front of the list. Node cannot be within a list prior to ins
     struct ecu_dlist list;
     struct ecu_dnode node1, node2;
 
-    /* list = [node1]. */
+    /* Before. list = [node1]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dlist_push_back(&list, &node1);
 
-    /* list = [node2, node1] */
+    /* After. list = [node2, node1] */
     ecu_dlist_push_front(&list, &node2);
 
 .. figure:: /images/dlist/ecu_dlist_push_front.svg
@@ -803,11 +961,12 @@ Removes front node in the list and returns it. If list is empty, returns NULL.
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list1 = [node1, node2]. list2 = []. */
+    /* Before. list1 = [node1, node2]. list2 = []. */
     ecu_dlist_push_back(&list1, &node1);
     ecu_dlist_push_back(&list1, &node2);
 
-    pos = ecu_dlist_pop_front(&list1); /* &node1 returned. list1 = [node2]. */
+    /* After. list1 = [node2]. list2 = []. */
+    pos = ecu_dlist_pop_front(&list1); /* &node1 returned. */
     pos = ecu_dlist_pop_front(&list2); /* NULL returned. */
 
 .. figure:: /images/dlist/ecu_dlist_pop_front.svg
@@ -821,7 +980,7 @@ ecu_dlist_back()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. _dlist_ecu_dlist_back:
 
-Returns tail node in list. If list is empty, returns NULL.
+Returns tail node in list but does not remove it. If list is empty, returns NULL.
 
 .. code-block:: c
 
@@ -834,11 +993,12 @@ Returns tail node in list. If list is empty, returns NULL.
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list1 = [node1, node2]. list2 = []. */
+    /* Before. list1 = [node1, node2]. list2 = []. */
     ecu_dlist_push_back(&list1, &node1);
     ecu_dlist_push_back(&list1, &node2);
 
-    pos = ecu_dlist_back(&list1); /* &node2 returned. list1 = [node1, node2]. */
+    /* After. Lists unchanged. list1 = [node1, node2]. list2 = []. */
+    pos = ecu_dlist_back(&list1); /* &node2 returned. */
     pos = ecu_dlist_back(&list2); /* NULL returned. */
 
 
@@ -857,13 +1017,13 @@ Inserts node to the back of the list. Node cannot be within a list prior to inse
     struct ecu_dlist list;
     struct ecu_dnode node1, node2;
 
-    /* list = [node1]. */
+    /* Before. list = [node1]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dlist_push_back(&list, &node1);
 
-    /* list = [node1, node2] */
+    /* After. list = [node1, node2] */
     ecu_dlist_push_back(&list, &node2);
 
 .. figure:: /images/dlist/ecu_dlist_push_back.svg
@@ -888,11 +1048,12 @@ Removes tail node in the list and returns it. If list is empty, returns NULL.
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list1 = [node1, node2]. list2 = []. */
+    /* Before. list1 = [node1, node2]. list2 = []. */
     ecu_dlist_push_back(&list1, &node1);
     ecu_dlist_push_back(&list1, &node2);
 
-    pos = ecu_dlist_pop_back(&list1); /* &node2 returned. list1 = [node1]. */
+    /* After. list1 = [node1]. list2 = []. */
+    pos = ecu_dlist_pop_back(&list1); /* &node2 returned. */
     pos = ecu_dlist_pop_back(&list2); /* NULL returned. */
 
 .. figure:: /images/dlist/ecu_dlist_pop_back.svg
@@ -905,13 +1066,13 @@ Removes tail node in the list and returns it. If list is empty, returns NULL.
 ecu_dlist_insert_before()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Inserts node before specified position. Insertion criteria is defined by a 
-user-supplied function. Node cannot be within a list prior to insertion.
+user-supplied condition function. Node cannot be within a list prior to insertion.
 
-Starting at HEAD, the list is iterated over. Each position in the iteration and 
-the node being inserted are passed into the user-supplied function. If it returns true,
-the node is inserted before the specified position and ecu_dlist_insert_before() exits. 
+Starting at HEAD, the list is iterated over. The current position in the iteration and 
+the node being inserted are passed into the user-supplied condition function. If it returns true,
+the node is inserted before the current position and ecu_dlist_insert_before() exits. 
 Otherwise the iteration continues and the process repeats. If the list is empty, or if 
-the iteration completes and all function calls returned false, the node is inserted at 
+the iteration completes and all condition function calls returned false, the node is inserted at 
 the back of the list.
 
 .. code-block:: c
@@ -923,18 +1084,19 @@ the back of the list.
     };
 
     /* User-defined condition function. */
-    static bool condition(const struct ecu_dnode *me, const struct ecu_dnode *position, void *obj)
+    static bool condition(const struct ecu_dnode *n, const struct ecu_dnode *position, void *obj)
     {
         bool status = false; /* Return true if condition passes. False otherwise. */
-        ECU_RUNTIME_ASSERT( (me && position) );
+        ECU_RUNTIME_ASSERT( (n && position) );
         (void)obj; /* Optional callback object unused. */
 
-        const struct user_node *me_node = ECU_DNODE_GET_CONST_ENTRY(me, struct user_node, node);
+        const struct user_node *me = ECU_DNODE_GET_CONST_ENTRY(n, struct user_node, node);
         const struct user_node *pos = ECU_DNODE_GET_CONST_ENTRY(position, struct user_node, node);
 
-        if (me_node->val <= pos->val)
+        if (me->val <= pos->val)
         {
-            /* Node should be inserted before position if its value is less than or equal position's value. */
+            /* Node should be inserted before position if its value is less than or equal 
+            to position's value. */
             status = true;
         }
 
@@ -953,11 +1115,11 @@ the back of the list.
     ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     node3.val = 3;
 
-    /* list = [node1, node3]. */
+    /* Before. list = [node1, node3]. */
     ecu_dlist_push_back(&list, &node1.node);
     ecu_dlist_push_back(&list, &node3.node);
     
-    /* list = [node1, node2, node3]. */
+    /* After. list = [node1, node2, node3]. */
     ecu_dlist_insert_before(&list, &node2.node, &condition, ECU_DNODE_OBJ_UNUSED);
 
 .. figure:: /images/dlist/ecu_dlist_insert_before.svg
@@ -967,7 +1129,7 @@ the back of the list.
   ecu_dlist_insert_before()
 
 In this example the iteration completes and all user-supplied function calls 
-return false, so the node is inserted at the back of the list:
+returned false, so the node is inserted to the back of the list:
 
 .. code-block:: c
 
@@ -985,11 +1147,11 @@ return false, so the node is inserted at the back of the list:
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list = [node1, node3]. */
+    /* Before. list = [node1, node3]. */
     ecu_dlist_push_back(&list, &node1);
     ecu_dlist_push_back(&list, &node3);
 
-    /* list = [node1, node3, node2]. */
+    /* After. list = [node1, node3, node2]. */
     ecu_dlist_insert_before(&list, &node2, &all_conditions_fail, ECU_DNODE_OBJ_UNUSED);
 
 .. figure:: /images/dlist/ecu_dlist_insert_before_iteration_done.svg
@@ -1004,9 +1166,10 @@ ecu_dlist_sort()
 Merge sorts all nodes in the list. The sorting condition is defined by a 
 user-supplied function.
 
-.. code-block:: c
+The lefthand-side node (lhs) and the righthand-side node (rhs) are supplied
+to the user's function. It must return true if lhs < rhs or false if lhs >= rhs.
 
-    #include "ecu/dlist.h"
+.. code-block:: c
 
     struct user_node 
     {
@@ -1046,13 +1209,13 @@ user-supplied function.
     ecu_dnode_ctor(&node4.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     node4.val = 4;
 
-    /* list = [node4, node1, node3, node2]. */
+    /* Before. list = [node4, node1, node3, node2]. */
     ecu_dlist_push_back(&list, &node4.node);
     ecu_dlist_push_back(&list, &node1.node);
     ecu_dlist_push_back(&list, &node3.node);
     ecu_dlist_push_back(&list, &node2.node);
 
-    /* list = [node1, node2, node3, node4]. */
+    /* After. list = [node1, node2, node3, node4]. */
     ecu_dlist_sort(&list, &lhs_less_than_rhs, ECU_DNODE_OBJ_UNUSED);
 
 .. figure:: /images/dlist/ecu_dlist_sort.svg
@@ -1062,22 +1225,98 @@ user-supplied function.
   ecu_dlist_sort()
 
 
-
-!!!!!!!!!!!! TODO Stopped here
-
 ecu_dlist_swap()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
+Swaps contents between two lists.
+
+.. code-block:: c
+
+    struct ecu_dlist list1, list2;
+    struct ecu_dnode node1, node2, node3, node4, node5;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    /* Before. list1 = [node1, node2]. list2 = [node3, node4, node5]. */
+    ecu_dlist_push_back(&list1, &node1);
+    ecu_dlist_push_back(&list1, &node2);
+    ecu_dlist_push_back(&list2, &node3);
+    ecu_dlist_push_back(&list2, &node4);
+    ecu_dlist_push_back(&list2, &node5);
+
+    /* After. list1 = [node3, node4, node5]. list2 = [node1, node2]. */
+    ecu_dlist_swap(&list1, &list2);
+
+.. figure:: /images/dlist/ecu_dlist_swap.svg
+  :width: 1000
+  :align: center
+
+  ecu_dlist_swap()
+
+If one list is empty, the swapped list will become empty:
+
+.. code-block:: c
+
+    struct ecu_dlist list1, list2;
+    struct ecu_dnode node1, node2;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    /* Before. list1 = [node1, node2]. list2 = []. */
+    ecu_dlist_push_back(&list1, &node1);
+    ecu_dlist_push_back(&list1, &node2);
+
+    /* After. list1 = []. list2 = [node1, node2]. */
+    ecu_dlist_swap(&list1, &list2);
 
 
 ecu_dlist_size()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
+Returns number of nodes in a list. Returns 0 if list is empty.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    ecu_dlist_size(&list); /* Returns 0. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_size(&list); /* Returns 1. */
+    ecu_dlist_push_back(&list, &node2);
+    ecu_dlist_size(&list); /* Returns 2. */
+    ecu_dnode_remove(&node1);
+    ecu_dlist_size(&list); /* Returns 1. */
+
+.. figure:: /images/dlist/ecu_dlist_size.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_size()
 
 
 ecu_dlist_empty()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
+Returns true if list is empty. False otherwise.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    ecu_dlist_empty(&list); /* Returns true. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_empty(&list); /* Returns false. */
+    ecu_dnode_remove(&node1);
+    ecu_dlist_empty(&list); /* Returns true. */
+
+.. figure:: /images/dlist/ecu_dlist_empty.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_empty()
 
 
 Iterators
@@ -1086,197 +1325,11 @@ Iterators
 
 ECU_DLIST_FOR_EACH()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo. safe to remove nodes in middle of iteration.
+.. _dlist_ecu_dlist_for_each:
 
-
-ECU_DLIST_CONST_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
-
-
-ECU_DLIST_AT_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo. safe to remove nodes in middle of iteration.
-
-
-ECU_DLIST_CONST_AT_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-todo
-
-
-
-
-
-
-List Swap
-=================================================
-
-
-
-List Destruction
-=================================================
-:ecudoxygen:`ecu_dlist_destroy() <ecu_dlist_destroy>` destroys the list, and all nodes 
-within the list. 
-
-.. warning:: 
-
-    Memory is **not** freed memory in this destructor since ECU library is meant to be 
-    used without dynamic memory allocation. If :ecudoxygen:`ecu_dnodes <ecu_dnode>` are 
-    allocated on the heap, they can be freed within their destroy callbacks (see 
-    :ref:`Node Destruction Section <dlist_node_destruction>`). If the :ecudoxygen:`ecu_dlist` 
-    is allocated on the heap, it must be freed elsewhere, **after** calling 
-    :ecudoxygen:`ecu_dlist_destroy() <ecu_dlist_destroy>`.
-
-All nodes are removed from the list. Values within the :ecudoxygen:`ecu_dlist` and 
-each :ecudoxygen:`ecu_dnode` are reset such that they require reconstruction in order 
-to be used again:
+Iterates over an :ecudoxygen:`ecu_dlist`, starting at HEAD.
 
 .. code-block:: c 
-
-    #include "ecu/dlist.h"
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1;
-    struct ecu_dnode node2;
-    struct ecu_dnode node3;
-
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Starting list = [node1, node2, node3] */
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_push_back(&list, &node2);
-    ecu_dlist_push_back(&list, &node3);
-
-    /* ..... */
-    /* ..... */
-
-    /* At a later time list is destroyed. Destroys list and all nodes within 
-    list. Each must be reconstructed in order to be used again. */
-    ecu_dlist_destroy(&list);
-
-.. figure:: /images/dlist/dlist_destroy.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_destroy()
-
-An optional destroy callback can be supplied to each node's constructor that allows
-users to define additional, application-specific cleanup. When each node in the list 
-is destroyed, its destroy callback executes if one was supplied. This is explained 
-in detail in the :ref:`Node Destruction Section <dlist_node_destruction>`.
-
-In the following example the :ecudoxygen:`ecu_dlist` and each :ecudoxygen:`ecu_dnode` 
-is allocated on the heap. Each node is freed within the destroy callback.
-
-.. code-block:: c 
-
-    #include "ecu/dlist.h"
-
-    static void destroy(struct ecu_dnode *n, ecu_object_id id)
-    {
-        /* Define additional cleanup for node. DO NOT USE DNODE
-        MEMBER FUNCTIONS IN THE DESTROY CALLBACK. */
-        ECU_RUNTIME_ASSERT( (n) );
-        (void)id;
-        free(me); /* Node was allocated on heap so we must free it here. */
-    }
-
-    /* Construct list and nodes. Put them all on heap. Supply custom destroy
-    callback to node constructors. */
-    struct ecu_dlist *list = malloc(sizeof(struct ecu_dlist));
-    struct ecu_dnode *node1 = malloc(sizeof(struct ecu_dnode));
-    struct ecu_dnode *node2 = malloc(sizeof(struct ecu_dnode));
-    struct ecu_dnode *node3 = malloc(sizeof(struct ecu_dnode));
-    ecu_dlist_ctor(list);
-    ecu_dnode_ctor(node1, &destroy, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(node2, &destroy, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(node3, &destroy, ECU_OBJECT_ID_UNUSED);
-
-    /* Starting list = [node1, node2, node3] */
-    ecu_dlist_push_back(list, node1);
-    ecu_dlist_push_back(list, node2);
-    ecu_dlist_push_back(list, node3);
-
-    /* ..... */
-    /* ..... */
-
-    /* At a later time list is destroyed. destroy() is called on node1,
-    node2, and node3, freeing them. No additional intervention required
-    for node cleanup. */
-    ecu_dlist_destroy(list);
-    free(list); /* NOTE THAT LIST MUST STILL BE EXPLICITLY FREED. */
-
-Note that this feature can be applied to many other scenarios besides heap allocation. 
-For example, a linked list of LEDs. When the list is destroyed, all LED nodes can be 
-turned off:
-
-.. code-block:: c
-
-    #include "ecu/asserter.h"
-    #include "ecu/dlist.h"
-
-    struct led 
-    {
-        struct ecu_dnode node;
-        struct 
-        {
-            uint32_t port;
-            uint32_t pin;
-        } gpio;
-    };
-
-    static void led_destroy(struct ecu_dnode *n, ecu_object_id id)
-    {
-        /* Turn off LED when node is destroyed. */
-        ECU_RUNTIME_ASSERT( (n) );
-        (void)id;
-
-        struct led *me = ECU_DNODE_GET_ENTRY(n, struct led, node);
-        gpio_set_low(me->gpio.port, me->gpio.pin);
-    }
-
-    struct ecu_dlist list;
-    struct led led1;
-    struct led led2;
-    struct led led3;
-
-    /* Construct nodes. Supply custom destroy callback. */
-    ecu_dnode_ctor(&led1.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&led2.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&led3.node, &led_destroy, ECU_OBJECT_ID_UNUSED);
-    led1.gpio.port = PORTA;
-    led1.gpio.pin = 5;
-    led2.gpio.port = PORTC;
-    led2.gpio.pin = 2;
-    led3.gpio.port = PORTD;
-    led3.gpio.pin = 8;
-
-    /* Turn all LEDs on. */
-    gpio_set_high(led1.gpio.port, led1.gpio.pin);
-    gpio_set_high(led2.gpio.port, led3.gpio.pin);
-    gpio_set_high(led2.gpio.port, led3.gpio.pin);
-
-    /* ..... */
-    /* ..... */
-
-    /* At a later time list is destroyed. led_destroy() is called on led1,
-    led2, and led3, turning them off. No additional intervention needed. */
-    ecu_dlist_destroy(&list);
-
-
-List Iterators
-=================================================
-:ecudoxygen:`ecu_dlist_iterator_begin() <ecu_dlist_iterator_begin>`, 
-:ecudoxygen:`ecu_dlist_iterator_end() <ecu_dlist_iterator_end>`, and 
-:ecudoxygen:`ecu_dlist_iterator_next() <ecu_dlist_iterator_next>` iterates over 
-the supplied list using a non-const iterator. The iteration starts at the HEAD node:
-
-.. code-block:: c 
-
-    #include "ecu/dlist.h"
 
     struct user_node 
     {
@@ -1286,9 +1339,7 @@ the supplied list using a non-const iterator. The iteration starts at the HEAD n
 
     struct ecu_dlist list;
     struct ecu_dlist_iterator iterator;
-    struct user_node node1;
-    struct user_node node2;
-    struct user_node node3;
+    struct user_node node1, node2, node3;
 
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
@@ -1298,34 +1349,101 @@ the supplied list using a non-const iterator. The iteration starts at the HEAD n
     ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     node3.val = 5;
 
-    /* list = [node1, node2, node3] */
+    /* list = [node1, node2, node3]. */
     ecu_dlist_push_back(&list, &node1.node);
     ecu_dlist_push_back(&list, &node2.node);
     ecu_dlist_push_back(&list, &node3.node);
 
     /* Iterate over the list and update each node's val. */
-    uint8_t idx = 0;
-
-    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
-         i != ecu_dlist_iterator_end(&iterator);
-         i = ecu_dlist_iterator_next(&iterator))
+    ECU_DLIST_FOR_EACH(curr, &iterator, &list)
     {
-        struct user_node *n = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
-        n->val = idx;
-        idx++;
+        struct user_node *n = ECU_DNODE_GET_ENTRY(curr, struct user_node, node);
+        n->val = 10;
     }
 
-.. figure:: /images/dlist/dlist_iterator.svg
+.. figure:: /images/dlist/ecu_dlist_for_each.svg
   :width: 800
   :align: center
 
-  DList Iteration
+  ECU_DLIST_FOR_EACH()
 
-:ecudoxygen:`ecu_dlist_iterator_at() <ecu_dlist_iterator_at>` starts the iteration at the supplied node.
+It is safe to remove the **current** node in an iteration. Note however that 
+this is only possible with non-const iterators:
 
 .. code-block:: c 
 
-    #include "ecu/dlist.h"
+    struct ecu_dlist list;
+    struct ecu_dlist_iterator iterator;
+    struct ecu_dnode node1, node2, node3;
+
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* Before. list = [node1, node2, node3] */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node2);
+    ecu_dlist_push_back(&list, &node3);
+
+    /* After. list = [node1, node3] */
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
+    {
+        if (i == &node2)
+        {
+            ecu_dnode_remove(i);
+        }
+    }
+
+.. figure:: /images/dlist/ecu_dlist_for_each_remove.svg
+  :width: 800
+  :align: center
+
+  Remove Nodes In Middle Of Iteration
+
+Under the hood, this macro expands to a for-loop that calls 
+:ecudoxygen:`ecu_dlist_iterator_begin() <ecu_dlist_iterator_begin>`, 
+:ecudoxygen:`ecu_dlist_iterator_end() <ecu_dlist_iterator_end>`, and 
+:ecudoxygen:`ecu_dlist_iterator_next() <ecu_dlist_iterator_next>`.
+The two iterations produce the same code:
+
+.. code-block:: c 
+
+    /* The two iterations are exactly the same. */
+    ECU_DLIST_FOR_EACH(curr, &iterator, &list)
+    {
+        // ....
+    }
+
+    for (struct ecu_dnode *curr = ecu_dlist_iterator_begin(&iterator, &list);
+         curr != ecu_dlist_iterator_end(&iterator);
+         curr = ecu_dlist_iterator_next(&iterator))
+    {
+        // ....
+    }
+
+It is recommended to use the iteration macros instead of for-loops since they shield
+the application from future API changes, and require less typing.
+
+
+ECU_DLIST_CONST_FOR_EACH()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Const-qualified version of :ref:`ECU_DLIST_FOR_EACH() <dlist_ecu_dlist_for_each>`. Nodes 
+cannot be edited or removed in the middle of an iteration since this is a const iterator.
+
+
+ECU_DLIST_AT_FOR_EACH()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _dlist_ecu_dlist_at_for_each:
+
+Iterates over an :ecudoxygen:`ecu_dlist`, starting at the specified position.
+
+.. warning::
+
+    Behavior is undefined if the position node is not within the list being 
+    iterated over.
+
+.. code-block:: c 
 
     struct user_node
     {
@@ -1335,9 +1453,7 @@ the supplied list using a non-const iterator. The iteration starts at the HEAD n
 
     struct ecu_dlist list;
     struct ecu_dlist_iterator iterator;
-    struct user_node node1;
-    struct user_node node2;
-    struct user_node node3;
+    struct user_node node1, node2, node3;
 
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
@@ -1352,80 +1468,40 @@ the supplied list using a non-const iterator. The iteration starts at the HEAD n
     ecu_dlist_push_back(&list, &node2.node);
     ecu_dlist_push_back(&list, &node3.node);
 
-    /* Iterate over the list starting at node 2 and update node's val. */
-    uint8_t idx = 0;
-
-    for (struct ecu_dnode *i = ecu_dlist_iterator_at(&iterator, &list, &node2.node);
-         i != ecu_dlist_iterator_end(&iterator);
-         i = ecu_dlist_iterator_next(&iterator))
+    /* Iterate over the list starting at node 2. Update each node's val. */
+    ECU_DLIST_AT_FOR_EACH(curr, &iterator, &list, &node2.node)
     {
-        struct user_node *n = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
-        n->val = idx;
-        idx++;
+        struct user_node *n = ECU_DNODE_GET_ENTRY(curr, struct user_node, node);
+        n->val = 10;
     }
 
-.. figure:: /images/dlist/dlist_at_iterator.svg
+.. figure:: /images/dlist/ecu_dlist_at_for_each.svg
   :width: 800
   :align: center
 
-  DList At Iteration
+  ECU_DLIST_AT_FOR_EACH()
 
-:ecudoxygen:`ECU_DLIST_FOR_EACH() <ECU_DLIST_FOR_EACH>` and 
-:ecudoxygen:`ECU_DLIST_AT_FOR_EACH() <ECU_DLIST_AT_FOR_EACH>` are helper 
-macros that expand to the long-handed for-loop syntaxes in the previous examples.
-
-.. code-block:: c 
-
-    /* Expands to:
-    for (struct ecu_dnode *i = ecu_dlist_iterator_begin(&iterator, &list);
-         i != ecu_dlist_iterator_end(&iterator);
-         i = ecu_dlist_iterator_next(&iterator)) */
-    ECU_DLIST_FOR_EACH(i, &iterator, &list)
-    {
-        struct user_node *n = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
-        n->val = idx;
-        idx++;
-    }
-
-    /* Expands to:
-    for (struct ecu_dnode *i = ecu_dlist_iterator_at(&iterator, &list, &node2.node);
-         i != ecu_dlist_iterator_end(&iterator);
-         i = ecu_dlist_iterator_next(&iterator)) */
-    ECU_DLIST_AT_FOR_EACH(i, &iterator, &list, &node2.node)
-    {
-        struct user_node *n = ECU_DNODE_GET_ENTRY(i, struct user_node, node);
-        n->val = idx;
-        idx++;
-    }
-
-It is recommended to use these macros instead of a for-loop since they shield
-the application from future iterator API changes, and require less typing.
-
-It is safe to remove nodes in the middle of an iteration. Note however that nodes can only
-be removed with non-const iterators:
+It is safe to remove the **current** node in an iteration. Note however that 
+this is only possible with non-const iterators:
 
 .. code-block:: c 
-
-    #include "ecu/dlist.h"
 
     struct ecu_dlist list;
     struct ecu_dlist_iterator iterator;
-    struct ecu_dnode node1;
-    struct ecu_dnode node2;
-    struct ecu_dnode node3;
+    struct ecu_dnode node1, node2, node3;
 
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
-    /* list = [node1, node2, node3] */
+    /* Before. list = [node1, node2, node3] */
     ecu_dlist_push_back(&list, &node1);
     ecu_dlist_push_back(&list, &node2);
     ecu_dlist_push_back(&list, &node3);
 
-    /* list after iteration = [node1, node3] */
-    ECU_DLIST_FOR_EACH(i, &iterator, &list)
+    /* After. list = [node1, node3] */
+    ECU_DLIST_AT_FOR_EACH(i, &iterator, &list, &node2)
     {
         if (i == &node2)
         {
@@ -1433,18 +1509,41 @@ be removed with non-const iterators:
         }
     }
 
-.. figure:: /images/dlist/dlist_iterator_remove_node.svg
+.. figure:: /images/dlist/ecu_dlist_at_for_each_remove.svg
   :width: 800
   :align: center
 
   Remove Nodes In Middle Of Iteration
 
-As a final note, :ecudoxygen:`ecu_dlist_const_iterator_begin() <ecu_dlist_const_iterator_begin>`, 
-:ecudoxygen:`ecu_dlist_const iterator_end() <ecu_dlist_const_iterator_end>`, 
-:ecudoxygen:`ecu_dlist_const iterator_next() <ecu_dlist_const_iterator_next>`,
-and :ecudoxygen:`ECU_DLIST_CONST_FOR_EACH() <ECU_DLIST_CONST_FOR_EACH>` work exactly 
-the same as the non-const iterators explained above. However all operations are const-qualified 
-and a const :ecudoxygen:`ecu_dnode` is returned in the iterations.
+Under the hood, this macro expands to a for-loop that calls 
+:ecudoxygen:`ecu_dlist_iterator_at() <ecu_dlist_iterator_at>`, 
+:ecudoxygen:`ecu_dlist_iterator_end() <ecu_dlist_iterator_end>`, and 
+:ecudoxygen:`ecu_dlist_iterator_next() <ecu_dlist_iterator_next>`.
+The two iterations produce the same code:
+
+.. code-block:: c 
+
+    /* The two iterations are exactly the same. */
+    ECU_DLIST_AT_FOR_EACH(curr, &iterator, &list, &node2)
+    {
+        // ....
+    }
+
+    for (struct ecu_dnode *curr = ecu_dlist_iterator_at(&iterator, &list, &node2);
+         curr != ecu_dlist_iterator_end(&iterator);
+         curr = ecu_dlist_iterator_next(&iterator))
+    {
+        // ....
+    }
+
+It is recommended to use the iteration macros instead of for-loops since they shield
+the application from future API changes, and require less typing.
+
+
+ECU_DLIST_CONST_AT_FOR_EACH()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Const-qualified version of :ref:`ECU_DLIST_AT_FOR_EACH() <dlist_ecu_dlist_at_for_each>`. Nodes 
+cannot be edited or removed in the middle of an iteration since this is a const iterator.
 
 
 API

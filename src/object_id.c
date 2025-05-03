@@ -31,7 +31,7 @@ ECU_ASSERT_DEFINE_NAME("ecu/object_id.c")
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
-/* Produce compilation error if ecu_id is an unsigned type. */
+/* Produce compilation error if ecu_object_id is an unsigned type. */
 ECU_STATIC_ASSERT( (((ecu_object_id)(-1)) < ((ecu_object_id)(0))), "ecu_object_id must be a signed type." );
 
 /* The start of object IDs that users can define must always be 0 for future compatibility. */

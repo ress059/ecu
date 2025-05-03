@@ -34,6 +34,7 @@ to view in-depth documentation and APIs for each library module.
     fsm.h <fsm_h/index>
     endian.h <endian_h/index>
     object_id.h <object_id_h/index>
+    timer.h <timer_h/index>
 
 .. toctree::
     :maxdepth: 1

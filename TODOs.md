@@ -1,13 +1,13 @@
 Completed.
 1. asserter.h/.c DONE.
 2. attributes.h. DONE.
-3. dlist.h/.c. TODO. See dlist entry below.
+3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
 6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
-9. timer.h/.c. TODO. Refactor with new dlist. Refactor to use list sort. Update tests, clang-format, documentation.
+9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
 11. utils.h. TODO Documentation.
 
@@ -35,41 +35,10 @@ so this only applies to GCC. I.e.
 #endif
 ```
 
-2. Add ecu_dlist_front(), ecu_dlist_cfront(), ecu_dlist_pop_front(), 
-ecu_dlist_back(), ecu_dlist_cback(), ecu_dlist_pop_back(), and ecu_dlist_swap() to Sphinx documentation. 
-
-3. Update Sphinx documentation for ecu_dnode_remove(). Before you were
-not allowed to remove it unless node was in list. Now we remove it
-regardless (no need to check).
-
-4. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
-
-5. Changed ecu_dlist_get_size() to ecu_dlist_size() and Changed ecu_dlist_is_empty() to
-ecu_dlist_empty() to emulate stdlib. Don't think these were ever in Sphinx documentation 
-Add them to Sphinx documentation!!!
-
-6. Make sphinx documentation headers similar to stdlib.  I.e.
-    List Modifiers Section
-        - ecu_dlist_clear
-        - ecu_dlist_insert_before
-        - ...
-    
-    List Operations
-        - ecu_dlist_clear
-        - ecu_dlist_sort
-        - ecu_dlist_swap
-        - ....
-
-7. Add sphinx documentation for ECU_DLIST_AT_FOR_EACH(), and ECU_DLIST_CONST_AT_FOR_EACH().
+2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
 
 # Timer
-1. Add Sphinx documentation.
-3. When timer and FSM done, use it in main.c build test to verify linkage.
-4. In documentation note that ecu_timer_set() DISARMS the timer and removes it from list.
-5. In documentation note that calling ecu_timer_set() in expire callback will remove it.
-   User has to readd timer to reactivate it.
-6. In documentation note that disarming/rearming timer is valid. Talk about cases with
-one-shot and periodic timers.
+1. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree

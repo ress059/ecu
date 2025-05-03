@@ -19,6 +19,7 @@
 /*------------------------------------------------------------*/
 
 /* STDLib. */
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -36,9 +37,21 @@
 #define ECU_TIMER_OBJ_UNUSED \
     ((void *)0)
 
+/**
+ * @brief Maximum value an ecu_tick_t type can hold.
+ */
+#define ECU_TICK_MAX \
+    (UINT_MAX)
+
 /*------------------------------------------------------------*/
 /*------------------------- TIMER TYPES ----------------------*/
 /*------------------------------------------------------------*/
+
+/**
+ * @brief Represents timer ticks. Must be unsigned. Typedeffed 
+ * in case this needs to change in the future.
+ */
+typedef unsigned int ecu_tick_t;
 
 /**
  * @brief Type of @ref ecu_timer used.
@@ -64,10 +77,10 @@ enum ecu_timer_type
 struct ecu_timer
 {
     /// @brief Absolute time, in ticks, when this timer expires.
-    size_t expiration;
+    ecu_tick_t expiration;
 
     /// @brief Timer expires once elapsed ticks exceeds this value.
-    size_t period;
+    ecu_tick_t period;
 
     /// @brief Single shot, periodic, etc.
     enum ecu_timer_type type;
@@ -100,7 +113,7 @@ struct ecu_tlist
 {
     /// @brief Absolute timestamp, in ticks. Incremented with each call
     /// to @ref ecu_tlist_service(). Overflow is automatically handled.
-    size_t current;
+    ecu_tick_t current;
 
     /// @brief True if @ref ecu_tlist.current overflowed. Flag set back
     /// to false once overflow handled. Otherwise always false.
@@ -164,12 +177,13 @@ extern void ecu_timer_ctor(struct ecu_timer *me,
  *
  * @param me Timer to set.
  * @param period New period, in timer ticks, to set. Timer
- * expires once elapsed ticks exceeds this value.
+ * expires once elapsed ticks exceeds this value. Must be
+ * between 1 and @ref ECU_TICK_MAX.
  * @param type See @ref ecu_timer_type enum. Specifies if
  * timer is one-shot, periodic, etc.
  */
 extern void ecu_timer_set(struct ecu_timer *me,
-                          size_t period,
+                          ecu_tick_t period,
                           enum ecu_timer_type type);
 
 /**
@@ -220,7 +234,8 @@ extern void ecu_tlist_ctor(struct ecu_tlist *me);
 /**
  * @pre @p me previously constructed via @ref ecu_tlist_ctor().
  * @pre @p timer previously constructed via @ref ecu_timer_ctor().
- * @brief Starts a timer. This operation is O(N), where N = the total
+ * @brief Starts a timer. If the timer is already running it is restarted
+ * with the specified values. This operation is O(N), where N = the total
  * number of timers currently in @p me.
  * 
  * @warning @p period is measured in hardware timer ticks, not time.
@@ -229,13 +244,14 @@ extern void ecu_tlist_ctor(struct ecu_tlist *me);
  * @param timer Timer to start. It will be serviced in calls
  * to @ref ecu_tlist_service(@p me)
  * @param period New period, in timer ticks, to set. Timer
- * expires once elapsed ticks exceeds this value.
+ * expires once elapsed ticks exceeds this value. Must be
+ * between 1 and @ref ECU_TICK_MAX.
  * @param type See @ref ecu_timer_type enum. Specifies if
  * timer is one-shot, periodic, etc.
  */
 extern void ecu_tlist_timer_arm(struct ecu_tlist *me, 
                                 struct ecu_timer *timer, 
-                                size_t period, 
+                                ecu_tick_t period, 
                                 enum ecu_timer_type type);
 
 /**
@@ -261,7 +277,7 @@ extern void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
  * access to all @ref ecu_tlist and @ref ecu_timer objects if this
  * function is called within an ISR.
  * @warning This must be called periodically, at least once every
- * SIZE_MAX ticks. The accuracy of the timers is proportional to
+ * ECU_TICK_MAX ticks. The accuracy of the timers is proportional to
  * how often this function is called.
  * @warning @p elapsed is measured in hardware timer ticks, not time.
  * 
@@ -270,7 +286,7 @@ extern void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
  * this function was called. This module keeps track of time solely
  * based off of this parameter.
  */
-extern void ecu_tlist_service(struct ecu_tlist *me, size_t elapsed);
+extern void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed);
 /**@}*/
 
 #ifdef __cplusplus
