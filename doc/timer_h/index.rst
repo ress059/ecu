@@ -83,19 +83,20 @@ its output into the API:
 
 In the example above, the conversion macro returns an :ecudoxygen:`ecu_tick_t` value.
 The module defines this type to store timer ticks in case it has to change in the future.
+**It is guaranteed this type will always be unsigned.**
 
 Currently :ecudoxygen:`ecu_tick_t` is an **unsigned int**.
-The C standard dictates that int is the natural size suggested by the architecture
-of the execution environment. In other words, it suggests that int is the word-size
+The C standard dictates that "int is the natural size suggested by the architecture
+of the execution environment." In other words, it suggests that int is the word-size
 of the target. 
 
-This module is driven by a user's hardware timer. Its elapsed ticks is fed into
+This module is driven by a user's hardware timer, whose elapsed ticks is fed into
 :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>`.
 On almost all microcontrollers, a timer's tick width is less than or equal to 
 its word-size. I.e. a 32-bit microcontroller may have 
 8-bit timers, 16-bit timers, and 32-bit timers, but usually not 64-bit timers.
-An unsigned int type best matches this pattern since it is implementation-defined 
-and, in almost all cases, will be the word-size of the target platform.
+An unsigned int type best matches this pattern since in almost all cases, it 
+will be the word-size of the target platform.
 
 
 Timer List Representation
@@ -193,11 +194,14 @@ position such that all timers are sorted by **absolute expiration date**:
 
     struct ecu_tlist tlist;
     struct ecu_timer t1, t2, t3;
+
+    /* Before. tlist = []. */
     ecu_tlist_ctor(&tlist);
     ecu_timer_ctor(&t1, &callback, ECU_TIMER_OBJ_UNUSED);
     ecu_timer_ctor(&t2, &callback, ECU_TIMER_OBJ_UNUSED);
     ecu_timer_ctor(&t3, &callback, ECU_TIMER_OBJ_UNUSED);
 
+    /* After. tlist = [t2, t3, t1]. */
     ecu_tlist_timer_arm(&tlist, &t1, 30, ECU_TIMER_TYPE_ONE_SHOT);
     ecu_tlist_timer_arm(&tlist, &t2, 10, ECU_TIMER_TYPE_ONE_SHOT);
     ecu_tlist_timer_arm(&tlist, &t3, 20, ECU_TIMER_TYPE_ONE_SHOT);
@@ -208,23 +212,24 @@ position such that all timers are sorted by **absolute expiration date**:
 
   Timer List Order
 
-This makes :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>` an O(N) function where N = the number 
-of **expired** timers, **not** the total number of timers. Following off of the above code snippet:
+Starting at HEAD, the service function iterates over timers in the linked list. 
+The current timer's value is checked. If it has expired, the iteration continues
+and the next timer is checked. Otherwise the function can immediately exit, as 
+an ordered list guarantees the remaining timers have also not expired.
+This makes :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>` an O(N) function 
+where **N = the number of expired timers, not the total number of timers.** 
+Following off of the above code snippet:
 
 .. code-block:: c
 
-    ecu_tlist_service(10); /* Function exits as soon as non-expired timer (t3) is reached. */
+    /* Function exits as soon as non-expired timer (t3) is reached. */
+    ecu_tlist_service(&tlist, 10); 
 
 .. figure:: /images/timer/tlist_service_order_n.svg
   :width: 600
   :align: center
 
   Timer Service O(N)
-
-Starting at HEAD, the service function iterates over timers in the linked list. 
-The current timer's value is checked. If it has expired, the iteration continues
-and the next timer is checked. Otherwise the function can immediately exit, as 
-an ordered list guarantees the remaining timers have also not expired.
 
 To maintain this order, every :ecudoxygen:`ecu_tlist` stores an **absolute** timestamp 
 (:ecudoxygen:`ecu_tlist::current`) to keep track of time. This stored value is incremented by the 
@@ -244,7 +249,9 @@ it is updated in every call to :ecudoxygen:`ecu_tlist_service() <ecu_tlist_servi
 
 A timer's **absolute expiration date** is calculated using this timestamp:
 
-    Absolute expiration date = ecu_tlist::current + ecu_timer::period
+.. code-block:: text
+
+    ecu_timer::expiration = ecu_tlist::current + ecu_timer::period
 
 This ensures proper order when a new timer is added to an :ecudoxygen:`ecu_tlist`
 that already contains active timers:
@@ -260,7 +267,7 @@ that already contains active timers:
 
     ecu_tlist_timer_arm(&tlist, &t1, 100, ECU_TIMER_TYPE_ONE_SHOT);
     ecu_tlist_service(&tlist, 95); /* ecu_tlist::current = 95. t1 expires @ 100. */
-    ecu_tlist_timer_arm(&t2, 20, ECU_TIMER_TYPE_ONE_SHOT); /* ecu_tlist::current = 95. t1 expires @ 100. t2 expires @ 115. */
+    ecu_tlist_timer_arm(&tlist, &t2, 20, ECU_TIMER_TYPE_ONE_SHOT); /* ecu_tlist::current = 95. t1 expires @ 100. t2 expires @ 115. */
 
 .. figure:: /images/timer/tlist_absolute_expiration_date_oneshot.svg
   :width: 600
@@ -268,12 +275,14 @@ that already contains active timers:
 
   Absolute Expiration Date Example
 
-Readability is straightforward as all timers are simply sorted by increasing 
-expiration dates (least to greatest). Therefore t2 is inserted **after** t1, even 
-though its period is less. At the time t2 is added, t1 has 5 ticks remaining 
-until expiration.
+At the time t2 is added, t1 has 5 ticks remaining until expiration.
+**Therefore t2 is inserted after t1, even though its period is less.**
+This situation is automatically handled and simplified through the 
+use of absolute time. All timers are simply sorted by increasing 
+expiration dates (least to greatest). 
 
-For completeness, the following example shows this scheme in action for a periodic timer:
+For completeness, the following example shows this scheme in action 
+for a periodic timer:
 
 .. code-block:: c
 
@@ -297,10 +306,12 @@ For completeness, the following example shows this scheme in action for a period
 This scheme allows all timers in :ecudoxygen:`ecu_tlist` to be driven by the elapsed ticks
 parameter passed into :ecudoxygen:`ecu_tlist_service() <ecu_tlist_service>`. **No user-defined 
 callbacks are required**.
-Since the current timestamp is stored in the :ecudoxygen:`ecu_tlist` object, timers being 
-used across different :ecudoxygen:`ecu_tlist` objects are also automatically handled. Recall
+Since the current timestamp is stored in the :ecudoxygen:`ecu_tlist` object, timers can 
+be used across different lists without much thought. Recall:
 
-    Absolute expiration date = ecu_tlist::current + ecu_timer::period
+.. code-block:: text
+
+    ecu_timer::expiration = ecu_tlist::current + ecu_timer::period
 
 where ecu_tlist::current is **unique** to each :ecudoxygen:`ecu_tlist` instance. For example:
 
@@ -314,12 +325,12 @@ where ecu_tlist::current is **unique** to each :ecudoxygen:`ecu_tlist` instance.
     ecu_timer_ctor(&t1, &callback, ECU_TIMER_OBJ_UNUSED);
 
     /* tlist1.current = 0.
-    t1.expire = tlist1.current + t1.period = 100. 
+    t1.expiration = tlist1.current + t1.period = 100. 
     t1 expires after 100 ticks. */
     ecu_tlist_timer_arm(&tlist1, &t1, 100, ECU_TIMER_TYPE_ONE_SHOT);
 
     /* tlist2.current = 2000.
-    t1.expire = tlist2.current + t1.period = 2100. 
+    t1.expiration = tlist2.current + t1.period = 2100. 
     t1 added to new list and still expires after 100 ticks. */
     ecu_tlist_service(&tlist2, 2000);
     ecu_tlist_timer_arm(&tlist2, &t1, 100, ECU_TIMER_TYPE_ONE_SHOT);
@@ -371,8 +382,13 @@ The steps in the figure above are taken to handle overflow in the service call:
 
 #. :ecudoxygen:`ecu_tlist::current` is updated. Since it's maximum value is 255 
    it overflows back to 5. 
-        
-        current = 245 + 16 = (uint8_t)261 = 5
+
+   .. code-block:: text 
+
+        ecu_tlist::current = ecu_tlist::current + elapsed
+        ecu_tlist::current = (uint8_t)(245 + 16)
+        ecu_tlist::current = (uint8_t)261
+        ecu_tlist::current = 5
 
 #. Since the counter overflowed, it is guaranteed that all timers in the :ecudoxygen:`ecu_tlist::timers`
    list have expired. This condition does not have to be checked - all timers in this list 
@@ -383,10 +399,10 @@ The steps in the figure above are taken to handle overflow in the service call:
    acts the same. If timers with periods between 251-255 are armed at this point (current = 5), they 
    would be inserted into :ecudoxygen:`ecu_tlist::wraparounds`.
 
-#. The remaining timers in the updated :ecudoxygen:`ecu_tlist::timers` list are serviced like normal.
-   :ecudoxygen:`ecu_tlist::current` is 5, so only t2 expires.
+#. After the swap, the remaining timers in the updated :ecudoxygen:`ecu_tlist::timers` 
+   list are serviced like normal. :ecudoxygen:`ecu_tlist::current` is 5, so only t2 expires.
 
-#. List iteration has reached a non-expired timer (t2) so function immediately exits.
+#. List iteration reaches a non-expired timer (t2) so function immediately exits.
 
 The examples above show why the :ecudoxygen:`ecu_tlist` object is required to arm 
 an :ecudoxygen:`ecu_timer`. The application can create wrappers that allow the list 
@@ -454,8 +470,7 @@ period and type are specified in these calls:
     /* Starts timer. Sets its period and type. */
     ecu_tlist_timer_arm(&tlist, &t1, 100, ECU_TIMER_TYPE_ONE_SHOT);
 
-    /* Already set timers can be rearmed. Its previously set type
-    and period are used. */
+    /* Already set timers can be rearmed. Its previously set type and period are used. */
     ecu_tlist_timer_rearm(&tlist, &t1);
     ecu_tlist_timer_rearm(&tlist, &t2);
 
@@ -578,8 +593,22 @@ Constructors
 
 ecu_timer_ctor()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-See the :ecudoxygen:`API <ecu_timer_ctor>`. Callback implementation details explained 
-in :ref:`Timer Representation Section <timer_representation>`.
+Timer constructor. Initializes the :ecudoxygen:`ecu_timer` data structure for use.
+When the timer expires, its callback executes. The timer object and callback 
+implementation details are fully explained in the :ref:`Timer Representation Section <timer_representation>`.
+
+.. warning:: 
+
+    Must be called once on startup before the timer is used. User is also responsible 
+    for allocating memory since ECU does not use dynamic memory allocation.
+
+.. code-block:: c 
+
+    struct ecu_timer t1;    /* User must allocate memory before constructor. */
+    ecu_timer_disarm(&t1);  /* ILLEGAL. Must construct before using. */
+
+    ecu_timer_ctor(&t1, &callback, ECU_TIMER_OBJ_UNUSED);
+    ecu_timer_disarm(&t1);  /* Ok. */
 
 
 Member Functions
@@ -669,7 +698,22 @@ Constructors
 
 ecu_tlist_ctor()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-See the :ecudoxygen:`API <ecu_tlist_ctor>`.
+Timer list constructor. Initializes the :ecudoxygen:`ecu_tlist` data structure for use.
+This object is the "engine" that runs all :ecudoxygen:`ecu_timers <ecu_timer>`
+added to it. It is fully explained in the :ref:`Timer List Representation Section <timer_list_representation>`.
+
+.. warning:: 
+
+    Must be called once on startup before the tlist is used. User is also responsible 
+    for allocating memory since ECU does not use dynamic memory allocation.
+
+.. code-block:: c 
+
+    struct ecu_tlist tlist;         /* User must allocate memory before constructor. */
+    ecu_tlist_service(&tlist, 10);  /* ILLEGAL. Must construct before using. */
+
+    ecu_tlist_ctor(&tlist);
+    ecu_tlist_service(&tlist, 10);  /* Ok. */
 
 
 Member Functions
@@ -678,8 +722,10 @@ Member Functions
 
 ecu_tlist_timer_arm()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Starts the timer. If the timer is already running it is restarted
-with the specified values. 
+.. _tlist_ecu_tlist_timer_arm:
+
+Starts a timer. If the timer was already running, it is restarted
+with the specified period and type. 
 
 .. code-block:: c
 
@@ -710,10 +756,18 @@ the arming process in detail.
 
 ecu_tlist_timer_rearm()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _tlist_ecu_tlist_timer_rearm:
+
 Restarts a previously set timer. Since the timer list is ordered, this operation is O(N), 
 where N = the total number of timers currently in the supplied :ecudoxygen:`ecu_tlist`. 
 :ref:`Timer List Representation Section <timer_list_representation>` explains 
 the arming process in detail.
+
+.. warning::
+
+    The timer's period and type must have been previously set by calling 
+    :ecudoxygen:`ecu_timer_set() <ecu_timer_set>` or :ecudoxygen:`ecu_tlist_timer_arm() <ecu_tlist_timer_arm>`
+    before using this function.
 
 .. code-block:: c
 
@@ -731,25 +785,23 @@ the arming process in detail.
     ecu_tlist_service(&tlist, 45);      /* t1 expires in 5 ticks. */
     ecu_tlist_service(&tlist, 5);       /* t1 expires. */
 
-.. warning::
-
-    The timer's period and type must be previously set by calling 
-    :ecudoxygen:`ecu_timer_set() <ecu_timer_set>` or :ecudoxygen:`ecu_tlist_timer_arm() <ecu_tlist_timer_arm>`
-    before using this function.
-
 
 ecu_tlist_service()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Services all timers in the passed :ecudoxygen:`ecu_tlist`. Must be called periodically by 
-the application. This function is explained in detail in the 
-:ref:`Timer List Representation Section <timer_list_representation>`. Also see the 
-:ecudoxygen:`API <ecu_tlist_service>`.
+Services all timers that were added to the :ecudoxygen:`ecu_tlist` via
+:ref:`ecu_tlist_timer_arm() <tlist_ecu_tlist_timer_arm>` or 
+:ref:`ecu_tlist_timer_rearm() <tlist_ecu_tlist_timer_rearm>`. When a timer 
+expires its callback executes.
+
+This function must be periodically called by the application and driven by 
+a hardware timer. :ref:`Timer List Representation Section <timer_list_representation>`
+explains this in detail. Also see the :ecudoxygen:`API <ecu_tlist_service>`.
 
 .. warning::
 
     The application is responsible for ensuring exclusive access to :ecudoxygen:`ecu_tlist` 
-    and every :ecudoxygen:`ecu_timer` if this function or the rest of the API is called 
-    within an ISR, or used in a multi-threaded environment.
+    and every :ecudoxygen:`ecu_timer` if the API is called within an ISR, or used in a 
+    multi-threaded environment.
 
 API
 =================================================

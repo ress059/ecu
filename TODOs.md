@@ -1,13 +1,13 @@
 Completed.
 1. asserter.h/.c DONE.
 2. attributes.h. DONE.
-3. dlist.h/.c. TODO. See dlist entry below.
+3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
 6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
-9. timer.h/.c. TODO. Refactor with new dlist. Refactor to use list sort. Update tests, clang-format, documentation.
+9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
 
 ## Ring buffer
@@ -65,8 +65,7 @@ so this only applies to GCC. I.e.
 2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
 
 # Timer
-1. Finished first pass of documentation. Proofread rendered Sphinx documentation.
-3. When timer and FSM done, use it in main.c build test to verify linkage.
+1. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree

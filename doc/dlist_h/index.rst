@@ -20,6 +20,8 @@ same list using :ref:`a node ID <dlist_ecu_dnode_get_id>`.
 
 Theory 
 =================================================
+This section explains how lists and nodes are represented. It is recommended 
+to read this before using the API.
 
 List And Node Representation
 -------------------------------------------------
