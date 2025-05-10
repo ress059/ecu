@@ -90,13 +90,13 @@ to the following C++ code:
     app_fsm APP_FSM;
     APP_FSM.ecu_fsm_start();
 
-Upcasting in this manner is always legal and safe **as long as :ecudoxygen:`ecu_fsm` is the first member**.
+**Upcasting in this manner is always legal and safe as long as** :ecudoxygen:`ecu_fsm` **is the first member**.
 The C standard mandates there is no struct padding before the first member so a derived pointer can
 always be represented as a base pointer. Inheritance is only unsafe if :ecudoxygen:`ecu_fsm` is not 
 the first member due to misaligned access:
 
 .. figure:: /images/fsm/inheritance.svg
-  :width: 600
+  :width: 800
   :align: center
 
   Inheritance
@@ -131,27 +131,21 @@ condition can be statically asserted:
 State Representation
 -------------------------------------------------
 States are represented as an :ecudoxygen:`ecu_fsm_state` object that contains 
-a set of handler functions:
+a set of handler functions. **The contents of the struct are const-qualified,
+meaning that states must be initialized at compile-time.**
 
 .. code-block:: c 
 
     struct ecu_fsm_state
     {
-        void (*entry)(struct ecu_fsm *fsm);
-        void (*exit)(struct ecu_fsm *fsm);
-        void (*handler)(struct ecu_fsm *fsm, const void *event);
+        void (*const entry)(struct ecu_fsm *fsm);
+        void (*const exit)(struct ecu_fsm *fsm);
+        void (*const handler)(struct ecu_fsm *fsm, const void *event);
     };
 
 - **entry()** is an optional function that executes when the state is first entered.
 - **exit()** is an optional function that executes when the state is exited.
 - **handler()** is a mandatory function that executes when the FSM is running in this state.
-
-This API has no knowledge of the application, so :ecudoxygen:`ecu_fsm_state` stores
-functions to the base class type (struct ecu_fsm \*). The inheritance scheme described in the 
-:ref:`State Machine Representation Section <fsm_state_machine_representation>` 
-allows the application to define state functions that take in a derived fsm type. These
-are stored in the :ecudoxygen:`ecu_fsm_state` by upcasting them back into functions that
-take in the base class type (struct ecu_fsm \*).
 
 To create a state, these functions are defined and assigned to an :ecudoxygen:`ecu_fsm_state`
 object through use of the :ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` macro:
@@ -191,8 +185,20 @@ object through use of the :ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>
                                                                   &state1_on_exit, 
                                                                   &state1_handler);
 
-:ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` is a helper macro that expands to
-the full struct initialization of :ecudoxygen:`ecu_fsm_state`. The above code is equivalent to:
+**Notice how state functions take in a pointer to the user's FSM type but** 
+:ecudoxygen:`ecu_fsm_state` **stores functions that take in (struct ecu_fsm \*)**.
+
+States must be able to work with the user's FSM in order to be useful, however this 
+framework has no knowledge of the application and its types. As explained in the
+:ref:`State Machine Representation Section <fsm_state_machine_representation>`,
+this dilemna is solved by inheritance. User FSMs must inherit :ecudoxygen:`ecu_fsm`.
+Therefore :ecudoxygen:`ecu_fsm` is a base class that acts as a common interface 
+between the application and this framework, allowing these functions to be assigned 
+to a state by upcasting.
+
+:ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` performs these upcasts
+and expands to the full struct initialization of :ecudoxygen:`ecu_fsm_state`.
+The following is equivalent to the code snippet above:
 
 .. code-block:: c 
 
@@ -203,13 +209,13 @@ the full struct initialization of :ecudoxygen:`ecu_fsm_state`. The above code is
         .handler = (void (*)(struct ecu_fsm *, const void *))(&state1_handler)
     };
 
-It is recommended to use the macro for better encapsulation. It contains all casts and protects the 
-application from any changes to the :ecudoxygen:`ecu_fsm_state` struct. The changepoint would be 
-limited to the definition of the :ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` macro as 
-oppposed to the entire application.
+It is recommended to use this macro for better encapsulation as it contains 
+all upcasts and protects the application from any changes to the 
+:ecudoxygen:`ecu_fsm_state` struct.
 
 :ecudoxygen:`ECU_FSM_STATE_ENTRY_UNUSED` and :ecudoxygen:`ECU_FSM_STATE_EXIT_UNUSED` can be supplied 
-if entry() and exit() functions are unused.
+if entry() and exit() functions are unused. In this case, only the mandatory handler() function 
+will run for this state:
 
 .. code-block:: c 
 
@@ -217,15 +223,12 @@ if entry() and exit() functions are unused.
                                                                   ECU_FSM_STATE_EXIT_UNUSED, 
                                                                   &state1_handler);
 
-In this case, only the mandatory handler() function will run for this state.
-
 
 State Transitions
 -------------------------------------------------
-State machine behavior is solely defined using this API without having to worry about
-the complexities of running the FSM and handling state transitions. Internally, this framework
-will execute the proper entry(), exit(), and handler() functions for each state defined in 
-the user's state machine. 
+State machine behavior is abstracted away through the use of this API.
+Internally, this framework will execute the proper entry(), exit(), and handler() 
+functions for each state defined in the user's state machine. 
 
 For example if the user's FSM transitions from STATE1 to STATE2, the framework will execute the 
 following in order:
@@ -253,10 +256,9 @@ Accompanying pseudocode defining this behavior is shown below:
 
     static void state1_handler(struct app_fsm *me, const void *event)
     {
-        const struct app_event *e = (const struct app_event *)event;
         printf("state1 handler!");
 
-        if (e->id == go to STATE2)
+        if (event causes transition to STATE2)
         {
             ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
         }
@@ -292,6 +294,12 @@ it will be processed in state2_handler().
 Consecutive state transitions are also allowed by calling :ecudoxygen:`ecu_fsm_change_state() <ecu_fsm_change_state>`
 within a state's entry() function. For example:
 
+.. figure:: /images/fsm/consecutive_state_transition.svg
+  :width: 800
+  :align: center
+
+  Consecutive State Transition
+
 .. code-block:: c 
 
     /*--------------------- STATE1 definition ---------------------*/
@@ -307,10 +315,9 @@ within a state's entry() function. For example:
 
     static void state1_handler(struct app_fsm *me, const void *event)
     {
-        const struct app_event *e = (const struct app_event *)event;
         printf("state1 handler!");
 
-        if (e->id == go to STATE2)
+        if (event causes transition to STATE2)
         {
             ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
         }
@@ -320,7 +327,7 @@ within a state's entry() function. For example:
     static void state2_on_entry(struct app_fsm *me)
     {
         printf("state2 entered!");
-        if (go to STATE3)
+        if (fsm needs to transition to STATE3)
         {
             ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE3);
         }
@@ -362,18 +369,18 @@ within a state's entry() function. For example:
                                                                   &state3_on_exit,
                                                                   &state3_handler);
 
-.. figure:: /images/fsm/consecutive_state_transition.svg
-  :width: 600
-  :align: center
-
-  Consecutive State Transition
-
 In this case, "state1 handler!", "state1 exited!", "state2 entered!", "state2 exited!",
 "state3 entered!" is printed to the console in order. The FSM is now in STATE3 so if an 
 event is dispatched via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`, it will be 
 processed in state3_handler().
 
-Finally, self-state transitions are also allowed. This is often done to reset the state:
+Finally, self-state transitions are also allowed. This is often done to reset a state:
+
+.. figure:: /images/fsm/self_state_transition.svg
+  :width: 600
+  :align: center
+
+  Self State Transition
 
 .. code-block:: c 
 
@@ -392,10 +399,9 @@ Finally, self-state transitions are also allowed. This is often done to reset th
 
     static void state1_handler(struct app_fsm *me, const void *event)
     {
-        const struct app_event *e = (const struct app_event *)event;
         printf("state1 handler!");
 
-        if (e->id == reset state)
+        if (event causes state reset)
         {
             ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE1);
         }
@@ -404,12 +410,6 @@ Finally, self-state transitions are also allowed. This is often done to reset th
     static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(&state1_on_entry,
                                                                   &state1_on_exit,
                                                                   &state1_handler);
-
-.. figure:: /images/fsm/self_state_transition.svg
-  :width: 600
-  :align: center
-
-  Self State Transition
 
 In this case, "state1 handler!", "state1 exited!", "state1 entered!" is printed 
 to the console in order. The FSM is still in STATE1 so if an event is dispatched 
@@ -564,30 +564,30 @@ Notable advantages an event-driven approach provides are:
 #. The FSM implementation is fully reusable. The code snippet above shows no code changes 
    in app_fsm.h/.c are required in order to use it across different applications.
 
-+ Decoupling makes code far easier to test. Test code simply creates an event, dispatches 
-  it to the state machine, and verifies how it reacts.
+#. Decoupling makes code far easier to test. Test code simply creates an event, dispatches 
+   it to the state machine, and verifies how it reacts.
 
-- Decoupling makes thread-safety trivial. Events are **not** a shared resource since they 
-  are represented as an **object**. Each thread can create their own events. The only shared 
-  resource is the FSM object instance which can be delegated to a separate task with an 
-  event queue. This is discussed in the :ref:`Run to Completion Semantics Section <fsm_run_to_completion_semantics>`
+#. Decoupling makes thread-safety trivial. Events are **not** a shared resource since they 
+   are represented as an **object**. Each thread can create their own events. The only shared 
+   resource is the FSM object instance which can be delegated to a separate task with an 
+   event queue. This is discussed in the :ref:`Run to Completion Semantics Section <fsm_run_to_completion_semantics>`
 
-+ Less CPU overhead. The state machine only performs work when it needs to.
+#. Less CPU overhead. The state machine only performs work when it needs to.
 
-- Representing the state machine as an **object** allows multiple instances of the same 
-  FSM to be created that operate **independently on one another**.
+#. Representing the state machine as an **object** allows multiple instances of the same 
+   FSM to be created that operate **independently from one another**.
 
 Compare this to the traditional polling state machine that is unfortunately most commonly used.
 Communication between the application is facilitated through global flags:
 
 .. code-block:: c 
 
-    /*----------------- polled_fsm.h ---------------*/
+    /*----------------- polled.h ---------------*/
     #define MAX_TIME    (50)
     extern bool button_pressed;
     extern uint8_t elapsed_time;
 
-    /*--------------- polled_fsm.h/.c --------------*/
+    /*--------------- polled.h/.c --------------*/
     void polled_fsm_run(void)
     {
         enum state_t{OFF_STATE, ON_STATE};
@@ -719,8 +719,327 @@ guaranteed to finish.
 
 
 Example
-=================================================
-todo show example creating fsm with this framework.
+-------------------------------------------------
+The following in-depth example uses this state machine framework to create 
+the following LED FSM. This LED FSM is then ran on two separate applications 
+and hardware targets. The first on a microcontroller in main.c and the second 
+on a computer in tests.c. For conciseness, run-time checks (NULL assertions, etc) are not done:
+
+.. figure:: /images/fsm/led.svg
+  :width: 600
+  :align: center
+
+  LED FSM Example
+
+When a button is pressed the LED's state changes from OFF to ON or from ON to OFF.
+The application can also request the LED to turn on or off by dispatching the 
+LED_ON_REQUEST_EVENT and LED_OFF_REQUEST_EVENT respectively.
+
+This example aims to demonstrate the following points:
+#. Proper use of this framework.
+
+#. How this framework handles all transitions by automatically executing the proper 
+   entry(), exit(), and handler() functions for each state.
+
+#. How representing states as functions reduces the use of flags and eliminates spaghetti code.
+
+#. How each state **only requires one instance**. This single instance can be shared across
+   any number of FSM instances.
+
+#. How representing the FSM as an **object** allows multiple instances of the same 
+   FSM to be created that operate **independently from one another**.
+
+#. How an event-driven approach combined with [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) 
+   fully decouples the FSM from the application. The application can blindly 
+   dispatch events to the LED FSM without worrying about its internal details.
+
+
+led.h/.c 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These files create the LED FSM described above by using this framework.
+Points 1 to 4 are primarily showcases here.
+
+.. code-block:: c
+
+    /*-------------------------- led.h --------------------------*/
+    #include "ecu/fsm.h"
+
+    struct led
+    {
+        /* Inherit base fsm class. */
+        struct ecu_fsm fsm;
+
+        /* Members specific to led fsm. */
+        struct
+        {
+            /* Use dependency injection to handle hardware-specific code */
+            void (*turn_on)(void *obj);     /* User-defined function that turns LED off. */
+            void (*turn_off)(void *obj);    /* User-defined function that turns LED on. */
+            void *obj;                      /* Optional object to pass to turn_led_off and turn_led_on. */
+        } api;
+    };
+
+    enum led_event_id
+    {
+        LED_BUTTON_PRESS_EVENT,
+        LED_ON_REQUEST_EVENT,
+        LED_OFF_REQUEST_EVENT
+    };
+
+    /* Wrap event ID in a struct in case more members have to be added in the future. */
+    struct led_event
+    {
+        enum led_event_id id;
+    };
+
+    extern void led_ctor(struct led *me,
+                         void (*turn_on)(void *obj),
+                         void (*turn_off)(void *obj),
+                         void *obj);
+
+    /* Wrappers can be created to enforce a specific event type. */
+    extern void led_dispatch(struct led *me, const struct led_event *event);
+
+.. code-block:: c
+
+    /*-------------------------- led.c --------------------------*/
+    #include "led.h"
+    #include "ecu/asserter.h"
+
+    /* Assert at compile-time ecu_fsm was properly inherited. */
+    ECU_STATIC_ASSERT( (ECU_FSM_IS_BASEOF(fsm, struct led)), "LED must inherit ecu_fsm." ); 
+
+    /* Create LED states. */
+    static void led_on_entry(struct led *me)
+    {
+        (*me->api.turn_on)(me->api.obj);
+    }
+
+    static void led_on_handler(struct led *me, const void *event)
+    {
+        const struct led_event *e = (const struct led_event *)event;
+
+        switch (e->id)
+        {
+            case LED_OFF_REQUEST_EVENT:
+            {
+                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+                break;
+            }
+
+            case LED_BUTTON_PRESS_EVENT:
+            {
+                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+                break;
+            }
+
+            default:
+            {
+                /* Ignore all other events. */
+                break;
+            }
+        }
+    }
+
+    static void led_off_entry(struct led *me)
+    {
+        (*me->api.turn_off)(me->api.obj);
+    }
+
+    static void led_off_handler(struct led *me, const void *event)
+    {
+        const struct led_event *e = (const struct led_event *)event;
+
+        switch (e->id)
+        {
+            case LED_ON_REQUEST_EVENT:
+            {
+                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+                break;
+            }
+
+            case LED_BUTTON_PRESS_EVENT:
+            {
+                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+                break;
+            }
+            
+            default:
+            {
+                /* Ignore all other events. */
+                break;
+            }
+        }
+    }
+
+    /* Notice how only one instance has to be created per state. Notice how
+    a single state instance can be shared across any number of LED fsms. */
+    static const struct ecu_fsm_state LED_ON_STATE = ECU_FSM_STATE_CTOR(
+        &led_on_entry, ECU_FSM_STATE_EXIT_UNUSED, &led_on_handler
+    );
+
+    static const struct ecu_fsm_state LED_OFF_STATE = ECU_FSM_STATE_CTOR(
+        &led_off_entry, ECU_FSM_STATE_EXIT_UNUSED, &led_off_handler
+    );
+
+
+    void led_ctor(struct led *me,
+                  void (*turn_on)(void *obj),
+                  void (*turn_off)(void *obj),
+                  void *obj)
+    {
+        ecu_fsm_ctor(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+        me->api.turn_on = turn_on;
+        me->api.turn_off = turn_off;
+        me->api.obj = obj;
+    }
+
+    void led_dispatch(struct led *me, const struct led_event *event)
+    {
+        ecu_fsm_dispatch(ECU_FSM_BASE_CAST(me), event);
+    }
+
+
+main.c 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This file runs the LED FSM defined in defined in led.h/.c on a microcontroller.
+It primarily showcases points 5 and 6.
+
+.. code-block:: c
+
+    /*-------------------------- main.c --------------------------*/
+    #include "led.h" /* Reusable FSM we created. */
+
+    /* Notice how hardware-specific code is fully decoupled through dependency injection. */
+    struct led_gpio
+    {
+        uint32_t port;
+        uint32_t pin;
+    };
+
+    static void turn_led_on(void *obj)
+    {
+        struct led_gpio *gpio = (struct led_gpio *)obj;
+        HardwareGpioPinWriteHigh(gpio->port, gpio->pin);
+    }
+
+    static void turn_led_off(void *obj)
+    {
+        struct led_gpio *gpio = (struct led_gpio *)obj;
+        HardwareGpioPinWriteLow(gpio->port, gpio->pin);
+    }
+
+    static struct led led1;
+    static struct led led2;
+    static struct led led3;
+    static struct led_gpio led1_gpio = {GPIO_PORTA, 15};
+    static struct led_gpio led2_gpio = {GPIO_PORTD, 3};
+    static struct led_gpio led3_gpio = {GPIO_PORTC, 8};
+    static const struct led_event BUTTON_PRESS_EVENT = {LED_BUTTON_PRESS_EVENT};
+    static const struct led_event ON_REQUEST_EVENT = {LED_ON_REQUEST_EVENT};
+    static const struct led_event OFF_REQUEST_EVENT = {LED_OFF_REQUEST_EVENT};
+
+    int main()
+    {
+        /* Notice how hardware-specific code is fully decoupled through dependency injection. */
+        led_ctor(&led1, &turn_led_on, &turn_led_off, &led1_gpio);
+        led_ctor(&led2, &turn_led_on, &turn_led_off, &led2_gpio);
+        led_ctor(&led3, &turn_led_on, &turn_led_off, &led3_gpio);
+
+        /* Pseudocode. Notice how the application blindly dispatches events to the
+        state machine. It does not care about its internal details. Also notice how
+        multiple instances of the same FSM can be created and they operate independently
+        from one another. */
+        while (1)
+        {
+            if (button1 pressed)
+            {
+                led_dispatch(&led1, &BUTTON_PRESS_EVENT);
+            }
+            else if (led1 on requested)
+            {
+                led_dispatch(&led1, &ON_REQUEST_EVENT);
+            }
+            else if (led1 off requested)
+            {
+                led_dispatch(&led1, &OFF_REQUEST_EVENT);
+            }
+
+            if (button2 pressed)
+            {
+                led_dispatch(&led2, &BUTTON_PRESS_EVENT);
+            }
+            else if (led2 on requested)
+            {
+                led_dispatch(&led2, &ON_REQUEST_EVENT);
+            }
+
+            //.......
+        }
+    }
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO Stopped here !!!!!
+tests.c 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This file runs the state machine defined in led.h/.c on a computer. It demonstrates how an
+event-driven state machine combined with dependency injection fully decouples led.h/.c from
+the application. Notice how <b>no code has to be changed in led.h/.c in order to use it in
+a different application and run it on a different target (in this case a computer).</b>
+
+
+```C
+/*-------------------------- tests.c ------------------------*/
+#include "led.h" /* Code under test. */
+
+static void turn_led_on(void *obj)
+{
+    (void)obj;
+    printf("LED turned on!");
+}
+
+static void turn_led_off(void *obj)
+{
+    (void)obj;
+    printf("LED turned off!");
+}
+
+
+/*------------------ Create led events for testing ----------*/
+static const led_event BUTTON_PRESS_EVENT = {LED_BUTTON_PRESS_EVENT};
+static const led_event ON_REQUEST_EVENT = {LED_ON_REQUEST_EVENT};
+static const led_event OFF_REQUEST_EVENT = {LED_OFF_REQUEST_EVENT};
+
+
+/*------------------------------ Tests -------------------------*/
+TEST()
+{
+    led TEST_LED;
+    ledFsmCtor(&TEST_LED, 3, &turn_led_on, &turn_led_off, NULL); /* Threshold == 3. */
+
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT); /* "LED turned on!" */
+
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT); /* "LED turned off!" */
+
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT);
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &BUTTON_PRESS_EVENT); /* "LED turned on!" */
+}
+
+TEST()
+{
+    led TEST_LED;
+    ledFsmCtor(&TEST_LED, 3, &turn_led_on, &turn_led_off, NULL);
+
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &LED_ON_REQUEST_EVENT);   /* "LED turned on!" */
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &LED_OFF_REQUEST_EVENT);  /* "LED turned off!" */
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &LED_ON_REQUEST_EVENT);   /* "LED turned on!" */
+    fsmDispatch(FSM_BASE_CAST(&TEST_LED), &LED_OFF_REQUEST_EVENT);  /* "LED turned off!" */
+}
+```
 
 
 ecu_fsm_state

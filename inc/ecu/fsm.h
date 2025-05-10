@@ -102,12 +102,18 @@ struct ecu_fsm;
 
 /**
  * @brief Single state in fsm, initialized via @ref ECU_FSM_STATE_CTOR().
+ * Pointers are const-qualified to only allow states to be
+ * created at compile-time.
  * 
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_fsm_state
 {
+    /* Normally, pointers are const-qualified to only allow states to
+    be created at compile-time. Const is stripped only for unit tests 
+    since test code framework requires state creation at run-time. */
+#ifdef ECU_UNIT_TEST
     /// @brief Executes when state first entered. Optional.
     void (*entry)(struct ecu_fsm *fsm);
     
@@ -116,6 +122,16 @@ struct ecu_fsm_state
 
     /// @brief Processes events dispatched to this state. Mandatory.
     void (*handler)(struct ecu_fsm *fsm, const void *event);
+#else
+    /// @brief Executes when state first entered. Optional.
+    void (*const entry)(struct ecu_fsm *fsm);
+    
+    /// @brief Executes when state exits. Optional.
+    void (*const exit)(struct ecu_fsm *fsm);
+
+    /// @brief Processes events dispatched to this state. Mandatory.
+    void (*const handler)(struct ecu_fsm *fsm, const void *event);
+#endif
 };
 
 /**

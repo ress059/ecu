@@ -3,7 +3,24 @@
  * @brief Unit tests for public API functions in @ref fsm.h. 
  * Test Summary:
  * 
- * TODO!!!!
+ * @ref ecu_fsm_start(), @ref ecu_fsm_change_state()
+ *      - TEST(Fsm, StartNoTransition)
+ *      - TEST(Fsm, StartSingleStateTransition)
+ *      - TEST(Fsm, StartConsecutiveStateTransitions)
+ *      - TEST(Fsm, StartTransitionOnFirstExit)
+ *      - TEST(Fsm, StartTransitionOnSecondExit)
+ *      - TEST(Fsm, StartSelfTransitionOnFirstEntry)
+ *      - TEST(Fsm, StartSelfTransitionOnSecondEntry)
+ * 
+ * @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
+ *      - TEST(Fsm, DispatchSelfTransition)
+ *      - TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
+ *      - TEST(Fsm, DispatchSingleStateTransition)
+ *      - TEST(Fsm, DispatchConsecutiveStateTransitions)
+ *      - TEST(Fsm, DispatchTransitionOnFirstExit)
+ *      - TEST(Fsm, DispatchTransitionOnSecondExit)
+ *      - TEST(Fsm, DispatchSelfTransitionOnFirstEntry)
+ *      - TEST(Fsm, DispatchSelfTransitionOnSecondEntry)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -17,8 +34,8 @@
 
 /* STDLib. */
 #include <cassert>
-#include <functional>
 #include <type_traits>
+#include <utility>
 
 /* Files under test. */
 #include "ecu/fsm.h"
@@ -51,137 +68,348 @@ enum state_id
     NUMBER_OF_STATE_IDS
 };
 
-template<state_id ID>
-struct test_state : public ecu_fsm_state
-{
-    test_state()
-    {
-        static constexpr std::string S{"S"};
-        static constexpr std::string entry{"entry"};
-        static constexpr std::string exit{"exit"};
-        static constexpr std::string handler{"handler"};
-         SimpleString(std::to_string(ID).c_str())
-    }
-
-    ~test_state()
-    {
-        // reset std::func to null
-    }
-
-    static SimpleString m_entry_name;
-    static SimpleString m_exit_name;
-    static SimpleString m_handler_name;
-};
-
-
-
+/* Forward declaration required for handler function definitions. */
 struct test_fsm;
 
+struct base_handler
+{
+    virtual const SimpleString& name() const = 0;
+    virtual ~base_handler() = default;
+
+    /**
+     * @brief Must be ran in state handler function under test.
+     * Transitions the FSM into a new state if it was requested
+     * by the test by calling @ref to().
+     * 
+     * @param me FSM in state handler function.
+     */
+    void process_state_change(test_fsm *me);
+
+    /**
+     * @brief Returns true if to() was called. This means
+     * the test wants the FSM to change state in its
+     * respective handler (entry, exit, handler) function.
+     */
+    bool state_change_requested() const
+    {
+        return (m_to < NUMBER_OF_STATE_IDS);
+    }
+
+    /**
+     * @brief Test should call this if FSM should change state 
+     * in its respective handler (entry, exit, handler) function.
+     * 
+     * @param id State to change to.
+     */
+    void to(state_id id)
+    {
+        assert( (id >= 0 && id < NUMBER_OF_STATE_IDS) );
+        m_to = id;
+    }
+
+    state_id m_to{NUMBER_OF_STATE_IDS};
+
+protected:
+    base_handler() = default;
+};
+
+struct test_entry : public base_handler
+{
+    const SimpleString& name() const override
+    {
+        static const SimpleString m_name{"entry"};
+        return m_name;
+    }
+
+    /**
+     * @brief Each state's entry function, parameterized by a 
+     * state ID.
+     * 
+     * @tparam ID The state's ID.
+     * @param fsm This is a test_fsm object upcasted to ecu_fsm
+     * base. This is downcasted back into a test_fsm object
+     * in order for C++ test code to be compatible with the
+     * C ECU library. Having this be a pointer to derived (test_fsm)
+     * and upcasting the function pointer is not safe for C++
+     * as there are no guarantees &test_fsm == (ecu_fsm *)&test_fsm.
+     */
+    template<state_id ID>
+    static void run(ecu_fsm *fsm);
+};
+
+struct test_exit : public base_handler
+{
+    const SimpleString& name() const override
+    {
+        static const SimpleString m_name{"exit"};
+        return m_name;
+    }
+
+    /**
+     * @brief Each state's exit function, parameterized by a 
+     * state ID.
+     * 
+     * @tparam ID The state's ID.
+     * @param fsm This is a test_fsm object upcasted to ecu_fsm
+     * base. This is downcasted back into a test_fsm object
+     * in order for C++ test code to be compatible with the
+     * C ECU library. Having this be a pointer to derived (test_fsm)
+     * and upcasting the function pointer is not safe for C++
+     * as there are no guarantees &test_fsm == (ecu_fsm *)&test_fsm.
+     */
+    template<state_id ID>
+    static void run(ecu_fsm *fsm);
+};
+
+struct test_handler : public base_handler
+{
+    const SimpleString& name() const override
+    {
+        static const SimpleString m_name{"handler"};
+        return m_name;
+    }
+
+    /**
+     * @brief Each state's handler function, parameterized by a 
+     * state ID.
+     * 
+     * @tparam ID The state's ID.
+     * @param fsm This is a test_fsm object upcasted to ecu_fsm
+     * base. This is downcasted back into a test_fsm object
+     * in order for C++ test code to be compatible with the
+     * C ECU library. Having this be a pointer to derived (test_fsm)
+     * and upcasting the function pointer is not safe for C++
+     * as there are no guarantees &test_fsm == (ecu_fsm *)&test_fsm.
+     * @param event Unused.
+     */
+    template<state_id ID>
+    static void run(ecu_fsm *fsm, const void *event);
+};
+
 struct test_state : public ecu_fsm_state
 {
-    test_state(test_fsm *fsm, SimpleString name) : 
-        m_fsm{fsm},
-        m_entry{std::move(name + SimpleString("_entry"))}, 
-        m_exit{std::move(name + SimpleString("_exit"))}, 
-        m_handler{std::move(name + SimpleString("_handler"))}
+    using entry_t = void (*)(ecu_fsm *);
+    using exit_t = void (*)(ecu_fsm *);
+    using handler_t = void (*)(ecu_fsm *, const void *);
+
+    void create(entry_t entry_func, exit_t exit_func, handler_t handler_func)
     {
-        entry = m_entry.get();
-        exit = m_exit.get();
-        handler = m_handler.get();
+        entry = (void (*)(ecu_fsm *))entry_func;
+        exit = (void (*)(ecu_fsm *))exit_func;
+        handler = (void (*)(ecu_fsm *, const void *))handler_func;
     }
 
-    template<class T>
-    struct state_function;
-
-    template<class Ret, class... Args>
-    struct state_function<Ret(Args...)>
-    {
-        typedef Ret (*handler_t)(Args...);
-
-        state_function(SimpleString name) : 
-            m_name{std::move(name)}
-        {
-            static_assert( (sizeof...(Args) <= 2), "Number of function arguments too large.");
-
-            if constexpr(sizeof...(Args) == 0)
-            {
-                m_run = std::bind(&run, *this);
-            }
-            else if constexpr(sizeof...(Args) == 1)
-            {
-                m_run = std::bind(&run, *this, std::placeholders::_1);
-            }
-            else
-            {
-                m_run = std::bind(&run, *this, std::placeholders::_1, std::placeholders::_2);
-            }
-        }
-
-        static Ret run(state_function& me, Args... args)
-        {
-            (..., (void)args);
-
-            mock().actualCall(me.m_name);
-            if (me.m_to)
-            {
-                me.m_to();
-            }
-        }
-
-        handler_t get()
-        {
-            return m_run.target<Ret(Args...)>();
-        }
-
-        const SimpleString& operator()() const
-        {
-            return m_name;
-        }
-
-        void to(test_state& new_state)
-        {
-            m_to = std::bind(&ecu_fsm_change_state, new_state.m_fsm, &new_state);
-        }
-
-        void to()
-        {
-            m_to = nullptr;
-        }
-        
-        SimpleString m_name;
-        std::function<void(void)> m_to;
-        std::function<Ret(Args...)> m_run;
-    };
-
-    test_fsm *m_fsm;
-    state_function<void(ecu_fsm *)> m_entry;
-    state_function<void(ecu_fsm *)> m_exit;
-    state_function<void(ecu_fsm *, const void *)> m_handler;
+    test_entry m_entry;
+    test_exit m_exit;
+    test_handler m_handler;
 };
 
-struct test_fsm : public ecu_fsm
+struct test_fsm : public ecu_fsm, public Utest
 {
-    test_fsm(test_state& init_state)
+    test_fsm()
     {
-        ecu_fsm_ctor(this, &init_state);
+        for (std::size_t i = 0; i < (std::size_t)NUMBER_OF_STATE_IDS; i++)
+        {
+            states.at(i).create(entry_functions.at(i), exit_functions.at(i), handler_functions.at(i));
+        }
+
+        ecu_fsm_ctor(this, &states.at(S0));
     }
 
+    /**
+     * @brief Returns state object from supplied ID.
+     */
+    const test_state& state(state_id id)
+    {
+        return states.at(id);
+    }
+
+    /**
+     * @brief Returns entry object from supplied ID.
+     */
+    test_entry& entry(state_id id)
+    {
+        return states.at(id).m_entry;
+    }
+
+    /**
+     * @brief Returns exit object from supplied ID.
+     */
+    test_exit& exit(state_id id)
+    {
+        return states.at(id).m_exit;
+    }
+
+    /**
+     * @brief Returns handler object from supplied ID.
+     */
+    test_handler& handler(state_id id)
+    {
+        return states.at(id).m_handler;
+    }
+
+    /**
+     * @brief Returns ID of supplied object.
+     * 
+     * @param obj Entry, exit, or handler object stored in
+     * this fsm.
+     */
+    state_id id(base_handler& obj) const
+    {
+        state_id id = NUMBER_OF_STATE_IDS;
+
+        for (std::size_t i = 0; i < (std::size_t)NUMBER_OF_STATE_IDS; i++)
+        {
+            const base_handler *entry = &states.at(i).m_entry;
+            const base_handler *exit = &states.at(i).m_exit;
+            const base_handler *handler = &states.at(i).m_handler;
+
+            if (entry == &obj || exit == &obj || handler == &obj)
+            {
+                id = static_cast<state_id>(i);
+                break;
+            }
+        }
+
+        assert( (id >= 0 && id < NUMBER_OF_STATE_IDS) );
+        return id;
+    }
+
+    /**
+     * @brief Wrapper function that calls function under 
+     * test: @ref ecu_fsm_start().
+     */
+    void start()
+    {
+        ecu_fsm_start(this);
+    }
+
+    /**
+     * @brief Wrapper function that calls function under 
+     * test: @ref ecu_fsm_dispatch().
+     */
     void dispatch()
     {
-        static constexpr int DUMMY_EVENT = 0;
         ecu_fsm_dispatch(this, &DUMMY_EVENT);
     }
-};
 
-TEST_GROUP(Fsm)
-{
-    TEST_GROUP_CppUTestGroupFsm() : 
-        s1{&me, "S1"}, s2{&me, "S2"}, s3{&me, "S3"}, 
-        s4{&me, "S4"}, s5{&me, "s5"}, me{s1}
+    /**
+     * @brief Test should call this function to verify correct
+     * state path is taken from fsm under test. 
+     * Syntax: EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1), ...)
+     */
+    template<typename... Handlers>
+    requires (std::is_base_of_v<base_handler, Handlers> && ...)
+    void EXPECT_STATE_PATH(base_handler& h0, Handlers&... hn)
     {
+        mock().expectOneCall(h0.name())
+              .withParameter("state", id(h0));
 
+        if constexpr(sizeof...(Handlers) > 0)
+        {
+            (mock().expectOneCall(hn.name())
+                   .withParameter("state", id(hn)), ...);
+        }
     }
 
+    /* Instantiates templated functions test_entry::run, test_exit::run, and test_handler::run for all state IDs. */
+    template<std::size_t... I>
+    static constexpr auto create_entry_functions(std::index_sequence<I...>)
+    {
+        return std::array<test_state::entry_t, sizeof...(I)>{&test_entry::run<static_cast<state_id>(I)>...};
+    }
+
+    template<std::size_t... I>
+    static constexpr auto create_exit_functions(std::index_sequence<I...>)
+    {
+        return std::array<test_state::exit_t, sizeof...(I)>{&test_exit::run<static_cast<state_id>(I)>...};
+    }
+
+    template<std::size_t... I>
+    static constexpr auto create_handler_functions(std::index_sequence<I...>)
+    {
+        return std::array<test_state::handler_t, sizeof...(I)>{&test_handler::run<static_cast<state_id>(I)>...};
+    }
+
+    static const std::array<test_state::entry_t, NUMBER_OF_STATE_IDS> entry_functions;
+    static const std::array<test_state::exit_t, NUMBER_OF_STATE_IDS> exit_functions;
+    static const std::array<test_state::handler_t, NUMBER_OF_STATE_IDS> handler_functions;
+    static constexpr int DUMMY_EVENT{0};
+    std::array<test_state, NUMBER_OF_STATE_IDS> states;
+};
+
+/* Class variables defined here so the templates are fully instantiated.... */
+const std::array<test_state::entry_t, NUMBER_OF_STATE_IDS> test_fsm::entry_functions = test_fsm::create_entry_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+const std::array<test_state::exit_t, NUMBER_OF_STATE_IDS> test_fsm::exit_functions = test_fsm::create_exit_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+const std::array<test_state::handler_t, NUMBER_OF_STATE_IDS> test_fsm::handler_functions = test_fsm::create_handler_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+
+/* Functions defined here since they require test_fsm's full definition to be visible... */
+void base_handler::process_state_change(test_fsm *me)
+{
+    assert( (me) );
+
+    if (state_change_requested())
+    {
+        ecu_fsm_change_state(me, &me->state(m_to));
+    }
+}
+
+template<state_id ID>
+void test_entry::run(ecu_fsm *fsm)
+{
+    /* dynamic_cast cannot be performed because test_fsm
+    inherits ecu_fsm which is a non-polymorphic C struct. */
+    assert( (fsm) );
+    test_fsm *me = static_cast<test_fsm *>(fsm);
+
+    auto& entry_obj = me->entry(ID);
+    mock().actualCall(entry_obj.name())
+          .withParameter("state", ID);
+    
+    entry_obj.process_state_change(me);
+}
+
+template<state_id ID>
+void test_exit::run(ecu_fsm *fsm)
+{
+    /* dynamic_cast cannot be performed because test_fsm
+    inherits ecu_fsm which is a non-polymorphic C struct. */
+    assert( (fsm) );
+    test_fsm *me = static_cast<test_fsm *>(fsm);
+
+    auto& exit_obj = me->exit(ID);
+    mock().actualCall(exit_obj.name())
+          .withParameter("state", ID);
+
+    exit_obj.process_state_change(me);
+}
+
+template<state_id ID>
+void test_handler::run(ecu_fsm *fsm, const void *event)
+{
+    /* dynamic_cast cannot be performed because test_fsm
+    inherits ecu_fsm which is a non-polymorphic C struct. */
+    (void)event;
+    assert( (fsm) );
+    test_fsm *me = static_cast<test_fsm *>(fsm);
+
+    auto& handler_obj = me->handler(ID);
+    mock().actualCall(handler_obj.name())
+          .withParameter("state", ID);
+
+    handler_obj.process_state_change(me);
+}
+
+/*------------------------------------------------------------*/
+/*----------------------- TEST GROUPS ------------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Inherit test_fsm so its member functions are
+ * within the test group's namespace.
+ */
+TEST_GROUP_BASE(Fsm, test_fsm)
+{
     void setup() override
     {
         set_assert_handler(AssertResponse::FAIL);
@@ -192,32 +420,28 @@ TEST_GROUP(Fsm)
         mock().checkExpectations();
         mock().clear();
     }
-    
-    template<class... Args>
-    requires (... && std::is_same_v<const SimpleString, std::remove_reference_t<Args>>)
-    static void EXPECT_STATE_PATH(const SimpleString& s1, Args&&... args)
-    {
-        mock().strictOrder();
-        mock().expectOneCall(s1);
-        (..., mock().expectOneCall(args));
-    }
-
-    test_state s1;
-    test_state s2;
-    test_state s3;
-    test_state s4;
-    test_state s5;
-    test_fsm me;
 };
 
-#warning "TODO: Stopped here. Assert firing because state_function.get() returning nullptr...probably because \
-    we cant bind a class function to a C function pointer..idk..."
-TEST(Fsm, CompileTest)
+/*------------------------------------------------------------*/
+/*---------------------- TESTS - FSM START -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief FSM started with no transition.
+ * 
+ * Expect: entry(S0).
+ */
+TEST(Fsm, StartNoTransition)
 {
     try
     {
-        /* code */
-        EXPECT_STATE_PATH(s1.m_entry(), s1.m_exit(), s2.m_entry());
+        /* Step 1: Arrange. */
+        EXPECT_STATE_PATH(entry(S0));
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
     }
     catch (const AssertException& e)
     {
@@ -226,743 +450,365 @@ TEST(Fsm, CompileTest)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// class fsm : fsm_t 
-// {
-// public:
-//     fsm()
-//     {
-//         init<(state_number)(NUMBER_OF_STATES - 1)>();
-//         fsmCtor(this, &states.at(0));
-//     }
-
-//     void ctor(state_number s)
-//     {
-//         fsmCtor(this, &states.at(s));
-//     }
-
-//     void start()
-//     {
-//         fsmStart(this);
-//     }
-
-//     void dispatch()
-//     {
-//         fsmDispatch(this, &DUMMY_EVENT);
-//     }
-
-//     /**
-//      * @brief Generates definition for the state's onEntry handler 
-//      * based on input parameters.
-//      * 
-//      * @param s Which state's onEntry handler to modify.
-//      * @param name Name given to mock expectation when handler runs. Only
-//      * applicable if @p type is MOCK.
-//      * @param type Specify if onEntry handler should be a STUB or MOCK.
-//      * @param to_state Optional. Specify if FSM should transition to another
-//      * state in the onEntry handler.
-//      */
-//     void set_entry(state_number s, const char *name, state_type type, to_state to_state = NO_TRANSITION)
-//     {
-//         states.at(s).set_entry(name, type, to_state);
-//     }
-
-//     /**
-//      * @brief Generates definition for the state's onExit handler 
-//      * based on input parameters.
-//      * 
-//      * @param s Which state's onExit handler to modify.
-//      * @param name Name given to mock expectation when handler runs. Only
-//      * applicable if @p type is MOCK.
-//      * @param type Specify if onExit handler should be a STUB or MOCK.
-//      * @param to_state Optional. Specify if FSM should transition to another
-//      * state in the onExit handler.
-//      */
-//     void set_exit(state_number s, const char *name, state_type type, to_state to_state = NO_TRANSITION)
-//     {
-//         states.at(s).set_exit(name, type, to_state);
-//     }
-
-//     /**
-//      * @brief Generates definition for the state's handler 
-//      * based on input parameters.
-//      * 
-//      * @param s Which state's handler to modify.
-//      * @param name Name given to mock expectation when handler runs. Only
-//      * applicable if @p type is MOCK.
-//      * @param type Specify if handler should be a STUB or MOCK.
-//      * @param to_state Optional. Specify if FSM should transition to another
-//      * state in the handler.
-//      */
-//     void set_handler(state_number s, const char *name, state_type type, to_state to_state = NO_TRANSITION)
-//     {
-//         states.at(s).set_handler(name, type, to_state);
-//     }
-
-//     state_number get_current_state() const
-//     {
-//         state_number s = NUMBER_OF_STATES;
-
-//         for (std::size_t i = 0; i < (std::size_t)NUMBER_OF_STATES; i++)
-//         {
-//             if (fsm_t::state == &states.at(i))
-//             {
-//                 s = (state_number)i;
-//                 break;
-//             }
-//         }
-        
-//         return s;
-//     }
-
-//     const SimpleString& get_entry_name(state_number s) const 
-//     {
-//         return states.at(s).m_entry_name;
-//     }
-
-//     const SimpleString& get_exit_name(state_number s) const 
-//     {
-//         return states.at(s).m_exit_name;
-//     }
-
-//     const SimpleString& get_handler_name(state_number s) const 
-//     {
-//         return states.at(s).m_handler_name;
-//     }
-
-// private:
-//     /**
-//      * @brief Sets handlers in fsm_state_t. Recursive template has to be
-//      * used instead of a for-loop since the handler functions are C callbacks.
-//      * They must be resolved at compile-time.
-//      * 
-//      * @tparam N Number of states to initialize. Max = NUMBER_OF_STATES.
-//      */
-//     template<state_number N>
-//     void init()
-//     {
-//         static_assert( (N < NUMBER_OF_STATES) );
-//         init<(state_number)(N-1)>(); /* Recursive. init<0> explicitly specialized. */
-//         states.at(N).onEntry = FSM_STATE_ON_ENTRY_CAST(&entry<N>);
-//         states.at(N).onExit = FSM_STATE_ON_EXIT_CAST(&exit<N>);
-//         states.at(N).handler = FSM_STATE_HANDLER_CAST(&run<N>);
-
-//         /* Default to mocks so test fails if unexpected state function ran. */
-//         states.at(N).set_entry("unused_state_entered", MOCK);
-//         states.at(N).set_exit("unused_state_exited", MOCK);
-//         states.at(N).set_handler("unused_state_ran", MOCK);
-//     }
-
-//     /**
-//      * @brief Each State's unique onEntry function. This approach allows
-//      * each State to have a unique function definition and allows the
-//      * function to be passed to fsm_state_t, which takes in C callbacks.
-//      */
-//     template<state_number S>
-//     static void entry(fsm *me)
-//     {
-//         state_type type = me->states.at(S).m_entry_type;
-//         to_state to_state = me->states.at(S).m_entry_to_state;
-
-//         switch (type)
-//         {
-//             case STUB:
-//             {
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             case MOCK:
-//             {
-//                 const SimpleString& name = me->states.at(S).m_entry_name;
-//                 mock().actualCall(name);
-
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             default:
-//             {
-//                 assert( (false) );
-//                 break;
-//             }
-//         }
-//     }
-
-//     /**
-//      * @brief Each State's unique onExit function. This approach allows
-//      * each State to have a unique function definition and allows the
-//      * function to be passed to fsm_state_t, which takes in C callbacks.
-//      */
-//     template<state_number S>
-//     static void exit(fsm *me)
-//     {
-//         state_type type = me->states.at(S).m_exit_type;
-//         to_state to_state = me->states.at(S).m_exit_to_state;
-
-//         switch (type)
-//         {
-//             case STUB:
-//             {
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             case MOCK:
-//             {
-//                 const SimpleString& name = me->states.at(S).m_exit_name;
-//                 mock().actualCall(name);
-
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             default:
-//             {
-//                 assert( (false) );
-//                 break;
-//             }
-//         }
-//     }
-
-//     /**
-//      * @brief Each State's unique handler function. This approach allows
-//      * each State to have a unique function definition and allows the
-//      * function to be passed to fsm_state_t, which takes in C callbacks.
-//      */
-//     template<state_number S>
-//     static void run(fsm *me, const void *event)
-//     {
-//         (void)event;
-//         state_type type = me->states.at(S).m_handler_type;
-//         to_state to_state = me->states.at(S).m_handler_to_state;
-
-//         switch (type)
-//         {
-//             case STUB:
-//             {
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             case MOCK:
-//             {
-//                 const SimpleString& name = me->states.at(S).m_handler_name;
-//                 mock().actualCall(name);
-
-//                 if (to_state != NO_TRANSITION)
-//                 {
-//                     fsmChangeState(me, &me->states.at(to_state));
-//                 }
-//                 break;
-//             }
-
-//             default:
-//             {
-//                 assert( (false) );
-//                 break;
-//             }
-//         }
-//     }
-
-// private:
-//     class state : public fsm_state_t
-//     {
-//     public:
-//         void set_entry(const char* name, state_type type, to_state to_state = NO_TRANSITION)
-//         {
-//             m_entry_name = SimpleString(name);
-//             m_entry_type = type;
-//             m_entry_to_state = to_state;
-//         }
-
-//         void set_exit(const char *name, state_type type, to_state to_state = NO_TRANSITION)
-//         {
-//             m_exit_name = SimpleString(name);
-//             m_exit_type = type;
-//             m_exit_to_state = to_state;
-//         }
-
-//         void set_handler(const char *name, state_type type, to_state to_state = NO_TRANSITION)
-//         {
-//             m_handler_name = SimpleString(name);
-//             m_handler_type = type;
-//             m_handler_to_state = to_state;
-//         }
-
-//         to_state m_entry_to_state;
-//         to_state m_exit_to_state;
-//         to_state m_handler_to_state;
-//         state_type m_entry_type;
-//         state_type m_exit_type;
-//         state_type m_handler_type;
-//         SimpleString m_entry_name;
-//         SimpleString m_exit_name;
-//         SimpleString m_handler_name;
-//     };
-
-// private:
-//     std::array<state, NUMBER_OF_STATES> states;
-//     static constexpr to_state NO_TRANSITION = TO_STATE_NO_TRANSITION;
-//     static constexpr std::uint8_t DUMMY_EVENT{0};
-// };
-
-// /* C++ standard requires full specialization of member templates to be within 
-// the namespace the fsm class is in. So it has to be outside the fsm class. */
-// template<>
-// void fsm::init<(state_number)0>()
-// {
-//     states.at(0).onEntry = FSM_STATE_ON_ENTRY_CAST(&entry<(state_number)0>);
-//     states.at(0).onExit = FSM_STATE_ON_EXIT_CAST(&exit<(state_number)0>);
-//     states.at(0).handler = FSM_STATE_HANDLER_CAST(&run<(state_number)0>);
-
-//     /* Default to mocks so test fails if unexpected state function ran. */
-//     states.at(0).set_entry("unused_state_entered", MOCK);
-//     states.at(0).set_exit("unused_state_exited", MOCK);
-//     states.at(0).set_handler("unused_state_ran", MOCK);
-// }
-
-
-
-// /**************************************************************************************************
-//                                             Static Asserts
-// **************************************************************************************************/
-
-// static_assert( ((int)NUMBER_OF_STATES == (int)TO_STATE_NO_TRANSITION), "Values must be equal" );
-
-
-
-// /**************************************************************************************************
-//                                             Test Groups
-// **************************************************************************************************/
-
-// TEST_GROUP(FSM)
-// {
-// protected:
-//     void setup() override
-//     {
-//         set_assert_handler(AssertResponse::FAIL);
-//     }
-
-//     void teardown() override
-//     {
-//         mock().checkExpectations();
-//         mock().removeAllComparatorsAndCopiers();
-//         mock().clear();
-//     }
-
-//     void EXPECT_STATE_PATH(const std::initializer_list<SimpleString>& states)
-//     {
-//         /* Add strings to vector so they remain in memory for mock expectations. */
-//         expected_states.insert(expected_states.cend(), states);
-
-//         mock().strictOrder();
-//         for (const auto& s : states)
-//         {
-//             mock().expectOneCall(s);
-//         }
-//     }
-
-// protected:
-//     fsm me;
-//     std::vector<SimpleString> expected_states;
-// };
-
-
-
-// /**************************************************************************************************
-//                                         Tests - fsmDispatch()
-// **************************************************************************************************/
-
-// /**
-//  * @brief Expect s1->s1_exit->s1_entry
-//  */
-// TEST(FSM, SelfTransition)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_handler(S1, "s1", MOCK, TO_S1); /* self transition. */
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S1, "s1_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s1_entry"});
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to a new state in S1 entry handler. Perform
-//  * a self-transition in S1 handler. Can happen when user first 
-//  * constructs FSM and this is the first state they assign to it. 
-//  * This does not require entry handler to run. First dispatched 
-//  * event can cause self transition which then runs entry handler.
-//  * 
-//  * Expect s1->s1_exit->s1_entry->s1_exit->s2_entry.
-//  */
-// TEST(FSM, SelfTransitionAndTransitionInEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_handler(S1, "s1", MOCK, TO_S1); /* self transition. */
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S2);
-//         me.set_entry(S2, "s2_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s1_entry", "s1_exit", "s2_entry"});
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Expect s1->s1_exit->s2_entry
-//  */
-// TEST(FSM, SingleStateTransition)
-// {
-//     try
-//     {
-//         me.set_handler(S1, "s1", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s2_entry"});
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Expect s1->s1_exit->s2_entry->s2_exit->s3_entry
-//  */
-// TEST(FSM, MultipleStateTransitionsInARow)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_handler(S1, "s1", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK, TO_S3);
-//         me.set_exit(S2, "s2_exit", MOCK);
-//         me.set_entry(S3, "s3_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s2_entry", "s2_exit", "s3_entry"});
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition is not allowed in exit handler. Makes no
-//  * sense since we are already exiting the State.
-//  */
-// TEST(FSM, StateTransitionOnExit)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_handler(S1, "s1", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK, TO_S2);
-//         EXPECT_STATE_PATH({"s1", "s1_exit"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Do s1->s2 transition. Do self-transition to s2
-//  * in s2_entry. This is not allowed since we are already in
-//  * s2 and would cause an infinite loop. Should cause
-//  * an assertion.
-//  */
-// TEST(FSM, SelfTransitionOnFirstEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_handler(S1, "s1", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK, TO_S2); /* self transition in entry not allowed. */
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s2_entry"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Do s1->s2->s3 transition. Do self-transition to s3
-//  * in s3_entry. This is not allowed since we are already in
-//  * s2 and would cause an infinite loop. Should cause
-//  * an assertion.
-//  */
-// TEST(FSM, SelfTransitionOnSecondEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_handler(S1, "s1", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK, TO_S3);
-//         me.set_exit(S2, "s2_exit", MOCK);
-//         me.set_entry(S3, "s3_entry", MOCK, TO_S3); /* self transition in entry not allowed. */
-//         EXPECT_STATE_PATH({"s1", "s1_exit", "s2_entry", "s2_exit", "s3_entry"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.dispatch();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-
-
-// /**************************************************************************************************
-//                                         Tests - fsmStart()
-// **************************************************************************************************/
-
-// /**
-//  * @brief Start the FSM. Expect only s1_entry.
-//  */
-// TEST(FSM, StartNoTransition)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_entry(S1, "s1_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1_entry"});
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to s2 in s1_entry.
-//  * Expect s1_entry->s1_exit->s2_entry.
-//  */
-// TEST(FSM, StartSingleStateTransitionOnEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1_entry", "s1_exit", "s2_entry"});
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to s2 in s1_entry. Transition to s3 in s2_entry. 
-//  * Expect s1_entry->s1_exit->s2_entry->s2_exit->s3_entry.
-//  */
-// TEST(FSM, StartMultipleStateTransitionsInARow)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK, TO_S3);
-//         me.set_exit(S2, "s2_exit", MOCK);
-//         me.set_entry(S3, "s3_entry", MOCK);
-//         EXPECT_STATE_PATH({"s1_entry", "s1_exit", "s2_entry", "s2_exit", "s3_entry"});
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if State Path was incorrect. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to s2 in s1_entry. Transition to s1 in s1_exit. 
-//  * Transition in exit handler should cause assertion. Not allowed
-//  * since we are already exiting the State.
-//  */
-// TEST(FSM, StartStateTransitionOnExit)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK, TO_S1); /* State transition in exit handler not allowed. */
-//         EXPECT_STATE_PATH({"s1_entry", "s1_exit"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to s2 in s1_entry. Should cause assertion
-//  * since self-transition in entry handler causes infinite loop.
-//  */
-// TEST(FSM, StartSelfTransitionOnFirstEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S1); /* Self-transition in entry handler not allowed. */
-//         EXPECT_STATE_PATH({"s1_entry"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Transition to s2 in s1_entry. Transition to s2
-//  * in s2_entry. Should cause assertion in s2_entry since 
-//  * self-transition in entry handler causes infinite loop.
-//  */
-// TEST(FSM, StartSelfTransitionOnSecondEntry)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-//         me.set_entry(S1, "s1_entry", MOCK, TO_S2);
-//         me.set_exit(S1, "s1_exit", MOCK);
-//         me.set_entry(S2, "s2_entry", MOCK, TO_S2); /* Self-transition in entry handler not allowed. */
-//         EXPECT_STATE_PATH({"s1_entry", "s1_exit", "s2_entry"}); /* Setup mocks to verify assertion fired in proper location. */
-
-//         /* Step 2: Action. */
-//         me.start();
-
-//         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
+/**
+ * @brief Transition done in entry function.
+ * 
+ * Expect: entry(S0) -> exit(S0) -> entry(S1).
+ */
+TEST(Fsm, StartSingleStateTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        entry(S0).to(S1);
+        EXPECT_STATE_PATH(entry(S0), exit(S0), entry(S1));
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in both entry functions.
+ * 
+ * Expect: entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2).
+ */
+TEST(Fsm, StartConsecutiveStateTransitions)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        entry(S0).to(S1);
+        entry(S1).to(S2);
+        EXPECT_STATE_PATH(entry(S0), exit(S0), entry(S1), exit(S1), entry(S2));
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ */
+TEST(Fsm, StartTransitionOnFirstExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        entry(S0).to(S1);
+        exit(S0).to(S1);
+        EXPECT_STATE_PATH(entry(S0), exit(S0)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ */
+TEST(Fsm, StartTransitionOnSecondExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        entry(S0).to(S1);
+        entry(S1).to(S2);
+        exit(S1).to(S2);
+        EXPECT_STATE_PATH(entry(S0), exit(S0), entry(S1), exit(S1)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ */
+TEST(Fsm, StartSelfTransitionOnFirstEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        entry(S0).to(S0);
+        EXPECT_STATE_PATH(entry(S0)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ */
+TEST(Fsm, StartSelfTransitionOnSecondEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        entry(S0).to(S1);
+        entry(S1).to(S1);
+        EXPECT_STATE_PATH(entry(S0), exit(S0), entry(S1)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        start();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*-------------------- TESTS - FSM DISPATCH ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Transition to self within handler function.
+ * 
+ * Expect: handler(S0) -> exit(S0) -> entry(S0)
+ */
+TEST(Fsm, DispatchSelfTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        handler(S0).to(S0);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S0));
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition to self in handler function. Transition
+ * to new state in entry function. Edge case can happen when
+ * user first constructs FSM with this state.
+ * 
+ * Expect: handler(S0) -> exit(S0) -> entry(S0) -> exit(S0) -> entry(S1).
+ */
+TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        handler(S0).to(S0);
+        entry(S0).to(S1);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S0), exit(S0), entry(S1));
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Normal state transition occurs in handler function.
+ * 
+ * Expect: handler(S0) -> exit(S0) -> entry(S3)
+ */
+TEST(Fsm, DispatchSingleStateTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        handler(S0).to(S3);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S3));
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief State transition occurs in handler function and
+ * new state's entry function.
+ * 
+ * Expect: handler(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2) -> exit(S2) -> entry(S3).
+ */
+TEST(Fsm, DispatchConsecutiveStateTransitions)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        handler(S0).to(S1);
+        entry(S1).to(S2);
+        entry(S2).to(S3);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1), exit(S1), entry(S2), exit(S2), entry(S3));
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ */
+TEST(Fsm, DispatchTransitionOnFirstExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        handler(S0).to(S1);
+        exit(S0).to(S1);
+        EXPECT_STATE_PATH(handler(S0), exit(S0)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ */
+TEST(Fsm, DispatchTransitionOnSecondExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        handler(S0).to(S1);
+        entry(S1).to(S2);
+        exit(S1).to(S2);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1), exit(S1)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ */
+TEST(Fsm, DispatchSelfTransitionOnFirstEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        handler(S0).to(S1);
+        entry(S1).to(S1);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ */
+TEST(Fsm, DispatchSelfTransitionOnSecondEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        EXPECT_ASSERTION();
+        handler(S0).to(S1);
+        entry(S1).to(S2);
+        entry(S2).to(S2);
+        EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1), exit(S1), entry(S2)); /* Setup mocks to verify assertion fired in proper location. */
+
+        /* Step 2: Action. */
+        dispatch();
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}

@@ -19,10 +19,22 @@ target_compile_options(ecu
 #------------------- BUILD TEST SETTINGS --------------------#
 #------------------------------------------------------------#
 add_executable(ECU_BUILD_TEST 
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.c 
+    ${CMAKE_CURRENT_LIST_DIR}/src/led_strip.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/led.c
 )
 
-# Have main.c use the same warning flags as ECU, with the addition of -Werror.
+target_compile_options(ECU_BUILD_TEST
+    PRIVATE
+        # Save debug symbols.
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-g3>
+)
+
+target_include_directories(ECU_BUILD_TEST
+    PRIVATE 
+        ${CMAKE_CURRENT_LIST_DIR}/src 
+)
+
+# Have build test code use the same warning flags as ECU, with the addition of -Werror.
 target_link_libraries(ECU_BUILD_TEST 
     PRIVATE 
         ecu
@@ -30,6 +42,6 @@ target_link_libraries(ECU_BUILD_TEST
 )
 
 #------------------------------------------------------------#
-#-------------------- MCU SPECIFIC FILES --------------------#
+#---------------- MCU SPECIFIC FILES AND MAIN.C -------------#
 #------------------------------------------------------------#
 add_subdirectory(${MCU})

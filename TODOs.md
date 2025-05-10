@@ -16,8 +16,8 @@ Completed.
 
 ## FSM
 0. Lint.
-1. Add tests.
-2. Sphinx documentation.
+1. Sphinx documentation.
+2. Update Sphinx documentation - states can now only be created at compile-time since function pointers are const.
 
 ## Utils
 1. Added utils.h. Have to document in sphinx.
@@ -36,9 +36,6 @@ so this only applies to GCC. I.e.
 ```
 
 2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
-
-# Timer
-1. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree
