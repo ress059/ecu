@@ -1,451 +1,224 @@
 /**
  * @file
- * @brief Event-driven finite state machine (fsm). Rather than a case statement, 
- * state is instead represented by a user-defined function:
- * @image html partial-state-definition.png "FSM State Represented By Function"
- * \n
- * 
- * Instead of polling, the application dispatches events to their fsms whenever 
- * required via the @ref ecu_fsm_dispatch() function. Users can also optionally 
- * define exit and entry handlers for each state in case a dispatched event
- * causes a state transition. So the full state definition is comprised of 
- * a user-defined state handler, entry handler, and exit handler. All of this 
- * is contained within the @ref ecu_fsm_state struct.
- * @image html full-state-definition.png "Full FSM State Representation"
- * \n 
- * 
- * This module will automatically update the internal state of your fsm.
- * It will also automatically handle state transitions by executing the
- * proper exit and entry handlers assigned to each state. For example if
- * an event is dispatched that causes a transition from State 1 to State 2
- * the following occurs:
- * @image html state-transition.png "FSM State Transition"
- * \n 
- * 
- * This is all facilitated by the @ref ecu_fsm_dispatch() function. Users
- * indicate a state change by calling @ref ecu_fsm_transition_to_state() within their
- * state handlers. Consecutive state transitions and self-state transitions are
- * also allowed:
- * @image html consecutive-state-transitions.png "FSM Consecutive State Transitions"
- * \n
- * @image html self-state-transition.png "FSM Self State Transition"
- * \n 
- * 
- * Consecutive state transitions are accomplished by calling @ref ecu_fsm_transition_to_state()
- * within a state's entry handler. Self-state transitions are accomplished by
- * passing your current state into @ref ecu_fsm_transition_to_state(). For example
- * if you are in State 1 then ecu_fsm_transition_to_state(&fsm, &state1) would cause
- * a self-transition. <b>IMPORTANT: Do not do a self-transition within your entry 
- * handler. You can see that this will cause an infinite transition loop.</b>
- * 
- * What makes this module useful is that it serves as a base class that
- * users inherit from to define their application-specific fsms. This is 
- * accomplished using C-style inheritance:
- * @code{.c}
- * struct user_fsm
- * {
- *     // Inherit base fsm class. MUST be first member.
- *     struct ecu_fsm fsm;
- * 
- *     // User fsm data
- *     bool state1_led; // true = on, false = off
- *     bool state2_led; // true = on, false = off
- * };
- * @endcode
- * \n 
- * 
- * Custom fsms are passed to this module via upcasting. Using the user_fsm
- * created in the previous code example:
- * @code{.c}
- * struct user_fsm me;
- * 
- * ecu_fsm_ctor((struct ecu_fsm *)&me, ...);
- * ecu_fsm_dispatch((struct ecu_fsm *)&me, ...);
- * @endcode
- * \n 
- * 
- * This exact same approach is used by the application to define custom 
- * events to dispatch. See @ref event.h. This same approach is also done
- * when passing state handlers to this module via casts to @ref ecu_fsm_state_handler,
- * @ref ecu_fsm_on_entry_handler, and @ref ecu_fsm_on_exit_handler. For example:
- * @code{.c}
- * // User defined state handlers. Notice function parameters are pointers
- * // to user-defined fsm and event structs. These types MUST inherit base
- * // fsm and event classes. Function parameters also MUST be pointers to
- * // these user-defined types so we can safely cast back and forth.
- * static enum ecu_fsm_status STATE_1(struct user_fsm *me, const struct user_event *event);
- * static enum ecu_fsm_status STATE_1_ON_ENTRY(struct user_fsm *me);
- * static void STATE_1_ON_EXIT(struct user_fsm *me);
- * 
- * // State 1. Shared across all user_fsm objects that are made.
- * static struct ecu_fsm_state state1;
- * 
- * // Upcast handlers.
- * ecu_fsm_state_ctor(&state1, 
- *                    (ecu_fsm_on_entry_handler)&STATE1_ON_ENTRY, 
- *                    (ecu_fsm_on_exit_handler)&STATE1_ON_EXIT,
- *                    (ecu_fsm_state_handler)&STATE_1));
- * @endcode
- * \n 
- * 
- * For completeness, a bare-bones pseudocode definition of fsm states is shown
- * below that uses the user_fsm struct defined earlier. This is a trivial example 
- * where State 1 to State 2 transitions occur when a button is pressed. 
- * state1_led is on (true) when fsm is in State 1, otherwise it is off (false). 
- * state2_led is on (true) when fsm is in State 2, otherwise it is off (false). 
- * For conciseness the base event class is used but this can be a user-defined 
- * event with more data:
- * @image html fsm-example.png "FSM Code Example (above)"
- * \n
- * 
- * @code{.c}
- * /------------------------------------------------------------/
- * /-------- User-defined State 1 function declarations --------/
- * /------------------------------------------------------------/
- * static enum ecu_fsm_status STATE_1(struct user_fsm *me, const struct ecu_event *event);
- * static enum ecu_fsm_status STATE_1_ON_ENTRY(struct user_fsm *me);
- * static void STATE_1_ON_EXIT(struct user_fsm *me);
- * 
- * // Can also construct state object at compile-time.
- * static const struct ecu_Fsm_state state1 = 
- * {
- *     .on_entry    = (ecu_fsm_on_entry_handler)&STATE_1_ON_ENTRY,
- *     .on_exit     = (ecu_fsm_on_exit_handler)&STATE_1_ON_EXIT,
- *     .handler     = (ecu_fsm_state_handler)&STATE_1
- * };
- * 
- * 
- * /------------------------------------------------------------/
- * /-------- User-defined State 2 function declarations --------/
- * /------------------------------------------------------------/
- * static enum ecu_fsm_status STATE_2(struct user_fsm *me, const struct ecu_event *event);
- * static enum ecu_fsm_status STATE_2_ON_ENTRY(struct user_fsm *me);
- * static void STATE_2_ON_EXIT(struct user_fsm *me);
- * 
- * // Can also construct state object at compile-time.
- * static const struct ecu_Fsm_state state2 = 
- * {
- *     .on_entry    = (ecu_fsm_on_entry_handler)&STATE_2_ON_ENTRY,
- *     .on_exit     = (ecu_fsm_on_exit_handler)&STATE_2_ON_EXIT,
- *     .handler     = (ecu_fsm_state_handler)&STATE_2
- * };
- * 
- * 
- * /------------------------------------------------------------/
- * /--------- User-defined State 1 function definitions --------/
- * /------------------------------------------------------------/
- * static enum ecu_fsm_status STATE_1(struct user_fsm *me, const struct ecu_event *event)
- * {
- *     enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
- *     
- *     switch (event->id)
- *     {
- *         case BUTTON_PRESSED_EVENT:
- *         {
- *             // Transition from State 1 to State 2 on button press.
- *             // IMPORTANT: Ensure 'status' variable is updated from this function call.
- *             status = ecu_fsm_transition_to_state((struct ecu_fsm *)me, &state2);
- *             break;
- *         }
- * 
- *         case SOME_OTHER_EVENT_ID:
- *         {
- *             // Process other events according to current state.
- *             process_event_state1();
- *             break;
- *         }
- * 
- *         default:
- *         {
- *             // You can ignore events if it is not relevant to current state.
- *             status = ECU_FSM_EVENT_IGNORED;
- *             break;
- *         }
- *     }
- *     
- *     // IMPORTANT: Always update and return this variable accordingly within all
- *     // your state handlers so ecu_fsm_dispatch() can properly update your fsm 
- *     // and handle state transitions.
- *     return status;
- * }
- * 
- * 
- * static enum ecu_fsm_status STATE_1_ON_ENTRY(struct user_fsm *me)
- * {
- *     // Turn State 1 LED on when state is entered. Return status to
- *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_transition_to_state()
- *     // within entry events as well for consecutive state transitions.
- *     me->state1_led = true;
- *     return ECU_FSM_EVENT_HANDLED;
- * }
- * 
- * 
- * static void STATE_1_ON_EXIT(struct user_fsm *me)
- * {
- *     me->state1_led = false;
- * }
- * 
- * 
- * /------------------------------------------------------------/
- * /--------- User-defined State 2 function definitions --------/
- * /------------------------------------------------------------/
- * static enum ecu_fsm_status STATE_2(struct user_fsm *me, const struct ecu_event *event)
- * {
- *     enum ecu_fsm_status status = ECU_FSM_EVENT_HANDLED;
- *     
- *     switch (event->id)
- *     {
- *         case BUTTON_PRESSED_EVENT:
- *         {
- *             // Transition from State 2 to State 1 on button press.
- *             // IMPORTANT: Ensure 'status' variable is updated from this function call.
- *             status = ecu_fsm_transition_to_state((struct ecu_fsm *)me, &state1);
- *             break;
- *         }
- * 
- *         case SOME_OTHER_EVENT_ID:
- *         {
- *             // Process other events according to current state.
- *             process_event_state2();
- *             break;
- *         }
- * 
- *         default:
- *         {
- *             // You can ignore events if it is not relevant to current state.
- *             status = ECU_FSM_EVENT_IGNORED;
- *             break;
- *         }
- *     }
- *     
- *     // IMPORTANT: Always update and return this variable accordingly within all
- *     // your state handlers so ecu_fsm_dispatch() can properly update your fsm 
- *     // and handle state transitions.
- *     return status;
- * }
- * 
- * 
- * static enum ecu_fsm_status STATE_2_ON_ENTRY(struct user_fsm *me)
- * {
- *     // Turn State 2 LED on when state is entered. Return status to
- *     // ecu_fsm_dispatch(). Note you can call ecu_fsm_transition_to_state()
- *     // within entry events as well for consecutive state transitions.
- *     me->state2_led = true;
- *     return ECU_FSM_EVENT_HANDLED;
- * }
- * 
- * 
- * static void STATE_2_ON_EXIT(struct user_fsm *me)
- * {
- *     me->state2_led = false;
- * }
- * @endcode
+ * @brief 
+ * @rst
+ * See :ref:`fsm.h section <fsm_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
- * @date 2024-04-14
- * @copyright Copyright (c) 2024
+ * @date 2024-03-14
+ * @copyright Copyright (c) 2025
  */
-
 
 #ifndef ECU_FSM_H_
 #define ECU_FSM_H_
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------- INCLUDES -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*------------------------- INCLUDES -------------------------*/
+/*------------------------------------------------------------*/
 
 /* STDLib. */
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-/* Base event class. */
-#include "ecu/event.h"
+/*------------------------------------------------------------*/
+/*---------------------- DEFINES AND MACROS ------------------*/
+/*------------------------------------------------------------*/
 
+/**
+ * @brief Verifies, at compile-time, that derived fsm
+ * correctly inherits @ref ecu_fsm base class. Returns
+ * true if correctly inherited. False otherwise.
+ * 
+ * @param base_ Name of @ref ecu_fsm <b>member</b> within 
+ * user's @p derived_ fsm type.
+ * @param derived_ Derived fsm type to check.
+ */
+#define ECU_FSM_IS_BASEOF(base_, derived_) \
+    ((bool)(offsetof(derived_, base_) == (size_t)0))
 
+/**
+ * @brief Upcasts derived fsm pointer into @ref ecu_fsm
+ * base class pointer. This macro encapsulates the cast
+ * and allows derived fsms to be passed into base class 
+ * functions defined in this module.
+ * 
+ * @param me_ Pointer to derived fsm. This must inherit
+ * @ref ecu_fsm base class and must be pointer to non-const.
+ */
+#define ECU_FSM_BASE_CAST(me_) \
+    ((struct ecu_fsm *)(me_))
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------- FSM STATE ----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/**
+ * @brief Helper macro supplied to @ref ECU_FSM_STATE_CTOR()
+ * if state's entry handler is unused.
+ */
+#define ECU_FSM_STATE_ENTRY_UNUSED \
+    ((void (*)(struct ecu_fsm *))0)
 
-/* Forward declaration for state function typedefs. */
+/**
+ * @brief Helper macro supplied to @ref ECU_FSM_STATE_CTOR()
+ * if state's exit handler is unused.
+ */
+#define ECU_FSM_STATE_EXIT_UNUSED \
+    ((void (*)(struct ecu_fsm *))0)
+
+/**
+ * @brief Creates a state at compile-time. Supplied state
+ * functions taking in a derived fsm pointer are upcasted
+ * to state functions taking in an @ref ecu_fsm base class
+ * pointer. The results of these casts are assigned to
+ * members of @ref ecu_fsm_state. This macro encapsulates
+ * all casts and member initializations of @ref ecu_fsm_state.
+ * Example usage:
+ * @code{.c}
+ * static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
+ *      &entry_handler, ECU_FSM_STATE_EXIT_UNUSED, &state_handler
+ * );
+ * @endcode
+ * 
+ * @param entry_ Optional function that executes when state is 
+ * first entered. Supply @ref ECU_FSM_STATE_ENTRY_UNUSED if unused.
+ * @param exit_ Optional function that executes when state exits.
+ * Supply @ref ECU_FSM_STATE_EXIT_UNUSED if unused.
+ * @param handler_ Mandatory function that processes events
+ * dispatched to this state.
+ */
+#define ECU_FSM_STATE_CTOR(entry_, exit_, handler_)                     \
+    {                                                                   \
+        .entry = (void (*)(struct ecu_fsm *))(entry_),                  \
+        .exit = (void (*)(struct ecu_fsm *))(exit_),                    \
+        .handler = (void (*)(struct ecu_fsm *, const void *))(handler_) \
+    }
+
+/*------------------------------------------------------------*/
+/*---------------------------- FSM ---------------------------*/
+/*------------------------------------------------------------*/
+
+/* Forward declaration for ecu_fsm_state. */
 struct ecu_fsm;
 
-
 /**
- * @brief User's @ref ecu_fsm_state.handler must return one of these
- * values. This allows @ref ecu_fsm_dispatch() to take proper state
- * transitions and verify fsm behavior.
- */
-enum ecu_fsm_status
-{
-    ECU_FSM_STATE_TRANSITION,  /**< Dispatched event caused a state transition. Never return directly. Only return via call to ecu_fsm_transition_to_state() */
-    ECU_FSM_EVENT_HANDLED,     /**< Dispatched event was handled by your fsm. Stay in current state. */
-    ECU_FSM_EVENT_IGNORED      /**< Dispatched event was ignored by your fsm. Event is not relevant for current state. Stay in current state. */
-};
-
-
-/**
- * @brief State entry handler in base-class form. This is a typedef 
- * to make it easier for the user to upcast from their handlers to 
- * ones used in this module. See @ref fsm.h for more details.
- */
-typedef enum ecu_fsm_status (*ecu_fsm_on_entry_handler)(struct ecu_fsm *me);
-
-
-/**
- * @brief State exit handler in base-class form. This is a typedef 
- * to make it easier for the user to upcast from their handlers to 
- * ones used in this module. See @ref fsm.h for more details.
- */
-typedef void (*ecu_fsm_on_exit_handler)(struct ecu_fsm *me);
-
-
-/**
- * @brief State handler in base-class form. This is a typedef 
- * to make it easier for the user to upcast from their handlers to 
- * ones used in this module. See @ref fsm.h for more details.
- */
-typedef enum ecu_fsm_status (*ecu_fsm_state_handler)(struct ecu_fsm *me, const struct ecu_event *event);
-
-
-/**
- * @brief Single state within fsm.
+ * @brief Single state in fsm, initialized via @ref ECU_FSM_STATE_CTOR().
+ * Pointers are const-qualified to only allow states to be
+ * created at compile-time.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
  */
 struct ecu_fsm_state
 {
-    /**
-     * @private 
-     * @brief PRIVATE. Optional handler that executes when state is 
-     * first entered.
-     */
-    ecu_fsm_on_entry_handler on_entry;
+    /* Normally, pointers are const-qualified to only allow states to
+    be created at compile-time. Const is stripped only for unit tests 
+    since test code framework requires state creation at run-time. */
+#ifdef ECU_UNIT_TEST
+    /// @brief Executes when state first entered. Optional.
+    void (*entry)(struct ecu_fsm *fsm);
+    
+    /// @brief Executes when state exits. Optional.
+    void (*exit)(struct ecu_fsm *fsm);
 
-    /**
-     * @private 
-     * @brief PRIVATE. Optional handler that executes when state is 
-     * exited.
-     */
-    ecu_fsm_on_exit_handler on_exit;
+    /// @brief Processes events dispatched to this state. Mandatory.
+    void (*handler)(struct ecu_fsm *fsm, const void *event);
+#else
+    /// @brief Executes when state first entered. Optional.
+    void (*const entry)(struct ecu_fsm *fsm);
+    
+    /// @brief Executes when state exits. Optional.
+    void (*const exit)(struct ecu_fsm *fsm);
 
-    /**
-     * @private 
-     * @brief PRIVATE. Handler that defines the state's behavior.
-     * This is mandatory.
-     */
-    ecu_fsm_state_handler handler;
+    /// @brief Processes events dispatched to this state. Mandatory.
+    void (*const handler)(struct ecu_fsm *fsm, const void *event);
+#endif
 };
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------- BASE FSM CLASS ------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-
 /**
- * @brief Base fsm class that users inherit from to define
- * their own fsms. See @ref fsm.h for more details.
+ * @brief Base fsm class.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
  */
 struct ecu_fsm
 {
-    /**
-     * @private 
-     * @brief PRIVATE. Current state the fsm is in.
-     */
+    /// @brief Current state the fsm is in.
     const struct ecu_fsm_state *state;
+
+    /// @brief Bitmap representing fsm's state transition context.
+    uint32_t transition;
 };
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------------- PUBLIC FUNCTIONS -----------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*-------------------- FSM MEMBER FUNCTIONS ------------------*/
+/*------------------------------------------------------------*/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @name Constructors
+ * @name Fsm Constructor
  */
 /**@{*/
 /**
  * @pre Memory already allocated for @p me.
- * @pre @p state_0 previously constructed via call to @ref ecu_fsm_state_ctor().
- * @brief FSM constructor.
+ * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
+ * @brief Fsm constructor.
  * 
- * @param me FSM to construct. This cannot be NULL.
- * @param state_0 Initial state to put fsm in. This cannot be NULL.
+ * @param me Fsm to construct.
+ * @param state Fsm's initial state. 
  */
-extern void ecu_fsm_ctor(struct ecu_fsm *me, 
-                         const struct ecu_fsm_state *state_0);
-
-
-/**
- * @pre Memory already allocated for @p me.
- * @brief State constructor.
- * 
- * @param me State to construct. This cannot be NULL.
- * @param on_entry_0 @ref ecu_fsm_state.on_entry. User-defined handler that executes 
- * when this state is first entered. Optional. Set to NULL if unused.
- * @param on_exit_0 @ref ecu_fsm_state.on_exit. User-defined handler that executes 
- * when this state is exited. Optional. Set to NULL if unused.
- * @param handler_0 @ref ecu_fsm_state.handler. User-defined handler that defines
- * this state's behavior. This is mandatory and cannot be NULL.
- */
-extern void ecu_fsm_state_ctor(struct ecu_fsm_state *me, 
-                               ecu_fsm_on_entry_handler on_entry_0,
-                               ecu_fsm_on_exit_handler on_exit_0,
-                               ecu_fsm_state_handler handler_0);
+extern void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state);
 /**@}*/
 
-
 /**
- * @name External Application Interaction with FSM
+ * @name Fsm Member Functions
  */
 /**@{*/
 /**
- * @pre @p me previously constructed via call to @ref ecu_fsm_ctor().
- * @brief Dispatch event to fsm. Handles state transitions signaled 
- * by @ref ecu_fsm_transition_to_state() calls by updating the fsm's state,
- * executing the proper exit handlers ( @ref ecu_fsm_state.on_exit ), 
- * and executing the proper entry handlers ( @ref ecu_fsm_state.on_entry ).
- * See @ref fsm.h for more details.
+ * @pre @p me constructed via @ref ecu_fsm_ctor().
+ * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
+ * @brief Should be called only once on startup. Runs the
+ * initial state's entry handler and manages all state
+ * transition logic if any state changes were siganlled via
+ * @ref ecu_fsm_change_state(). This function does nothing
+ * if the initial state's entry handler is unused.
  * 
- * @param me FSM to dispatch event to.
- * @param event User-defined event to dispatch. This cannot be NULL.
- * @ref ecu_event.id must be greater than or equal to @ref ECU_VALID_EVENT_ID_BEGIN.
+ * @warning This function must run to completion.
+ * 
+ * @param me Fsm to start. This should not be an already 
+ * running fsm.
  */
-extern void ecu_fsm_dispatch(struct ecu_fsm *me, 
-                             const struct ecu_event *event);
-/**@}*/
-
+extern void ecu_fsm_start(struct ecu_fsm *me);
 
 /**
- * @name Functions Called Only In Your State Handlers
+ * @pre @p me constructed via @ref ecu_fsm_ctor().
+ * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
+ * @brief Transitions fsm into a new state.
+ * 
+ * @warning This must only be called within @ref ecu_fsm_state.handler
+ * and @ref ecu_fsm_state.entry.
+ * 
+ * @param me Fsm to transition.
+ * @param state State to transition into. If fsm's current state == @p state
+ * then a self-transition will occur. I.e. @p state::exit then @p state::entry.
  */
-/**@{*/
+extern void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state *state);
+
 /**
- * @pre @p me previously constructed via call to @ref ecu_fsm_ctor().
- * @pre @p state previously constructed via call to @ref ecu_fsm_state_ctor().
- * @brief Transition fsm into a new state.
+ * @pre @p me constructed via @ref ecu_fsm_ctor().
+ * @brief Relays event to fsm where it is processed by
+ * the current state's handler function. Manages all
+ * state transition logic if any state changes were
+ * signalled via @ref ecu_fsm_change_state().
  * 
- * @warning Only call this function within your @ref ecu_fsm_state.handler 
- * and @ref ecu_fsm_state.on_entry handlers.
- * @warning Do NOT do a self-transition within your @ref ecu_fsm_state.on_entry
- * handler or else an infinite transition loop occurs. See @ref fsm.h.
- * @warning Ensure the return value of this function is returned by your
- * handlers so @ref ecu_fsm_dispatch() controls your fsm properly.
+ * @warning This function must run to completion.
  * 
- * @param me Change state of this fsm.
- * @param state New state to transition into.
- * 
- * @return PRIVATE. Used internally by @ref ecu_fsm_dispatch() to determine 
- * proper fsm state transitions and behavior.
+ * @param me Fsm to run.
+ * @param event Event to dispatch.
  */
-extern enum ecu_fsm_status ecu_fsm_transition_to_state(struct ecu_fsm *me, 
-                                                       const struct ecu_fsm_state *state);
+extern void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event);
 /**@}*/
 
 #ifdef __cplusplus

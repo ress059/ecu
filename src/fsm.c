@@ -1,107 +1,247 @@
 /**
  * @file
- * @brief See @ref fsm.h 
+ * @brief 
+ * @rst
+ * See :ref:`fsm.h section <fsm_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
- * @date 2024-04-14
- * @copyright Copyright (c) 2024
+ * @date 2024-03-13
+ * @copyright Copyright (c) 2025
  */
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------- INCLUDES -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*------------------------- INCLUDES -------------------------*/
+/*------------------------------------------------------------*/
 
 /* Translation unit. */
 #include "ecu/fsm.h"
 
-/* Runtime asserts. */
+/* Asserts and utilities. */
 #include "ecu/asserter.h"
+#include "ecu/utils.h"
 
-
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------- DEFINE FILE NAME FOR ASSERTER ----------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
+/*------------------------------------------------------------*/
 
 ECU_ASSERT_DEFINE_NAME("ecu/fsm.c")
 
+/*------------------------------------------------------------*/
+/*---------------------- FILE SCOPE TYPES --------------------*/
+/*------------------------------------------------------------*/
 
-
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------- PUBLIC FUNCTIONS -------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-
-void ecu_fsm_ctor(struct ecu_fsm *me, 
-                  const struct ecu_fsm_state *state_0)
+/**
+ * @brief Meaning of bits in @ref ecu_fsm.transition bitmap.
+ * A set bit means that type of state transition is active.
+ */
+enum transition_type
 {
-    ECU_RUNTIME_ASSERT( (me && state_0) );
-    ECU_RUNTIME_ASSERT( (state_0->handler) );
-    me->state = state_0;
+    FSM_SELF_TRANSITION,
+    FSM_STATE_TRANSITION,
+    /************************/
+    FSM_TRANSITION_TYPE_COUNT
+};
+
+/*------------------------------------------------------------*/
+/*------------------------ STATIC ASSERTS --------------------*/
+/*------------------------------------------------------------*/
+
+ECU_STATIC_ASSERT( ((size_t)FSM_TRANSITION_TYPE_COUNT <= (ECU_FIELD_SIZEOF(struct ecu_fsm, transition) * 8)),
+                    "transition bitmap in ecu_fsm is too small. Largest value of "
+                    "transition_type exceeds MSB of ecu_fsm transition bitmap." );
+
+/*------------------------------------------------------------*/
+/*---------------- STATIC FUNCTION DECLARATIONS --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Returns true if supplied state has a non-NULL 
+ * handler function. False otherwise.
+ */
+static bool state_is_valid(const struct ecu_fsm_state *state);
+
+/**
+ * @brief Returns true if no state transitions have
+ * been signalled. False otherwise.
+ */
+static bool no_transitions_active(const struct ecu_fsm *fsm);
+
+/**
+ * @brief Returns true if a specific state transition 
+ * type has been signalled. False otherwise.
+ *
+ * @param t State transition type to check.
+ */
+static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t);
+
+/**
+ * @brief Signals that a specific state transition type
+ * has been requested. 
+ * 
+ * @param t State transition type requested.
+ */
+static void set_transition(struct ecu_fsm *fsm, enum transition_type t);
+
+/**
+ * @brief Clears all @ref ecu_fsm transition bits.
+ */
+static void clear_all_transitions(struct ecu_fsm *fsm);
+
+/*------------------------------------------------------------*/
+/*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
+/*------------------------------------------------------------*/
+
+static bool state_is_valid(const struct ecu_fsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (state) );
+    return (state->handler);
 }
 
-
-void ecu_fsm_state_ctor(struct ecu_fsm_state *me, 
-                        ecu_fsm_on_entry_handler on_entry_0,
-                        ecu_fsm_on_exit_handler on_exit_0,
-                        ecu_fsm_state_handler handler_0)
+static bool no_transitions_active(const struct ecu_fsm *fsm)
 {
-    ECU_RUNTIME_ASSERT( (me && handler_0) );
-    me->on_entry    = on_entry_0;   /* Optional so do not NULL assert. */
-    me->on_exit     = on_exit_0;    /* Optional so do not NULL assert. */
-    me->handler     = handler_0;    /* Mandatory. */
+    ECU_RUNTIME_ASSERT( (fsm) );
+    return (fsm->transition == 0);
 }
 
-
-void ecu_fsm_dispatch(struct ecu_fsm *me, 
-                      const struct ecu_event *event)
+static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t)
 {
-    enum ecu_fsm_status status = ECU_FSM_EVENT_IGNORED;
-    const struct ecu_fsm_state *prev_state = (const struct ecu_fsm_state *)0;
+    ECU_RUNTIME_ASSERT( (fsm) );
+    ECU_RUNTIME_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    return (fsm->transition & (1U << t));
+}
 
-    ECU_RUNTIME_ASSERT( (me && event) );
-    ECU_RUNTIME_ASSERT( ((me->state) && (event->id >= ECU_VALID_EVENT_ID_BEGIN)) );
-    ECU_RUNTIME_ASSERT( (me->state->handler) );
+static void set_transition(struct ecu_fsm *fsm, enum transition_type t)
+{
+    ECU_RUNTIME_ASSERT( (fsm) );
+    ECU_RUNTIME_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    fsm->transition |= (1U << t);
+}
 
-    /* Dispatch event to state. */
-    prev_state = me->state;
-    status = (*me->state->handler)(me, event);
+static void clear_all_transitions(struct ecu_fsm *fsm)
+{
+    ECU_RUNTIME_ASSERT( (fsm) );
+    fsm->transition = 0;
+}
 
-    /* Handle State Transitions. */
-    while (status == ECU_FSM_STATE_TRANSITION)
+/*------------------------------------------------------------*/
+/*-------------------- FSM MEMBER FUNCTIONS ------------------*/
+/*------------------------------------------------------------*/
+
+void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state)
+{
+    ECU_RUNTIME_ASSERT( (me && state) );
+    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
+    me->state = state;
+    clear_all_transitions(me);
+}
+
+void ecu_fsm_start(struct ecu_fsm *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
+    ECU_RUNTIME_ASSERT( (me->state) );
+    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
+    const struct ecu_fsm_state *prev_state = me->state;
+
+    /* Run entry handler of current state if one was supplied.
+    State transitions are handled by running exit handler of previous state
+    and entry handler of current state. Reject user from state transitions
+    in exit handler as that makes no sense - we are already exiting the State.
+    Reject user from self-transitions in entry handler. Pointless and causes
+    infinite loop. */
+    if (me->state->entry)
     {
-        /* State can only be changed when user signals a transition so only assert here. */
-        ECU_RUNTIME_ASSERT( (me->state) );
-        ECU_RUNTIME_ASSERT( (me->state->handler) );
+        (*me->state->entry)(me);
+        ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
 
-        /* Exit old state. */
-        if (prev_state->on_exit)
+        while (transition_is_active(me, FSM_STATE_TRANSITION))
         {
-            (*prev_state->on_exit)(me);
-        }
+            clear_all_transitions(me);
 
-        /* Enter new state. */
-        prev_state = me->state;
-        if (me->state->on_entry)
-        {
-            status = (*me->state->on_entry)(me);
+            if (prev_state->exit)
+            {
+                (*prev_state->exit)(me);
+                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+            }
 
-            /* Reject user from self-transitioning into current state 
-            within entry handler. Pointless and causes infinite loop. */
-            ECU_RUNTIME_ASSERT( ((status != ECU_FSM_STATE_TRANSITION) || \
-                                 (prev_state != me->state)) );
+            prev_state = me->state;
+            if (me->state->entry)
+            {
+                (*me->state->entry)(me);
+                ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+            }
         }
     }
 }
 
-
-enum ecu_fsm_status ecu_fsm_transition_to_state(struct ecu_fsm *me, 
-                                                const struct ecu_fsm_state *state)
+void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state *state)
 {
     ECU_RUNTIME_ASSERT( (me && state) );
-    ECU_RUNTIME_ASSERT( (state->handler) );
-    me->state = state;
-    return ECU_FSM_STATE_TRANSITION;
+    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* Cannot call ecu_fsm_change_state() multiple times in a row. Only one transition per dispatch. */
+    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
+
+    if (me->state == state)
+    {
+        set_transition(me, FSM_SELF_TRANSITION);
+    }
+    else
+    {
+        set_transition(me, FSM_STATE_TRANSITION);
+        me->state = state;
+    }
+}
+
+void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event)
+{
+    ECU_RUNTIME_ASSERT( (me && event) );
+    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
+    ECU_RUNTIME_ASSERT( (me->state) );
+    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
+    const struct ecu_fsm_state *prev_state = me->state;
+
+    /* Relay event to state. Save previous state in case of transition.
+    State transitions are handled by running exit handler of previous state
+    and entry handler of current state. Reject user from state transitions
+    in exit handler as that makes no sense - we are already exiting the State.
+    Reject user from self-transitions in entry handler. Pointless and causes
+    infinite loop. */
+    (*me->state->handler)(me, event);
+
+    if (transition_is_active(me, FSM_SELF_TRANSITION))
+    {
+        clear_all_transitions(me);
+
+        if (prev_state->exit)
+        {
+            (*prev_state->exit)(me);
+            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+        }
+
+        prev_state = me->state;
+        if (me->state->entry)
+        {
+            (*me->state->entry)(me);
+            ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+        }
+    }
+
+    while (transition_is_active(me, FSM_STATE_TRANSITION))
+    {
+        clear_all_transitions(me);
+
+        if (prev_state->exit)
+        {
+            (*prev_state->exit)(me);
+            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+        }
+
+        prev_state = me->state;
+        if (me->state->entry)
+        {
+            (*me->state->entry)(me);
+            ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+        }
+    }
 }
