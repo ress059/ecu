@@ -155,7 +155,8 @@ static void restore_terminal(void)
 
 static bool timer_expired(struct ecu_timer *timer, void *obj)
 {
-    ECU_RUNTIME_ASSERT( (timer && obj) );
+    (void)timer;
+    ECU_RUNTIME_ASSERT( (obj) );
     ecu_object_id id = *((ecu_object_id *)obj);
 
     switch (id)
