@@ -31,9 +31,11 @@ to view in-depth documentation and APIs for each library module.
     attributes.h <attributes_h/index>
     dlist.h <dlist_h/index>
     event.h <event_h/index>
+    fsm.h <fsm_h/index>
     endian.h <endian_h/index>
     object_id.h <object_id_h/index>
     timer.h <timer_h/index>
+    utils.h <utils_h/index>
 
 .. toctree::
     :maxdepth: 1

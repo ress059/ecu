@@ -4,50 +4,15 @@ Completed.
 3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
-6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
+6. fsm.h/.c. DONE.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
 9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
+11. utils.h. DONE.
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
-
-
-## FSM
-1. Make helper macro that allows users to static assert that ecu_fsm is
-the first member of their fsm.
-2. **Test calling ecu_fsm_dispatch() within an fsm state handler**.
-
-1. Should entry and exit handlers both take in an event? Reasoning is in
-case fsm should be updated with any event data on entry/exit.
-I.e. 
-```C
-// Should I do this instead?
-entry_handler(struct ecu_fsm* const struct ecu_event*);
-exit_handler(struct ecu_fsm* const struct ecu_event*);
-
-// current.
-exit_handler(struct ecu_fsm*);
-exit_handler(struct ecu_fsm*);
-```
-
-2. Should ecu_event passed into fsm be non-const? Think const is fine for now?
-I.e.
-```C
-// Should I do this instead?
-ecu_fsm_dispatch(struct ecu_fsm *, struct ecu_event *);
-
-// current.
-ecu_fsm_dispatch(struct ecu_fsm *, const struct ecu_event *);
-```
-
-3. Create compile-time state constructors for fsm. Obviously won't be backwards compatible
-if any parameters have to change but that is the same case for run-time functions. I.e.
-```C
-#define ECU_FSM_STATE_CTOR_COMPILETIME(state, entry_handler, exit_handler, state_handler) ....
-```
-
 
 ## DList
 1. In ECU_DNODE_GET_ENTRY() macro call, getting warning about how cast from char*
@@ -63,9 +28,6 @@ so this only applies to GCC. I.e.
 ```
 
 2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
-
-# Timer
-1. When timer and FSM done, use it in main.c build test to verify linkage.
 
 
 ## Tree
