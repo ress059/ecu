@@ -74,9 +74,9 @@
  * all casts and member initializations of @ref ecu_fsm_state.
  * Example usage:
  * @code{.c}
- * static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(&entry_handler,
- *                                                               ECU_FSM_STATE_EXIT_UNUSED,
- *                                                               &state_handler);
+ * static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
+ *      &entry_handler, ECU_FSM_STATE_EXIT_UNUSED, &state_handler
+ * );
  * @endcode
  * 
  * @param entry_ Optional function that executes when state is 

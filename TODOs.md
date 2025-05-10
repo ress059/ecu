@@ -4,23 +4,15 @@ Completed.
 3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
-6. fsm.h/.c. TODO. Refactor, new tests, clang-format, documentation.
+6. fsm.h/.c. DONE.
 7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
 8. object_id.h/.c. DONE.
 9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
-11. utils.h. TODO Documentation.
+11. utils.h. DONE.
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
-
-## FSM
-0. Lint.
-1. Sphinx documentation.
-2. Update Sphinx documentation - states can now only be created at compile-time since function pointers are const.
-
-## Utils
-1. Added utils.h. Have to document in sphinx.
 
 ## DList
 1. In ECU_DNODE_GET_ENTRY() macro call, getting warning about how cast from char*
