@@ -47,13 +47,20 @@ static void (*current_handler)(const char *file, int line) = &assert_fail;
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
+static void assert_expected(const char *file, int line)
+{
+    (void)file;
+    (void)line;
+    mock().actualCall("expected_assertion");
+    throw AssertException();
+}
+
 static void assert_ok(const char *file, int line)
 {
     (void)file;
     (void)line;
     throw AssertException();
 }
-
 
 static void assert_fail(const char *file, int line)
 {
@@ -91,13 +98,17 @@ void stubs::set_assert_handler(AssertResponse response)
     }
 }
 
-
 void stubs::set_assert_handler(void (*handler)(const char *file, int line))
 {
     assert(handler);
     current_handler = handler;
 }
 
+void stubs::EXPECT_ASSERTION()
+{
+    current_handler = &assert_expected;
+    mock().expectOneCall("expected_assertion");
+}
 
 void ecu_assert_handler(const char *file, int line)
 {

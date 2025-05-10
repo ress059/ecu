@@ -28,86 +28,58 @@
 ECU_ASSERT_DEFINE_NAME("ecu/timer.c")
 
 /*------------------------------------------------------------*/
-/*---------------------- FILE SCOPE TYPES --------------------*/
-/*------------------------------------------------------------*/
-
-/**
- * @brief Timestamp and list information used to sort ordered list.
- */
-struct tlist_info
-{
-    ecu_timer_tick_t current_ticks;
-    ecu_timer_tick_t overflow_mask;
-};
-
-/*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
 /*------------------------------------------------------------*/
 
 /**
- * @brief Returns true if timer type, period, and callback are
- * set.
- *
- * @param timer Timer to check.
+ * @brief Returns true if @p node should be inserted before
+ * @p position. Otherwise returns false. This insertion
+ * condition ensures all timer linked lists in @ref ecu_tlist
+ * are ordered by the value of @ref ecu_timer.expiration.
+ * 
+ * @param node Node that is being inserted.
+ * @param position List position to check against.
+ * @param obj Unused.
  */
-static bool timer_is_set(const struct ecu_timer *timer);
+static bool insert_here(const struct ecu_dnode *node,
+                        const struct ecu_dnode *position,
+                        void *obj);
 
 /**
- * @brief Returns true if timer list has been constructed via
- * @ref ecu_tlist_ctor(). False otherwise.
- *
- * @param list List to check.
+ * @brief Helper function that calls timer's callback. Handles
+ * timer rearming logic based on type (one-shot, periodic, etc)
+ * and what the user does in their callback.
+ * 
+ * @param t Timer to expire.
+ * @param tlist "Engine" the expired timer was apart of. Required
+ * for rearming logic.
  */
-static bool tlist_is_constructed(const struct ecu_tlist *list);
-
-/**
- * @brief Helper function that returns the raw number of clock ticks
- * from the user's hardware timer by calling @ref ecu_tlist.api.get_tick_count().
- * This returned value cannot exceed the maximum resolution of the
- * user's timer. This condition is asserted, which is why this operation
- * is offloaded to this function.
- *
- * @param list Hardware timer to check.
- */
-static ecu_timer_tick_t get_ticks(struct ecu_tlist *list);
-
-/**
- * @brief Returns true if @p node should be inserted before @p position
- * node in @ref ecu_tlist. False otherwise. @ref ecu_tlist is
- * an ordered list. It is ordered by time remaining until expiration.
- * For example if the current list is [1, 3, 20] where these values
- * are ticks until timeout and a timer of period 4 is being added,
- * the new list becomes [1, 3, 4, 20].
- *
- * @param node Timer being added.
- * @param position Current node position in @ref ecu_tlist.
- * @param obj Timestamp and list info (@ref tlist_info) required
- * to calculate ticks until timeout.
- */
-static bool tlist_insert_condition(const struct ecu_dnode *node,
-                                   const struct ecu_dnode *position,
-                                   void *obj);
+static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
 
 /*------------------------------------------------------------*/
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
-ECU_STATIC_ASSERT( (((ecu_timer_tick_t)(-1)) > ((ecu_timer_tick_t)0)), 
-                    "ecu_timer_tick_t must be an unsigned type so tick wraparound can be handled." );
+/* Produce compilation error if ecu_tick_t is a signed type. */
+ECU_STATIC_ASSERT( (((ecu_tick_t)-1) > ((ecu_tick_t)0)), "ecu_tick_t must be an unsigned type." );
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
-static bool timer_is_set(const struct ecu_timer *timer)
+static bool insert_here(const struct ecu_dnode *node,
+                        const struct ecu_dnode *position,
+                        void *obj)
 {
+    (void)obj;
     bool status = false;
-    ECU_RUNTIME_ASSERT( (timer) );
+    ECU_RUNTIME_ASSERT( (node && position) );
+    
+    const struct ecu_timer *me = ECU_DNODE_GET_CONST_ENTRY(node, struct ecu_timer, dnode);
+    const struct ecu_timer *tposition = ECU_DNODE_GET_CONST_ENTRY(position, struct ecu_timer, dnode);
 
-    /* A period if 0 is technically valid. */
-    if (timer->type >= 0 &&
-        timer->type < ECU_TIMER_TYPES_COUNT &&
-        timer->callback)
+    /* Use <= instead of < so ordered insertion ends ASAP. No functional difference between the two. */
+    if (me->expiration <= tposition->expiration)
     {
         status = true;
     }
@@ -115,74 +87,42 @@ static bool timer_is_set(const struct ecu_timer *timer)
     return status;
 }
 
-static bool tlist_is_constructed(const struct ecu_tlist *list)
+static void expire_timer(struct ecu_timer *timer, struct ecu_tlist *tlist)
 {
-    bool status = false;
-    ECU_RUNTIME_ASSERT( (list) );
+    ECU_RUNTIME_ASSERT( (timer && tlist) );
+    ECU_RUNTIME_ASSERT( (timer->callback) );
 
-    if (ecu_dnode_in_list(&list->dlist.head) &&
-        list->api.resolution >= 0 &&
-        list->api.resolution < ECU_TIMER_RESOLUTIONS_COUNT &&
-        list->api.get_tick_count)
+    if (timer->type == ECU_TIMER_TYPE_ONE_SHOT)
     {
-        status = true;
+        /* Disarming here BEFORE callback allows one-shot timer to be rearmed in user callback. Do 
+        NOT disarm periodic timers so we can check if user disarmed periodic timer in their callback. */
+        ecu_timer_disarm(timer);
     }
 
-    return status;
-}
-
-static ecu_timer_tick_t get_ticks(struct ecu_tlist *list)
-{
-    ecu_timer_tick_t current_ticks = 0;
-    ECU_RUNTIME_ASSERT( (list) );
-    ECU_RUNTIME_ASSERT( (tlist_is_constructed(list)) );
-
-    /* Get current tick count. It should not be possible for returned
-    value to be greater than the maximum resolution of the timer. */
-    current_ticks = (*list->api.get_tick_count)(list->api.obj);
-    ECU_RUNTIME_ASSERT( (current_ticks <= list->overflow_mask) );
-    return current_ticks;
-}
-
-static bool tlist_insert_condition(const struct ecu_dnode *node,
-                                   const struct ecu_dnode *position,
-                                   void *obj)
-{
-    bool status = false;
-    ecu_timer_tick_t remaining_ticks = 0;
-    ECU_RUNTIME_ASSERT( (node && position && obj) );
-
-    const struct ecu_timer *timer_to_add = ECU_DNODE_GET_CONST_ENTRY(node, struct ecu_timer, dnode);
-    const struct ecu_timer *tlist_element = ECU_DNODE_GET_CONST_ENTRY(position, struct ecu_timer, dnode);
-    struct tlist_info *info = (struct tlist_info *)obj;
-
-    /* Unsigned overflow automatically handles wraparound.
-    ANDing with overflow_mask sets 0xFF overflowed bytes that
-    are greater than the timer's resolution back to 0.
-
-    Example: sizeof(ecu_tick_type_t) == sizeof(uint32_t),
-    hardware timer = ECU_TIMER_RESOLUTION_8BIT,
-    current_ticks = 1, starting_ticks = 255.
-
-    overflow_mask = 0x000000FF
-    elapsed_ticks = (current_ticks - starting_ticks) & overflow_mask
-    elapsed_ticks = (1 - 255) & 0x000000FF
-    elapsed_ticks = 0xFFFFFF02 & 0x000000FF = 2 */
-    ecu_timer_tick_t elapsed_ticks = (info->current_ticks - tlist_element->starting_ticks) & info->overflow_mask;
-
-    /* Edge case is elapsed_ticks >= tlist_element->period. Means
-    tlist_element timer already expired so obviously return false. */
-    if (elapsed_ticks < tlist_element->period)
+    if ((*timer->callback)(timer, timer->obj)) /* Execute callback. */
     {
-        remaining_ticks = tlist_element->period - elapsed_ticks;
-
-        if (timer_to_add->period <= remaining_ticks)
+        /* Callback successful. Only rearm if timer is periodic and user did NOT disarm it in their callback. */
+        if (timer->type == ECU_TIMER_TYPE_PERIODIC && 
+            ecu_timer_is_active(timer))
         {
-            status = true;
+            ecu_tlist_timer_rearm(tlist, timer);
         }
     }
+    else
+    {
+        /* Callback failed. Retry callback by always expiring the timer on the next service. */
+        ecu_timer_disarm(timer);
+        timer->expiration = 0;
 
-    return status;
+        if (tlist->overflowed)
+        {
+            ecu_dlist_push_front(&tlist->wraparounds, &timer->dnode);
+        }
+        else
+        {
+            ecu_dlist_push_front(&tlist->timers, &timer->dnode);
+        }
+    }
 }
 
 /*------------------------------------------------------------*/
@@ -190,27 +130,25 @@ static bool tlist_insert_condition(const struct ecu_dnode *node,
 /*------------------------------------------------------------*/
 
 void ecu_timer_ctor(struct ecu_timer *me,
-                    ecu_timer_tick_t period,
-                    enum ecu_timer_type type,
-                    bool (*callback)(void *obj),
+                    bool (*callback)(struct ecu_timer *me, void *obj),
                     void *obj)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
-    ECU_RUNTIME_ASSERT( (callback) );
+    ECU_RUNTIME_ASSERT( (me && callback) );
 
-    ecu_dnode_ctor(&me->dnode, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    me->period = period;
-    me->type = type;
+    me->expiration = 0;
+    me->period = 0;
+    me->type = ECU_TIMER_TYPES_COUNT;
     me->callback = callback;
     me->obj = obj;
+    ecu_dnode_ctor(&me->dnode, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 }
 
 void ecu_timer_set(struct ecu_timer *me,
-                   ecu_timer_tick_t period,
+                   ecu_tick_t period,
                    enum ecu_timer_type type)
 {
     ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (period > 0) );
     ECU_RUNTIME_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
 
     ecu_timer_disarm(me);
@@ -230,150 +168,144 @@ bool ecu_timer_is_active(const struct ecu_timer *me)
     return ecu_dnode_in_list(&me->dnode);
 }
 
-#pragma message("TODO: Want a timer reset capability without coupling it to tlist. \
-    Reset = stop timer but do not restart its timer. When its readded it counts down \
-    from its old saved value.")
-
 /*------------------------------------------------------------*/
 /*-------------------- TLIST MEMBER FUNCTIONS ----------------*/
 /*------------------------------------------------------------*/
 
-void ecu_tlist_ctor(struct ecu_tlist *me,
-                    enum ecu_timer_resolution resolution,
-                    ecu_timer_tick_t (*get_tick_count)(void *obj),
-                    void *obj)
+void ecu_tlist_ctor(struct ecu_tlist *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (resolution >= 0 && resolution < ECU_TIMER_RESOLUTIONS_COUNT) );
-    ECU_RUNTIME_ASSERT( (get_tick_count) );
 
-    ecu_dlist_ctor(&me->dlist);
-
-    switch (resolution)
-    {
-        case ECU_TIMER_RESOLUTION_8BIT:
-        {
-            me->overflow_mask = UINT8_MAX;
-            break;
-        }
-
-        case ECU_TIMER_RESOLUTION_16BIT:
-        {
-            /* ecu_timer_tick_t is currently size_t which is never less than
-            sizeof(uint16_t). However this condition is still asserted for
-            future compatibility in case the type of ecu_timer_tick_t changes. */
-            ECU_RUNTIME_ASSERT( (sizeof(ecu_timer_tick_t) >= sizeof(uint16_t)) );
-            me->overflow_mask = UINT16_MAX;
-            break;
-        }
-
-        case ECU_TIMER_RESOLUTION_32BIT:
-        {
-            ECU_RUNTIME_ASSERT( (sizeof(ecu_timer_tick_t) >= sizeof(uint32_t)) );
-            me->overflow_mask = UINT32_MAX;
-            break;
-        }
-
-        case ECU_TIMER_RESOLUTION_64BIT:
-        {
-            ECU_RUNTIME_ASSERT( (sizeof(ecu_timer_tick_t) >= sizeof(uint64_t)) );
-            me->overflow_mask = UINT64_MAX;
-            break;
-        }
-
-        default:
-        {
-            ECU_RUNTIME_ASSERT( (false) );
-            break;
-        }
-    }
-
-    me->api.resolution = resolution;
-    me->api.get_tick_count = get_tick_count;
-    me->api.obj = obj;
+    me->current = 0;
+    me->overflowed = false;
+    ecu_dlist_ctor(&me->timers);
+    ecu_dlist_ctor(&me->wraparounds);
 }
 
-void ecu_tlist_timer_arm(struct ecu_tlist *me, struct ecu_timer *timer)
+void ecu_tlist_timer_arm(struct ecu_tlist *me, 
+                         struct ecu_timer *timer, 
+                         ecu_tick_t period, 
+                         enum ecu_timer_type type)
 {
-    struct tlist_info info;
     ECU_RUNTIME_ASSERT( (me && timer) );
-    ECU_RUNTIME_ASSERT( (tlist_is_constructed(me)) );
-    ECU_RUNTIME_ASSERT( (timer_is_set(timer)) );
+    ECU_RUNTIME_ASSERT( (timer->callback) );
 
-    ecu_timer_disarm(timer); /* If user's timer was previously running it is rearmed. */
-    timer->starting_ticks = get_ticks(me);
-    info.current_ticks = timer->starting_ticks;
-    info.overflow_mask = me->overflow_mask;
+    ecu_timer_set(timer, period, type);
+    timer->expiration = me->current + period; /* Unsigned overflow OK since we store absolute ticks. */
 
-    /* Ordered list insertion. Ordered by time remaining until expiration. O(n). */
-    ecu_dlist_insert_before(&me->dlist, &timer->dnode, &tlist_insert_condition, (void *)&info);
+    if ((timer->expiration < me->current) || (me->overflowed))
+    {
+        /* Timer expires after me->current wraparound. Or this timer is being rearmed
+        in the middle of an ecu_tlist_service() call (in user's callback), where the 
+        me->current counter has already wrapped around. */
+        ecu_dlist_insert_before(&me->wraparounds, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
+    }
+    else
+    {
+        ecu_dlist_insert_before(&me->timers, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
+    }
 }
 
-void ecu_tlist_service(struct ecu_tlist *me)
+void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (tlist_is_constructed(me)) );
-    static const bool CALLBACK_SUCCESSFUL = true;
-    struct ecu_dlist_iterator iterator;
-    ecu_timer_tick_t current_ticks = 0;
-    ecu_timer_tick_t elapsed_ticks = 0;
-    ecu_timer_tick_t prev_period = 0;
-    ecu_timer_tick_t prev_starting_ticks = 0;
+    ECU_RUNTIME_ASSERT( (me && timer) );
+    ECU_RUNTIME_ASSERT( (timer->period > 0) );
+    ECU_RUNTIME_ASSERT( (timer->type >= 0 && timer->type < ECU_TIMER_TYPES_COUNT) );
+    ECU_RUNTIME_ASSERT( (timer->callback) );
 
-    if (!ecu_dlist_is_empty(&me->dlist))
+    ecu_timer_disarm(timer);
+    timer->expiration = me->current + timer->period; /* Unsigned overflow OK since we store absolute ticks. */
+
+    if ((timer->expiration < me->current) || (me->overflowed))
     {
-        current_ticks = get_ticks(me);
+        /* Timer expires after me->current wraparound. Or this timer is being rearmed
+        in the middle of an ecu_tlist_service() call (in user's callback), where the 
+        me->current counter has already wrapped around. */
+        ecu_dlist_insert_before(&me->wraparounds, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
+    }
+    else
+    {
+        ecu_dlist_insert_before(&me->timers, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
+    }
+}
 
-        ECU_DLIST_FOR_EACH(node, &iterator, &me->dlist)
+void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
+{
+    ecu_tick_t prev = 0;
+    struct ecu_dlist_iterator iterator;
+    struct ecu_timer *t = (struct ecu_timer *)0;
+    struct ecu_dnode *tstart = (struct ecu_dnode *)0;
+    ECU_RUNTIME_ASSERT( (me) );
+
+    /* Always update timestamp even if lists empty since time is measured in absolute ticks. */
+    prev = me->current;
+    me->current += elapsed;
+
+    if (!ecu_dlist_empty(&me->timers) || !ecu_dlist_empty(&me->wraparounds))
+    {
+        if (me->current < prev)
         {
-            /* Unsigned overflow automatically handles wraparound. ANDing with overflow_mask
-            sets 0xFF overflowed bytes that are greater than the timer's resolution back to 0.
-
-            Example: sizeof(ecu_tick_type_t) == sizeof(uint32_t),
-            hardware timer = ECU_TIMER_RESOLUTION_8BIT,
-            current_ticks = 1, starting_ticks = 255.
-
-            overflow_mask = 0x000000FF
-            elapsed_ticks = (current_ticks - starting_ticks) & overflow_mask
-            elapsed_ticks = (1 - 255) & 0x000000FF
-            elapsed_ticks = 0xFFFFFF02 & 0x000000FF = 2 */
-            struct ecu_timer *t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
-            prev_period = t->period;                 /* Save to re-expire timer in case callback returns false. */
-            prev_starting_ticks = t->starting_ticks; /* Save to re-expire timer in case callback returns false. */
-            elapsed_ticks = (current_ticks - t->starting_ticks) & me->overflow_mask;
-
-            if (elapsed_ticks >= t->period)
+            /* Edge case that only runs when me->current tick counter has wrapped around.
+            All timers in me->timers list will have expired if counter overflows. Expire
+            all timers in this list. All timers that are rearmed during this operation 
+            (will primarily happen in user callback) are inserted into the me->wraparounds 
+            list. Once complete, the me->timers list should be empty. me->timers and 
+            me->wraparounds are swapped to "reset" the engine. Finally, any timers that were 
+            previously added to the me->wraparounds list before this service have to be 
+            checked for expiration. */
+            me->overflowed = true; /* Timers rearmed are always added to me->wraparounds. */
+            tstart = ecu_dlist_front(&me->wraparounds);
+            
+            ECU_DLIST_FOR_EACH(node, &iterator, &me->timers)
             {
-                /* Timer expired. */
+                /* Everything in me->timers list has expired if me->current counter overflowed. */
+                t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
                 ECU_RUNTIME_ASSERT( (t->callback) );
-                ecu_timer_disarm(t); /* Disarm here to allow one-shot timer to be readded in user callback. */
+                expire_timer(t, me);
+            }
 
-                if ((*t->callback)(t->obj) == CALLBACK_SUCCESSFUL)
+            /* Reset the "engine". */
+            ECU_RUNTIME_ASSERT( (ecu_dlist_empty(&me->timers)) ); /* All timers rearmed during this operation should be in me->wraparounds list. */
+            ecu_dlist_swap(&me->timers, &me->wraparounds);
+            me->overflowed = false; /* Done. Timer rearm logic follows normal conditions. */
+
+            if (tstart) /* Any more timers to check? */
+            {
+                /* Check if any timers previously in the me->wraparounds list before this service have 
+                expired. List is ordered so function can exit as soon as a non-expired timer is reached. */
+                ECU_DLIST_AT_FOR_EACH(node, &iterator, &me->timers, tstart)
                 {
-                    if (t->type == ECU_TIMER_PERIODIC)
+                    t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
+
+                    if (me->current >= t->expiration)
                     {
-                        ecu_timer_disarm(t); /* Disarm here in case user armed periodic timer in their callback for some reason. */
-                        ecu_tlist_timer_arm(me, t);
+                        ECU_RUNTIME_ASSERT( (t->callback) );
+                        expire_timer(t, me);
                     }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            /* This branch runs most of the time. Timeout any expired timers. List is ordered
+            so function can exit as soon as a non-expired timer is reached. */
+            ECU_DLIST_FOR_EACH(node, &iterator, &me->timers)
+            {
+                t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
+
+                if (me->current >= t->expiration)
+                {
+                    ECU_RUNTIME_ASSERT( (t->callback) );
+                    expire_timer(t, me);
                 }
                 else
                 {
-                    /* User callback failed so we need to reattempt it on next service by re-expiring
-                    the timer. Add timer to front since it has already expired, and will expire on next
-                    service. Ensure timer's period and starting ticks are their original values in case
-                    user set them in their callback for some reason. This guarantees the timer will
-                    re-expire on the next service. */
-                    ecu_timer_disarm(t); /* Disarm in case user armed timer in their callback for some reason. */
-                    t->period = prev_period;
-                    t->starting_ticks = prev_starting_ticks;
-                    ecu_dlist_push_front(&me->dlist, &t->dnode);
+                    break;
                 }
-            }
-            else
-            {
-                /* This list is ordered by time remaining until expiration. If timer we are checking
-                has not timed out, then break since the remaining ones will also not be timed out. */
-                break;
             }
         }
     }

@@ -5,44 +5,44 @@
  * swap bytes regardless of whatever computer this runs on.
  * Test Summary: 
  * 
- * ECU_CPU_TO_LE16_COMPILETIME(), ECU_CPU_TO_LE32_COMPILETIME(),
- * ECU_CPU_TO_LE64_COMPILETIME(), ECU_SWAP16_COMPILETIME(),
- * ECU_SWAP32_COMPILETIME(), ECU_SWAP64_COMPILETIME()
+ * @ref ECU_CPU_TO_LE16_COMPILETIME(), @ref ECU_CPU_TO_LE32_COMPILETIME(),
+ * @ref ECU_CPU_TO_LE64_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
+ * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
  *      - TEST(CPUToLittleEndian, CompileTime)
  * 
- * ECU_CPU_TO_LE16_RUNTIME(), ECU_CPU_TO_LE32_RUNTIME(),
- * ECU_CPU_TO_LE64_RUNTIME(), ecu_swap16_runtime(),
- * ecu_swap32_runtime(), ecu_swap64_runtime()
+ * @ref ECU_CPU_TO_LE16_RUNTIME(), @ref ECU_CPU_TO_LE32_RUNTIME(),
+ * @ref ECU_CPU_TO_LE64_RUNTIME(), @ref ecu_swap16_runtime(),
+ * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
  *      - TEST(CPUToLittleEndian, RunTime)
  * 
- * ECU_CPU_TO_BE16_COMPILETIME(), ECU_CPU_TO_BE32_COMPILETIME(),
- * ECU_CPU_TO_BE64_COMPILETIME(), ECU_SWAP16_COMPILETIME(),
- * ECU_SWAP32_COMPILETIME(), ECU_SWAP64_COMPILETIME()
+ * @ref ECU_CPU_TO_BE16_COMPILETIME(), @ref ECU_CPU_TO_BE32_COMPILETIME(),
+ * @ref ECU_CPU_TO_BE64_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
+ * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
  *      - TEST(CPUToBigEndian, CompileTime)
  * 
- * ECU_CPU_TO_BE16_RUNTIME(), ECU_CPU_TO_BE32_RUNTIME(),
- * ECU_CPU_TO_BE64_RUNTIME(), ecu_swap16_runtime(),
- * ecu_swap32_runtime(), ecu_swap64_runtime()
+ * @ref ECU_CPU_TO_BE16_RUNTIME(), @ref ECU_CPU_TO_BE32_RUNTIME(),
+ * @ref ECU_CPU_TO_BE64_RUNTIME(), @ref ecu_swap16_runtime(),
+ * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
  *      - TEST(CPUToBigEndian, RunTime)
  * 
- * ECU_LE16_TO_CPU_COMPILETIME(), ECU_LE32_TO_CPU_COMPILETIME(),
- * ECU_LE64_TO_CPU_COMPILETIME(), ECU_SWAP16_COMPILETIME(),
- * ECU_SWAP32_COMPILETIME(), ECU_SWAP64_COMPILETIME()
+ * @ref ECU_LE16_TO_CPU_COMPILETIME(), @ref ECU_LE32_TO_CPU_COMPILETIME(),
+ * @ref ECU_LE64_TO_CPU_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
+ * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
  *      - TEST(LittleEndianToCPU, CompileTime)
  * 
- * ECU_LE16_TO_CPU_RUNTIME(), ECU_LE32_TO_CPU_RUNTIME(),
- * ECU_LE64_TO_CPU_RUNTIME(), ecu_swap16_runtime(),
- * ecu_swap32_runtime(), ecu_swap64_runtime()
+ * @ref ECU_LE16_TO_CPU_RUNTIME(), @ref ECU_LE32_TO_CPU_RUNTIME(),
+ * @ref ECU_LE64_TO_CPU_RUNTIME(), @ref ecu_swap16_runtime(),
+ * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
  *      - TEST(LittleEndianToCPU, RunTime)
  * 
- * ECU_BE16_TO_CPU_COMPILETIME(), ECU_BE32_TO_CPU_COMPILETIME(),
- * ECU_BE64_TO_CPU_COMPILETIME(), ECU_SWAP16_COMPILETIME(),
- * ECU_SWAP32_COMPILETIME(), ECU_SWAP64_COMPILETIME()
+ * @ref ECU_BE16_TO_CPU_COMPILETIME(), @ref ECU_BE32_TO_CPU_COMPILETIME(),
+ * @ref ECU_BE64_TO_CPU_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
+ * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
  *      - TEST(BigEndianToCPU, CompileTime)
  * 
- * ECU_BE16_TO_CPU_RUNTIME(), ECU_BE32_TO_CPU_RUNTIME(),
- * ECU_BE64_TO_CPU_RUNTIME(), ecu_swap16_runtime(),
- * ecu_swap32_runtime(), ecu_swap64_runtime()
+ * @ref ECU_BE16_TO_CPU_RUNTIME(), @ref ECU_BE32_TO_CPU_RUNTIME(),
+ * @ref ECU_BE64_TO_CPU_RUNTIME(), @ref ecu_swap16_runtime(),
+ * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
  *      - TEST(BigEndianToCPU, RunTime)
  * 
  * @author Ian Ress

@@ -1,3 +1,5 @@
 doc/doxygen/html/
 doc/build/
 bin/
+**/*.dtmp
+doxygen_warning_log.txt

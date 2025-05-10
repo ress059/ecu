@@ -88,7 +88,7 @@ class AssertException
  * an @ref AssertException is thrown so control jumps back to the unit test
  * if an assert fires.
  */
-extern void set_assert_handler(AssertResponse response);
+void set_assert_handler(AssertResponse response);
 
 /**
  * @brief Set a custom handler to execute if an assert fires.
@@ -96,7 +96,14 @@ extern void set_assert_handler(AssertResponse response);
  * @param handler At a minimum this handler should throw an @ref AssertResponse
  * exception so control can jump back to the unit test.
  */
-extern void set_assert_handler(void (*handler)(const char *file, int line));
+void set_assert_handler(void (*handler)(const char *file, int line));
+
+/**
+ * @brief Helper that can be called when it is expected that an assert
+ * should fire in the unit test. This should be called when setting up
+ * the test.
+ */
+void EXPECT_ASSERTION();
 
 } /* namespace stubs */
 

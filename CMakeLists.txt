@@ -106,6 +106,11 @@ target_link_libraries(ecu
 #---------------------- INTERNAL TESTS ----------------------#
 #------------------------------------------------------------#
 if(${ECU_ENABLE_UNIT_TESTING})
+    target_compile_definitions(ecu
+        PUBLIC 
+            ECU_UNIT_TEST 
+    )
+
     # CTest and enable_testing has to be in the root CMakeLists.txt. 
     # Tests will not be discovered if this is in tests/CMakeLists.txt....
     include(CTest)
