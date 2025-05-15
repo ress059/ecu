@@ -2,7 +2,32 @@
  * @file
  * @brief Unit tests for public API functions in @ref hsm.h. 
  * Test Summary:
- * !!!! TODO!!
+ * 
+ * @ref ecu_hsm_ctor(), @ref ecu_hsm_start(), @ref ecu_hsm_change_state()
+ *      - TEST(Hsm, StartStateIsTop)
+ *      - TEST(Hsm, StartStateIsLeaf)
+ *      - TEST(Hsm, StartTransitionOnEntry)
+ * 
+ * @ref ecu_hsm_ctor(), @ref ecu_hsm_change_state(), @ref ecu_hsm_dispatch()
+ *      - TEST(Hsm, DispatchSelfTransition)
+ *      - TEST(Hsm, DispatchInnerTransitionHighToLow)
+ *      - TEST(Hsm, DispatchInnerTransitionLowToHigh)
+ *      - TEST(Hsm, DispatchInnerTransitionSameLevel)
+ *      - TEST(Hsm, DispatchIntraTransitionHighToLow)
+ *      - TEST(Hsm, DispatchIntraTransitionLowToHigh)
+ *      - TEST(Hsm, DispatchIntraTransitionSameLevel)
+ *      - TEST(Hsm, DispatchTransitionToParent)
+ *      - TEST(Hsm, DispatchTransitionToGrandParent)
+ *      - TEST(Hsm, DispatchTransitionToTop)
+ *      - TEST(Hsm, DispatchParentHandlers)
+ *      - TEST(Hsm, DispatchParentHandlerInnerTransition)
+ *      - TEST(Hsm, DispatchParentHandlerIntraTransition)
+ *      - TEST(Hsm, DispatchParentHandlerTransitionToTop)
+ *      - TEST(Hsm, DispatchParentHandlerTransitionToSelf)
+ *      - TEST(Hsm, DispatchParentHandlerTransitionToCurrentState)
+ *      - TEST(Hsm, DispatchAllParentHandlersFalse)
+ *      - TEST(Hsm, DispatchTransitionOnEntry)
+ *      - TEST(Hsm, DispatchTransitionOnExit)
  * 
  * @author Ian Ress
  * @version 0.1
