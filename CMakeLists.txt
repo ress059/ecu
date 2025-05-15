@@ -86,11 +86,11 @@ if(${ECU_DISABLE_RUNTIME_ASSERTS})
             ECU_DISABLE_RUNTIME_ASSERTS 
     )
 
-    # Some functions will now be unused because they are called within 
-    # assert macros. Use -Wno-unused-function to suppress these warnings.
+    # Some functions and parameters will now be unused because they are 
+    # only called within assert macros. Suppress these warnings.
     target_compile_options(ecu_warning_flags
         INTERFACE
-            $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function>
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function -Wno-unused-parameter>
     )
 endif()
 
