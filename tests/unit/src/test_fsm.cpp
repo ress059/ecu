@@ -3,7 +3,7 @@
  * @brief Unit tests for public API functions in @ref fsm.h. 
  * Test Summary:
  * 
- * @ref ecu_fsm_start(), @ref ecu_fsm_change_state()
+ * @ref ecu_fsm_ctor(), @ref ecu_fsm_start(), @ref ecu_fsm_change_state()
  *      - TEST(Fsm, StartNoTransition)
  *      - TEST(Fsm, StartSingleStateTransition)
  *      - TEST(Fsm, StartConsecutiveStateTransitions)
@@ -12,7 +12,7 @@
  *      - TEST(Fsm, StartSelfTransitionOnFirstEntry)
  *      - TEST(Fsm, StartSelfTransitionOnSecondEntry)
  * 
- * @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
+ * @ref ecu_fsm_ctor(), @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
  *      - TEST(Fsm, DispatchSelfTransition)
  *      - TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
  *      - TEST(Fsm, DispatchSingleStateTransition)
