@@ -125,11 +125,11 @@ extern "C" {
  * derived event, user must explicitly upcast to an @ref ecu_event
  * base class. Do not use @ref ECU_EVENT_BASE_CAST() since the macro
  * const casts.
- * @param id_0 User-defined event ID. This must be greater than or
+ * @param id User-defined event ID. This must be greater than or
  * equal to @ref ECU_VALID_EVENT_ID_BEGIN.
  */
 extern void ecu_event_ctor(struct ecu_event *me,
-                           ecu_event_id id_0);
+                           ecu_event_id id);
 
 #ifdef __cplusplus
 }

@@ -5,7 +5,7 @@ Completed.
 4. endian.h. DONE.
 5. event.h/.c DONE. TODO May delete this.
 6. fsm.h/.c. DONE.
-7. hsm.h/.c. TODO. Implmentation, tests, clang-format, documentation.
+7. hsm.h/.c. DONE.
 8. object_id.h/.c. DONE.
 9. timer.h/.c. DONE.
 10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.

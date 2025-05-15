@@ -71,10 +71,10 @@ enum state_id
 /* Forward declaration required for handler function definitions. */
 struct test_fsm;
 
-struct base_handler
+struct fsm_base_handler
 {
     virtual const SimpleString& name() const = 0;
-    virtual ~base_handler() = default;
+    virtual ~fsm_base_handler() = default;
 
     /**
      * @brief Must be ran in state handler function under test.
@@ -110,10 +110,10 @@ struct base_handler
     state_id m_to{NUMBER_OF_STATE_IDS};
 
 protected:
-    base_handler() = default;
+    fsm_base_handler() = default;
 };
 
-struct test_entry : public base_handler
+struct fsm_state_entry : public fsm_base_handler
 {
     const SimpleString& name() const override
     {
@@ -137,7 +137,7 @@ struct test_entry : public base_handler
     static void run(ecu_fsm *fsm);
 };
 
-struct test_exit : public base_handler
+struct fsm_state_exit : public fsm_base_handler
 {
     const SimpleString& name() const override
     {
@@ -161,7 +161,7 @@ struct test_exit : public base_handler
     static void run(ecu_fsm *fsm);
 };
 
-struct test_handler : public base_handler
+struct fsm_state_handler : public fsm_base_handler
 {
     const SimpleString& name() const override
     {
@@ -186,7 +186,7 @@ struct test_handler : public base_handler
     static void run(ecu_fsm *fsm, const void *event);
 };
 
-struct test_state : public ecu_fsm_state
+struct fsm_state : public ecu_fsm_state
 {
     using entry_t = void (*)(ecu_fsm *);
     using exit_t = void (*)(ecu_fsm *);
@@ -199,9 +199,9 @@ struct test_state : public ecu_fsm_state
         handler = (void (*)(ecu_fsm *, const void *))handler_func;
     }
 
-    test_entry m_entry;
-    test_exit m_exit;
-    test_handler m_handler;
+    fsm_state_entry m_entry;
+    fsm_state_exit m_exit;
+    fsm_state_handler m_handler;
 };
 
 struct test_fsm : public ecu_fsm, public Utest
@@ -219,7 +219,7 @@ struct test_fsm : public ecu_fsm, public Utest
     /**
      * @brief Returns state object from supplied ID.
      */
-    const test_state& state(state_id id)
+    const fsm_state& state(state_id id)
     {
         return states.at(id);
     }
@@ -227,7 +227,7 @@ struct test_fsm : public ecu_fsm, public Utest
     /**
      * @brief Returns entry object from supplied ID.
      */
-    test_entry& entry(state_id id)
+    fsm_state_entry& entry(state_id id)
     {
         return states.at(id).m_entry;
     }
@@ -235,7 +235,7 @@ struct test_fsm : public ecu_fsm, public Utest
     /**
      * @brief Returns exit object from supplied ID.
      */
-    test_exit& exit(state_id id)
+    fsm_state_exit& exit(state_id id)
     {
         return states.at(id).m_exit;
     }
@@ -243,7 +243,7 @@ struct test_fsm : public ecu_fsm, public Utest
     /**
      * @brief Returns handler object from supplied ID.
      */
-    test_handler& handler(state_id id)
+    fsm_state_handler& handler(state_id id)
     {
         return states.at(id).m_handler;
     }
@@ -254,15 +254,15 @@ struct test_fsm : public ecu_fsm, public Utest
      * @param obj Entry, exit, or handler object stored in
      * this fsm.
      */
-    state_id id(base_handler& obj) const
+    state_id id(fsm_base_handler& obj) const
     {
         state_id id = NUMBER_OF_STATE_IDS;
 
         for (std::size_t i = 0; i < (std::size_t)NUMBER_OF_STATE_IDS; i++)
         {
-            const base_handler *entry = &states.at(i).m_entry;
-            const base_handler *exit = &states.at(i).m_exit;
-            const base_handler *handler = &states.at(i).m_handler;
+            const fsm_base_handler *entry = &states.at(i).m_entry;
+            const fsm_base_handler *exit = &states.at(i).m_exit;
+            const fsm_base_handler *handler = &states.at(i).m_handler;
 
             if (entry == &obj || exit == &obj || handler == &obj)
             {
@@ -299,8 +299,8 @@ struct test_fsm : public ecu_fsm, public Utest
      * Syntax: EXPECT_STATE_PATH(handler(S0), exit(S0), entry(S1), ...)
      */
     template<typename... Handlers>
-    requires (std::is_base_of_v<base_handler, Handlers> && ...)
-    void EXPECT_STATE_PATH(base_handler& h0, Handlers&... hn)
+    requires (std::is_base_of_v<fsm_base_handler, Handlers> && ...)
+    void EXPECT_STATE_PATH(fsm_base_handler& h0, Handlers&... hn)
     {
         mock().expectOneCall(h0.name())
               .withParameter("state", id(h0));
@@ -312,39 +312,39 @@ struct test_fsm : public ecu_fsm, public Utest
         }
     }
 
-    /* Instantiates templated functions test_entry::run, test_exit::run, and test_handler::run for all state IDs. */
+    /* Instantiates templated functions fsm_state_entry::run, fsm_state_exit::run, and fsm_state_handler::run for all state IDs. */
     template<std::size_t... I>
     static constexpr auto create_entry_functions(std::index_sequence<I...>)
     {
-        return std::array<test_state::entry_t, sizeof...(I)>{&test_entry::run<static_cast<state_id>(I)>...};
+        return std::array<fsm_state::entry_t, sizeof...(I)>{&fsm_state_entry::run<static_cast<state_id>(I)>...};
     }
 
     template<std::size_t... I>
     static constexpr auto create_exit_functions(std::index_sequence<I...>)
     {
-        return std::array<test_state::exit_t, sizeof...(I)>{&test_exit::run<static_cast<state_id>(I)>...};
+        return std::array<fsm_state::exit_t, sizeof...(I)>{&fsm_state_exit::run<static_cast<state_id>(I)>...};
     }
 
     template<std::size_t... I>
     static constexpr auto create_handler_functions(std::index_sequence<I...>)
     {
-        return std::array<test_state::handler_t, sizeof...(I)>{&test_handler::run<static_cast<state_id>(I)>...};
+        return std::array<fsm_state::handler_t, sizeof...(I)>{&fsm_state_handler::run<static_cast<state_id>(I)>...};
     }
 
-    static const std::array<test_state::entry_t, NUMBER_OF_STATE_IDS> entry_functions;
-    static const std::array<test_state::exit_t, NUMBER_OF_STATE_IDS> exit_functions;
-    static const std::array<test_state::handler_t, NUMBER_OF_STATE_IDS> handler_functions;
+    static const std::array<fsm_state::entry_t, NUMBER_OF_STATE_IDS> entry_functions;
+    static const std::array<fsm_state::exit_t, NUMBER_OF_STATE_IDS> exit_functions;
+    static const std::array<fsm_state::handler_t, NUMBER_OF_STATE_IDS> handler_functions;
     static constexpr int DUMMY_EVENT{0};
-    std::array<test_state, NUMBER_OF_STATE_IDS> states;
+    std::array<fsm_state, NUMBER_OF_STATE_IDS> states;
 };
 
 /* Class variables defined here so the templates are fully instantiated.... */
-const std::array<test_state::entry_t, NUMBER_OF_STATE_IDS> test_fsm::entry_functions = test_fsm::create_entry_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
-const std::array<test_state::exit_t, NUMBER_OF_STATE_IDS> test_fsm::exit_functions = test_fsm::create_exit_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
-const std::array<test_state::handler_t, NUMBER_OF_STATE_IDS> test_fsm::handler_functions = test_fsm::create_handler_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+const std::array<fsm_state::entry_t, NUMBER_OF_STATE_IDS> test_fsm::entry_functions = test_fsm::create_entry_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+const std::array<fsm_state::exit_t, NUMBER_OF_STATE_IDS> test_fsm::exit_functions = test_fsm::create_exit_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
+const std::array<fsm_state::handler_t, NUMBER_OF_STATE_IDS> test_fsm::handler_functions = test_fsm::create_handler_functions(std::make_index_sequence<NUMBER_OF_STATE_IDS>{});
 
 /* Functions defined here since they require test_fsm's full definition to be visible... */
-void base_handler::process_state_change(test_fsm *me)
+void fsm_base_handler::process_state_change(test_fsm *me)
 {
     assert( (me) );
 
@@ -355,7 +355,7 @@ void base_handler::process_state_change(test_fsm *me)
 }
 
 template<state_id ID>
-void test_entry::run(ecu_fsm *fsm)
+void fsm_state_entry::run(ecu_fsm *fsm)
 {
     /* dynamic_cast cannot be performed because test_fsm
     inherits ecu_fsm which is a non-polymorphic C struct. */
@@ -370,7 +370,7 @@ void test_entry::run(ecu_fsm *fsm)
 }
 
 template<state_id ID>
-void test_exit::run(ecu_fsm *fsm)
+void fsm_state_exit::run(ecu_fsm *fsm)
 {
     /* dynamic_cast cannot be performed because test_fsm
     inherits ecu_fsm which is a non-polymorphic C struct. */
@@ -385,7 +385,7 @@ void test_exit::run(ecu_fsm *fsm)
 }
 
 template<state_id ID>
-void test_handler::run(ecu_fsm *fsm, const void *event)
+void fsm_state_handler::run(ecu_fsm *fsm, const void *event)
 {
     /* dynamic_cast cannot be performed because test_fsm
     inherits ecu_fsm which is a non-polymorphic C struct. */

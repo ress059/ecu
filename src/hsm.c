@@ -1,6 +1,9 @@
 /**
  * @file
- * @brief todo
+ * @brief
+ * @rst
+ * See :ref:`hsm.h section <hsm_h>` in Sphinx documentation.
+ * @endrst
  *
  * @author Ian Ress
  * @version 0.1
@@ -46,13 +49,14 @@ enum transition_type
 
 /**
  * @brief Returns true if supplied hsm has a valid state 
- * and height. False otherwise.
+ * and top state. False otherwise.
  */
 static bool hsm_is_valid(const struct ecu_hsm *hsm);
 
 /**
  * @brief Returns true if supplied state has a valid handler 
- * function and parent. False otherwise.
+ * function and parent. False otherwise. Normal states and
+ * the top state can be supplied.
  */
 static bool state_is_valid(const struct ecu_hsm_state *state);
 
@@ -60,7 +64,13 @@ static bool state_is_valid(const struct ecu_hsm_state *state);
  * @brief Returns true if any state transitions are active.
  * False otherwise.
  */
-static bool transitions_active(const struct ecu_hsm *hsm);
+static bool any_transitions_active(const struct ecu_hsm *hsm);
+
+/**
+ * @brief Returns true if no state transitions are active.
+ * False otherwise.
+ */
+static bool no_transitions_active(const struct ecu_hsm *hsm);
 
 /**
  * @brief Returns true if a specific state transition 
@@ -85,73 +95,49 @@ static void clear_all_transitions(struct ecu_hsm *hsm);
 
 /**
  * @brief Returns true if @p parent is a parent, grandparent,
- * great-grandparent, etc of @p state. False otherwise.
+ * great-grandparent, etc of @p state. False otherwise. If
+ * @p parent == @p state, then @p state is returned.
  * 
+ * @param hsm HSM tree that contains @p parent and @p state.
  * @param parent Parent to check.
  * @param state State to check.
- * @param max_height Fail-safe to prevent infinite loop. Starting 
- * at @p state, the state hierarchy is traversed up until the top 
- * state or @p parent is reached. An assert fires if the number of 
- * traversals exceeds this amount.
  */
-static bool is_parent_of(const struct ecu_hsm_state *parent,
-                         const struct ecu_hsm_state *state,
-                         uint8_t max_height);
+static bool is_parent_of(const struct ecu_hsm *hsm,
+                         const struct ecu_hsm_state *parent,
+                         const struct ecu_hsm_state *state);
 
 /**
- * @brief Returns parent of supplied state and asserts it's valid.
+ * @brief Returns parent of supplied state.
  * 
  * @param state Get parent of this state.
  */
 static const struct ecu_hsm_state *get_parent(const struct ecu_hsm_state *state);
 
 /**
- * @brief Returns child of supplied state and asserts it's valid.
+ * @brief Returns child of supplied state.
  * 
- * @param state Get child of this state.
+ * @param hsm HSM tree that contains @p leaf and @p state.
  * @param leaf Required since only parent points used in state 
  * tree. This leaf is traversed up until current->parent == state.
  * Therefore @p leaf and @p state must be related and not equal.
- * @param max_height Fail-safe to prevent infinite loop. Starting 
- * at @p leaf, the state hierarchy is traversed up until 
- * current->parent == @p state. At that point, the child has been
- * reached. An assert fires if the number of traversals exceeds 
- * this amount.
+ * @param state Get child of this state.
  */
-static const struct ecu_hsm_state *get_child(const struct ecu_hsm_state *state,
+static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
                                              const struct ecu_hsm_state *leaf,
-                                             uint8_t max_height);
-
-/**
- * @brief Gets top state and asserts it's valid.
- * 
- * @param state Starting at this state, the state hierarchy is
- * traversed up until the top state is reached.
- * @param max_height Fail-safe to prevent infinite loop. Starting 
- * at @p state, the state hierarchy is traversed up until the top 
- * state is reached. An assert fires if the number of traversals 
- * exceeds this amount.
- */
-static const struct ecu_hsm_state *get_top(const struct ecu_hsm_state *state,
-                                           uint8_t max_height);
+                                             const struct ecu_hsm_state *state);
 
 /**
  * @brief Gets the least common ancestor between the two
  * supplied states. NULL is returned if the two states are 
  * not in the same tree.
  * 
+ * @param hsm HSM tree to check.
  * @param s1 First state to check.
  * @param s2 Second state to check.
- * @param max_height Fail-safe to prevent infinite loop. LCA
- * algorithm traverses up the state hierarchy until the top 
- * state is reached. An assert fires if the number of traversals 
- * exceeds this amount.
  */
-static const struct ecu_hsm_state *get_lca(const struct ecu_hsm_state *s1, 
-                                           const struct ecu_hsm_state *s2, 
-                                           uint8_t max_height);
-#warning "TODO: Decided on following: \
-    Level starts at 0. Dont have to assert max_height > 0."
+static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
+                                           const struct ecu_hsm_state *s1, 
+                                           const struct ecu_hsm_state *s2);
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
@@ -162,7 +148,9 @@ static bool hsm_is_valid(const struct ecu_hsm *hsm)
     bool status = false;
     ECU_RUNTIME_ASSERT( (hsm) );
 
-    if (state_is_valid(hsm->state) && hsm->height > 0)
+    if (state_is_valid(hsm->state) && 
+        state_is_valid(hsm->top) &&
+        hsm->top->parent == ECU_HSM_STATE_NO_PARENT)
     {
         status = true;
     }
@@ -183,10 +171,16 @@ static bool state_is_valid(const struct ecu_hsm_state *state)
     return status;
 }
 
-static bool transitions_active(const struct ecu_hsm *hsm)
+static bool any_transitions_active(const struct ecu_hsm *hsm)
 {
     ECU_RUNTIME_ASSERT( (hsm) );
     return (hsm->transition);
+}
+
+static bool no_transitions_active(const struct ecu_hsm *hsm)
+{
+    ECU_RUNTIME_ASSERT( (hsm) );
+    return (hsm->transition == 0U);
 }
 
 static bool transition_is_active(const struct ecu_hsm *hsm, enum transition_type t)
@@ -209,18 +203,18 @@ static void clear_all_transitions(struct ecu_hsm *hsm)
     hsm->transition = 0;
 }
 
-static bool is_parent_of(const struct ecu_hsm_state *parent,
-                         const struct ecu_hsm_state *state,
-                         uint8_t max_height)
+static bool is_parent_of(const struct ecu_hsm *hsm,
+                         const struct ecu_hsm_state *parent,
+                         const struct ecu_hsm_state *state)
 {
     bool status = false;
     uint8_t height = 0;
-    ECU_RUNTIME_ASSERT( (parent && state) );
+    ECU_RUNTIME_ASSERT( (hsm && parent && state) );
 
     /* Notice how this also handles case where parent == state. */
     for (const struct ecu_hsm_state *s = state; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
     {
-        ECU_RUNTIME_ASSERT( (height < max_height) );
+        ECU_RUNTIME_ASSERT( (height <= hsm->height) );
         height++;
 
         if (s == parent)
@@ -236,68 +230,47 @@ static bool is_parent_of(const struct ecu_hsm_state *parent,
 static const struct ecu_hsm_state *get_parent(const struct ecu_hsm_state *state)
 {
     ECU_RUNTIME_ASSERT( (state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state->parent)) );
     return (state->parent);
 }
 
-static const struct ecu_hsm_state *get_child(const struct ecu_hsm_state *state,
+static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
                                              const struct ecu_hsm_state *leaf,
-                                             uint8_t max_height)
+                                             const struct ecu_hsm_state *state)
 {
     const struct ecu_hsm_state *s = (const struct ecu_hsm_state *)0;
-    ECU_RUNTIME_ASSERT( (state && leaf) );
+    ECU_RUNTIME_ASSERT( (hsm && state && leaf) );
     ECU_RUNTIME_ASSERT( (state != leaf) );
-    ECU_RUNTIME_ASSERT( (is_parent_of(state, leaf, max_height)) );
+    ECU_RUNTIME_ASSERT( (is_parent_of(hsm, state, leaf)) );
 
     for (s = leaf; s->parent != state; s = s->parent)
     {
         /* Purposefully empty. */
     }
 
-    ECU_RUNTIME_ASSERT( (state_is_valid(s)) );
     return s;
 }
 
-static const struct ecu_hsm_state *get_top(const struct ecu_hsm_state *state,
-                                           uint8_t max_height)
-{
-    uint8_t height = 0;
-    const struct ecu_hsm_state *s = (const struct ecu_hsm_state *)0;
-    ECU_RUNTIME_ASSERT( (state) );
-
-    for (s = state; s->parent != ECU_HSM_STATE_NO_PARENT; s = s->parent)
-    {
-        ECU_RUNTIME_ASSERT( (height < max_height) );
-        height++;
-    }
-
-    ECU_RUNTIME_ASSERT( (state_is_valid(s)) );
-    return s;
-}
-
-static const struct ecu_hsm_state *get_lca(const struct ecu_hsm_state *s1, 
-                                           const struct ecu_hsm_state *s2, 
-                                           uint8_t max_height)
+static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
+                                           const struct ecu_hsm_state *s1, 
+                                           const struct ecu_hsm_state *s2)
 {
     uint8_t height = 0;
     const struct ecu_hsm_state *lca = (const struct ecu_hsm_state *)0;
-    ECU_RUNTIME_ASSERT( (s1 && s2) );
+    ECU_RUNTIME_ASSERT( (hsm && s1 && s2) );
 
     /* Notice how this also handles the case of s1 == s2. */
     for (const struct ecu_hsm_state *s = s1; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
     {
-        ECU_RUNTIME_ASSERT( (height < max_height) );
+        ECU_RUNTIME_ASSERT( (height <= hsm->height) );
         height++;
 
-        if (s == s2 || is_parent_of(s, s2, max_height))
+        if (s == s2 || is_parent_of(hsm, s, s2))
         {
             lca = s;
             break;
         }
     }
 
-    ECU_RUNTIME_ASSERT( (state_is_valid(lca)) );
     return lca;
 }
 
@@ -307,24 +280,25 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm_state *s1,
 
 void ecu_hsm_ctor(struct ecu_hsm *me, 
                   const struct ecu_hsm_state *state,
+                  const struct ecu_hsm_state *top,
                   uint8_t height)
 {
-    ECU_RUNTIME_ASSERT( (me && state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
-    ECU_RUNTIME_ASSERT( (height > 0) ); // use fsm if you are using a flat state machine..
+    ECU_RUNTIME_ASSERT( (me && state && top) );
+    ECU_RUNTIME_ASSERT( (state_is_valid(state) && state_is_valid(top)) );
+    ECU_RUNTIME_ASSERT( (top->parent == ECU_HSM_STATE_NO_PARENT) );
 
     me->state = state;
+    me->top = top;
     me->height = height;
     clear_all_transitions(me);
 }
 
-// run entry handlers from top to state.
 void ecu_hsm_start(struct ecu_hsm *me)
 {
     const struct ecu_hsm_state *trace = (const struct ecu_hsm_state *)0;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
-    trace = get_top(me->state, me->height);
+    trace = me->top;
 
     /* Run entry handlers from top to current state. Entry handler of current state not ran. */
     while (trace != me->state)
@@ -335,7 +309,8 @@ void ecu_hsm_start(struct ecu_hsm *me)
             ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
         }
 
-        trace = get_child(trace, me->state, me->height);
+        trace = get_child(me, me->state, trace);
+        ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
     }
 
     /* Run entry handler of current state. */
@@ -368,25 +343,25 @@ void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state *state)
 void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
 {
     ECU_RUNTIME_ASSERT( (me && event) );
-    /* Only initial state asserted. Remaining state changes have to be done 
-    with ecu_hsm_change_state(), which asserts the new state is valid. */
     ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
-    ECU_RUNTIME_ASSERT( (!transitions_active(me)) );
+    ECU_RUNTIME_ASSERT( (!any_transitions_active(me)) );
 
     const struct ecu_hsm_state *lca = me->state;
+    const struct ecu_hsm_state *start = me->state;
     const struct ecu_hsm_state *trace = me->state;
-    uint8_t traversals = 0;
+    uint8_t height = 0;
     bool handled = false;
 
     /* Dispatch event to current state. */
     handled = (*me->state->handler)(me, event);
 
-    while (!transitions_active(me) && !handled)
+    while (!any_transitions_active(me) && !handled)
     {
         /* Dispatch event to parents until it is handled or a state transition occurred. */
-        ECU_RUNTIME_ASSERT( (traversals < me->height) );
-        traversals++;
+        ECU_RUNTIME_ASSERT( (height < me->height) ); /* Not a typo. Should be < instead of <=. */
+        height++;
         trace = get_parent(trace);
+        ECU_RUNTIME_ASSERT( (state_is_valid(trace)) ); /* Also rejects get_parent(top) being called. */
         handled = (*trace->handler)(me, event);
     }
 
@@ -407,11 +382,12 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
             ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
         }
     }
-    else if (transitions_active(me)) /* Any other state transition type active? */
+    else if (any_transitions_active(me)) /* Any other state transition type active? */
     {
         /* Run exit up until LCA. Run entry from LCA to current state. Exit and entry of LCA not ran. */
         clear_all_transitions(me);
-        lca = get_lca(trace, me->state, me->height); /* Asserts number of traversals does not exceed me->height. */
+        trace = start;
+        lca = get_lca(me, start, me->state);
         ECU_RUNTIME_ASSERT( (lca) ); /* User cannot transition to state not in HSM hierarchy. */
 
         /* Run exit handlers from starting state up until LCA. LCA exit not ran. */
@@ -424,25 +400,20 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
             }
 
             trace = get_parent(trace);
+            ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
         }
 
-        /* Run entry handlers starting from LCA to current state. Entry handlers of LCA and current state not ran. */
+        /* Run entry handlers starting from LCA to current state. Entry handlers of LCA not ran. */
         while (trace != me->state)
         {
-            trace = get_child(trace, me->state, me->height);
+            trace = get_child(me, me->state, trace);
+            ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
 
             if (trace->entry)
             {
                 (*trace->entry)(me);
                 ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
             }
-        }
-
-        /* Run entry handler of current state. */
-        if (me->state->entry)
-        {
-            (*me->state->entry)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
         }
     }
 }

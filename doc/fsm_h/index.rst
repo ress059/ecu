@@ -14,7 +14,7 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Event-driven finite state machine (FSM) framework that applications inherit from to 
+Event-driven **finite state machine (FSM)** framework that applications inherit from to 
 create their own state machines. The complexity of running the FSM and handling state
 transitions are fully encapsulated within this API.
 
@@ -1044,7 +1044,7 @@ macro are fully explained in the :ref:`State Representation Section <fsm_state_r
 
 ecu_fsm
 =================================================
-This is an object that represent the base finite state machine (FSM) class. 
+This is an object that represents the base finite state machine (FSM) class. 
 Users create their own FSMs by inheriting this base class and passing it to 
 this API by upcasting. It is recommended to read the
 :ref:`State Machine Representation Section <fsm_state_machine_representation>` 
@@ -1077,6 +1077,7 @@ Sets the starting state the FSM should be in.
 
 Member Functions
 -------------------------------------------------
+
 
 ECU_FSM_IS_BASEOF()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
