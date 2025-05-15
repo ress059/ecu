@@ -178,14 +178,13 @@ extern void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state);
 /**@{*/
 /**
  * @pre @p me constructed via @ref ecu_fsm_ctor().
- * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
- * @brief Should be called only once on startup. Runs the
- * initial state's entry handler and manages all state
- * transition logic if any state changes were siganlled via
- * @ref ecu_fsm_change_state(). This function does nothing
+ * @brief Runs the initial state's entry handler and manages 
+ * all state transition logic if any state changes were siganlled 
+ * via @ref ecu_fsm_change_state(). This function does nothing
  * if the initial state's entry handler is unused.
  * 
- * @warning This function must run to completion.
+ * @warning This function should only be called once on
+ * startup and must run to completion.
  * 
  * @param me Fsm to start. This should not be an already 
  * running fsm.
@@ -216,7 +215,7 @@ extern void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state 
  * @warning This function must run to completion.
  * 
  * @param me Fsm to run.
- * @param event Event to dispatch.
+ * @param event Event to dispatch. This cannot be NULL.
  */
 extern void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event);
 /**@}*/

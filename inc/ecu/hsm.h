@@ -1,146 +1,274 @@
 /**
  * @file
- * @brief TODO
+ * @brief
+ * @rst
+ * See :ref:`hsm.h section <hsm_h>` in Sphinx documentation.
+ * @endrst
  * 
  * @author Ian Ress
  * @version 0.1
- * @date 2024-06-02
- * @copyright Copyright (c) 2024
+ * @date 2025-05-01
+ * @copyright Copyright (c) 2025
  */
-
 
 #ifndef ECU_HSM_H_
 #define ECU_HSM_H_
 
+/*------------------------------------------------------------*/
+/*------------------------- INCLUDES -------------------------*/
+/*------------------------------------------------------------*/
 
+/* STDLib. */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------- INCLUDES -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*---------------------- DEFINES AND MACROS ------------------*/
+/*------------------------------------------------------------*/
 
-/* HSM represented as generic tree. */
-#include "ecu/tree.h"
+/**
+ * @brief Verifies, at compile-time, that derived hsm
+ * correctly inherits @ref ecu_hsm base class. Returns
+ * true if correctly inherited. False otherwise.
+ * 
+ * @param base_ Name of @ref ecu_hsm <b>member</b> within 
+ * user's @p derived_ hsm type.
+ * @param derived_ Derived hsm type to check.
+ */
+#define ECU_HSM_IS_BASEOF(base_, derived_) \
+    ((bool)(offsetof(derived_, base_) == (size_t)0))
 
-/* Base event class. */
-#include "ecu/event.h"
+/**
+ * @brief Upcasts derived hsm pointer into @ref ecu_hsm
+ * base class pointer. This macro encapsulates the cast
+ * and allows derived hsms to be passed into base class 
+ * functions defined in this module.
+ * 
+ * @param me_ Pointer to derived hsm. This must inherit
+ * @ref ecu_hsm base class and must be pointer to non-const.
+ */
+#define ECU_HSM_BASE_CAST(me_) \
+    ((struct ecu_hsm *)(me_))
 
+/**
+ * @brief Helper macro supplied to @ref ECU_HSM_STATE_CTOR()
+ * if state's entry handler is unused.
+ */ 
+#define ECU_HSM_STATE_ENTRY_UNUSED \
+    ((void (*)(struct ecu_hsm *))0)
 
+/**
+ * @brief Helper macro supplied to @ref ECU_HSM_STATE_CTOR()
+ * if state's exit handler is unused.
+ */
+#define ECU_HSM_STATE_EXIT_UNUSED \
+    ((void (*)(struct ecu_hsm *))0)
 
-/* Forward declaration for state function typedefs. */
+/**
+ * @brief Helper macro supplied to @ref ECU_HSM_STATE_CTOR()
+ * if state has no parent.
+ * 
+ * @warning This should only be used to initialize the top state.
+ */
+#define ECU_HSM_STATE_NO_PARENT \
+    ((const struct ecu_hsm_state *)0)
+
+/**
+ * @brief Creates a state at compile-time. Supplied state
+ * functions taking in a derived hsm pointer are upcasted
+ * to state functions taking in an @ref ecu_hsm base class
+ * pointer. The results of these casts are assigned to
+ * members of @ref ecu_hsm_state. This macro encapsulates
+ * all casts and member initializations of @ref ecu_hsm_state.
+ * Example usage:
+ * @code{.c}
+ * static const struct ecu_hsm_state STATE1 = ECU_HSM_STATE_CTOR(
+ *      &entry_handler, ECU_HSM_STATE_EXIT_UNUSED, &state_handler, &PARENT_STATE
+ * );
+ * @endcode
+ * 
+ * @param entry_ Optional function that executes when state is 
+ * first entered. A state transition CANNOT be done in the entry 
+ * handler. Supply @ref ECU_HSM_STATE_ENTRY_UNUSED if unused.
+ * @param exit_ Optional function that executes when state exits.
+ * A state transition CANNOT be done in the exit handler.
+ * Supply @ref ECU_HSM_STATE_EXIT_UNUSED if unused.
+ * @param handler_ Mandatory function that processes events
+ * dispatched to this state. Return true if the dispatched event
+ * is processed within this state. Return false if the event should
+ * be propogated up the state hierarchy.
+ * @param parent_ This state's parent. @ref ECU_HSM_STATE_NO_PARENT
+ * should only be supplied if this is the top state. Otherwise this
+ * must always be another state.
+ */
+#define ECU_HSM_STATE_CTOR(entry_, exit_, handler_, parent_)                \
+    {                                                                       \
+        .entry = (void (*)(struct ecu_hsm *))(entry_),                      \
+        .exit = (void (*)(struct ecu_hsm *))(exit_),                        \
+        .handler = (bool (*)(struct ecu_hsm *, const void *))(handler_),    \
+        .parent = (parent_)                                                 \
+    }
+
+/*------------------------------------------------------------*/
+/*---------------------------- HSM ---------------------------*/
+/*------------------------------------------------------------*/
+
+/* Forward declaration for ecu_hsm_state. */
 struct ecu_hsm;
 
-enum ecu_hsm_status
-{
-    ECU_HSM_EVENT_HANDLED,
-    ECU_HSM_EVENT_IGNORED,
-    ECU_HSM_EVENT_TO_SUPER_STATE,
-    ECU_HSM_STATE_TRANSITION, // normal state transition that can be used in all scenarios. entry and exit condition of lca will NOT be run.
-    ECU_HSM_INTRA_STATE_TRANSITION // state transition between two composite states. entry and exit condition of lca (outermost composite state) will run.
-};
-
-
-// support transitions in entry event. https://www.youtube.com/watch?v=lUvUNuUMQHo&list=PLPW8O6W-1chxym7TgIPV9k5E8YJtSBToI&index=6
-// 20:27. Analagous to INIT_SIG in hsm.
-typedef void (*ecu_hsm_on_entry_handler)(struct ecu_hsm *me);
-typedef void (*ecu_hsm_on_exit_handler)(struct ecu_hsm *me);
-typedef enum ecu_hsm_status (*ecu_hsm_state_handler)(struct ecu_hsm *me, const struct ecu_event *event);
-
-
-
-struct ecu_hsm
-{
-    // pointer instead of full data member so multiple hsm objects can share
-    // the same state tree. Otherwise you would have to construct the top state
-    // again for each hsm object.
-    const struct ecu_hsm_top_state *top_state;
-    const struct ecu_hsm_state *current_state;
-    const struct ecu_hsm_state *temp_state; // placeholder so we can change current state at last possible minute.
-};
-
-
+/**
+ * @brief Single state in hsm, initialized via @ref ECU_HSM_STATE_CTOR().
+ * Pointers are const-qualified to only allow states to be
+ * created at compile-time.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
 struct ecu_hsm_state
 {
-    struct ecu_tree_node node;
-    ecu_hsm_on_entry_handler on_entry;
-    ecu_hsm_on_exit_handler on_exit;
-    ecu_hsm_state_handler handler;
+/* Normally, pointers are const-qualified to only allow states to
+be created at compile-time. Const is stripped only for unit tests 
+since test code framework requires state creation at run-time. */
+#ifdef ECU_UNIT_TEST
+    /// @brief Executes when state first entered. Optional.
+    void (*entry)(struct ecu_hsm *me);
+
+    /// @brief Executes when state exits. Optional.
+    void (*exit)(struct ecu_hsm *me);
+
+    /// @brief Processes events dispatched to this state. Mandatory.
+    /// Return true if the dispatched event is processed within this state. 
+    /// Return false if the event should be propogated up the state hierarchy.
+    bool (*handler)(struct ecu_hsm *me, const void *event);
+
+    /// @brief This state's parent. Can only be @ref ECU_HSM_STATE_NO_PARENT
+    /// if this is the top state. Otherwise this must always be another state.
+    const struct ecu_hsm_state *parent;
+#else
+    /// @brief Executes when state first entered. Optional.
+    void (*const entry)(struct ecu_hsm *me);
+
+    /// @brief Executes when state exits. Optional.
+    void (*const exit)(struct ecu_hsm *me);
+
+    /// @brief Processes events dispatched to this state. Mandatory.
+    /// Return true if the dispatched event is processed within this state. 
+    /// Return false if the event should be propogated up the state hierarchy.
+    bool (*const handler)(struct ecu_hsm *me, const void *event);
+
+    /// @brief This state's parent. Can only be @ref ECU_HSM_STATE_NO_PARENT
+    /// if this is the top state. Otherwise this must always be another state.
+    const struct ecu_hsm_state *const parent;
+#endif
 };
 
-struct ecu_hsm_top_state
+/**
+ * @brief Base hsm class.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_hsm
 {
-    struct ecu_hsm_state state;
+    /// @brief Current state the hsm is in.
+    const struct ecu_hsm_state *state;
+
+    /// @brief The hsm's top state.
+    const struct ecu_hsm_state *top;
+
+    /// @brief Number of levels in the hsm, starting at 0. Used
+    /// as a fail safe to avoid infinite loops when traversing up 
+    /// the state hierarchy.
+    uint8_t height;
+
+    /// @brief Bitmap representing hsm's state transition context.
+    uint32_t transition;
 };
 
-
+/*------------------------------------------------------------*/
+/*-------------------- HSM MEMBER FUNCTIONS ------------------*/
+/*------------------------------------------------------------*/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @name Hsm Constructors
+ */
+/**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p state and @p top constructed via @ref ECU_HSM_STATE_CTOR().
+ * @brief Hsm constructor.
+ * 
+ * @param me Hsm to construct.
+ * @param state Hsm's initial state.
+ * @param top Hsm's top state.
+ * @param height Number of levels in the hsm, starting at 0. For
+ * example if the hsm only consists of a top state, this would be 0.
+ */
+extern void ecu_hsm_ctor(struct ecu_hsm *me, 
+                         const struct ecu_hsm_state *state,
+                         const struct ecu_hsm_state *top,
+                         uint8_t height);
+/**@}*/
 
-// entry handler would be a good place to initialize your hsm object.
-// exit handler good place to deinitialize/destroy your hsm object.
-extern void ecu_hsm_ctor(struct ecu_hsm *me,
-                         const struct ecu_hsm_top_state *top_state_0);
+/**
+ * @name Hsm Member Functions
+ */
+/**@{*/
+/**
+ * @pre @p me constructed via @ref ecu_hsm_ctor().
+ * @brief Runs each state's entry handler, starting from
+ * the top state and ending at the initial state assigned
+ * in @ref ecu_hsm_ctor(). Inclusive, meaning top state's
+ * entry and the initial state's entry are ran.
+ * 
+ * @warning This function should only be called once on
+ * startup and must run to completion.
+ * 
+ * @param me Hsm to start. This should not be an already 
+ * running hsm.
+ */
+extern void ecu_hsm_start(struct ecu_hsm *me);
 
+/**
+ * @pre @p me constructed via @ref ecu_hsm_ctor().
+ * @pre @p state constructed via @ref ECU_HSM_STATE_CTOR().
+ * @brief Transitions hsm into a new state.
+ * 
+ * @warning This can only be called within @ref ecu_hsm_state.handler.
+ * 
+ * @param me Hsm to transition.
+ * @param state State to transition into. States are exited up to the
+ * least common ancestor (LCA). States are entered from the LCA to
+ * @p state. Entry and exit of LCA is not ran. A local transition occurs
+ * if @p state is a child or parent state. A self-transition occurs
+ * if hsm's current state == @p state. See 
+ * @rst 
+ * :ref:`hsm.h section in Sphinx documentation <hsm_state_transitions>` 
+ * @endrst
+ * for more details.
+ */
+extern void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state *state);
 
-extern void ecu_hsm_top_state_ctor(struct ecu_hsm_top_state *me,
-                                   ecu_hsm_on_entry_handler on_entry_0,
-                                   ecu_hsm_on_exit_handler on_exit_0);
-
-
-// 1. Not adding super_state here since that would make the constructor order now matter. Higher level nodes (states)
-// would have to be constructed before lower level states since ecu_tree_node_ctor() must be called to add nodes to tree.
-// 2. undefined behavior if you pass in a top state. I.e. &ecu_hsm_top_state.state
-extern void ecu_hsm_state_ctor(struct ecu_hsm_state *me,
-                               ecu_hsm_on_entry_handler on_entry_0,
-                               ecu_hsm_on_exit_handler on_exit_0,
-                               ecu_hsm_state_handler handler_0);
-
-
-// runtime initialization of hsm state tree.
-// requires states to be constructed as precondition.
-extern void ecu_hsm_add_state_to_top_state(struct ecu_hsm_state *me,
-                                           struct ecu_hsm_top_state *top_state);
-
-
-// runtime initialization of hsm state tree.
-// requires states to be constructed as precondition.
-extern void ecu_hsm_add_state_to_super_state(struct ecu_hsm_state *me,
-                                             struct ecu_hsm_state *super_state);
-
-
-// start_state != &me->top
-// start_state must be in hsm state tree.
-extern void ecu_hsm_begin(struct ecu_hsm *me,
-                          const struct ecu_hsm_state *start_state);
-
-// requires hsm_begin() to have been called.
-extern void ecu_hsm_dispatch(struct ecu_hsm *me,
-                             const struct ecu_event *event);
-
-
-// exit path = from current state to lca (not including lca). entry path = from lca (not including it)
-// to new state.
-// show images of local and standard state transitions.
-
-// show picture of state A in State B. transition path would be State A entry.
-// if you want State B exit -> State B entry -> State A entry call @ref ecu_hsm_transition_to_intra_state() instead.
-extern enum ecu_hsm_status ecu_hsm_transition_to_state(struct ecu_hsm *me,
-                                                       const struct ecu_hsm_state *new_state);
-
-// same state path of ecu_hsm_change_state() however lca is exited and entered as well.
-// show images of local and standard state transitions.
-// asserts if states arent composites.
-extern enum ecu_hsm_status ecu_hsm_transition_to_intra_state(struct ecu_hsm *me,
-                                                             const struct ecu_hsm_state *new_state);
-// make function name mention composite/substate and superstate somehow?
-
-
-static inline enum ecu_hsm_status ecu_hsm_dispatch_event_to_super_state(void)
-{
-    return ECU_HSM_EVENT_TO_SUPER_STATE;
-}
+/**
+ * @pre @p me constructed via @ref ecu_hsm_ctor().
+ * @brief Relays event to hsm where it is processed by
+ * the current state's handler function. The event is propogated 
+ * up the state hierarchy until it is handled. All state transitions
+ * signalled via @ref ecu_hsm_change_state() are also processed
+ * in this function.
+ * 
+ * @warning This function must run to completion.
+ * 
+ * @param me Hsm to run.
+ * @param event Event to dispatch. This cannot be NULL.
+ */
+extern void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event);
+/**@}*/
 
 #ifdef __cplusplus
 }

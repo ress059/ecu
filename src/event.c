@@ -42,8 +42,8 @@ ECU_STATIC_ASSERT( (ECU_USER_EVENT_ID_BEGIN == 0), "ECU_USER_EVENT_ID_BEGIN must
 /*------------------------------------------------------------*/
 
 void ecu_event_ctor(struct ecu_event *me,
-                    ecu_event_id id_0)
+                    ecu_event_id id)
 {
-    ECU_RUNTIME_ASSERT( ((me) && (id_0 >= ECU_VALID_EVENT_ID_BEGIN)) );
-    me->id = id_0;
+    ECU_RUNTIME_ASSERT( ((me) && (id >= ECU_VALID_EVENT_ID_BEGIN)) );
+    me->id = id;
 }

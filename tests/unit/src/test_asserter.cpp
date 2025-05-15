@@ -28,7 +28,7 @@
 #include "ecu/dlist.h"
 #include "ecu/event.h"
 #include "ecu/fsm.h"
-// #include "ecu/hsm.h"
+#include "ecu/hsm.h"
 #include "ecu/timer.h"
 // #include "ecu/tree.h"
 
@@ -105,7 +105,6 @@ TEST(Asserter, DefineNameMacro)
         /* Steps 2 and 3: Action and assert. */
         ECU_RUNTIME_ASSERT( (false) );
     }
-
     catch (const AssertException& e)
     {
         (void)e;
@@ -126,7 +125,6 @@ TEST(Asserter, ECUDListAssert)
         /* Steps 2 and 3: Action and assert. */
         ecu_dlist_ctor(reinterpret_cast<ecu_dlist *>(0));
     }
-
     catch (const AssertException& e)
     {
         (void)e;
@@ -147,7 +145,6 @@ TEST(Asserter, ECUEventAssert)
         /* Steps 2 and 3: Action and assert. */
         ecu_event_ctor(reinterpret_cast<ecu_event *>(0), 0);
     }
-
     catch (const AssertException& e)
     {
         (void)e;
@@ -168,7 +165,6 @@ TEST(Asserter, ECUFsmAssert)
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_ctor(reinterpret_cast<ecu_fsm *>(0), reinterpret_cast<const ecu_fsm_state *>(0));
     }
-
     catch (const AssertException& e)
     {
         (void)e;
@@ -181,7 +177,19 @@ TEST(Asserter, ECUFsmAssert)
  */
 TEST(Asserter, ECUHsmAssert)
 {
-    /* Placeholder until HSM module is complete. */
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/hsm.c");
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_hsm_ctor(reinterpret_cast<ecu_hsm *>(0), reinterpret_cast<ecu_hsm_state *>(0),
+                     reinterpret_cast<ecu_hsm_state *>(0), 0);
+    }
+    catch (const AssertException& e)
+    {
+        (void)e;
+    }
 }
 
 /**
@@ -198,7 +206,6 @@ TEST(Asserter, ECUTimerAssert)
         /* Steps 2 and 3: Action and assert. */
         ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), nullptr, nullptr);
     }
-
     catch (const AssertException& e)
     {
         (void)e;
@@ -219,7 +226,6 @@ TEST(Asserter, ECUTimerAssert)
 //         /* Steps 2 and 3: Action and assert. */
 //         ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
 //     }
-
 //     catch (const AssertException& e)
 //     {
 //         (void)e;

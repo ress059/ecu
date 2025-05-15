@@ -154,12 +154,12 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
 /*------------------------------------------------------------*/
 
 void ecu_dnode_ctor(struct ecu_dnode *me,
-                    void (*destroy_0)(struct ecu_dnode *me, ecu_object_id id),
-                    ecu_object_id id_0)
+                    void (*destroy)(struct ecu_dnode *me, ecu_object_id id),
+                    ecu_object_id id)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (destroy_0 != &HEAD_DESTROY_CALLBACK) );
-    ECU_RUNTIME_ASSERT( (id_0 >= ECU_VALID_OBJECT_ID_BEGIN) );
+    ECU_RUNTIME_ASSERT( (destroy != &HEAD_DESTROY_CALLBACK) );
+    ECU_RUNTIME_ASSERT( (id >= ECU_VALID_OBJECT_ID_BEGIN) );
     /* Do not assert node_valid() or !node_in_list() since next and prev pointers
     can be initialized to garbage non-NULL values before a constructor call. It is
     the user's responsibility to not construct an active node, which is clearly outlined
@@ -167,8 +167,8 @@ void ecu_dnode_ctor(struct ecu_dnode *me,
 
     me->next = me;
     me->prev = me;
-    me->destroy = destroy_0; /* Optional callback so do not NULL assert. */
-    me->id = id_0;           /* Optional. */
+    me->destroy = destroy; /* Optional callback so do not NULL assert. */
+    me->id = id;           /* Optional. */
 }
 
 void ecu_dnode_destroy(struct ecu_dnode *me)

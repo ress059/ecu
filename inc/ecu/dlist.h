@@ -243,19 +243,19 @@ extern "C" {
  * is undefined.
  *
  * @param me Node to construct. This cannot be NULL.
- * @param destroy_0 Optional callback. Defines any <b>additional</b> cleanup
+ * @param destroy Optional callback. Defines any <b>additional</b> cleanup
  * needed to fully destroy this user-defined node. Do not use API calls that edit
  * the ecu_dnode (node insert, remove, etc) within this callback. Doing so is undefined
  * behavior. Executes when node is destroyed via @ref ecu_dnode_destroy(). Also
  * executes when node is in list that is destroyed via @ref ecu_dlist_destroy().
  * Supply @ref ECU_DNODE_DESTROY_UNUSED if unused.
- * @param id_0 Optional ID to assign to node. Used to identify different user-defined
+ * @param id Optional ID to assign to node. Used to identify different user-defined
  * types stored in the same list. Supply @ref ECU_OBJECT_ID_UNUSED if unused. This
  * value must be greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
  */
 extern void ecu_dnode_ctor(struct ecu_dnode *me,
-                           void (*destroy_0)(struct ecu_dnode *me, ecu_object_id id),
-                           ecu_object_id id_0);
+                           void (*destroy)(struct ecu_dnode *me, ecu_object_id id),
+                           ecu_object_id id);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
