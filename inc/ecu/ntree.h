@@ -21,6 +21,7 @@
 /* STDLib. */
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /* ECU. */
 #include "ecu/dlist.h"
@@ -39,21 +40,48 @@
 #define ECU_NTNODE_GET_CONST_ENTRY(ptr_, type_, member_) \
     ((const type_ *)((const uint8_t *)(ptr_) - offsetof(type_, member_)))
 
+#define ECU_NTNODE_SIBLING_AT_FOR_EACH(var_, iter_, start_)                     \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_at(iter_, start_); \
+         var_ != ecu_ntnode_child_iterator_end(iter_);                          \
+         var = ecu_ntnode_child_iterator_next(iter_))
+
+#define ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH(var_, citer_, start_)                      \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_cat(citer_, start_); \
+         var_ != ecu_ntnode_child_iterator_cend(iter_);                                 \
+         var = ecu_ntnode_child_iterator_cnext(iter_))
+
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(iter_);                              \
+         var_ = end_ntnode_child_iterator_next(iter_))
+
+#define ECU_NTNODE_CONST_CHILD_FOR_EACH(var_, citer_, parent_)                              \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_cbegin(citer_, parent_); \
+         var_ != ecu_ntnode_child_iterator_cend(citer_);                                    \
+         var_ = end_ntnode_child_iterator_cnext(citer_))
+
+// root is iterated over.
+#define ECU_NTNODE_PREORDER_FOR_EACH(var_, iter_, root_)                                \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_preorder_iterator_begin(iter_, root_);    \
+         var_ != ecu_ntnode_preorder_iterator_end(iter_);                               \
+         var_ = end_ntnode_preorder_iterator_next(iter_))
+
+// root is iterated over.
+#define ECU_NTNODE_CONST_PREORDER_FOR_EACH(var_, citer_, root_)                                 \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_preorder_iterator_cbegin(citer_, root_);    \
+         var_ != ecu_ntnode_preorder_iterator_cend(citer_);                                     \
+         var_ = end_ntnode_preorder_iterator_cnext(citer_))
+
 /*------------------------------------------------------------*/
 /*---------------------------- NTREE -------------------------*/
 /*------------------------------------------------------------*/
 
 struct ecu_ntnode
 {
-    struct ecu_dlist children;
     struct ecu_dnode dnode;
+    struct ecu_dlist children;
     struct ecu_ntnode *parent;
     void (*destroy)(struct ecu_ntnode *me, ecu_object_id id); // wrap this around dnode destroy.
-};
-
-struct ecu_ntree
-{
-    struct ecu_ntnode root;
 };
 
 /*------------------------------------------------------------*/
@@ -67,8 +95,27 @@ struct ecu_ntnode_child_iterator
 
 struct ecu_ntnode_child_citerator
 {
-    struct ecu_dlist_const_iterator iterator;
+    struct ecu_dlist_citerator iterator;
 };
+
+/*------------------------------------------------------------*/
+/*------------------- NTNODE PREORDER ITERATOR ---------------*/
+/*------------------------------------------------------------*/
+
+struct ecu_ntnode_preorder_iterator
+{
+    struct ecu_ntnode delimiter;
+    struct ecu_ntnode *root;
+    struct ecu_ntnode *current;
+};
+
+struct ecu_ntnode_preorder_citerator
+{
+    struct ecu_ntnode delimiter;
+    const struct ecu_ntnode *root;
+    const struct ecu_ntnode *current;
+};
+
 
 /*------------------------------------------------------------*/
 /*------------------- NTNODE POSTORDER ITERATOR --------------*/
@@ -134,42 +181,28 @@ extern void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *child
 extern void ecu_ntnode_remove(struct ecu_ntnode *me);
 
 // misc
-extern struct ecu_ntnode *ecu_ntnode_lca(struct ecu_ntnode *n1, struct ecu_ntnode *n2);
-extern bool ecu_ntnode_in_tree(const struct ecu_ntnode *me);
+bool ecu_ntnode_is_root(const struct ecu_ntnode *me);
+extern bool ecu_ntnode_in_subtree(const struct ecu_ntnode *me);
 extern ecu_object_id ecu_ntnode_get_id(const struct ecu_ntnode *me); // can be thought of as key.
-extern size_t ecu_ntnode_size(const struct ecu_ntnode *me); // return total number of children, grandchildren, etc.
 extern size_t ecu_ntnode_count(const struct ecu_ntnode *me); // return total number of direct children.
-/**@}*/
+extern size_t ecu_ntnode_level(const struct ecu_ntnode *me); // return which level the node is in. level starts at 0. i.e. root == level 0.
+extern size_t ecu_ntnode_size(const struct ecu_ntnode *me); // return total number of children, grandchildren, etc. If node empty returns 1 (just this node).
+// return NULL if not found.
+extern struct ecu_ntnode *ecu_ntnode_find(struct ecu_ntnode *me, 
+                                          bool (*found)(const struct ecu_ntnode *me, void *obj),
+                                          void *obj);
+extern const struct ecu_ntnode *ecu_ntnode_cfind(struct ecu_ntnode *me, 
+                                                 bool (*found)(const struct ecu_ntnode *me, void *obj),
+                                                 void *obj);
 
-/*------------------------------------------------------------*/
-/*-------------------- NTREE MEMBER FUNCTIONS ----------------*/
-/*------------------------------------------------------------*/
+// return NULL if no LCA.
+extern struct ecu_ntnode *ecu_ntnode_lca(struct ecu_ntnode *n1, struct ecu_ntnode *n2);
+extern const struct ecu_ntnode *ecu_ntnode_clca(const struct ecu_ntnode *n1, const struct ecu_ntnode *n2);
 
-/**
- * @name Ntree Constructors
- */
-/**@{*/
-extern void ecu_ntree_ctor(struct ecu_ntree *me);
-extern void ecu_ntree_destroy(struct ecu_ntree *me);
-/**@}*/
 
-/**
- * @name Ntree Member Functions
- */
-/**@{*/
-extern void ecu_ntree_clear(struct ecu_ntree *me);
-extern struct ecu_ntnode *ecu_ntree_find(ecu_object_id id);
+// see TODOs for these! dont know if possible since cant remove node in iteration.
+// clear();
 
-// inserts child below root node.
-extern void ecu_ntree_push_front(struct ecu_ntree *me, struct ecu_ntnode *node);
-extern void ecu_ntree_push_back(struct ecu_ntree *me, struct ecu_ntnode *node);
-
-// level starts at 0. assert if level > tree depth.
-extern void ecu_ntree_insert_front(struct ecu_ntree *me, struct ecu_ntnode *node, size_t level);
-extern void ecu_ntree_insert_back(struct ecu_ntree *me, struct ecu_ntnode *node, size_t level);
-extern bool ecu_ntree_empty(const struct ecu_ntree *me);
-extern size_t ecu_ntree_depth(const struct ecu_ntree *me);
-extern size_t ecu_ntree_size(const struct ecu_ntree *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -181,14 +214,40 @@ extern size_t ecu_ntree_size(const struct ecu_ntree *me);
  */
 /**@{*/
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_begin(struct ecu_ntnode_child_iterator *me, 
-                                                          struct ecu_ntnode *node);
+                                                          struct ecu_ntnode *parent);
+extern struct ecu_ntnode *ecu_ntnode_child_iterator_at(struct ecu_ntnode_child_iterator *me,
+                                                       struct ecu_ntnode *start);
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_end(struct ecu_ntnode_child_iterator *me);
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_next(struct ecu_ntnode_child_iterator *me);
-extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cbegin(struct ecu_ntnode_child_iterator *me, 
-                                                                 const struct ecu_ntnode *node);
-extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cend(struct ecu_ntnode_child_iterator *me);
-extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnode_child_iterator *me);
+extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cbegin(struct ecu_ntnode_child_citerator *me, 
+                                                                 const struct ecu_ntnode *parent);
+extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cat(struct ecu_ntnode_child_citerator *me,
+                                                              const struct ecu_ntnode *start);
+extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cend(struct ecu_ntnode_child_citerator *me);
+extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnode_child_citerator *me);
 /**@}*/
+
+
+
+/*------------------------------------------------------------*/
+/*-------- NTNODE PREORDER ITERATOR MEMBER FUNCTIONS ---------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @name Ntnode Preorder Iterator Member Functions
+ */
+/**@{*/
+extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_begin(struct ecu_ntnode_preorder_iterator *me,
+                                                             struct ecu_ntnode *root);
+extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_end(struct ecu_ntnode_preorder_iterator *me);
+extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_next(struct ecu_ntnode_preorder_iterator *me);
+
+extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cbegin(struct ecu_ntnode_preorder_citerator *me,
+                                                                    const struct ecu_ntnode *root);
+extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cend(struct ecu_ntnode_preorder_citerator *me);
+extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_ntnode_preorder_citerator *me);
+/**@}*/
+
 
 /**
  * @name Ntnode Postorder Iterator Member Functions
