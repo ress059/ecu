@@ -106,8 +106,8 @@
  *      - TEST(DListBase, EmptyGeneralTest)
  * 
  * @ref ECU_DLIST_FOR_EACH(), @ref ECU_DLIST_CONST_FOR_EACH(), @ref ecu_dlist_iterator_begin(),
- * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_const_iterator_begin(),
- * @ref ecu_dlist_const_iterator_end(), @ref ecu_dlist_const_iterator_next()
+ * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_iterator_cbegin(),
+ * @ref ecu_dlist_iterator_cend(), @ref ecu_dlist_iterator_cnext()
  *      - TEST(DList, IteratorGeneralTest)
  *      - TEST(DList, ConstIteratorGeneralTest)
  *      - TEST(DList, IteratorOverEmptyList)
@@ -115,8 +115,8 @@
  *      - TEST(DList, IteratorRemoveNodesInMiddleOfIteration)
  * 
  * @ref ECU_DLIST_AT_FOR_EACH(), @ref ECU_DLIST_CONST_AT_FOR_EACH(), @ref ecu_dlist_iterator_at(),
- * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_const_iterator_at(),
- * @ref ecu_dlist_const_iterator_end(), @ref ecu_dlist_const_iterator_next()
+ * @ref ecu_dlist_iterator_end(), @ref ecu_dlist_iterator_next(), @ref ecu_dlist_iterator_cat(),
+ * @ref ecu_dlist_iterator_cend(), @ref ecu_dlist_iterator_cnext()
  *      - TEST(DList, AtIteratorGeneralTest)
  *      - TEST(DList, ConstAtIteratorGeneralTest)
  *      - TEST(DList, AtIteartorOverNodeNotInList)
@@ -258,7 +258,7 @@ static void node_in_list_mock(const ecu_dlist *list, const ecu_dnode *node)
 static void list_order_check_expectations(const ecu_dlist *list)
 {
     assert( (list) );
-    ecu_dlist_const_iterator citerator;
+    ecu_dlist_citerator citerator;
 
     ECU_DLIST_CONST_FOR_EACH(i, &citerator, list)
     {
@@ -340,7 +340,7 @@ TEST_GROUP(DListBase)
     }
 
     ecu_dlist_iterator m_iterator;
-    ecu_dlist_const_iterator m_citerator;
+    ecu_dlist_citerator m_citerator;
     ecu_dlist m_list;
     ecu_dlist m_other_list;
     ecu_dnode m_node1;
@@ -498,7 +498,7 @@ TEST_GROUP(DListSort)
 
     void list_sort_check_expectations()
     {
-        ecu_dlist_const_iterator citerator;
+        ecu_dlist_citerator citerator;
 
         ECU_DLIST_CONST_FOR_EACH(i, &citerator, &m_list)
         {

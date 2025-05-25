@@ -594,7 +594,7 @@ void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other)
 size_t ecu_dlist_size(const struct ecu_dlist *me)
 {
     size_t i = 0;
-    struct ecu_dlist_const_iterator citerator;
+    struct ecu_dlist_citerator citerator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
 
@@ -677,8 +677,8 @@ struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 /*------------- CONST ITERATOR MEMBER FUNCTIONS --------------*/
 /*------------------------------------------------------------*/
 
-const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_iterator *me, 
-                                                       const struct ecu_dlist *list)
+const struct ecu_dnode *ecu_dlist_iterator_cbegin(struct ecu_dlist_citerator *me, 
+                                                  const struct ecu_dlist *list)
 {
     ECU_RUNTIME_ASSERT( (me && list) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
@@ -693,9 +693,9 @@ const struct ecu_dnode *ecu_dlist_const_iterator_begin(struct ecu_dlist_const_it
     return (me->current);
 }
 
-const struct ecu_dnode *ecu_dlist_const_iterator_at(struct ecu_dlist_const_iterator *me, 
-                                                    const struct ecu_dlist *list, 
-                                                    const struct ecu_dnode *start)
+const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me, 
+                                               const struct ecu_dlist *list, 
+                                               const struct ecu_dnode *start)
 {
     ECU_RUNTIME_ASSERT( (me && list && start) );
     ECU_RUNTIME_ASSERT( (list_valid(list)) );
@@ -710,14 +710,14 @@ const struct ecu_dnode *ecu_dlist_const_iterator_at(struct ecu_dlist_const_itera
     return (me->current);
 }
 
-const struct ecu_dnode *ecu_dlist_const_iterator_end(struct ecu_dlist_const_iterator *me)
+const struct ecu_dnode *ecu_dlist_iterator_cend(struct ecu_dlist_citerator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
     return (&me->list->head);
 }
 
-const struct ecu_dnode *ecu_dlist_const_iterator_next(struct ecu_dlist_const_iterator *me)
+const struct ecu_dnode *ecu_dlist_iterator_cnext(struct ecu_dlist_citerator *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me->list)) );
