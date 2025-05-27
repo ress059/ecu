@@ -51,6 +51,11 @@ ECU_ASSERT_DEFINE_NAME("ecu/ntree.c")
     5. Root is iterated over for preorder, postorder iterations. \
     6. No separate structure for tree/root. Just nodes.")
 
+#pragma message("TODO: \
+    1. Make sibling iterator a separate entity. do not try to wrap child iterator in it. \
+    2. Sibling iterator starts at sibling and goes through all siblings. End == start sibling or maybe delimieter. \
+    3. Probably get rid of child_iterator_at() if sibling iterator made.")
+
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
 /*------------------------------------------------------------*/
@@ -111,7 +116,7 @@ static bool is_parent_of(const struct ecu_ntnode *parent, const struct ecu_ntnod
     bool status = false;
 
     /* Notice how this also handles case where n1 == n2. */
-    for (const struct ecu_ntnode *n = child; n; n = ecu_ntnode_parent(n))
+    for (const struct ecu_ntnode *n = child; n; n = ecu_ntnode_cparent(n))
     {
         ECU_RUNTIME_ASSERT( (node_valid(n)) );
         if (n == parent)
@@ -284,7 +289,7 @@ struct ecu_ntnode *ecu_ntnode_prev(struct ecu_ntnode *me)
     first = ecu_ntnode_front(me->parent);
     if (first && first != me) /* me has siblings and me not first child? */
     {
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iterator, &me->parent)
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iterator, me->parent)
         {
             /* Iterator asserts returned node is valid so do not assert. */
             if (ecu_ntnode_next(n) == me)
@@ -313,7 +318,7 @@ const struct ecu_ntnode *ecu_ntnode_cprev(const struct ecu_ntnode *me)
     first = ecu_ntnode_cfront(me->parent);
     if (first && first != me) /* me has siblings and me not first child? */
     {
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citerator, &me->parent)
+        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citerator, me->parent)
         {
             /* Iterator asserts returned node is valid so do not assert. */
             if (ecu_ntnode_cnext(n) == me)
@@ -400,6 +405,7 @@ const struct ecu_ntnode *ecu_ntnode_cback(const struct ecu_ntnode *me)
 void ecu_ntnode_insert_before(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
 {
     ECU_RUNTIME_ASSERT( (me && sibling) );
+    ECU_RUNTIME_ASSERT( (me != sibling) );
     ECU_RUNTIME_ASSERT( (node_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(sibling)) );
     /* Tree must have a root. Cannot add sibling to a root. */
@@ -413,6 +419,7 @@ void ecu_ntnode_insert_before(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
 void ecu_ntnode_insert_after(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
 {
     ECU_RUNTIME_ASSERT( (me && sibling) );
+    ECU_RUNTIME_ASSERT( (me != sibling) );
     ECU_RUNTIME_ASSERT( (node_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(sibling)) );
     /* Tree must have a root. Cannot add sibling to a root. */
@@ -423,24 +430,26 @@ void ecu_ntnode_insert_after(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
     me->parent = sibling->parent;
 }
 
-void ecu_ntnode_push_front(struct ecu_ntnode *me, struct ecu_ntnode *child)
+void ecu_ntnode_push_front(struct ecu_ntnode *me, struct ecu_ntnode *parent)
 {
-    ECU_RUNTIME_ASSERT( (me && child) );
+    ECU_RUNTIME_ASSERT( (me && parent) );
+    ECU_RUNTIME_ASSERT( (me != parent) );
     ECU_RUNTIME_ASSERT( (node_valid(me)) );
-    ECU_RUNTIME_ASSERT( (node_valid(child)) );
+    ECU_RUNTIME_ASSERT( (node_valid(parent)) );
 
-    ecu_dlist_push_front(&me->children, &child->dnode);
-    child->parent = me;
+    ecu_dlist_push_front(&parent->children, &me->dnode);
+    me->parent = parent;
 }
 
-void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *child)
+void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *parent)
 {
-    ECU_RUNTIME_ASSERT( (me && child) );
+    ECU_RUNTIME_ASSERT( (me && parent) );
+    ECU_RUNTIME_ASSERT( (me != parent) );
     ECU_RUNTIME_ASSERT( (node_valid(me)) );
-    ECU_RUNTIME_ASSERT( (node_valid(child)) );
+    ECU_RUNTIME_ASSERT( (node_valid(parent)) );
 
-    ecu_dlist_push_back(&me->children, &child->dnode);
-    child->parent = me;
+    ecu_dlist_push_back(&parent->children, &me->dnode);
+    me->parent = parent;
 }
 
 void ecu_ntnode_remove(struct ecu_ntnode *me)
@@ -449,6 +458,20 @@ void ecu_ntnode_remove(struct ecu_ntnode *me)
     ECU_RUNTIME_ASSERT( (node_valid(me)) );
     ecu_dnode_remove(&me->dnode);
     me->parent = me;
+}
+
+void ecu_ntnode_clear(struct ecu_ntnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    struct ecu_ntnode_postorder_iterator iterator;
+
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iterator, me)
+    {
+        /* Must be postorder so nodes can be safely removed in the middle of 
+        an iteration. Iterator already asserts if returned nodes are valid
+        (including me) so do not assert node_valid(). */
+        ecu_ntnode_remove(n);
+    }
 }
 
 bool ecu_ntnode_is_root(const struct ecu_ntnode *me)
@@ -509,7 +532,8 @@ size_t ecu_ntnode_size(const struct ecu_ntnode *me)
         size++;
     }
 
-    return size;
+    ECU_RUNTIME_ASSERT( (size > 0) ); /* Iteration should have gone at least over me. */
+    return (size - 1);
 }
 
 struct ecu_ntnode *ecu_ntnode_find(struct ecu_ntnode *me, 
@@ -934,7 +958,7 @@ const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cbegin(struct ecu_ntnode_
 {
     ECU_RUNTIME_ASSERT( (me && root) );
     ECU_RUNTIME_ASSERT( (node_valid(root)) );
-    struct ecu_ntnode *sibling = NTNODE_NULL;
+    const struct ecu_ntnode *sibling = NTNODE_NULL;
 
     ecu_ntnode_ctor(&me->delimiter, &invalid_destroy, ECU_OBJECT_ID_RESERVED);
     me->root = root;

@@ -140,8 +140,8 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief Single node within list. User-defined
- * nodes contain this object.
+ * @brief Single node within list. Intrusive, so
+ * user-defined types contain this node as a member.
  *
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.

@@ -31,7 +31,7 @@ so this only applies to GCC. I.e.
 
 
 ## Tree
-1. In ECU_TREE_NODE_GET_ENTRY() macro call, getting warning about how cast from char*
+1. In ECU_NTNODE_GET_ENTRY() macro call, getting warning about how cast from char*
 to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
 THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
 so this only applies to GCC. I.e.
@@ -42,12 +42,11 @@ so this only applies to GCC. I.e.
 #end pragma
 #endif
 ```
-2. Add add_sibling_left() and add_sibling_right() function. 
-3. NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
-4. Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
-5. Finished (done!) tree.c cleanup and code verification (asserts, style, etc).
-6. Finished (done!) destructor tests and tests for adding nodes in middle of iteration. 
-7. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
+1b. ntree.c pretty much done. All node_valid() asserts and correct paths done.
+2. Tests and documentation.
+3. Make sibling iterator and get rid of child_iterator_at() functions.
+    - Do not wrap child iterator in sibling iterator - it'll be its own entity.
+    - Probably iterate over all siblings so end == &delimiter.
 
 
 ## Unit Tests
