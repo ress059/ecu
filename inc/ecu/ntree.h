@@ -72,6 +72,16 @@
          var_ != ecu_ntnode_preorder_iterator_cend(citer_);                                     \
          var_ = end_ntnode_preorder_iterator_cnext(citer_))
 
+#define ECU_NTNODE_POSTORDER_FOR_EACH(var_, iter_, root_)                               \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_postorder_iterator_begin(iter_, root_);   \
+         var_ != ecu_ntnode_postorder_iterator_end(iter_);                              \
+         var_ = end_ntnode_postorder_iterator_next(iter_))
+
+#define ECU_NTNODE_CONST_POSTORDER_FOR_EACH(var_, citer_, root_)                                \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_postorder_iterator_cbegin(citer_, root_);   \
+         var_ != ecu_ntnode_postorder_iterator_cend(citer_);                                    \
+         var_ = end_ntnode_postorder_iterator_cnext(citer_))
+
 /*------------------------------------------------------------*/
 /*---------------------------- NTREE -------------------------*/
 /*------------------------------------------------------------*/
@@ -116,19 +126,24 @@ struct ecu_ntnode_preorder_citerator
     const struct ecu_ntnode *current;
 };
 
-
 /*------------------------------------------------------------*/
 /*------------------- NTNODE POSTORDER ITERATOR --------------*/
 /*------------------------------------------------------------*/
 
 struct ecu_ntnode_postorder_iterator
 {
-
+    struct ecu_ntnode delimiter;
+    struct ecu_ntnode *root;
+    struct ecu_ntnode *current;
+    struct ecu_ntnode *next;
 };
 
 struct ecu_ntnode_postorder_citerator
 {
-
+    struct ecu_ntnode delimiter;
+    const struct ecu_ntnode *root;
+    const struct ecu_ntnode *current;
+    const struct ecu_ntnode *next;
 };
 
 /*------------------------------------------------------------*/
@@ -146,6 +161,8 @@ extern "C" {
 extern void ecu_ntnode_ctor(struct ecu_ntnode *me,
                             void (*destroy)(struct ecu_ntnode *me, ecu_object_id id),
                             ecu_object_id id);
+
+// destroys all nodes in subtree too.
 extern void ecu_ntnode_destroy(struct ecu_ntnode *me);
 /**@}*/
 
@@ -179,6 +196,7 @@ extern void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *child
 
 // remove node
 extern void ecu_ntnode_remove(struct ecu_ntnode *me);
+extern void ecu_ntnode_clear(struct ecu_ntnode *me);
 
 // misc
 bool ecu_ntnode_is_root(const struct ecu_ntnode *me);
@@ -198,10 +216,6 @@ extern const struct ecu_ntnode *ecu_ntnode_cfind(struct ecu_ntnode *me,
 // return NULL if no LCA.
 extern struct ecu_ntnode *ecu_ntnode_lca(struct ecu_ntnode *n1, struct ecu_ntnode *n2);
 extern const struct ecu_ntnode *ecu_ntnode_clca(const struct ecu_ntnode *n1, const struct ecu_ntnode *n2);
-
-
-// see TODOs for these! dont know if possible since cant remove node in iteration.
-// clear();
 
 /**@}*/
 
@@ -227,8 +241,6 @@ extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cend(struct ecu_ntnode
 extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnode_child_citerator *me);
 /**@}*/
 
-
-
 /*------------------------------------------------------------*/
 /*-------- NTNODE PREORDER ITERATOR MEMBER FUNCTIONS ---------*/
 /*------------------------------------------------------------*/
@@ -248,12 +260,23 @@ extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cend(struct ecu_ntn
 extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_ntnode_preorder_citerator *me);
 /**@}*/
 
+/*------------------------------------------------------------*/
+/*-------- NTNODE POSTORDER ITERATOR MEMBER FUNCTIONS --------*/
+/*------------------------------------------------------------*/
 
 /**
  * @name Ntnode Postorder Iterator Member Functions
  */
 /**@{*/
+extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_begin(struct ecu_ntnode_postorder_iterator *me,
+                                                              struct ecu_ntnode *root);
+extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_end(struct ecu_ntnode_postorder_iterator *me);
+extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_next(struct ecu_ntnode_postorder_iterator *me);
 
+extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cbegin(struct ecu_ntnode_postorder_citerator *me,
+                                                                     const struct ecu_ntnode *root);
+extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cend(struct ecu_ntnode_postorder_citerator *me);
+extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cnext(struct ecu_ntnode_postorder_citerator *me);
 /**@}*/
 
 #ifdef __cplusplus

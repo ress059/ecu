@@ -165,7 +165,7 @@ void ecu_timer_disarm(struct ecu_timer *me)
 bool ecu_timer_is_active(const struct ecu_timer *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
-    return ecu_dnode_in_list(&me->dnode);
+    return (ecu_dnode_in_list(&me->dnode));
 }
 
 /*------------------------------------------------------------*/

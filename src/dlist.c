@@ -139,7 +139,7 @@ static bool node_in_list(const struct ecu_dnode *node)
 static bool list_valid(const struct ecu_dlist *list)
 {
     ECU_RUNTIME_ASSERT( (list) );
-    return node_is_valid_head(&list->head);
+    return (node_is_valid_head(&list->head));
 }
 
 static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
@@ -187,7 +187,8 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     /* Destroy object by setting to NULL values. Forces user to reconstruct
     node if they want to use it again, assuming asserts are enabled.
     IMPORTANT: These values are reset before the destroy callback in case
-    the user frees their entire node (including ecu_dnode). */
+    the user frees their entire node (including ecu_dnode). Otherwise 
+    we would be accessing and writing to freed memory. */
     me->next = (struct ecu_dnode *)0;
     me->prev = (struct ecu_dnode *)0;
     me->destroy = ECU_DNODE_DESTROY_UNUSED;
