@@ -279,26 +279,28 @@ extern void ecu_dnode_destroy(struct ecu_dnode *me);
  */
 /**@{*/
 /**
- * @pre @p me and @p position previously constructed via call to @ref ecu_dnode_ctor().
+ * @pre @p pos and @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node before specified position in list.
  *
- * @param me Node to insert in the list. Node cannot already be in a list. This
- * cannot be @ref ecu_dlist.head.
- * @param position Insert before this position. @p position must be within a list.
- * Node will be new TAIL if this is @ref ecu_dlist.head.
+ * @param pos Position node. Node is inserted before this position. This
+ * must be within a list. Inserted node will become new TAIL if this is
+ * @ref ecu_dlist.head.
+ * @param node Node to insert. This cannot already be within a list.
+ * This cannot be @ref ecu_dlist.head.
  */
-extern void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *position);
+extern void ecu_dnode_insert_before(struct ecu_dnode *pos, struct ecu_dnode *node);
 
 /**
- * @pre @p me and @p position previously constructed via call to @ref ecu_dnode_ctor().
+ * @pre @p pos and @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node after specified position in list.
- *
- * @param me Node to insert in the list. Node cannot already be in a list. This
- * cannot be @ref ecu_dlist.head.
- * @param position Insert after this position. @p position must be within a list.
- * Node will be at the front of the list if this is @ref ecu_dlist.head.
+ * 
+ * @param pos Position node. Node is inserted after this position. This
+ * must be within a list. Inserted node will become first node in list 
+ * if this is @ref ecu_dlist.head.
+ * @param node Node to insert in the list. This cannot already be within
+ * a list. This cannot be @ref ecu_dlist.head.
  */
-extern void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *position);
+extern void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().

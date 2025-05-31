@@ -402,54 +402,52 @@ const struct ecu_ntnode *ecu_ntnode_cback(const struct ecu_ntnode *me)
     return ntback;
 }
 
-void ecu_ntnode_insert_before(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
+void ecu_ntnode_insert_before(struct ecu_ntnode *pos, struct ecu_ntnode *sibling)
 {
-    ECU_RUNTIME_ASSERT( (me && sibling) );
-    ECU_RUNTIME_ASSERT( (me != sibling) );
-    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (pos && sibling) );
+    ECU_RUNTIME_ASSERT( (pos != sibling) );
+    ECU_RUNTIME_ASSERT( (node_valid(pos)) );
     ECU_RUNTIME_ASSERT( (node_valid(sibling)) );
     /* Tree must have a root. Cannot add sibling to a root. */
-    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(me)) );
-    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(sibling)) );
+    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(pos)) );
 
-    ecu_dnode_insert_before(&me->dnode, &sibling->dnode);
-    me->parent = sibling->parent;
+    ecu_dnode_insert_before(&pos->dnode, &sibling->dnode);
+    sibling->parent = pos->parent;
 }
 
-void ecu_ntnode_insert_after(struct ecu_ntnode *me, struct ecu_ntnode *sibling)
+void ecu_ntnode_insert_after(struct ecu_ntnode *pos, struct ecu_ntnode *sibling)
 {
-    ECU_RUNTIME_ASSERT( (me && sibling) );
-    ECU_RUNTIME_ASSERT( (me != sibling) );
-    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (pos && sibling) );
+    ECU_RUNTIME_ASSERT( (pos != sibling) );
+    ECU_RUNTIME_ASSERT( (node_valid(pos)) );
     ECU_RUNTIME_ASSERT( (node_valid(sibling)) );
     /* Tree must have a root. Cannot add sibling to a root. */
-    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(me)) );
-    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(sibling)) );
+    ECU_RUNTIME_ASSERT( (!ecu_ntnode_is_root(pos)) );
 
-    ecu_dnode_insert_after(&me->dnode, &sibling->dnode);
-    me->parent = sibling->parent;
+    ecu_dnode_insert_after(&pos->dnode, &sibling->dnode);
+    sibling->parent = pos->parent;
 }
 
-void ecu_ntnode_push_front(struct ecu_ntnode *me, struct ecu_ntnode *parent)
+void ecu_ntnode_push_front(struct ecu_ntnode *parent, struct ecu_ntnode *child)
 {
-    ECU_RUNTIME_ASSERT( (me && parent) );
-    ECU_RUNTIME_ASSERT( (me != parent) );
-    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (parent && child) );
+    ECU_RUNTIME_ASSERT( (parent != child) );
     ECU_RUNTIME_ASSERT( (node_valid(parent)) );
+    ECU_RUNTIME_ASSERT( (node_valid(child)) );
 
-    ecu_dlist_push_front(&parent->children, &me->dnode);
-    me->parent = parent;
+    ecu_dlist_push_front(&parent->children, &child->dnode);
+    child->parent = parent;
 }
 
-void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *parent)
+void ecu_ntnode_push_back(struct ecu_ntnode *parent, struct ecu_ntnode *child)
 {
-    ECU_RUNTIME_ASSERT( (me && parent) );
-    ECU_RUNTIME_ASSERT( (me != parent) );
-    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    ECU_RUNTIME_ASSERT( (parent && child) );
+    ECU_RUNTIME_ASSERT( (parent != child) );
     ECU_RUNTIME_ASSERT( (node_valid(parent)) );
+    ECU_RUNTIME_ASSERT( (node_valid(child)) );
 
-    ecu_dlist_push_back(&parent->children, &me->dnode);
-    me->parent = parent;
+    ecu_dlist_push_back(&parent->children, &child->dnode);
+    child->parent = parent;
 }
 
 void ecu_ntnode_remove(struct ecu_ntnode *me)

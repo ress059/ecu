@@ -72,7 +72,7 @@ member is passed to the API. For example:
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dlist_push_back(&list, &node1.node);
-    ecu_dnode_insert_before(&node2.node, &node1.node);
+    ecu_dlist_push_back(&list, &node2.node);
 
 
 Getting Node Data
@@ -477,7 +477,7 @@ be in a list.
     ecu_dlist_push_back(&list, &node3);
 
     /* After. Insert node2 before node3. list = [node1, node2, node3]. */
-    ecu_dnode_insert_before(&node2, &node3);
+    ecu_dnode_insert_before(&node3, &node2);
 
 .. figure:: /images/dlist/ecu_dnode_insert_before.svg
   :width: 600
@@ -485,8 +485,8 @@ be in a list.
 
   ecu_dnode_insert_before()
 
-The position node **must** be within a list. Other this operation 
-is illegal:
+The position node (first argument) **must** be within a list. Otherwise 
+this operation is illegal:
 
 .. code-block:: c 
 
@@ -495,7 +495,7 @@ is illegal:
     ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
     /* ILLEGAL. Position node (node3) not in a list. */
-    ecu_dnode_insert_before(&node2, &node3);
+    ecu_dnode_insert_before(&node3, &node2);
 
 .. figure:: /images/dlist/ecu_dnode_insert_before_illegal.svg
   :width: 600
@@ -523,7 +523,7 @@ be in a list.
     ecu_dlist_push_back(&list, &node3);
 
     /* After. Insert node2 after node1. list = [node1, node2, node3]. */
-    ecu_dnode_insert_after(&node2, &node1);
+    ecu_dnode_insert_after(&node1, &node2);
 
 .. figure:: /images/dlist/ecu_dnode_insert_after.svg
   :width: 600
@@ -531,8 +531,8 @@ be in a list.
 
   ecu_dnode_insert_after()
 
-The position node **must** be within a list. Other this operation 
-is illegal:
+The position node (first argument) **must** be within a list. Otherwise 
+this operation is illegal:
 
 .. figure:: /images/dlist/ecu_dnode_insert_after_illegal.svg
   :width: 600

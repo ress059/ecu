@@ -540,46 +540,46 @@ extern struct ecu_ntnode *ecu_ntnode_back(struct ecu_ntnode *me);
 extern const struct ecu_ntnode *ecu_ntnode_cback(const struct ecu_ntnode *me);
 
 /**
- * @pre @p me and @p sibling previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a sibling node into the tree. @p me is inserted 
- * before @p sibling.
+ * @pre @p pos and @p sibling previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Inserts a sibling node into the tree before the specified position.
  * 
- * @param me Node to insert. This will become @p sibling's previous sibling.
+ * @param pos Position node. Node is inserted before this position. 
  * This cannot be a root.
- * @param sibling Insert before this position. This cannot be a root.
+ * @param sibling Node to insert. This cannot already be within a tree
+ * unless this is a root node.
  */
-extern void ecu_ntnode_insert_before(struct ecu_ntnode *me, struct ecu_ntnode *sibling);
+extern void ecu_ntnode_insert_before(struct ecu_ntnode *pos, struct ecu_ntnode *sibling);
 
 /**
- * @pre @p me and @p sibling previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a sibling node into the tree. @p me is inserted 
- * after @p sibling.
+ * @pre @p pos and @p sibling previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Inserts a sibling node into the tree after the specified position.
  * 
- * @param me Node to insert. This will become @p sibling's next sibling.
+ * @param pos Position node. Node is inserted after this position. 
  * This cannot be a root.
- * @param sibling Insert after this position. This cannot be a root.
+ * @param sibling Node to insert. This cannot already be within a tree
+ * unless this is a root node.
  */
-extern void ecu_ntnode_insert_after(struct ecu_ntnode *me, struct ecu_ntnode *sibling);
+extern void ecu_ntnode_insert_after(struct ecu_ntnode *pos, struct ecu_ntnode *sibling);
 
 /**
- * @pre @p me and @p parent previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a child node into the tree. @p me becomes @p parent's 
+ * @pre @p parent and @p child previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Inserts a child node into the tree. @p child becomes @p parent's 
  * first child.
  * 
- * @param me Node to insert. This will become @p parent's first child.
  * @param parent Parent node to add child to.
+ * @param child Node to insert. This will become @p parent's first child.
  */
-extern void ecu_ntnode_push_front(struct ecu_ntnode *me, struct ecu_ntnode *parent);
+extern void ecu_ntnode_push_front(struct ecu_ntnode *parent, struct ecu_ntnode *child);
 
 /**
- * @pre @p me and @p parent previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a child node into the tree. @p me becomes @p parent's 
+ * @pre @p parent and @p child previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Inserts a child node into the tree. @p child becomes @p parent's 
  * last child.
  * 
- * @param me Node to insert. This will become @p parent's last child.
  * @param parent Parent node to add child to.
+ * @param child Node to insert. This will become @p parent's last child.
  */
-extern void ecu_ntnode_push_back(struct ecu_ntnode *me, struct ecu_ntnode *parent);
+extern void ecu_ntnode_push_back(struct ecu_ntnode *parent, struct ecu_ntnode *child);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().

@@ -360,9 +360,9 @@ TEST_GROUP_BASE(DNode, TEST_GROUP_CppUTestGroupDListBase)
 
         /* HEAD, 1, 2, 3. Use dnode_insert() functions instead of push_back()
         since this module tests insert() functions. Avoids dependencies. */
-        ecu_dnode_insert_after(&m_node1, &m_list.head);
-        ecu_dnode_insert_after(&m_node2, &m_node1);
-        ecu_dnode_insert_after(&m_node3, &m_node2);
+        ecu_dnode_insert_after(&m_list.head, &m_node1);
+        ecu_dnode_insert_after(&m_node1, &m_node2);
+        ecu_dnode_insert_after(&m_node2, &m_node3);
     }
 };
 
@@ -714,7 +714,7 @@ TEST(DNode, InsertBeforeHead)
         EXPECT_NODE_IN_LIST(&m_list, &m_inserted_node);
 
         /* Step 2: Action. */
-        ecu_dnode_insert_before(&m_inserted_node, &m_list.head);
+        ecu_dnode_insert_before(&m_list.head, &m_inserted_node);
 
         /* Step 3: Assert. Verify m_inserted_node is at the end of the list. */
         list_order_check_expectations(&m_list);
@@ -742,7 +742,7 @@ TEST(DNode, InsertBeforeTail)
         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
 
         /* Step 2: Action. */
-        ecu_dnode_insert_before(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_before(&m_node3, &m_inserted_node);
 
         /* Step 3: Assert. Verify m_inserted_node is before the tail (m_node3). */
         list_order_check_expectations(&m_list);
@@ -771,7 +771,7 @@ TEST(DNode, InsertBeforePositionNodeNotInList)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. */
-        ecu_dnode_insert_before(&m_inserted_node, &m_node_not_in_list);
+        ecu_dnode_insert_before(&m_node_not_in_list, &m_inserted_node);
     }
     catch (const AssertException& e)
     {
@@ -784,7 +784,7 @@ TEST(DNode, InsertBeforePositionNodeNotInList)
     try 
     {
         set_assert_handler(AssertResponse::FAIL);
-        ecu_dnode_insert_before(&m_inserted_node, &m_list.head);
+        ecu_dnode_insert_before(&m_list.head, &m_inserted_node);
         list_order_check_expectations(&m_list);
     }
     catch (const AssertException& e)
@@ -804,7 +804,7 @@ TEST(DNode, InsertBeforeAddNodeInList)
     {
         /* Step 1: Arrange. */
         mock().strictOrder();
-        ecu_dnode_insert_before(&m_inserted_node, &m_other_list.head);
+        ecu_dnode_insert_before(&m_other_list.head, &m_inserted_node);
 
         /* m_list nodes. */
         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
@@ -817,7 +817,7 @@ TEST(DNode, InsertBeforeAddNodeInList)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. Attempt to insert node from listA into listB. */
-        ecu_dnode_insert_before(&m_node1, &m_inserted_node);
+        ecu_dnode_insert_before(&m_inserted_node, &m_node1);
     }
     catch (const AssertException& e)
     {
@@ -848,7 +848,7 @@ TEST(DNode, InsertBeforeAddDestroyedNode)
 
         /* Step 2: Action. Attempt to insert destroyed node. */
         ecu_dnode_destroy(&m_inserted_node);
-        ecu_dnode_insert_before(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_before(&m_node3, &m_inserted_node);
     }
     catch (const AssertException& e)
     {
@@ -877,7 +877,7 @@ TEST(DNode, InsertBeforeAddHeadNode)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
-        ecu_dnode_insert_before(&m_other_list.head, &m_node3);
+        ecu_dnode_insert_before(&m_node3, &m_other_list.head);
     }
     catch (const AssertException& e)
     {
@@ -910,7 +910,7 @@ TEST(DNode, InsertAfterHead)
         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
 
         /* Step 2: Action. */
-        ecu_dnode_insert_after(&m_inserted_node, &m_list.head);
+        ecu_dnode_insert_after(&m_list.head, &m_inserted_node);
 
         /* Step 3: Assert. Verify m_inserted_node is one after HEAD. */
         list_order_check_expectations(&m_list);
@@ -937,7 +937,7 @@ TEST(DNode, InsertAfterTail)
         EXPECT_NODE_IN_LIST(&m_list, &m_inserted_node);
 
         /* Step 2: Action. */
-        ecu_dnode_insert_after(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_after(&m_node3, &m_inserted_node);
 
         /* Step 3: Assert. Verify m_inserted_node is now the tail. */
         list_order_check_expectations(&m_list);
@@ -966,7 +966,7 @@ TEST(DNode, InsertAfterPositionNodeNotInList)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. */
-        ecu_dnode_insert_after(&m_inserted_node, &m_node_not_in_list);
+        ecu_dnode_insert_after(&m_node_not_in_list, &m_inserted_node);
     }
     catch (const AssertException& e)
     {
@@ -979,7 +979,7 @@ TEST(DNode, InsertAfterPositionNodeNotInList)
     try 
     {
         set_assert_handler(AssertResponse::FAIL);
-        ecu_dnode_insert_after(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_after(&m_node3, &m_inserted_node);
         list_order_check_expectations(&m_list);
     }
     catch (const AssertException& e)
@@ -999,7 +999,7 @@ TEST(DNode, InsertAfterAddNodeInList)
     {
         /* Step 1: Arrange. */
         mock().strictOrder();
-        ecu_dnode_insert_after(&m_inserted_node, &m_other_list.head);
+        ecu_dnode_insert_after(&m_other_list.head, &m_inserted_node);
 
         /* m_list nodes. */
         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
@@ -1012,7 +1012,7 @@ TEST(DNode, InsertAfterAddNodeInList)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. Attempt to insert node from listA into listB. */
-        ecu_dnode_insert_after(&m_node1, &m_inserted_node);
+        ecu_dnode_insert_after(&m_inserted_node, &m_node1);
     }
     catch (const AssertException& e)
     {
@@ -1043,7 +1043,7 @@ TEST(DNode, InsertAfterAddDestroyedNode)
 
         /* Step 2: Action. Attempt to insert destroyed node. */
         ecu_dnode_destroy(&m_inserted_node);
-        ecu_dnode_insert_after(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_after(&m_node3, &m_inserted_node);
     }
     catch (const AssertException& e)
     {
@@ -1072,7 +1072,7 @@ TEST(DNode, InsertAfterAddHeadNode)
         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
 
         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
-        ecu_dnode_insert_after(&m_other_list.head, &m_node3);
+        ecu_dnode_insert_after(&m_node3, &m_other_list.head);
     }
     catch (const AssertException& e)
     {
@@ -1131,7 +1131,7 @@ TEST(DNode, RemoveAndReAddNode)
 
         /* Step 2: Action. */
         ecu_dnode_remove(&m_node2);
-        ecu_dnode_insert_after(&m_node2, &m_other_list.head);
+        ecu_dnode_insert_after(&m_other_list.head, &m_node2);
 
         /* Step 3: Assert. Verify list intact. */
         list_order_check_expectations(&m_list);
@@ -1185,7 +1185,7 @@ TEST(DNode, InList)
     {
         /* Steps 2 and 3: Action and assert. */
         CHECK_FALSE( (ecu_dnode_in_list(&m_inserted_node)) );
-        ecu_dnode_insert_after(&m_inserted_node, &m_node3);
+        ecu_dnode_insert_after(&m_node3, &m_inserted_node);
         CHECK_TRUE( (ecu_dnode_in_list(&m_inserted_node)) );
         ecu_dnode_remove(&m_inserted_node);
         CHECK_FALSE( (ecu_dnode_in_list(&m_inserted_node)) );

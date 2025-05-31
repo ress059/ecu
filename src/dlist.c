@@ -200,26 +200,26 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     }
 }
 
-void ecu_dnode_insert_before(struct ecu_dnode *me, struct ecu_dnode *position)
+void ecu_dnode_insert_before(struct ecu_dnode *pos, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (me && position) );
-    ECU_RUNTIME_ASSERT( (me != position) );
-    ECU_RUNTIME_ASSERT( (node_valid(me) && node_valid(position)) );
-    ECU_RUNTIME_ASSERT( (!node_in_list(me) && node_in_list(position)) );
+    ECU_RUNTIME_ASSERT( (pos && node) );
+    ECU_RUNTIME_ASSERT( (pos != node) );
+    ECU_RUNTIME_ASSERT( (node_valid(pos) && node_valid(node)) );
+    ECU_RUNTIME_ASSERT( (node_in_list(pos) && !node_in_list(node)) );
 
-    me->next = position;
-    me->prev = position->prev;
-    position->prev->next = me;
-    position->prev = me;
+    node->next = pos;
+    node->prev = pos->prev;
+    pos->prev->next = node;
+    pos->prev = node;
 }
 
-void ecu_dnode_insert_after(struct ecu_dnode *me, struct ecu_dnode *position)
+void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (me && position) );
-    ECU_RUNTIME_ASSERT( (me != position) );
-    ECU_RUNTIME_ASSERT( (node_valid(me) && node_valid(position)) );
-    ECU_RUNTIME_ASSERT( (!node_in_list(me) && node_in_list(position)) );
-    ecu_dnode_insert_before(me, position->next);
+    ECU_RUNTIME_ASSERT( (pos && node) );
+    ECU_RUNTIME_ASSERT( (pos != node) );
+    ECU_RUNTIME_ASSERT( (node_valid(pos) && node_valid(node)) );
+    ECU_RUNTIME_ASSERT( (node_in_list(pos) && !node_in_list(node)) );
+    ecu_dnode_insert_before(pos->next, node);
 }
 
 void ecu_dnode_remove(struct ecu_dnode *me)
@@ -341,7 +341,7 @@ void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dnode_insert_after(node, &me->head);
+    ecu_dnode_insert_after(&me->head, node);
 }
 
 struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me)
@@ -393,7 +393,7 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
-    ecu_dnode_insert_before(node, &me->head);
+    ecu_dnode_insert_before(&me->head, node);
 }
 
 struct ecu_dnode *ecu_dlist_pop_back(struct ecu_dlist *me)
@@ -427,7 +427,7 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
     {
         if ((*condition)(node, i, data))
         {
-            ecu_dnode_insert_before(node, i);
+            ecu_dnode_insert_before(i, node);
             inserted = true;
             break;
         }
@@ -551,7 +551,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                 {
                     swap_q = false;
                     ecu_dnode_remove(e); /* Must remove before swapping. API requires added nodes to not be in a list. */
-                    ecu_dnode_insert_before(e, p);
+                    ecu_dnode_insert_before(p, e);
                 }
             }
 
