@@ -62,7 +62,8 @@
     ((type_ *)((uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
- * @brief Read user-defined data stored in a dlist node. Converts
+ * @brief Const-qualified version of @ref ECU_DNODE_GET_ENTRY().
+ * Read user-defined data stored in a dlist node. Converts
  * a dlist node into the user-defined type stored in the list.
  *
  * @param ptr_ Address of dlist node within the user-defined @p type_.
@@ -389,7 +390,8 @@ extern struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @brief If list is not empty, returns a pointer to the front node.
+ * @brief Const-qualified version of @ref ecu_dlist_front().
+ * If list is not empty, returns a pointer to the front node.
  * If list is empty, returns NULL.
  *
  * @param me List to check.
@@ -427,7 +429,8 @@ extern struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
- * @brief If list is not empty, returns a pointer to the tail node.
+ * @brief Const-qualified version of @ref ecu_dlist_back().
+ * If list is not empty, returns a pointer to the tail node.
  * If list is empty, returns NULL.
  *
  * @param me List to check.
@@ -543,10 +546,13 @@ extern bool ecu_dlist_empty(const struct ecu_dlist *me);
  * @pre Memory already allocated for @p me
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
  * @brief Initializes iterator and returns first node in the list.
- * @details Returns first user-defined node if list is not empty. Otherwise
+ * Returns first user-defined node if list is not empty. Otherwise
  * returns the same terminal node as @ref ecu_dlist_iterator_end(). It is
  * safe to remove nodes in the middle of an iteration. Adding nodes in the
  * middle of an iteration is undefined.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_FOR_EACH()
+ * instead.
  *
  * @param me Non-const iterator to initialize.
  * @param list List to iterate over.
@@ -559,6 +565,9 @@ extern struct ecu_dnode *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me,
  * @pre @p start node is in @p list.
  * @brief Initializes iterator at the supplied starting node's position. 
  * The starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_AT_FOR_EACH()
+ * instead.
  * 
  * @param me Non-const iterator to initialize.
  * @param list List to iterate over.
@@ -573,6 +582,9 @@ extern struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me,
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
  * @brief Returns list's terminal node, which is @ref ecu_dlist.head. This
  * is a dummy delimeter.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_FOR_EACH()
+ * instead.
  *
  * @param me Non-const iterator.
  */
@@ -581,6 +593,9 @@ extern struct ecu_dnode *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me);
 /**
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_begin().
  * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_FOR_EACH()
+ * instead.
  *
  * @param me Non-const iterator.
  */
@@ -598,9 +613,13 @@ extern struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me);
 /**
  * @pre Memory already allocated for @p me
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
- * @brief Initializes iterator and returns first node in the list.
- * @details Returns first user-defined node if list is not empty. Otherwise
+ * @brief Const-qualified version of @ref ecu_dlist_iterator_begin().
+ * Initializes iterator and returns first node in the list.
+ * Returns first user-defined node if list is not empty. Otherwise
  * returns the same terminal node as @ref ecu_dlist_iterator_cend().
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_CONST_FOR_EACH()
+ * instead.
  *
  * @param me Const iterator to initialize.
  * @param list List to iterate over.
@@ -612,8 +631,12 @@ extern const struct ecu_dnode *ecu_dlist_iterator_cbegin(struct ecu_dlist_citera
  * @pre Memory already allocated for @p me
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
  * @pre @p start node is in @p list.
- * @brief Initializes iterator at the supplied starting node's position. 
+ * @brief Const-qualified version of @ref ecu_dlist_iterator_at().
+ * Initializes iterator at the supplied starting node's position. 
  * The starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_CONST_AT_FOR_EACH()
+ * instead.
  * 
  * @param me Const iterator to initialize.
  * @param list List to iterate over.
@@ -627,8 +650,12 @@ extern const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator
 /**
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_cbegin()
  * or @ref ecu_dlist_iterator_cat().
- * @brief Returns list's terminal node, which is @ref ecu_dlist.head. This
+ * @brief Const-qualified version of @ref ecu_dlist_iterator_end().
+ * Returns list's terminal node, which is @ref ecu_dlist.head. This
  * is a dummy delimeter.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_CONST_FOR_EACH()
+ * instead.
  *
  * @param me Const iterator.
  */
@@ -637,7 +664,11 @@ extern const struct ecu_dnode *ecu_dlist_iterator_cend(struct ecu_dlist_citerato
 /**
  * @pre @p me previously initialized via call to @ref ecu_dlist_iterator_cbegin()
  * or @ref ecu_dlist_iterator_cat().
- * @brief Returns the next node in the iteration.
+ * @brief Const-qualified version of @ref ecu_dlist_iterator_next(). Returns 
+ * the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_DLIST_CONST_FOR_EACH()
+ * instead.
  *
  * @param me Const iterator.
  */

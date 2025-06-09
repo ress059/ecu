@@ -61,7 +61,8 @@
     ((type_ *)((uint8_t *)(ptr_) - offsetof(type_, member_)))
 
 /**
- * @brief Read user-defined data stored in the intrusive tree
+ * @brief Const-qualified version of @ref ECU_NTNODE_GET_ENTRY().
+ * Read user-defined data stored in the intrusive tree
  * node. Converts @ref ecu_ntnode into a read-only user-defined 
  * type.
  *
@@ -78,8 +79,9 @@
 
 /**
  * @brief Helper macro that iterates over all direct children.
- * Grandchildren, great-grandchildren, etc are not iterated 
- * over. It is safe to remove the current node in the iteration.
+ * Grandchildren, great-grandchildren, etc are not included in
+ * the iteration. It is safe to remove the current node in the 
+ * iteration.
  * 
  * @param var_ Loop variable name. This will be a pointer to @ref ecu_ntnode.
  * @param iter_ Iterator to initialize. This will be a pointer 
@@ -93,9 +95,10 @@
          var_ = ecu_ntnode_child_iterator_next(iter_))
 
 /**
- * @brief Helper macro that const iterates over all direct 
+ * @brief Const-qualified version of @ref ECU_NTNODE_CHILD_FOR_EACH().
+ * Helper macro that const iterates over all direct 
  * children. Grandchildren, great-grandchildren, etc are not 
- * iterated over. Returned nodes are read-only.
+ * included in the iteration. Returned nodes are read-only.
  * 
  * @param var_ Loop variable name. This will be a pointer to 
  * const @ref ecu_ntnode.
@@ -108,6 +111,47 @@
     for (const struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_cbegin(citer_, parent_); \
          var_ != ecu_ntnode_child_iterator_cend(citer_);                                    \
          var_ = ecu_ntnode_child_iterator_cnext(citer_))
+
+/**
+ * @brief Helper macro that iterates over all parents.
+ * The tree is traversed up, returning parent, then grandparent,
+ * then great-grandparent, etc until the root is reached.
+ * The root is included in the iteration. It is safe to remove 
+ * the current node in the iteration.
+ * 
+ * @param var_ Loop variable name. This will be a pointer to @ref ecu_ntnode.
+ * @param iter_ Iterator to initialize. This will be a pointer 
+ * to @ref ecu_ntnode_parent_iterator.
+ * @param start_ Starting point of the iteration. Parents
+ * are obtained by traversing up the tree, starting at this
+ * node. This node is not included in the iteration. This
+ * will be a pointer to @ref ecu_ntnode. 
+ */
+#define ECU_NTNODE_PARENT_FOR_EACH(var_, iter_, start_)                             \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_parent_iterator_begin(iter_, start_); \
+         var_ != ecu_ntnode_parent_iterator_end(iter_);                             \
+         var_ = ecu_ntnode_parent_iterator_next(iter_))
+
+/**
+ * @brief Const-qualified version of @ref ECU_NTNODE_PARENT_FOR_EACH().
+ * Helper macro that iterates over all parents. The tree is traversed 
+ * up, returning parent, then grandparent, then great-grandparent, etc 
+ * until the root is reached. The root is included in the iteration. 
+ * Returned nodes are read-only.
+ * 
+ * @param var_ Loop variable name. This will be a pointer to 
+ * const @ref ecu_ntnode.
+ * @param iter_ Iterator to initialize. This will be a pointer 
+ * to @ref ecu_ntnode_parent_citerator.
+ * @param start_ Starting point of the iteration. Parents
+ * are obtained by traversing up the tree, starting at this
+ * node. This node is not included in the iteration. This
+ * will be a pointer to @ref ecu_ntnode. 
+ */
+#define ECU_NTNODE_CONST_PARENT_FOR_EACH(var_, citer_, start_)                          \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_parent_iterator_cbegin(citer_, start_);   \
+         var_ != ecu_ntnode_parent_iterator_cend(citer_);                               \
+         var_ = ecu_ntnode_parent_iterator_cnext(citer_))
 
 #if 0 /* !!!!!!!!!!!!!!!!! See TODO in ntree.c */
 /**
@@ -283,22 +327,89 @@ struct ecu_ntnode_child_citerator
 /*-------------------- NTNODE SIBLING ITERATOR ---------------*/
 /*------------------------------------------------------------*/
 
-/* !!!!!!!!!!!!!!!!! See TODO in ntree.c */
-// /**
-//  * @brief Non-const next sibling iterator.
-//  * 
-//  * @warning PRIVATE. Unless otherwise specified, all
-//  * members can only be edited via the public API.
-//  */
-// struct ecu_ntnode_next_sibling_iterator
-// {
-//     struct ecu_ntnode_child_iterator child_iterator;
-// };
+/**
+ * @brief Non-const sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_sibling_iterator
+{
+    /// @brief Starting node of iteration. Not included
+    /// in iteration.
+    struct ecu_ntnode *start;
 
-// struct ecu_ntnode_next_sibling_citerator
-// {
-//     struct ecu_ntnode_child_citerator child_iterator;
-// };
+    /// @brief Current node in the iteration.
+    struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    struct ecu_ntnode *next;
+};
+
+/**
+ * @brief Const sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_sibling_citerator
+{
+    /// @brief Starting node of iteration. Not included
+    /// in iteration.
+    const struct ecu_ntnode *start;
+
+    /// @brief Current node in the iteration.
+    const struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    const struct ecu_ntnode *next;
+};
+
+/*------------------------------------------------------------*/
+/*-------------------- NTNODE PARENT ITERATOR ----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Non-const parent iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_parent_iterator
+{
+    /// @brief Starting node of iteration. Not included
+    /// in iteration.
+    struct ecu_ntnode *start;
+
+    /// @brief Current node in the iteration.
+    struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    struct ecu_ntnode *next;
+};
+
+/**
+ * @brief Const parent iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_parent_citerator
+{
+    /// @brief Starting node of iteration. Not included
+    /// in iteration.
+    const struct ecu_ntnode *start;
+
+    /// @brief Current node in the iteration.
+    const struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    const struct ecu_ntnode *next;
+};
 
 /*------------------------------------------------------------*/
 /*------------------- NTNODE PREORDER ITERATOR ---------------*/
@@ -316,7 +427,8 @@ struct ecu_ntnode_preorder_iterator
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
-    /// @brief Root of tree being iterated over.
+    /// @brief Root of tree being iterated over. Included
+    /// in iteration.
     struct ecu_ntnode *root;
 
     /// @brief Current node in the iteration.
@@ -335,7 +447,8 @@ struct ecu_ntnode_preorder_citerator
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
-    /// @brief Root of tree being iterated over.
+    /// @brief Root of tree being iterated over. Included
+    /// in iteration.
     const struct ecu_ntnode *root;
 
     /// @brief Current node in the iteration.
@@ -358,7 +471,8 @@ struct ecu_ntnode_postorder_iterator
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
-    /// @brief Root of tree being iterated over.
+    /// @brief Root of tree being iterated over. Included
+    /// in iteration.
     struct ecu_ntnode *root;
 
     /// @brief Current node in the iteration.
@@ -381,7 +495,8 @@ struct ecu_ntnode_postorder_citerator
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
-    /// @brief Root of tree being iterated over.
+    /// @brief Root of tree being iterated over. Included
+    /// in iteration.
     const struct ecu_ntnode *root;
 
     /// @brief Current node in the iteration.
@@ -460,7 +575,8 @@ extern struct ecu_ntnode *ecu_ntnode_parent(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the supplied node's parent. If the node is
+ * @brief Const-qualified version of @ref ecu_ntnode_parent().
+ * Returns the supplied node's parent. If the node is
  * a root and has no parent, NULL is returned.
  * 
  * @param me Node to check.
@@ -478,7 +594,8 @@ extern struct ecu_ntnode *ecu_ntnode_next(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's next sibling. NULL is returned
+ * @brief Const-qualified version of @ref ecu_ntnode_next().
+ * Returns the node's next sibling. NULL is returned
  * if the node is the last sibling, or is a root and has no siblings.
  * 
  * @param me Node to check.
@@ -496,7 +613,8 @@ extern struct ecu_ntnode *ecu_ntnode_prev(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's previous sibling. NULL is returned
+ * @brief Const-qualified version of @ref ecu_ntnode_prev().
+ * Returns the node's previous sibling. NULL is returned
  * if the node is the first sibling, or is a root and has no siblings.
  * 
  * @param me Node to check.
@@ -514,7 +632,8 @@ extern struct ecu_ntnode *ecu_ntnode_front(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's first child. NULL is returned
+ * @brief Const-qualified version of @ref ecu_ntnode_front().
+ * Returns the node's first child. NULL is returned
  * if the node is a leaf and has no children.
  * 
  * @param me Node to check.
@@ -532,7 +651,8 @@ extern struct ecu_ntnode *ecu_ntnode_back(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's last child. NULL is returned
+ * @brief Const-qualified version of @ref ecu_ntnode_back().
+ * Returns the node's last child. NULL is returned
  * if the node is a leaf and has no children.
  * 
  * @param me Node to check.
@@ -568,6 +688,7 @@ extern void ecu_ntnode_insert_after(struct ecu_ntnode *pos, struct ecu_ntnode *s
  * 
  * @param parent Parent node to add child to.
  * @param child Node to insert. This will become @p parent's first child.
+ * This cannot already be within a tree unless this is a root node.
  */
 extern void ecu_ntnode_push_front(struct ecu_ntnode *parent, struct ecu_ntnode *child);
 
@@ -578,6 +699,7 @@ extern void ecu_ntnode_push_front(struct ecu_ntnode *parent, struct ecu_ntnode *
  * 
  * @param parent Parent node to add child to.
  * @param child Node to insert. This will become @p parent's last child.
+ * This cannot already be within a tree unless this is a root node.
  */
 extern void ecu_ntnode_push_back(struct ecu_ntnode *parent, struct ecu_ntnode *child);
 
@@ -681,7 +803,8 @@ extern struct ecu_ntnode *ecu_ntnode_find(struct ecu_ntnode *me,
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Attempts to find a specific node within a tree. NULL
+ * @brief Const-qualified version of @ref ecu_ntnode_find().
+ * Attempts to find a specific node within a tree. NULL
  * is returned if the node is not found. The tree is iterated over, 
  * and each node is passed into a user-defined function. If
  * the supplied node is the one that needed to be found, the user
@@ -714,7 +837,8 @@ extern struct ecu_ntnode *ecu_ntnode_lca(struct ecu_ntnode *n1, struct ecu_ntnod
 
 /**
  * @pre @p n1 and @p n2 previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the least common ancestor of @p n1 and @p n2.
+ * @brief Const-qualified version of @ref ecu_ntnode_lca().
+ * Returns the least common ancestor of @p n1 and @p n2.
  * Returns NULL if nodes are in separate trees and do not have
  * an LCA.
  * 
@@ -732,18 +856,204 @@ extern const struct ecu_ntnode *ecu_ntnode_clca(const struct ecu_ntnode *n1, con
  * @name Ntnode Child Iterator Member Functions
  */
 /**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p parent previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over the supplied node's direct children.
+ * Grandchildren, great-grandchildren, etc are not iterated over.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const child iterator to initialize.
+ * @param parent Parent containing children to iterate over. 
+ * If @p parent has children, the first (left-most) child is
+ * returned. If there are no children @p parent is returned, 
+ * signifying the end of the iteration. 
+ */
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_begin(struct ecu_ntnode_child_iterator *me, 
                                                           struct ecu_ntnode *parent);
-extern struct ecu_ntnode *ecu_ntnode_child_iterator_at(struct ecu_ntnode_child_iterator *me,
-                                                       struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_child_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is
+ * the parent node supplied to @ref ecu_ntnode_child_iterator_begin().
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const child iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_end(struct ecu_ntnode_child_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_child_iterator_begin().
+ * @brief Returns the next child in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const child iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_child_iterator_next(struct ecu_ntnode_child_iterator *me);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p parent previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified child iteration.
+ * Starts an iteration over the supplied node's direct children.
+ * Grandchildren, great-grandchildren, etc are not iterated over.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const child iterator to initialize.
+ * @param parent Parent containing children to iterate over. 
+ * If @p parent has children, the first (left-most) child is
+ * returned. If there are no children @p parent is returned, 
+ * signifying the end of the iteration. 
+ */
 extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cbegin(struct ecu_ntnode_child_citerator *me, 
                                                                  const struct ecu_ntnode *parent);
-extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cat(struct ecu_ntnode_child_citerator *me,
-                                                              const struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_child_iterator_cbegin().
+ * @brief Const-qualified child iteration.
+ * Returns the ending node in the iteration, which is
+ * the parent node supplied to @ref ecu_ntnode_child_iterator_cbegin().
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const child iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cend(struct ecu_ntnode_child_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_child_iterator_cbegin().
+ * @brief Const-qualified child iteration. Returns the next child 
+ * in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_CHILD_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const child iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnode_child_citerator *me);
+/**@}*/
+
+/*------------------------------------------------------------*/
+/*--------- NTNODE PARENT ITERATOR MEMBER FUNCTIONS ----------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @name Ntnode Parent Iterator Member Functions
+ */
+/**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over all parents. The tree is traversed
+ * up, returning parent, then grandparent, then great-grandparent, etc
+ * until the root is reached. The root is included in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const parent iterator to initialize.
+ * @param start Parents are obtained by traversing up the tree, starting 
+ * at this node. This node is not included in the iteration. If this node has 
+ * parents, its first parent is returned. If this is a root this node
+ * (@p start) is returned, signifying the end of the iteration.
+ */
+extern struct ecu_ntnode *ecu_ntnode_parent_iterator_begin(struct ecu_ntnode_parent_iterator *me,
+                                                           struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_parent_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is
+ * the start node supplied to @ref ecu_ntnode_parent_iterator_begin().
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const parent iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_parent_iterator_end(struct ecu_ntnode_parent_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_parent_iterator_begin().
+ * @brief Returns the next parent in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const parent iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_parent_iterator_next(struct ecu_ntnode_parent_iterator *me);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified parent iteration.
+ * Starts an iteration over all parents. The tree is traversed
+ * up, returning parent, then grandparent, then great-grandparent, etc
+ * until the root is reached. The root is included in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const parent iterator to initialize.
+ * @param start Parents are obtained by traversing up the tree, starting 
+ * at this node. This node is not included in the iteration. If this node has 
+ * parents, its first parent is returned. If this is a root this node
+ * (@p start) is returned, signifying the end of the iteration.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_parent_iterator_cbegin(struct ecu_ntnode_parent_citerator *me,
+                                                                  const struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_parent_iterator_cbegin().
+ * @brief Const-qualified parent iteration.
+ * Returns the ending node in the iteration, which is
+ * the start node supplied to @ref ecu_ntnode_parent_iterator_cbegin().
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const parent iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_parent_iterator_cend(struct ecu_ntnode_parent_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_parent_iterator_cbegin().
+ * @brief Const-qualified parent iteration. Returns the next parent 
+ * in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PARENT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const parent iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_parent_iterator_cnext(struct ecu_ntnode_parent_citerator *me);
+/**@}*/
+
+/*------------------------------------------------------------*/
+/*--------- NTNODE SIBLING ITERATOR MEMBER FUNCTIONS ---------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @name Ntnode Sibling Iterator Member Functions
+ */
+/**@{*/
+extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_begin(struct ecu_ntnode_sibling_iterator *me,
+                                                            struct ecu_ntnode *start);
+extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_end(struct ecu_ntnode_sibling_iterator *me);
+extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_next(struct ecu_ntnode_sibling_iterator *me);
+extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cbegin(struct ecu_ntnode_sibling_citerator *me,
+                                                                   const struct ecu_ntnode *start);
+extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cend(struct ecu_ntnode_sibling_citerator *me);
+extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cnext(struct ecu_ntnode_sibling_citerator *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -754,14 +1064,91 @@ extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnod
  * @name Ntnode Preorder Iterator Member Functions
  */
 /**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p root previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts a preorder iteration over the supplied node's tree.
+ * The supplied @p root is returned, which is the first node in the 
+ * iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const preorder iterator to initialize.
+ * @param root Root of tree to iterate over. This root is
+ * included in the iteration and is returned in this function.
+ */
 extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_begin(struct ecu_ntnode_preorder_iterator *me,
                                                              struct ecu_ntnode *root);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_preorder_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is a
+ * dummy delimiter.
+ * 
+ * @warning The node returned by this function should never be used
+ * since it is a dummy delimiter.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const preorder iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_end(struct ecu_ntnode_preorder_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_preorder_iterator_begin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const preorder iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_preorder_iterator_next(struct ecu_ntnode_preorder_iterator *me);
 
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p root previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified preorder iteration.
+ * Starts a preorder iteration over the supplied node's tree.
+ * The supplied @p root is returned, which is the first node in the 
+ * iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const preorder iterator to initialize.
+ * @param root Root of tree to iterate over. This root is
+ * included in the iteration and is returned in this function.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cbegin(struct ecu_ntnode_preorder_citerator *me,
                                                                     const struct ecu_ntnode *root);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_preorder_iterator_cbegin().
+ * @brief Const-qualified preorder iteration.
+ * Returns the ending node in the iteration, which is a
+ * dummy delimiter.
+ * 
+ * @warning The node returned by this function should never be used
+ * since it is a dummy delimiter.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const preorder iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cend(struct ecu_ntnode_preorder_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_preorder_iterator_cbegin().
+ * @brief Const-qualified preorder iteration. Returns the next 
+ * node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const preorder iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_ntnode_preorder_citerator *me);
 /**@}*/
 
@@ -773,14 +1160,88 @@ extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_nt
  * @name Ntnode Postorder Iterator Member Functions
  */
 /**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p root previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts a postorder iteration over the supplied node's tree.
+ * Returns the first node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const postorder iterator to initialize.
+ * @param root Root of tree to iterate over. This root is
+ * included in the iteration.
+ */
 extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_begin(struct ecu_ntnode_postorder_iterator *me,
                                                               struct ecu_ntnode *root);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_postorder_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is a
+ * dummy delimiter.
+ * 
+ * @warning The node returned by this function should never be used
+ * since it is a dummy delimiter.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const postorder iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_end(struct ecu_ntnode_postorder_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_postorder_iterator_begin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const postorder iterator.
+ */
 extern struct ecu_ntnode *ecu_ntnode_postorder_iterator_next(struct ecu_ntnode_postorder_iterator *me);
 
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p root previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified postorder iteration.
+ * Starts a postorder iteration over the supplied node's tree.
+ * Returns the first node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const postorder iterator to initialize.
+ * @param root Root of tree to iterate over. This root is
+ * included in the iteration.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cbegin(struct ecu_ntnode_postorder_citerator *me,
                                                                      const struct ecu_ntnode *root);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_postorder_iterator_cbegin().
+ * @brief Const-qualified postorder iteration.
+ * Returns the ending node in the iteration, which is a
+ * dummy delimiter.
+ * 
+ * @warning The node returned by this function should never be used
+ * since it is a dummy delimiter.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const postorder iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cend(struct ecu_ntnode_postorder_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_postorder_iterator_cbegin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_POSTORDER_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const postorder iterator.
+ */
 extern const struct ecu_ntnode *ecu_ntnode_postorder_iterator_cnext(struct ecu_ntnode_postorder_citerator *me);
 /**@}*/
 
