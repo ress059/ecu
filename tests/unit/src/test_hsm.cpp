@@ -78,6 +78,8 @@ enum state_id
     NUMBER_OF_STATE_IDS
 };
 
+namespace
+{
 /* Forward declaration required for handler function definitions. */
 struct test_hsm;
 
@@ -451,6 +453,7 @@ bool hsm_state_handler::run(ecu_hsm *hsm, const void *event)
 
     handler_obj.process_state_change(me);
     return handler_obj.ret;
+}
 }
 
 /*------------------------------------------------------------*/

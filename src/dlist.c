@@ -77,9 +77,9 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id);
 
 static bool node_valid(const struct ecu_dnode *node)
 {
-    bool valid = false;
     ECU_RUNTIME_ASSERT( (node) );
     ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+    bool valid = false;
 
     if ((node->next->prev == node) &&
         (node->prev->next == node) &&
@@ -98,11 +98,11 @@ static bool node_valid(const struct ecu_dnode *node)
 
 static bool node_is_valid_head(const struct ecu_dnode *node)
 {
-    bool is_head = false;
-    ECU_RUNTIME_ASSERT( (node) );
-    ECU_RUNTIME_ASSERT( (node->next && node->prev) );
     /* Do NOT assert node_valid() since node_valid() calls this
     function. Otherwise stack overflow will occur. */
+    ECU_RUNTIME_ASSERT( (node) );
+    ECU_RUNTIME_ASSERT( (node->next && node->prev) );
+    bool is_head = false;
 
     if ((node->next->prev == node) &&
         (node->prev->next == node) &&
@@ -117,9 +117,9 @@ static bool node_is_valid_head(const struct ecu_dnode *node)
 
 static bool node_in_list(const struct ecu_dnode *node)
 {
-    bool in_list = false;
     ECU_RUNTIME_ASSERT( (node) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
+    bool in_list = false;
 
     if ((node->next != node) &&
         (node->prev != node) &&
@@ -239,6 +239,78 @@ void ecu_dnode_remove(struct ecu_dnode *me)
     }
 }
 
+struct ecu_dnode *ecu_dnode_next(struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    struct ecu_dnode *next = (struct ecu_dnode *)0;
+
+    if (ecu_dnode_in_list(me))
+    {
+        if (!node_is_valid_head(me->next))
+        {
+            next = me->next;
+            ECU_RUNTIME_ASSERT( (node_valid(next)) );
+        }
+    }
+
+    return next;
+}
+
+const struct ecu_dnode *ecu_dnode_cnext(const struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    const struct ecu_dnode *next = (const struct ecu_dnode *)0;
+
+    if (ecu_dnode_in_list(me))
+    {
+        if (!node_is_valid_head(me->next))
+        {
+            next = me->next;
+            ECU_RUNTIME_ASSERT( (node_valid(next)) );
+        }
+    }
+
+    return next;
+}
+
+struct ecu_dnode *ecu_dnode_prev(struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    struct ecu_dnode *prev = (struct ecu_dnode *)0;
+
+    if (ecu_dnode_in_list(me))
+    {
+        if (!node_is_valid_head(me->prev))
+        {
+            prev = me->prev;
+            ECU_RUNTIME_ASSERT( (node_valid(prev)) );
+        }
+    }
+
+    return prev;
+}
+
+const struct ecu_dnode *ecu_dnode_cprev(const struct ecu_dnode *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (node_valid(me)) );
+    const struct ecu_dnode *prev = (const struct ecu_dnode *)0;
+
+    if (ecu_dnode_in_list(me))
+    {
+        if (!node_is_valid_head(me->prev))
+        {
+            prev = me->prev;
+            ECU_RUNTIME_ASSERT( (node_valid(prev)) );
+        }
+    }
+
+    return prev;
+}
+
 bool ecu_dnode_in_list(const struct ecu_dnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );
@@ -275,9 +347,9 @@ void ecu_dlist_ctor(struct ecu_dlist *me)
 
 void ecu_dlist_destroy(struct ecu_dlist *me)
 {
-    struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    struct ecu_dlist_iterator iterator;
 
     ECU_DLIST_FOR_EACH(node, &iterator, me)
     {
@@ -294,9 +366,9 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
 
 void ecu_dlist_clear(struct ecu_dlist *me)
 {
-    struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    struct ecu_dlist_iterator iterator;
 
     ECU_DLIST_FOR_EACH(node, &iterator, me)
     {
@@ -316,6 +388,7 @@ struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         front = me->head.next;
+        ECU_RUNTIME_ASSERT( (node_valid(front)) );
     }
 
     return front;
@@ -330,6 +403,7 @@ const struct ecu_dnode *ecu_dlist_cfront(const struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         front = me->head.next;
+        ECU_RUNTIME_ASSERT( (node_valid(front)) );
     }
 
     return front;
@@ -353,7 +427,7 @@ struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         front = me->head.next;
-        ecu_dnode_remove(me->head.next);
+        ecu_dnode_remove(me->head.next); /* Do not have to assert node_valid() since it is done in ecu_dnode_remove(). */
     }
 
     return front;
@@ -368,6 +442,7 @@ struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         tail = me->head.prev;
+        ECU_RUNTIME_ASSERT( (node_valid(tail)) );
     }
 
     return tail;
@@ -382,6 +457,7 @@ const struct ecu_dnode *ecu_dlist_cback(const struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         tail = me->head.prev;
+        ECU_RUNTIME_ASSERT( (node_valid(tail)) );
     }
 
     return tail;
@@ -405,7 +481,7 @@ struct ecu_dnode *ecu_dlist_pop_back(struct ecu_dlist *me)
     if (!ecu_dlist_empty(me))
     {
         tail = me->head.prev;
-        ecu_dnode_remove(me->head.prev);
+        ecu_dnode_remove(me->head.prev); /* Do not have to assert node_valid() since it is done in ecu_dnode_remove(). */
     }
 
     return tail;
@@ -416,12 +492,12 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
                              bool (*condition)(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data),
                              void *data)
 {
-    bool inserted = false;
-    struct ecu_dlist_iterator iterator;
     ECU_RUNTIME_ASSERT( (me && node && condition) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
     ECU_RUNTIME_ASSERT( (node_valid(node)) );
     ECU_RUNTIME_ASSERT( (!node_in_list(node)) );
+    bool inserted = false;
+    struct ecu_dlist_iterator iterator;
 
     ECU_DLIST_FOR_EACH(i, &iterator, me)
     {
@@ -594,10 +670,10 @@ void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other)
 
 size_t ecu_dlist_size(const struct ecu_dlist *me)
 {
-    size_t i = 0;
-    struct ecu_dlist_citerator citerator;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (list_valid(me)) );
+    size_t i = 0;
+    struct ecu_dlist_citerator citerator;
 
     /* Loop through entire list here instead of using a size variable in
     ecu_dlist to prevent all add and remove functions having to keep track

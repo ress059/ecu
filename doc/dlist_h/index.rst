@@ -579,6 +579,66 @@ If the supplied node is not in a list, this function does nothing:
     ecu_dnode_remove(&node1);
 
 
+ecu_dnode_next()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _dlist_ecu_dnode_next:
+
+Returns the next node. NULL is returned if the supplied node is the last 
+node in the list or if it is not in a list.
+
+.. code-block:: c 
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2, node_not_in_list;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    /* list = [node1, node2]. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node2);
+
+    ecu_dnode_next(&list.head); /* Returns &node1. */
+    ecu_dnode_next(&node1); /* Returns &node2. */
+    ecu_dnode_next(&node2); /* Returns NULL since node2 is the last node in the list. */
+    ecu_dnode_next(&node_not_in_list); /* Returns NULL since supplied node is not in a list. */
+
+
+ecu_dnode_cnext()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Const-qualified version of :ref:`ecu_dnode_next() <dlist_ecu_dnode_next>`.
+Returned node is read-only.
+
+
+ecu_dnode_prev()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _dlist_ecu_dnode_prev:
+
+Returns the previous node. NULL is returned if the supplied node is the first 
+node in the list or if it is not in a list.
+
+.. code-block:: c 
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2, node_not_in_list;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    /* list = [node1, node2]. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node2);
+
+    ecu_dnode_prev(&list.head); /* Returns &node2. */
+    ecu_dnode_prev(&node1); /* Returns NULL since node1 is the first node in the list. */
+    ecu_dnode_prev(&node2); /* Returns &node1. */
+    ecu_dnode_prev(&node_not_in_list); /* Returns NULL since supplied node is not in a list. */
+
+
+ecu_dnode_cprev()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Const-qualified version of :ref:`ecu_dnode_prev() <dlist_ecu_dnode_prev>`.
+Returned node is read-only.
+
+
 ecu_dnode_in_list()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Returns true if the supplied node is in a list. Otherwise returns false.

@@ -48,6 +48,78 @@ so this only applies to GCC. I.e.
     - Do not wrap child iterator in sibling iterator - it'll be its own entity.
     - Probably iterate over all siblings so end == &delimiter.
 
+4. Trying to encapsulate concrete iterator declaration inside FOR_EACH() macro declaration. 
+But can't find a good way to do it. I.e. 
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+    struct ecu_ntnode_child_iterator iter_;                                         \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))
+```
+
+This will break down if user uses multiple for-loops with same iter_ name. I.e.
+```C
+// RESULTS IN ERROR
+ECU_NTNODE_CHILD_FOR_EACH(n, iter_, parent_)
+{
+
+}
+
+ECU_NTNODE_CHILD_FOR_EACH(n, iter_, parent_)
+{
+
+}
+// ...
+
+struct ecu_ntnode_child_iterator iter_;
+for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_);
+        var_ != ecu_ntnode_child_iterator_end(&iter_);
+        var_ = ecu_ntnode_child_iterator_next(&iter_))
+{
+    // stuff
+}
+
+struct ecu_ntnode_child_iterator iter_;   // ERROR
+for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_);
+        var_ != ecu_ntnode_child_iterator_end(&iter_);
+        var_ = ecu_ntnode_child_iterator_next(&iter_))
+{
+    // stuff
+}
+```
+
+I cannot put in block-scope because {} brackets needed after for-loop. I.e. can't do:
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+{                                                                                   \
+    struct ecu_ntnode_child_iterator iter_;                                         \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))                                 \
+}
+```
+
+And obviously can't declare variables of different types in same for-loop like so:
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+    for (struct ecu_ntnode_child_iterator iter_,                                    \
+         struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))
+```
+
+5. Stuff decided on:
+    a. me->parent == me if no parent.
+    b. parent function returns null if no parent.
+    c. next functions return null if no siblings or is last sibling.
+    d. prev functions return null if no siblings or is first sibling.
+    e. Root is iterated over for preorder, postorder iterations.
+    f. Start node is not iterated over in parent iterator.
+    g. Start node is not iterated over in sibling iterator. Otherwise code can not figure out when to terminate.
+    h. No separate structure for tree/root. Just nodes.
+    
+6. Maybe make a ECU_DLIST_SIBLING_AT_FOR_EACH() iterator. Iterates over siblings until end (rightmost) reached.
 
 ## Unit Tests
 1. Prefix all **helper** class members with m_. TEST_GROUP classes do not have to follow this. 

@@ -81,7 +81,8 @@
  * at HEAD. Use of this macro also protects the application from 
  * iterator API changes.
  *
- * @param var_ Loop variable name. This will store pointers to @ref ecu_dnode.
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_dnode.
  * @param iter_ Pointer to @ref ecu_dlist_iterator.
  * @param list_ Pointer to @ref ecu_dlist to iterate over.
  */
@@ -95,7 +96,8 @@
  * starting at HEAD. Use of this macro also protects the application 
  * from iterator API changes.
  *
- * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_dnode.
  * @param citer_ Pointer to @ref ecu_dlist_citerator.
  * @param list_ Pointer to @ref ecu_dlist to iterate over.
  */
@@ -109,7 +111,8 @@
  * at the specified position. Use of this macro also protects the
  * application from iterator API changes.
  * 
- * @param var_ Loop variable name. This will store pointers to @ref ecu_dnode.
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_dnode.
  * @param iter_ Pointer to @ref ecu_dlist_iterator.
  * @param list_ Pointer to @ref ecu_dlist to iterate over.
  * @param start_ Pointer to @ref ecu_dnode. Iteration is started at this
@@ -125,7 +128,8 @@
  * at the specified position. Use of this macro also protects the
  * application from iterator API changes.
  *
- * @param var_ Loop variable name. This will store pointers to const @ref ecu_dnode.
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_dnode.
  * @param citer_ Pointer to @ref ecu_dlist_citerator.
  * @param list_ Pointer to @ref ecu_dlist to iterate over.
  * @param start_ Pointer to @ref ecu_dnode. Iteration is started at this
@@ -311,6 +315,48 @@ extern void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node
  * @param me Node to remove. This cannot be @ref ecu_dlist.head.
  */
 extern void ecu_dnode_remove(struct ecu_dnode *me);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
+ * @brief Returns the node next to (right of) @p me. NULL is returned 
+ * if @p me is the last node in the list or if @p me is not in 
+ * a list.
+ * 
+ * @param me Node to check.
+ */
+extern struct ecu_dnode *ecu_dnode_next(struct ecu_dnode *me);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
+ * @brief Const-qualified version of @ref ecu_dnode_next().
+ * Returns the node next to (right of) @p me. NULL is returned 
+ * if @p me is the last node in the list or if @p me is not in 
+ * a list.
+ * 
+ * @param me Node to check.
+ */
+extern const struct ecu_dnode *ecu_dnode_cnext(const struct ecu_dnode *me);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
+ * @brief Returns the node previous to (left of) @p me. NULL is 
+ * returned if @p me is the first node in the list or if @p me is 
+ * not in a list.
+ * 
+ * @param me Node to check.
+ */
+extern struct ecu_dnode *ecu_dnode_prev(struct ecu_dnode *me);
+
+/**
+ * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
+ * @brief Const-qualified version of @ref ecu_dnode_prev().
+ * Returns the node previous to (left of) @p me. NULL is 
+ * returned if @p me is the first node in the list or if @p me is 
+ * not in a list.
+ * 
+ * @param me Node to check.
+ */
+extern const struct ecu_dnode *ecu_dnode_cprev(const struct ecu_dnode *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().

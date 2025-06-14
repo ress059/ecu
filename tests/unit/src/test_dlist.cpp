@@ -35,6 +35,20 @@
  *      - TEST(DNode, RemoveAndReAddNode)
  *      - TEST(DNode, RemoveHeadNode)
  * 
+ * @ref ecu_dnode_next(), @ref ecu_dnode_cnext()
+ *      - TEST(DNode, Next)
+ *      - TEST(DNode, NextHead)
+ *      - TEST(DNode, NextLast)
+ *      - TEST(DNode, NextNodeNotInList)
+ *      - TEST(DNode, NextHeadNotInList)
+ * 
+ * @ref ecu_dnode_prev(), @ref ecu_dnode_cprev()
+ *      - TEST(DNode, Prev)
+ *      - TEST(DNode, PrevHead)
+ *      - TEST(DNode, PrevFirst)
+ *      - TEST(DNode, PrevNodeNotInList)
+ *      - TEST(DNode, PrevHeadNotInList)
+ * 
  * @ref ecu_dnode_in_list()
  *      - TEST(DNode, InList)
  *      - TEST(DNode, InListHead)
@@ -157,6 +171,8 @@ using namespace stubs;
 /*----------------------- FILE-SCOPE TYPES -------------------*/
 /*------------------------------------------------------------*/
 
+namespace
+{
 struct test_node : public ecu_dnode
 {
     test_node()
@@ -181,6 +197,7 @@ struct test_node : public ecu_dnode
 
     int m_val{0};
 };
+}
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
@@ -1173,6 +1190,208 @@ TEST(DNode, RemoveHeadNode)
 }
 
 /*------------------------------------------------------------*/
+/*---------------------- TESTS - DNODE NEXT ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Test under normal conditions. Next node should be
+ * returned.
+ */
+TEST(DNode, Next)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_next(&m_node1) == &m_node2) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_node1) == &m_node2) );
+        CHECK_TRUE( (ecu_dnode_next(&m_node2) == &m_node3) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_node2) == &m_node3) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief HEAD node supplied to function. Next node (first node)
+ * should be returned.
+ */
+TEST(DNode, NextHead)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_next(&m_list.head) == &m_node1) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_list.head) == &m_node1) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is the last in the list. NULL should
+ * be returned.
+ */
+TEST(DNode, NextLast)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_next(&m_node3) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_node3) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is not in a list. NULL should
+ * be returned.
+ */
+TEST(DNode, NextNodeNotInList)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_next(&m_node_not_in_list) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_node_not_in_list) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is HEAD but the list is empty. NULL 
+ * should be returned.
+ */
+TEST(DNode, NextHeadNotInList)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_next(&m_other_list.head) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cnext(&m_other_list.head) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*---------------------- TESTS - DNODE PREV ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Test under normal conditions. Prev node should be
+ * returned.
+ */
+TEST(DNode, Prev)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_prev(&m_node3) == &m_node2) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_node3) == &m_node2) );
+        CHECK_TRUE( (ecu_dnode_prev(&m_node2) == &m_node1) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_node2) == &m_node1) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief HEAD node supplied to function. Prev node (last node)
+ * should be returned.
+ */
+TEST(DNode, PrevHead)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_prev(&m_list.head) == &m_node3) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_list.head) == &m_node3) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is the first in the list. NULL should
+ * be returned.
+ */
+TEST(DNode, PrevFirst)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_prev(&m_node1) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_node1) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is not in a list. NULL should
+ * be returned.
+ */
+TEST(DNode, PrevNodeNotInList)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_prev(&m_node_not_in_list) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_node_not_in_list) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Supplied node is HEAD but the list is empty. NULL 
+ * should be returned.
+ */
+TEST(DNode, PrevHeadNotInList)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ecu_dnode_prev(&m_other_list.head) == nullptr) );
+        CHECK_TRUE( (ecu_dnode_cprev(&m_other_list.head) == nullptr) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
 /*------------------- TESTS - DNODE IN LIST ------------------*/
 /*------------------------------------------------------------*/
 
@@ -1190,7 +1409,6 @@ TEST(DNode, InList)
         ecu_dnode_remove(&m_inserted_node);
         CHECK_FALSE( (ecu_dnode_in_list(&m_inserted_node)) );
     }
-
     catch (const AssertException& e)
     {
         /* FAIL. */

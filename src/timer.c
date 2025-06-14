@@ -71,10 +71,9 @@ static bool insert_here(const struct ecu_dnode *node,
                         const struct ecu_dnode *position,
                         void *obj)
 {
+    ECU_RUNTIME_ASSERT( (node && position) );
     (void)obj;
     bool status = false;
-    ECU_RUNTIME_ASSERT( (node && position) );
-    
     const struct ecu_timer *me = ECU_DNODE_GET_CONST_ENTRY(node, struct ecu_timer, dnode);
     const struct ecu_timer *tposition = ECU_DNODE_GET_CONST_ENTRY(position, struct ecu_timer, dnode);
 
@@ -231,12 +230,12 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 
 void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 {
+    ECU_RUNTIME_ASSERT( (me) );
     ecu_tick_t prev = 0;
     struct ecu_dlist_iterator iterator;
     struct ecu_timer *t = (struct ecu_timer *)0;
     struct ecu_dnode *tstart = (struct ecu_dnode *)0;
-    ECU_RUNTIME_ASSERT( (me) );
-
+    
     /* Always update timestamp even if lists empty since time is measured in absolute ticks. */
     prev = me->current;
     me->current += elapsed;
