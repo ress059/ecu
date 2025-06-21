@@ -117,7 +117,7 @@ used to identify the type of each node.
     /* Iterate over list. Use object ID to identify the data type stored in each node. */
     ECU_DLIST_FOR_EACH(i, &iterator, &list)
     {
-        switch (ecu_dnode_get_id(i))
+        switch (ecu_dnode_id(i))
         {
             case TYPE1:
             {

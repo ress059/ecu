@@ -16,7 +16,7 @@ Overview
 
 Intrusive, doubly-linked list. Lists can store any user-defined types without 
 dynamic memory allocation. Different types can be stored and identified in the 
-same list using :ref:`a node ID <dlist_ecu_dnode_get_id>`.
+same list using :ref:`a node ID <dlist_ecu_dnode_id>`.
 
 Theory 
 =================================================
@@ -234,7 +234,7 @@ An optional destroy function and node ID can be assigned in the constructor. The
 function defines any **additional** cleanup required when the node is destroyed, and is 
 explained in detail in :ref:`ecu_dnode_destroy() <dlist_ecu_dnode_destroy>`.
 The node ID allows different types to be stored and identified in the same list. This 
-is explained in detail in :ref:`ecu_dnode_get_id() <dlist_ecu_dnode_get_id>`.
+is explained in detail in :ref:`ecu_dnode_id() <dlist_ecu_dnode_id>`.
 
 :ecudoxygen:`ECU_DNODE_DESTROY_UNUSED` and :ecudoxygen:`ECU_OBJECT_ID_UNUSED` should be
 passed if these optional features are unused.
@@ -401,7 +401,7 @@ For example, a linked list of LEDs. When an LED node is destroyed, it can be tur
     ecu_dnode_destroy(&led1.node);
 
 
-Member Functions
+Macros
 -------------------------------------------------
 
 
@@ -458,6 +458,160 @@ Const-qualified version of :ref:`ECU_DNODE_GET_ENTRY() <dlist_ecu_dnode_get_entr
 The returned node is read-only.
 
 
+Member Functions
+-------------------------------------------------
+
+
+ecu_dnode_id()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _dlist_ecu_dnode_id:
+
+Returns node ID supplied in :ref:`ecu_dnode_ctor() <dlist_ecu_dnode_ctor>`.
+IDs allow different user-defined types to be stored and identified in the 
+same list:
+
+.. code-block:: c
+
+    /* User-defined object IDs. */
+    enum user_object_ids
+    {
+        TYPE1 = ECU_USER_OBJECT_ID_BEGIN,
+        TYPE2,
+        TYPE3
+    };
+
+    /* Data types of nodes stored in linked list. */
+    struct type1 
+    {
+        int a;
+        struct ecu_dnode node;
+    };
+
+    struct type2 
+    {
+        struct ecu_dnode node;
+        int b;
+    };
+
+    struct type3 
+    {
+        int c;
+        struct ecu_dnode node;
+        int d;
+    };
+
+    struct ecu_dlist_iterator iterator;
+    struct ecu_dlist list;
+    struct type1 node1;
+    struct type2 node2;
+    struct type3 node3;
+
+    /* Construct list and nodes. Assign object IDs to each node to identify
+    their data types. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
+    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
+    ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
+
+    /* Add nodes to list. */
+    ecu_dlist_push_back(&list, &node1.node);
+    ecu_dlist_push_back(&list, &node2.node);
+    ecu_dlist_push_back(&list, &node3.node);
+
+    /* Iterate over list. Use object ID to identify the data type stored in each node. */
+    ECU_DLIST_FOR_EACH(i, &iterator, &list)
+    {
+        switch (ecu_dnode_id(i))
+        {
+            case TYPE1:
+            {
+                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type1, node);
+                me->a = 5;
+                break;
+            }
+
+            case TYPE2:
+            {
+                struct type2 *me = ECU_DNODE_GET_ENTRY(i, struct type2, node);
+                me->b = 10;
+                break;
+            }
+
+            case TYPE3:
+            {
+                struct type3 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
+                me->c = 15;
+                me->d = 20;
+                break;
+            }
+
+            default:
+            {
+                ECU_RUNTIME_ASSERT( (false) );
+                break;
+            }
+        }
+    }
+
+
+ecu_dnode_in_list()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Returns true if the supplied node is in a list. Otherwise returns false.
+
+.. code-block:: c 
+
+    bool status;
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2;
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    ecu_dlist_push_back(&list, &node1);
+    status = ecu_dnode_in_list(&node1); /* True. */
+    status = ecu_dnode_in_list(&node2); /* False. */
+
+    ecu_dnode_remove(&node1);
+    status = ecu_dnode_in_list(&node1); /* False. */
+
+
+ecu_dnode_insert_after()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inserts node after specified position. The node being inserted cannot already
+be in a list.
+
+.. code-block:: c 
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2, node3;
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* Before. list = [node1, node3]. */ 
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_push_back(&list, &node3);
+
+    /* After. Insert node2 after node1. list = [node1, node2, node3]. */
+    ecu_dnode_insert_after(&node1, &node2);
+
+.. figure:: /images/dlist/ecu_dnode_insert_after.svg
+  :width: 600
+  :align: center
+
+  ecu_dnode_insert_after()
+
+The position node (first argument) **must** be within a list. Otherwise 
+this operation is illegal:
+
+.. figure:: /images/dlist/ecu_dnode_insert_after_illegal.svg
+  :width: 600
+  :align: center
+
+  Illegal ecu_dnode_insert_after()
+
+
 ecu_dnode_insert_before()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Inserts node before specified position. The node being inserted cannot already
@@ -502,81 +656,6 @@ this operation is illegal:
   :align: center
 
   Illegal ecu_dnode_insert_before()
-
-
-ecu_dnode_insert_after()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Inserts node after specified position. The node being inserted cannot already
-be in a list.
-
-.. code-block:: c 
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1, node2, node3;
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Before. list = [node1, node3]. */ 
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_push_back(&list, &node3);
-
-    /* After. Insert node2 after node1. list = [node1, node2, node3]. */
-    ecu_dnode_insert_after(&node1, &node2);
-
-.. figure:: /images/dlist/ecu_dnode_insert_after.svg
-  :width: 600
-  :align: center
-
-  ecu_dnode_insert_after()
-
-The position node (first argument) **must** be within a list. Otherwise 
-this operation is illegal:
-
-.. figure:: /images/dlist/ecu_dnode_insert_after_illegal.svg
-  :width: 600
-  :align: center
-
-  Illegal ecu_dnode_insert_after()
-
-
-ecu_dnode_remove()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Removes a node from a list.
-
-.. code-block:: c 
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1, node2;
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Before. list = [node1, node2]. */
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_push_back(&list, &node2);
-
-    /* After. list = [node2]. */
-    ecu_dnode_remove(&node1);
-
-.. figure:: /images/dlist/ecu_dnode_remove.svg
-  :width: 600
-  :align: center
-
-  ecu_dnode_remove()
-
-If the supplied node is not in a list, this function does nothing:
-
-.. code-block:: c 
-
-    struct ecu_dnode node1;
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Doing this is OK. */
-    ecu_dnode_remove(&node1);
-    ecu_dnode_remove(&node1);
-    ecu_dnode_remove(&node1);
 
 
 ecu_dnode_next()
@@ -639,117 +718,47 @@ Const-qualified version of :ref:`ecu_dnode_prev() <dlist_ecu_dnode_prev>`.
 Returned node is read-only.
 
 
-ecu_dnode_in_list()
+ecu_dnode_remove()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Returns true if the supplied node is in a list. Otherwise returns false.
+Removes a node from a list.
 
 .. code-block:: c 
 
-    bool status;
     struct ecu_dlist list;
     struct ecu_dnode node1, node2;
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
 
+    /* Before. list = [node1, node2]. */
     ecu_dlist_push_back(&list, &node1);
-    status = ecu_dnode_in_list(&node1); /* True. */
-    status = ecu_dnode_in_list(&node2); /* False. */
+    ecu_dlist_push_back(&list, &node2);
 
+    /* After. list = [node2]. */
     ecu_dnode_remove(&node1);
-    status = ecu_dnode_in_list(&node1); /* False. */
+
+.. figure:: /images/dlist/ecu_dnode_remove.svg
+  :width: 600
+  :align: center
+
+  ecu_dnode_remove()
+
+If the supplied node is not in a list, this function does nothing:
+
+.. code-block:: c 
+
+    struct ecu_dnode node1;
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* Doing this is OK. */
+    ecu_dnode_remove(&node1);
+    ecu_dnode_remove(&node1);
+    ecu_dnode_remove(&node1);
 
 
-ecu_dnode_get_id()
+ecu_dnode_valid()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. _dlist_ecu_dnode_get_id:
-
-Returns node ID supplied in :ref:`ecu_dnode_ctor() <dlist_ecu_dnode_ctor>`.
-IDs allow different user-defined types to be stored and identified in the 
-same list:
-
-.. code-block:: c
-
-    /* User-defined object IDs. */
-    enum user_object_ids
-    {
-        TYPE1 = ECU_USER_OBJECT_ID_BEGIN,
-        TYPE2,
-        TYPE3
-    };
-
-    /* Data types of nodes stored in linked list. */
-    struct type1 
-    {
-        int a;
-        struct ecu_dnode node;
-    };
-
-    struct type2 
-    {
-        struct ecu_dnode node;
-        int b;
-    };
-
-    struct type3 
-    {
-        int c;
-        struct ecu_dnode node;
-        int d;
-    };
-
-    struct ecu_dlist_iterator iterator;
-    struct ecu_dlist list;
-    struct type1 node1;
-    struct type2 node2;
-    struct type3 node3;
-
-    /* Construct list and nodes. Assign object IDs to each node to identify
-    their data types. */
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
-    ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
-    ecu_dnode_ctor(&node3.node, ECU_DNODE_DESTROY_UNUSED, TYPE3);
-
-    /* Add nodes to list. */
-    ecu_dlist_push_back(&list, &node1.node);
-    ecu_dlist_push_back(&list, &node2.node);
-    ecu_dlist_push_back(&list, &node3.node);
-
-    /* Iterate over list. Use object ID to identify the data type stored in each node. */
-    ECU_DLIST_FOR_EACH(i, &iterator, &list)
-    {
-        switch (ecu_dnode_get_id(i))
-        {
-            case TYPE1:
-            {
-                struct type1 *me = ECU_DNODE_GET_ENTRY(i, struct type1, node);
-                me->a = 5;
-                break;
-            }
-
-            case TYPE2:
-            {
-                struct type2 *me = ECU_DNODE_GET_ENTRY(i, struct type2, node);
-                me->b = 10;
-                break;
-            }
-
-            case TYPE3:
-            {
-                struct type3 *me = ECU_DNODE_GET_ENTRY(i, struct type3, node);
-                me->c = 15;
-                me->d = 20;
-                break;
-            }
-
-            default:
-            {
-                ECU_RUNTIME_ASSERT( (false) );
-                break;
-            }
-        }
-    }
+TODO!!!!
 
 
 ecu_dlist
@@ -920,122 +929,6 @@ Member Functions
 -------------------------------------------------
 
 
-ecu_dlist_clear()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Removes all nodes in the list. List and nodes are **not** destroyed so they 
-can be reused without reconstruction:
-
-.. code-block:: c
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1, node2, node3;
-
-    /* Before. list = [node1, node2, node3]. */
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_push_back(&list, &node2);
-    ecu_dlist_push_back(&list, &node3);
-
-    /* After. list = []. */
-    ecu_dlist_clear(&list);
-
-.. figure:: /images/dlist/ecu_dlist_clear.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_clear()
-
-
-ecu_dlist_front()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. _dlist_ecu_dlist_front:
-
-Returns front node in list but does not remove it. If list is empty, returns NULL.
-
-.. code-block:: c
-
-    struct ecu_dnode *pos;
-    struct ecu_dlist list1, list2;
-    struct ecu_dnode node1, node2;
-
-    ecu_dlist_ctor(&list1);
-    ecu_dlist_ctor(&list2);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Before. list1 = [node1, node2]. list2 = []. */
-    ecu_dlist_push_back(&list1, &node1);
-    ecu_dlist_push_back(&list1, &node2);
-
-    /* After. Lists unchanged. list1 = [node1, node2]. list2 = []. */
-    pos = ecu_dlist_front(&list1); /* &node1 returned. */
-    pos = ecu_dlist_front(&list2); /* NULL returned. */
-
-
-ecu_dlist_cfront()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Const-qualified version of :ref:`ecu_dlist_front() <dlist_ecu_dlist_front>`.
-Front node returned is read-only.
-
-
-ecu_dlist_push_front()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Inserts node to the front of the list. Node cannot be within a list prior to insertion.
-
-.. code-block:: c
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1, node2;
-
-    /* Before. list = [node1]. */
-    ecu_dlist_ctor(&list);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dlist_push_back(&list, &node1);
-
-    /* After. list = [node2, node1] */
-    ecu_dlist_push_front(&list, &node2);
-
-.. figure:: /images/dlist/ecu_dlist_push_front.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_push_front()
-
-
-ecu_dlist_pop_front()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Removes front node in the list and returns it. If list is empty, returns NULL.
-
-.. code-block:: c
-
-    struct ecu_dnode *pos;
-    struct ecu_dlist list1, list2;
-    struct ecu_dnode node1, node2;
-
-    ecu_dlist_ctor(&list1);
-    ecu_dlist_ctor(&list2);
-    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-
-    /* Before. list1 = [node1, node2]. list2 = []. */
-    ecu_dlist_push_back(&list1, &node1);
-    ecu_dlist_push_back(&list1, &node2);
-
-    /* After. list1 = [node2]. list2 = []. */
-    pos = ecu_dlist_pop_front(&list1); /* &node1 returned. */
-    pos = ecu_dlist_pop_front(&list2); /* NULL returned. */
-
-.. figure:: /images/dlist/ecu_dlist_pop_front.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_pop_front()
-
-
 ecu_dlist_back()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. _dlist_ecu_dlist_back:
@@ -1068,34 +961,64 @@ Const-qualified version of :ref:`ecu_dlist_back() <dlist_ecu_dlist_back>`.
 Tail node returned is read-only.
 
 
-ecu_dlist_push_back()
+ecu_dlist_clear()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Inserts node to the back of the list. Node cannot be within a list prior to insertion.
+Removes all nodes in the list. List and nodes are **not** destroyed so they 
+can be reused without reconstruction:
 
 .. code-block:: c
 
     struct ecu_dlist list;
-    struct ecu_dnode node1, node2;
+    struct ecu_dnode node1, node2, node3;
 
-    /* Before. list = [node1]. */
+    /* Before. list = [node1, node2, node3]. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node3, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     ecu_dlist_push_back(&list, &node1);
-
-    /* After. list = [node1, node2] */
     ecu_dlist_push_back(&list, &node2);
+    ecu_dlist_push_back(&list, &node3);
 
-.. figure:: /images/dlist/ecu_dlist_push_back.svg
+    /* After. list = []. */
+    ecu_dlist_clear(&list);
+
+.. figure:: /images/dlist/ecu_dlist_clear.svg
   :width: 600
   :align: center
 
-  ecu_dlist_push_back()
+  ecu_dlist_clear()
 
 
-ecu_dlist_pop_back()
+ecu_dlist_empty()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Removes tail node in the list and returns it. If list is empty, returns NULL.
+Returns true if list is empty. False otherwise.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    ecu_dlist_empty(&list); /* Returns true. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_empty(&list); /* Returns false. */
+    ecu_dnode_remove(&node1);
+    ecu_dlist_empty(&list); /* Returns true. */
+
+.. figure:: /images/dlist/ecu_dlist_empty.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_empty()
+
+
+ecu_dlist_front()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _dlist_ecu_dlist_front:
+
+Returns front node in list but does not remove it. If list is empty, returns NULL.
 
 .. code-block:: c
 
@@ -1112,15 +1035,15 @@ Removes tail node in the list and returns it. If list is empty, returns NULL.
     ecu_dlist_push_back(&list1, &node1);
     ecu_dlist_push_back(&list1, &node2);
 
-    /* After. list1 = [node1]. list2 = []. */
-    pos = ecu_dlist_pop_back(&list1); /* &node2 returned. */
-    pos = ecu_dlist_pop_back(&list2); /* NULL returned. */
+    /* After. Lists unchanged. list1 = [node1, node2]. list2 = []. */
+    pos = ecu_dlist_front(&list1); /* &node1 returned. */
+    pos = ecu_dlist_front(&list2); /* NULL returned. */
 
-.. figure:: /images/dlist/ecu_dlist_pop_back.svg
-  :width: 600
-  :align: center
 
-  ecu_dlist_pop_back()
+ecu_dlist_cfront()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Const-qualified version of :ref:`ecu_dlist_front() <dlist_ecu_dlist_front>`.
+Front node returned is read-only.
 
 
 ecu_dlist_insert_before()
@@ -1219,6 +1142,142 @@ returned false, so the node is inserted to the back of the list:
   :align: center
 
   ecu_dlist_insert_before() Iteration Done
+
+
+ecu_dlist_push_back()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inserts node to the back of the list. Node cannot be within a list prior to insertion.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2;
+
+    /* Before. list = [node1]. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_push_back(&list, &node1);
+
+    /* After. list = [node1, node2] */
+    ecu_dlist_push_back(&list, &node2);
+
+.. figure:: /images/dlist/ecu_dlist_push_back.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_push_back()
+
+
+ecu_dlist_push_front()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inserts node to the front of the list. Node cannot be within a list prior to insertion.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2;
+
+    /* Before. list = [node1]. */
+    ecu_dlist_ctor(&list);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dlist_push_back(&list, &node1);
+
+    /* After. list = [node2, node1] */
+    ecu_dlist_push_front(&list, &node2);
+
+.. figure:: /images/dlist/ecu_dlist_push_front.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_push_front()
+
+
+ecu_dlist_pop_back()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Removes tail node in the list and returns it. If list is empty, returns NULL.
+
+.. code-block:: c
+
+    struct ecu_dnode *pos;
+    struct ecu_dlist list1, list2;
+    struct ecu_dnode node1, node2;
+
+    ecu_dlist_ctor(&list1);
+    ecu_dlist_ctor(&list2);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* Before. list1 = [node1, node2]. list2 = []. */
+    ecu_dlist_push_back(&list1, &node1);
+    ecu_dlist_push_back(&list1, &node2);
+
+    /* After. list1 = [node1]. list2 = []. */
+    pos = ecu_dlist_pop_back(&list1); /* &node2 returned. */
+    pos = ecu_dlist_pop_back(&list2); /* NULL returned. */
+
+.. figure:: /images/dlist/ecu_dlist_pop_back.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_pop_back()
+
+
+ecu_dlist_pop_front()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Removes front node in the list and returns it. If list is empty, returns NULL.
+
+.. code-block:: c
+
+    struct ecu_dnode *pos;
+    struct ecu_dlist list1, list2;
+    struct ecu_dnode node1, node2;
+
+    ecu_dlist_ctor(&list1);
+    ecu_dlist_ctor(&list2);
+    ecu_dnode_ctor(&node1, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    ecu_dnode_ctor(&node2, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+
+    /* Before. list1 = [node1, node2]. list2 = []. */
+    ecu_dlist_push_back(&list1, &node1);
+    ecu_dlist_push_back(&list1, &node2);
+
+    /* After. list1 = [node2]. list2 = []. */
+    pos = ecu_dlist_pop_front(&list1); /* &node1 returned. */
+    pos = ecu_dlist_pop_front(&list2); /* NULL returned. */
+
+.. figure:: /images/dlist/ecu_dlist_pop_front.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_pop_front()
+
+
+ecu_dlist_size()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Returns number of nodes in a list. Returns 0 if list is empty.
+
+.. code-block:: c
+
+    struct ecu_dlist list;
+    struct ecu_dnode node1, node2;
+
+    /* For conciceness assume all lists and nodes have been constructed. */
+
+    ecu_dlist_size(&list); /* Returns 0. */
+    ecu_dlist_push_back(&list, &node1);
+    ecu_dlist_size(&list); /* Returns 1. */
+    ecu_dlist_push_back(&list, &node2);
+    ecu_dlist_size(&list); /* Returns 2. */
+    ecu_dnode_remove(&node1);
+    ecu_dlist_size(&list); /* Returns 1. */
+
+.. figure:: /images/dlist/ecu_dlist_size.svg
+  :width: 600
+  :align: center
+
+  ecu_dlist_size()
 
 
 ecu_dlist_sort()
@@ -1329,54 +1388,9 @@ If one list is empty, the swapped list will become empty:
     ecu_dlist_swap(&list1, &list2);
 
 
-ecu_dlist_size()
+ecu_dlist_valid()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Returns number of nodes in a list. Returns 0 if list is empty.
-
-.. code-block:: c
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1, node2;
-
-    /* For conciceness assume all lists and nodes have been constructed. */
-
-    ecu_dlist_size(&list); /* Returns 0. */
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_size(&list); /* Returns 1. */
-    ecu_dlist_push_back(&list, &node2);
-    ecu_dlist_size(&list); /* Returns 2. */
-    ecu_dnode_remove(&node1);
-    ecu_dlist_size(&list); /* Returns 1. */
-
-.. figure:: /images/dlist/ecu_dlist_size.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_size()
-
-
-ecu_dlist_empty()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Returns true if list is empty. False otherwise.
-
-.. code-block:: c
-
-    struct ecu_dlist list;
-    struct ecu_dnode node1;
-
-    /* For conciceness assume all lists and nodes have been constructed. */
-
-    ecu_dlist_empty(&list); /* Returns true. */
-    ecu_dlist_push_back(&list, &node1);
-    ecu_dlist_empty(&list); /* Returns false. */
-    ecu_dnode_remove(&node1);
-    ecu_dlist_empty(&list); /* Returns true. */
-
-.. figure:: /images/dlist/ecu_dlist_empty.svg
-  :width: 600
-  :align: center
-
-  ecu_dlist_empty()
+TODO
 
 
 Iterators

@@ -151,9 +151,9 @@
  * node. This node is not included in the iteration. This
  * will be a pointer to @ref ecu_ntnode. 
  */
-#define ECU_NTNODE_CONST_PARENT_FOR_EACH(var_, citer_, start_)                          \
-    for (struct ecu_ntnode *var_ = ecu_ntnode_parent_iterator_cbegin(citer_, start_);   \
-         var_ != ecu_ntnode_parent_iterator_cend(citer_);                               \
+#define ECU_NTNODE_CONST_PARENT_FOR_EACH(var_, citer_, start_)                              \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_parent_iterator_cbegin(citer_, start_); \
+         var_ != ecu_ntnode_parent_iterator_cend(citer_);                                   \
          var_ = ecu_ntnode_parent_iterator_cnext(citer_))
 
 /**
@@ -189,9 +189,9 @@
  * siblings are iterated over. The iteration terminates 
  * when this node is reached again. This will be a pointer to @ref ecu_ntnode.
  */
-#define ECU_NTNODE_CONST_SIBLING_FOR_EACH(var_, citer_, start_)                         \
-    for (struct ecu_ntnode *var_ = ecu_ntnode_sibling_iterator_cbegin(citer_, start_);  \
-         var_ != ecu_ntnode_sibling_iterator_cend(citer_);                              \
+#define ECU_NTNODE_CONST_SIBLING_FOR_EACH(var_, citer_, start_)                                 \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_sibling_iterator_cbegin(citer_, start_);    \
+         var_ != ecu_ntnode_sibling_iterator_cend(citer_);                                      \
          var_ = ecu_ntnode_sibling_iterator_cnext(citer_))
 
 /**
@@ -735,7 +735,7 @@ extern void ecu_ntnode_clear(struct ecu_ntnode *me);
  * 
  * @param me Node to check.
  */
-bool ecu_ntnode_is_root(const struct ecu_ntnode *me);
+extern bool ecu_ntnode_is_root(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
@@ -784,6 +784,15 @@ extern size_t ecu_ntnode_level(const struct ecu_ntnode *me);
  * @param me Node to check.
  */
 extern size_t ecu_ntnode_size(const struct ecu_ntnode *me);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Returns true if the supplied node is a root that
+ * has no children. False otherwise.
+ * 
+ * @param me Node to check.
+ */
+extern bool ecu_ntnode_empty(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().

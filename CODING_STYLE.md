@@ -59,3 +59,17 @@ allowed are @warning and @code
 
 # Other
 1. Same typedef rules as linux kernel. Essentially no typedefs unless absolutely necessary.
+2. Global functions in alphabetical order. I.e.
+```C
+back()
+front()
+next()
+```
+
+Can violate this rule if it makes sense. I.e.
+```C
+back()
+front()
+cfront() // const version of front().
+next()
+```

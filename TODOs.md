@@ -1,15 +1,15 @@
 Completed.
-1. asserter.h/.c DONE.
-2. attributes.h. DONE.
-3. dlist.h/.c. DONE.
-4. endian.h. DONE.
-5. event.h/.c DONE. TODO May delete this.
-6. fsm.h/.c. DONE.
-7. hsm.h/.c. DONE.
-8. object_id.h/.c. DONE.
-9. timer.h/.c. DONE.
-10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
-11. utils.h. DONE.
+1. asserter.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+2. attributes.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+3. dlist.h/.c. TODO. Alphabetical order (sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+4. endian.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+5. event.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc). Keep. In sphinx docs show example of creating event base class for fsm/hsm modules.
+6. fsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+7. hsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+10. ntree.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
+11. utils.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
@@ -28,6 +28,15 @@ so this only applies to GCC. I.e.
 ```
 
 2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
+3. Add documentation for ecu_dnode_valid() and ecu_dlist_valid().
+4. No longer allowing HEAD (dlist) to be passed into dnode() functions. Edit documentation!!
+5. Proofread documentation again after this refactor and refactor described in ALL section.
+
+# ALL
+1. Public functions now in alphabetical order. Edit code and documentation.
+2. Expose valid() functions publically so they can be used by other modules.
+3. !!! void* should be first parameter to callbacks to be compatible with C++ varidic 
+arguments (variadic arguments must be last).
 
 
 ## Tree
@@ -44,9 +53,6 @@ so this only applies to GCC. I.e.
 ```
 1b. ntree.c pretty much done. All node_valid() asserts and correct paths done.
 2. Tests and documentation.
-3. Make sibling iterator and get rid of child_iterator_at() functions.
-    - Do not wrap child iterator in sibling iterator - it'll be its own entity.
-    - Probably iterate over all siblings so end == &delimiter.
 
 4. Trying to encapsulate concrete iterator declaration inside FOR_EACH() macro declaration. 
 But can't find a good way to do it. I.e. 
