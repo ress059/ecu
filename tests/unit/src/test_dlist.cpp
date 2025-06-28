@@ -168,6 +168,7 @@
 #include "ecu/dlist.h"
 
 /* STDLib. */
+#include <array>
 #include <cassert>
 #include <type_traits>
 #include <vector>
@@ -473,13 +474,31 @@ struct dlist : public ecu_dlist
         ecu_dlist_ctor(this);
     }
 
+    /// @brief Construct list with nodes supplied in array.
+    /// Nodes are added to the list in the order they are
+    /// supplied in the array. Container owns the nodes, so 
+    /// it is responsible for allocating memory for its nodes.
+    /// Cannot take in std::span because CTAD doesn't work
+    /// for non-templated classes.....
+    template<typename T, std::size_t N>
+    requires std::is_base_of_v<dnode, T>
+    dlist(std::array<T, N>& nodes)
+    {
+        ecu_dlist_ctor(this);
+
+        for (auto& n : nodes)
+        {
+            ecu_dlist_push_back(this, &n);
+        }
+    }
+
     /// @brief Construct list with supplied nodes. Nodes are
     /// added to the list in the order they are supplied.
     /// If supplied node is an lvalue it is directly added.
     /// If supplied node is an rvalue memory is allocated
     /// for it on the heap then it is added to the list.
     template<typename ...Nodes>
-    requires (std::is_base_of_v<dnode, std::remove_reference_t<Nodes>> && ...)
+    requires (std::is_base_of_v<dnode, std::remove_cvref_t<Nodes>> && ...)
     dlist(Nodes&&... n)
     {
         ecu_dlist_ctor(this);
@@ -513,6 +532,7 @@ struct dlist : public ecu_dlist
     /// rvalue memory is allocated for it on the heap then it is
     /// added to the list.
     template<typename... Nodes>
+    requires (std::is_base_of_v<dnode, std::remove_cvref_t<Nodes>> && ...)
     void add(Nodes&&... n)
     {
         static_assert( (sizeof...(Nodes) > 0), "At least one node must be supplied." );
@@ -595,7 +615,7 @@ struct dlist : public ecu_dlist
     requires std::is_base_of_v<visitor, std::remove_reference_t<T>>
     void accept(T&& v)
     {
-        struct ecu_dlist_iterator iter;
+        ecu_dlist_iterator iter;
 
         ECU_DLIST_FOR_EACH(n, &iter, this)
         {
@@ -614,9 +634,10 @@ struct dlist : public ecu_dlist
 
 /**
  * @brief Concrete visitor that calls node in list mock
- * expectation. Applies to all node types.
+ * expectation, where value is the node object's address. 
+ * Applies to all node types.
  */
-struct node_in_list_actual_call : public visitor
+struct node_obj_in_list_actual_call : public visitor
 {
     /// @brief Calls node in list mock expectation. 
     /// Takes in base C++ wrapper to make this a common function.
@@ -649,16 +670,17 @@ struct node_in_list_actual_call : public visitor
 };
 
 /**
- * @brief Concrete visitor that calls node sorted mock
- * expectation. Applies to all node types.
+ * @brief Concrete visitor that calls node in list mock
+ * expectation, where value is the node's ID. 
+ * Applies to all node types.
  */
-struct node_sorted_actual_call : public visitor
+struct node_id_in_list_actual_call : public visitor
 {
     /// @brief Calls node sorted mock expectation. 
     /// Takes in base node class to make this a common function.
     static void call(const dnode& n)
     {
-        mock().actualCall("node_sorted")
+        mock().actualCall("node_in_list")
               .withParameter("value", ecu_dnode_id(&n));
     }
 
@@ -744,20 +766,20 @@ TEST_GROUP(DList)
         mock().clear();
     }
 
-    /// @brief Creates node_in_list mock expectations in the order
-    /// that was supplied. Note how only lvalue references
-    /// can be supplied. Do not allow temporaries since object
-    /// lifetime must outlive the mock.
+    /// @brief Creates node_in_list mock expectations on the nodes
+    /// in the order they are supplied. Value is the node object's address.
+    /// Note how only lvalue references can be supplied. Do not allow 
+    /// temporaries since object lifetime must outlive the mock.
     template<typename... Nodes>
     requires (std::is_base_of_v<dnode, Nodes> && ...) /* Nodes type will never be reference since parameter passed by reference. */
-    static void EXPECT_NODES_IN_LIST(dnode& n1, Nodes&... n)
+    static void EXPECT_NODES_IN_LIST(dnode& n0, Nodes&... n)
     {
         /* Note how parameters are explicitly upcasted to (const ecu_dnode *) to standardize
         pointers passed in. It is NOT guaranteed (const ecu_dnode *) == (const dnode *). 
         Do const-qualified cast to allow const and non-const parameters. */
         mock().strictOrder();
         mock().expectOneCall("node_in_list")
-              .withParameter("value", static_cast<const void *>((const ecu_dnode *)&n1));
+              .withParameter("value", static_cast<const void *>((const ecu_dnode *)&n0));
 
         if constexpr(sizeof...(Nodes) > 0)
         {
@@ -766,22 +788,22 @@ TEST_GROUP(DList)
         }
     }
 
-    /// @brief Creates node_sorted mock expectations in the order
-    /// that was supplied. Note how only lvalue references
-    /// can be supplied. Do not allow temporaries since object
-    /// lifetime must outlive the mock.
-    template<typename... Nodes>
-    requires (std::is_base_of_v<dnode, Nodes> && ...) /* Nodes type will never be reference since parameter passed by reference. */
-    static void EXPECT_NODE_SORTING_ORDER(dnode& n1, Nodes&... n)
+    /// @brief Creates node_in_list mock expectations on the nodes
+    /// in the order they are supplied. Value is the node's ID, NOT
+    /// the object. Non-type template parmaeter is NOT used to allow
+    /// EXPECT_NODES_IN_LIST(...) syntax....
+    template<typename... IDs>
+    requires (std::convertible_to<IDs, ecu_object_id> && ...)
+    static void EXPECT_NODES_IN_LIST(ecu_object_id id0, IDs... idn)
     {
         mock().strictOrder();
-        mock().expectOneCall("node_sorted")
-              .withParameter("value", ecu_dnode_id(&n1));
+        mock().expectOneCall("node_in_list")
+              .withParameter("value", id0);
 
-        if constexpr(sizeof...(Nodes) > 0)
+        if constexpr(sizeof...(IDs) > 0)
         {
-            (mock().expectOneCall("node_sorted")
-                   .withParameter("value", ecu_dnode_id(&n)), ...);
+            (mock().expectOneCall("node_in_list")
+                   .withParameter("value", idn), ...);
         }
     }
 
@@ -791,14 +813,14 @@ TEST_GROUP(DList)
     /// lifetime must outlive the mock.
     template<typename... Nodes>
     requires (std::is_base_of_v<dnode, Nodes> && ...) /* Nodes type will never be reference since parameter passed by reference. */
-    static void EXPECT_NODES_DESTROYED(dnode& n1, Nodes&... n)
+    static void EXPECT_NODES_DESTROYED(dnode& n0, Nodes&... n)
     {
         /* Note how parameters are explicitly upcasted to (const ecu_dnode *) to standardize
         pointers passed in. It is NOT guaranteed (const ecu_dnode *) == (const dnode *). 
         Do const-qualified cast to allow const and non-const parameters. */
         mock().strictOrder();
         mock().expectOneCall("node_destroy")
-              .withParameter("value", static_cast<const void *>((const ecu_dnode *)&n1));
+              .withParameter("value", static_cast<const void *>((const ecu_dnode *)&n0));
 
         if constexpr(sizeof...(Nodes) > 0)
         {
@@ -832,14 +854,20 @@ TEST_GROUP(DList)
         return status;
     }
 
-    /// @brief Passed into function under test @ref ecu_dlist_insert_before().
-    /// Used to test node is added to tail when all conditions return false.
-    static bool insert_before_false(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data)
+    /// @brief Evaluation condition passed into function under 
+    /// test @ref ecu_dlist_sort().
+    static bool sort(const ecu_dnode *lhs, const ecu_dnode *rhs, void *data)
     {
-        (void)node;
-        (void)position;
+        assert( (lhs && rhs) );
         (void)data;
-        return false;
+        bool status = false;
+
+        if (ecu_dnode_id(lhs) < ecu_dnode_id(rhs))
+        {
+            status = true;
+        }
+
+        return status;
     }
 
     /**
@@ -897,20 +925,20 @@ TEST_GROUP(DList)
 TEST(DList, DNodeGetEntry)
 {
     /* Step 1: Arrange. */
-    intrusive_node n1;
-    nested_intrusive_node n2;
+    intrusive_node n0;
+    nested_intrusive_node n1;
 
     /* Step 2: Action. */
-    intrusive_node *n1_entry = ECU_DNODE_GET_ENTRY(&n1.dnode, struct intrusive_node, dnode);
-    const intrusive_node *n1_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n1.dnode, struct intrusive_node, dnode);
-    nested_intrusive_node *n2_entry = ECU_DNODE_GET_ENTRY(&n2.group.dnode, struct nested_intrusive_node, group.dnode);
-    const nested_intrusive_node *n2_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n2.group.dnode, struct nested_intrusive_node, group.dnode);
+    intrusive_node *n0_entry = ECU_DNODE_GET_ENTRY(&n0.dnode, struct intrusive_node, dnode);
+    const intrusive_node *n0_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n0.dnode, struct intrusive_node, dnode);
+    nested_intrusive_node *n1_entry = ECU_DNODE_GET_ENTRY(&n1.group.dnode, struct nested_intrusive_node, group.dnode);
+    const nested_intrusive_node *n1_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n1.group.dnode, struct nested_intrusive_node, group.dnode);
 
     /* Step 3: Assert. */
+    POINTERS_EQUAL(&n0, n0_entry);
+    POINTERS_EQUAL(&n0, n0_const_entry);
     POINTERS_EQUAL(&n1, n1_entry);
     POINTERS_EQUAL(&n1, n1_const_entry);
-    POINTERS_EQUAL(&n2, n2_entry);
-    POINTERS_EQUAL(&n2, n2_const_entry);
 }
 
 /*------------------------------------------------------------*/
@@ -934,7 +962,7 @@ TEST(DList, DNodeDestroy)
         ecu_dnode_destroy(&list.at(1));
 
         /* Step 3: Assert. Test fails if node destroy callback not called or list not intact. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1041,7 +1069,7 @@ TEST(DList, DNodeInsertAfterPosIsFront)
         ecu_dnode_insert_after(&RW.at(0), &RW.at(1));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1065,7 +1093,7 @@ TEST(DList, DNodeInsertAfterPosIsMiddle)
         ecu_dnode_insert_after(&RW.at(1), &RW.at(2));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1090,7 +1118,7 @@ TEST(DList, DNodeInsertAfterPosIsTail)
         ecu_dnode_insert_after(&RW.at(2), &RW.at(3));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1236,7 +1264,7 @@ TEST(DList, DNodeInsertBeforePosIsFront)
         ecu_dnode_insert_before(&RW.at(1), &RW.at(0));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1260,7 +1288,7 @@ TEST(DList, DNodeInsertBeforePosIsMiddle)
         ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1285,7 +1313,7 @@ TEST(DList, DNodeInsertBeforePosIsTail)
         ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1660,7 +1688,7 @@ TEST(DList, DNodeRemove)
         ecu_dnode_remove(&RW.at(1));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1685,7 +1713,7 @@ TEST(DList, DNodeRemoveAndReAddNodes)
         ecu_dnode_insert_after(&RW.at(2), &RW.at(1));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -1753,7 +1781,8 @@ TEST(DList, DNodeValid)
 {
     try
     {
-        /* Step 1: Arrange. */
+        /* Step 1: Arrange. Create C object, NOT C++ object since 
+        default constructor of C++ object calls C constructor. */
         ecu_dnode node;
 
         /* Steps 2 and 3: Action and assert. */
@@ -1860,7 +1889,7 @@ TEST(DList, DListClear)
     {
         /* Step 1: Arrange. */
         std::array<rw_dnode, 3> nodes{&node_destroy_actual_call, &node_destroy_actual_call, &node_destroy_actual_call};
-        dlist list{nodes.at(0), nodes.at(1), nodes.at(2)};
+        dlist list{nodes};
 
         /* Step 2: Action. */
         ecu_dlist_clear(&list);
@@ -1894,7 +1923,7 @@ TEST(DList, DListClearAndReAdd)
         list.add(RW.at(1), RW.at(0));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2015,15 +2044,15 @@ TEST(DList, DListInsertBeforeMiddleConditionPasses)
     try 
     {
         /* Step 1: Arrange. */
-        std::array<rw_dnode, 5> nodes{0, 1, 2, 3, 4}; /* Assign unique ID to each node. */
-        dlist list{nodes.at(0), nodes.at(1), nodes.at(3), nodes.at(4)};
-        EXPECT_NODES_IN_LIST(nodes.at(0), nodes.at(1), nodes.at(2), nodes.at(3), nodes.at(4));
+        dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}}; /* Assign unique ID to each node. */
+        rw_dnode node{2};
+        EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
 
         /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &nodes.at(2), &insert_before, ECU_DNODE_OBJ_UNUSED);
+        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_id_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2040,15 +2069,15 @@ TEST(DList, DListInsertBeforeFirstConditionPasses)
     try 
     {
         /* Step 1: Arrange. */
-        std::array<rw_dnode, 3> nodes{0, 1, 2}; /* Assign unique ID to each node. */
-        dlist list{nodes.at(1), nodes.at(2)};
-        EXPECT_NODES_IN_LIST(nodes.at(0), nodes.at(1), nodes.at(2));
+        dlist list{rw_dnode{1}, rw_dnode{2}};
+        rw_dnode node{0};
+        EXPECT_NODES_IN_LIST(0, 1, 2);
 
         /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &nodes.at(0), &insert_before, ECU_DNODE_OBJ_UNUSED);
+        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_id_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2066,15 +2095,15 @@ TEST(DList, DListInsertBeforeAllConditionsFalse)
     try
     {
         /* Step 1: Arrange. */
-        std::array<rw_dnode, 4> nodes{0, 1, 2, 3}; /* Assign unique ID to each node. */
-        dlist list{nodes.at(0), nodes.at(1), nodes.at(2)};
-        EXPECT_NODES_IN_LIST(nodes.at(0), nodes.at(1), nodes.at(2), nodes.at(3));
+        dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{2}};
+        rw_dnode node{10};
+        EXPECT_NODES_IN_LIST(0, 1, 2, 10);
 
         /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &nodes.at(3), &insert_before_false, ECU_DNODE_OBJ_UNUSED);
+        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_id_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2098,7 +2127,7 @@ TEST(DList, DListInsertBeforeListIsEmpty)
         ecu_dlist_insert_before(&list, &RW.at(0), &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2175,7 +2204,7 @@ TEST(DList, DListPushBack)
         ecu_dlist_push_back(&list, &RW.at(3));
 
         /* Step 3: Assert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2199,7 +2228,7 @@ TEST(DList, DListPushBackListIsEmpty)
         ecu_dlist_push_back(&list, &RW.at(0));
 
         /* Step 3: Asssert. */
-        list.accept(node_in_list_actual_call());
+        list.accept(node_obj_in_list_actual_call());
     }
     catch (const AssertException& e)
     {
@@ -2256,820 +2285,747 @@ TEST(DList, DListPushBackNodeIsHead)
     }
 }
 
-// /*------------------------------------------------------------*/
-// /*------------------ TESTS - DLIST PUSH FRONT ----------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Node should be added to front
-//  * of the list.
-//  */
-// TEST(DList, DListPushFront)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_inserted_node);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_push_front(&m_list, &m_inserted_node);
-
-//         /* Step 3: Assert. */
-//         list_order_check_expectations(&m_list);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Node should be added to the front of the list.
-//  */
-// TEST(DList, DListPushFrontListIsEmpty)
-// {
-//     try
-//     {
-
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Not allowed. Node being added cannot already
-//  * be within a list.
-//  */
-// TEST(DList, DListPushFrontNodeInList)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         ecu_dlist_push_front(&m_other_list, &m_inserted_node);
-
-//         /* m_list nodes. */
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* m_other_list nodes. */
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_inserted_node);
-
-//         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
-
-//         /* Step 2: Action. Attempt to insert node from listA into listB. */
-//         ecu_dlist_push_front(&m_other_list, &m_node1);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-
-//     /* Step 3: Assert. Verify lists weren't changed. m_node1 should still
-//     be in m_list. Do this outside try-catch. */
-//     list_order_check_expectations(&m_list);
-//     list_order_check_expectations(&m_other_list);
-// }
-
-// /**
-//  * @brief Not allowed. Node being added cannot be HEAD.
-//  */
-// TEST(DList, DListPushFrontNodeIsHead)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         set_assert_handler(AssertResponse::OK); /* Must be before step 2. */
-
-//         /* Step 2: Action. Attempt to insert listB HEAD to listA. */
-//         ecu_dlist_push_front(&m_list, &m_other_list.head);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-
-//     /* Step 3: Assert. Verify HEAD of listB was not added to listA. 
-//     Do this outside try-catch. */
-//     list_order_check_expectations(&m_list);
-// }
-
-// /*------------------------------------------------------------*/
-// /*--------------------- TESTS - DLIST POP BACK ---------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Popped node returned. 
-//  * Resulting list remains intact.
-//  */
-// TEST(DList, DListPopBack)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == &m_node3) );
-//         list_order_check_expectations(&m_list);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief NULL returned.
-//  */
-// TEST(DList, DListPopBackListIsEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. Precondition must be true to produce useful results. */
-//         ecu_dlist_clear(&m_list);
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == nullptr) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Popped node returned. Resulting list is now empty.
-//  */
-// TEST(DList, DListPopBackListWithOneNode)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_dlist_clear(&m_list);
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         CHECK_TRUE( (ecu_dlist_size(&m_list) == 1) );
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_back(&m_list) == &m_node1) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*-------------------- TESTS - DLIST POP FRONT ---------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Popped node returned. Resulting 
-//  * list remains intact.
-//  */
-// TEST(DList, DListPopFront)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == &m_node1) );
-//         list_order_check_expectations(&m_list);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief NULL returned.
-//  */
-// TEST(DList, DListPopFrontListIsEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. Precondition must be true to produce useful results. */
-//         ecu_dlist_clear(&m_list);
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == nullptr) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Popped node returned. Resulting list is now empty.
-//  */
-// TEST(DList, DListPopFrontListWithOneNode)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_dlist_clear(&m_list);
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         CHECK_TRUE( (ecu_dlist_size(&m_list) == 1) );
-
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE( (ecu_dlist_pop_front(&m_list) == &m_node1) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*--------------------- TESTS - DLIST SIZE -------------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Verify number of nodes 
-//  * returned is correct.
-//  */
-// TEST(DList, DListSize)
-// {
-//     try
-//     {
-//         /* Steps 2 and 3: Action and assert. */
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)0);
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)1);
-//         ecu_dlist_push_back(&m_list, &m_node2);
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)2);
-//         ecu_dlist_push_front(&m_list, &m_node3);
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)3);
-//         ecu_dnode_remove(&m_node2);
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)2);
-//         ecu_dlist_clear(&m_list);
-//         CHECK_TRUE(ecu_dlist_size(&m_list) == (std::size_t)0);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief 0 must be returned if empty list supplied.
-//  */
-// TEST(DList, DListSizeListIsEmpty)
-// {
-//     try
-//     {
-
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*--------------------- TESTS - DLIST SORT -------------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief Each node in the test list has a unique value. 
-//  * Number of list elements is an even number. Verify list 
-//  * sorted correctly. 
-//  */
-// TEST(DList, DListSortUniqueSortEven)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. List = 6, 2, 4, 1, 3, 5 */
-//         ecu_dlist_push_back(&m_list, &m_node6[0]);
-//         ecu_dlist_push_back(&m_list, &m_node2[0]);
-//         ecu_dlist_push_back(&m_list, &m_node4[0]);
-//         ecu_dlist_push_back(&m_list, &m_node1[0]);
-//         ecu_dlist_push_back(&m_list, &m_node3[0]);
-//         ecu_dlist_push_back(&m_list, &m_node5[0]);
-
-//         mock().strictOrder();
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(2);
-//         EXPECT_NODE_VALUE(3);
-//         EXPECT_NODE_VALUE(4);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(6);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_sort(&m_list, &lhs_less_than_rhs, nullptr);
-
-//         /* Step 3: Assert. Verify list correctly sorted. */
-//         list_sort_check_expectations();
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Each node in the test list has a unique value. 
-//  * Number of list elements is an odd number. Verify list 
-//  * sorted correctly. 
-//  */
-// TEST(DList, DListSortUniqueSortOdd)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. List = 2, 4, 5, 1, 6 */
-//         ecu_dlist_push_back(&m_list, &m_node2[0]);
-//         ecu_dlist_push_back(&m_list, &m_node4[0]);
-//         ecu_dlist_push_back(&m_list, &m_node5[0]);
-//         ecu_dlist_push_back(&m_list, &m_node1[0]);
-//         ecu_dlist_push_back(&m_list, &m_node6[0]);
-
-//         mock().strictOrder();
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(2);
-//         EXPECT_NODE_VALUE(4);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(6);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_sort(&m_list, &lhs_less_than_rhs, nullptr);
-
-//         /* Step 3: Assert. Verify list correctly sorted. */
-//         list_sort_check_expectations();
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Nodes in test list can have the same values.
-//  * Number of list elements is an even number. Verify list 
-//  * sorted correctly. 
-//  */
-// TEST(DList, DListSortNonUniqueSortEven)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. List = 5, 1, 2, 3, 6, 5, 1, 4, 2, 6 */
-//         ecu_dlist_push_back(&m_list, &m_node5[0]);
-//         ecu_dlist_push_back(&m_list, &m_node1[0]);
-//         ecu_dlist_push_back(&m_list, &m_node2[0]);
-//         ecu_dlist_push_back(&m_list, &m_node3[0]);
-//         ecu_dlist_push_back(&m_list, &m_node6[0]);
-//         ecu_dlist_push_back(&m_list, &m_node5[1]);
-//         ecu_dlist_push_back(&m_list, &m_node1[1]);
-//         ecu_dlist_push_back(&m_list, &m_node4[0]);
-//         ecu_dlist_push_back(&m_list, &m_node2[1]);
-//         ecu_dlist_push_back(&m_list, &m_node6[1]);
-
-//         mock().strictOrder();
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(2);
-//         EXPECT_NODE_VALUE(2);
-//         EXPECT_NODE_VALUE(3);
-//         EXPECT_NODE_VALUE(4);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(6);
-//         EXPECT_NODE_VALUE(6);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_sort(&m_list, &lhs_less_than_rhs, nullptr);
-
-//         /* Step 3: Assert. Verify list correctly sorted. */
-//         list_sort_check_expectations();
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Nodes in test list can have the same values.
-//  * Number of list elements is an odd number. Verify list 
-//  * sorted correctly. 
-//  */
-// TEST(DList, DListSortNonUniqueSortOdd)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. List = 1, 5, 3, 4, 5, 5, 6, 1, 4, 2, 6 */
-//         ecu_dlist_push_back(&m_list, &m_node1[0]);
-//         ecu_dlist_push_back(&m_list, &m_node5[0]);
-//         ecu_dlist_push_back(&m_list, &m_node3[0]);
-//         ecu_dlist_push_back(&m_list, &m_node4[0]);
-//         ecu_dlist_push_back(&m_list, &m_node5[1]);
-//         ecu_dlist_push_back(&m_list, &m_node5[2]);
-//         ecu_dlist_push_back(&m_list, &m_node6[0]);
-//         ecu_dlist_push_back(&m_list, &m_node1[1]);
-//         ecu_dlist_push_back(&m_list, &m_node4[1]);
-//         ecu_dlist_push_back(&m_list, &m_node2[0]);
-//         ecu_dlist_push_back(&m_list, &m_node6[1]);
-
-//         mock().strictOrder();
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(1);
-//         EXPECT_NODE_VALUE(2);
-//         EXPECT_NODE_VALUE(3);
-//         EXPECT_NODE_VALUE(4);
-//         EXPECT_NODE_VALUE(4);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(5);
-//         EXPECT_NODE_VALUE(6);
-//         EXPECT_NODE_VALUE(6);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_sort(&m_list, &lhs_less_than_rhs, nullptr);
-
-//         /* Step 3: Assert. Verify list correctly sorted. */
-//         list_sort_check_expectations();
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*--------------------- TESTS - DLIST SWAP -------------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief Normal swap.
-//  */
-// TEST(DList, DListSwapBothListsNotEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. me = [1, 2, 3]. other = [4, 5]. */
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         ecu_dlist_push_back(&m_list, &m_node2);
-//         ecu_dlist_push_back(&m_list, &m_node3);
-//         ecu_dlist_push_back(&m_other_list, &m_node4);
-//         ecu_dlist_push_back(&m_other_list, &m_node5);
-
-//         /* Step 1: Arrange. Expected lists after swap. me = [4, 5]. other = [1, 2, 3]. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node4);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node5);
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_node3);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_swap(&m_list, &m_other_list);
-
-//         /* Step 3: Assert. */
-//         list_order_check_expectations(&m_list);
-//         list_order_check_expectations(&m_other_list);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Me list gets other's contents. Other list 
-//  * becomes empty.
-//  */
-// TEST(DList, DListSwapMeListEmptyOtherListNotEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. me = []. other = [1, 2]. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) ); /* Precondition. */
-//         ecu_dlist_push_back(&m_other_list, &m_node1);
-//         ecu_dlist_push_back(&m_other_list, &m_node2);
-
-//         /* Step 1: Arrange. Expected lists after swap. me = [1, 2]. other = []. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_swap(&m_list, &m_other_list);
-
-//         /* Step 3: Assert. */
-//         list_order_check_expectations(&m_list);
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Me list becomes empty. Other list gets
-//  * me's contents.
-//  */
-// TEST(DList, DListSwapMeListNotEmptyOtherListEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. me = [1, 2]. other = []. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) ); /* Precondition. */
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         ecu_dlist_push_back(&m_list, &m_node2);
-
-//         /* Step 1: Arrange. Expected lists after swap. me = []. other = [1, 2]. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_other_list, &m_node2);
-
-//         /* Step 2: Action. */
-//         ecu_dlist_swap(&m_list, &m_other_list);
-
-//         /* Step 3: Assert. */
-//         list_order_check_expectations(&m_other_list);
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Allowed. Nothing should happen.
-//  */
-// TEST(DList, DListSwapBothListsEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
-
-//         /* Step 2: Action. */
-//         ecu_dlist_swap(&m_list, &m_other_list);
-
-//         /* Step 3: Assert. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_list)) );
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Not allowed. The two lists must be unique.
-//  */
-// TEST(DList, DListSwapSameListsSupplied)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         EXPECT_ASSERTION();
-
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_dlist_swap(&m_list, &m_list);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*--------------------- TESTS - DLIST VALID ------------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Dlist is not valid until it 
-//  * has been constructed.
-//  */
-// TEST(DList, DListValid)
-// {
-//     try
-//     {
-
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /*------------------------------------------------------------*/
-// /*------------------- TESTS - DLIST ITERATORS ----------------*/
-// /*------------------------------------------------------------*/
-
-// /**
-//  * @brief General test. Verify all nodes in list iterated over.
-//  */
-// TEST(DList, Iterator)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Steps 2 Action. */
-//         ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief General test. Verify all nodes in list iterated over.
-//  */
-// TEST(DList, ConstIterator)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Steps 2 Action. */
-//         ECU_DLIST_CONST_FOR_EACH(i, &m_citerator, &m_list)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Iterating over an empty list immediately returns.
-//  */
-// TEST(DList, IteratorListIsEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
-
-//         /* Step 2: Action. */
-//         ECU_DLIST_FOR_EACH(i, &m_iterator, &m_other_list)
-//         {
-//             /* Step 3: Assert. This should never be called since empty list. */
-//             node_in_list_mock(&m_other_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Iterating over an empty list immediately returns.
-//  */
-// TEST(DList, ConstIteratorListIsEmpty)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. Preconditions must be true for test to produce useful results. */
-//         CHECK_TRUE( (ecu_dlist_empty(&m_other_list)) );
-
-//         /* Step 2: Action. */
-//         ECU_DLIST_CONST_FOR_EACH(i, &m_citerator, &m_other_list)
-//         {
-//             /* Step 3: Assert. This should never be called since empty list. */
-//             node_in_list_mock(&m_other_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Nodes can be removed in the middle of an iteration.
-//  * List must remain intact.
-//  */
-// TEST(DList, IteratorRemoveSome)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. First list iteration. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Step 1: Arrange. Second list iteration. */
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-
-//         /* Step 2: Action. */
-//         ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-
-//             if (i == &m_node2)
-//             {
-//                 ecu_dnode_remove(i);
-//             }
-//         }
-
-//         /* Step 3: Assert. Iterate over list again. */
-//         ECU_DLIST_FOR_EACH(i, &m_iterator, &m_list)
-//         {
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
-
-// /**
-//  * @brief Verify all nodes removed and list is empty.
-//  */
-// TEST(DList, IteratorRemoveAll)
-// {
-//     try
-//     {
-//         /* code */
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+/*------------------------------------------------------------*/
+/*------------------ TESTS - DLIST PUSH FRONT ----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Node should be added to front
+ * of the list.
+ */
+TEST(DList, DListPushFront)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
+
+        /* Step 2: Action. */
+        ecu_dlist_push_front(&list, &RW.at(0));
+
+        /* Step 3: Assert. */
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Node should be added to the front of the list.
+ */
+TEST(DList, DListPushFrontListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list;
+        EXPECT_NODES_IN_LIST(RW.at(0));
+
+        /* Step 2: Action. */
+        ecu_dlist_push_front(&list, &RW.at(0));
+
+        /* Step 3: Assert. */
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Node being added cannot already
+ * be within a list.
+ */
+TEST(DList, DListPushFrontNodeInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0)};
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_dlist_push_front(&list, &RW.at(0));
+        
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Node being added cannot be HEAD.
+ */
+TEST(DList, DListPushFrontNodeIsHead)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list1;
+        dlist list2;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_dlist_push_front(&list1, &list2.head);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST POP BACK ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Popped node returned. 
+ * Resulting list remains intact.
+ */
+TEST(DList, DListPopBack)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_pop_back(&list)) );
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief NULL returned.
+ */
+TEST(DList, DListPopBackListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list;
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( nullptr, ecu_dlist_pop_back(&list) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list is now empty.
+ */
+TEST(DList, DListPopBackListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0)};
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_back(&list)) );
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*-------------------- TESTS - DLIST POP FRONT ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Popped node returned. Resulting 
+ * list remains intact.
+ */
+TEST(DList, DListPopFront)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2));
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief NULL returned.
+ */
+TEST(DList, DListPopFrontListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list;
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( nullptr, ecu_dlist_pop_front(&list) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Popped node returned. Resulting list is now empty.
+ */
+TEST(DList, DListPopFrontListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0)};
+
+        /* Steps 2 and 3: Action and assert. */
+        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
+        list.accept(node_obj_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST SIZE -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Verify number of nodes 
+ * returned is correct.
+ */
+TEST(DList, DListSize)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+
+        /* Steps 2 and 3: Action and assert. */
+        LONGLONGS_EQUAL( 3, ecu_dlist_size(&list) );
+        ecu_dnode_remove(&RW.at(1));
+        LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
+        ecu_dnode_remove(&RW.at(2));
+        LONGLONGS_EQUAL( 1, ecu_dlist_size(&list) );
+        ecu_dnode_remove(&RW.at(0));
+        LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
+        ecu_dlist_push_back(&list, &RW.at(0));
+        ecu_dlist_push_back(&list, &RW.at(1));
+        LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief 0 must be returned if empty list supplied.
+ */
+TEST(DList, DListSizeListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list;
+
+        /* Steps 2 and 3: Action and assert. */
+        LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST SORT -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Each node in the test list has a unique value. 
+ * Number of list elements is an even number. Verify list 
+ * sorted correctly.
+ */
+TEST(DList, DListSortUniqueSortEven)
+{
+    try 
+    {
+        /* Step 1: Arrange. List = 5, 1, 3, 0, 2, 4 */
+        dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{3}, rw_dnode{0}, rw_dnode{2}, rw_dnode{4}};
+        EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
+
+        /* Step 2: Action. */
+        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+
+        /* Step 3: Assert. */
+        list.accept(node_id_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Each node in the test list has a unique value. 
+ * Number of list elements is an odd number. Verify list 
+ * sorted correctly. 
+ */
+TEST(DList, DListSortUniqueSortOdd)
+{
+    try 
+    {
+        /* Step 1: Arrange. List = 1, 3, 4, 0, 5 */
+        dlist list{rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{0}, rw_dnode{5}};
+        EXPECT_NODES_IN_LIST(0, 1, 3, 4, 5);
+
+        /* Step 2: Action. */
+        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+
+        /* Step 3: Assert. */
+        list.accept(node_id_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Nodes in test list can have the same values.
+ * Number of list elements is an even number. Verify list 
+ * sorted correctly. 
+ */
+TEST(DList, DListSortNonUniqueSortEven)
+{
+    try 
+    {
+        /* Step 1: Arrange. List = 5, 1, 2, 3, 6, 5, 1, 4, 2, 6 */
+        dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{2}, rw_dnode{3}, rw_dnode{6}, rw_dnode{5},
+                   rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
+        EXPECT_NODES_IN_LIST(1, 1, 2, 2, 3, 4, 5, 5, 6, 6);
+
+        /* Step 2: Action. */
+        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+
+        /* Step 3: Assert. */
+        list.accept(node_id_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Nodes in test list can have the same values.
+ * Number of list elements is an odd number. Verify list 
+ * sorted correctly. 
+ */
+TEST(DList, DListSortNonUniqueSortOdd)
+{
+    try 
+    {
+        /* Step 1: Arrange. List = 1, 5, 3, 4, 5, 5, 6, 1, 4, 2, 6 */
+        dlist list{rw_dnode{1}, rw_dnode{5}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}, rw_dnode{5},
+                   rw_dnode{6}, rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
+        EXPECT_NODES_IN_LIST(1, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6);
+
+        /* Step 2: Action. */
+        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+
+        /* Step 3: Assert. */
+        list.accept(node_id_in_list_actual_call());
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST SWAP -------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Normal swap.
+ */
+TEST(DList, DListSwapBothListsNotEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. list1 = [0, 1, 2]. list2 = [3, 4]. */
+        dlist me{RW.at(0), RW.at(1), RW.at(2)};
+        dlist other{RW.at(3), RW.at(4)};
+        EXPECT_NODES_IN_LIST(RW.at(3), RW.at(4), /* me list. */
+                             RW.at(0), RW.at(1), RW.at(2) /* other list. */ );
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&me, &other);
+
+        /* Step 3: Assert. */
+        me.accept(node_obj_in_list_actual_call()); /* MUST be first. */
+        other.accept(node_obj_in_list_actual_call());
+        CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
+        CHECK_TRUE( (ecu_dlist_size(&other) == 3) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Me list gets other's contents. Other list 
+ * becomes empty.
+ */
+TEST(DList, DListSwapMeListEmptyOtherListNotEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. me = []. other = [0, 1]. */
+        dlist me;
+        dlist other{RW.at(0), RW.at(1)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&me, &other);
+
+        /* Step 3: Assert. */
+        me.accept(node_obj_in_list_actual_call());
+        other.accept(node_obj_in_list_actual_call());
+        CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
+        CHECK_TRUE( (ecu_dlist_size(&other) == 0) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Me list becomes empty. Other list gets
+ * me's contents.
+ */
+TEST(DList, DListSwapMeListNotEmptyOtherListEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. me = [1, 2]. other = []. */
+        dlist me{RW.at(0), RW.at(1)};
+        dlist other;
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&me, &other);
+
+        /* Step 3: Assert. */
+        me.accept(node_obj_in_list_actual_call());
+        other.accept(node_obj_in_list_actual_call());
+        CHECK_TRUE( (ecu_dlist_size(&me) == 0) );
+        CHECK_TRUE( (ecu_dlist_size(&other) == 2) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Allowed. Nothing should happen.
+ */
+TEST(DList, DListSwapBothListsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist me;
+        dlist other;
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&me, &other);
+
+        /* Step 3: Assert. Test fails if assertion fires. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. The two lists must be unique.
+ */
+TEST(DList, DListSwapSameListsSupplied)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist me;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_dlist_swap(&me, &me);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*--------------------- TESTS - DLIST VALID ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Dlist is not valid until it 
+ * has been constructed.
+ */
+TEST(DList, DListValid)
+{
+    try
+    {
+        /* Step 1: Arrange. Create C object, NOT C++ object since 
+        default constructor of C++ object calls C constructor. */
+        ecu_dlist list;
+
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ecu_dlist_valid(&list)) );
+        ecu_dlist_ctor(&list);
+        CHECK_TRUE( (ecu_dlist_valid(&list)) );
+        ecu_dlist_destroy(&list);
+        CHECK_FALSE( (ecu_dlist_valid(&list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - DLIST ITERATORS ----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General test. Verify all nodes in list iterated over.
+ */
+TEST(DList, Iterator)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief General test. Verify all nodes in list iterated over.
+ */
+TEST(DList, ConstIterator)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iterating over an empty list immediately returns.
+ */
+TEST(DList, IteratorListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call visitor;
+        dlist list;
+
+        /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iterating over an empty list immediately returns.
+ */
+TEST(DList, ConstIteratorListIsEmpty)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        node_obj_in_list_actual_call visitor;
+        dlist list;
+
+        /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
+        ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Nodes can be removed in the middle of an iteration.
+ * List must remain intact.
+ */
+TEST(DList, IteratorRemoveSome)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call in_list_visitor;
+        node_remove remove_visitor;
+        dlist list{RW.at(0), RO.at(0), RW.at(1), RO.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RO.at(0), RO.at(1));
+
+        /* Step 2: Action. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(remove_visitor);
+        }
+
+        /* Step 3: Assert. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(in_list_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify all nodes removed and list is empty.
+ */
+TEST(DList, IteratorRemoveAll)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call in_list_visitor;
+        node_remove remove_visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+
+        /* Step 2: Action. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(remove_visitor);
+        }
+
+        /* Step 3: Assert. Test fails if any nodes still in list. */
+        ECU_DLIST_FOR_EACH(n, &iter, &list)
+        {
+            convert(n).accept(in_list_visitor);
+        }
+
+        CHECK_TRUE( (ecu_dlist_empty(&list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
 // /*------------------------------------------------------------*/
 // /*------------------ TESTS - DLIST AT ITERATORS --------------*/
