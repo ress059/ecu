@@ -67,7 +67,7 @@ target_compile_options(ecu_warning_flags
         # C compiler flags. We know ECU is a C library so we can use this generator expression.
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fstack-usage -fno-common>
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-align -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-align=strict -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
 
         # Compiler flags specific to Debug builds

@@ -1,7 +1,7 @@
 Completed.
 1. asserter.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 2. attributes.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
-3. dlist.h/.c. TODO. Alphabetical order (sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+3. dlist.h/.c. DONE.
 4. endian.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 5. event.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc). Keep. In sphinx docs show example of creating event base class for fsm/hsm modules.
 6. fsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
@@ -9,48 +9,19 @@ Completed.
 8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 10. ntree.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
-11. utils.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+11. utils.h. DONE.
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
 
-## DList
-1. In ECU_DNODE_GET_ENTRY() macro call, getting warning about how cast from char*
-to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
-THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
-so this only applies to GCC. I.e.
-```C
-#ifdef GCC
-#pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
-#define ECU_DNODE_GET_ENTRY() ....
-#end pragma
-#endif
-```
-
-2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
-3. Add documentation for ecu_dnode_valid() and ecu_dlist_valid().
-4. No longer allowing HEAD (dlist) to be passed into dnode() functions. Edit documentation!!
-5. Proofread documentation again after this refactor and refactor described in ALL section.
 
 # ALL
 1. Public functions now in alphabetical order. Edit code and documentation.
 2. Expose valid() functions publically so they can be used by other modules.
-3. !!! void* should be first parameter to callbacks to be compatible with C++ varidic 
-arguments (variadic arguments must be last).
+3. Remove @details directive for **everything**.
 
 
 ## Tree
-1. In ECU_NTNODE_GET_ENTRY() macro call, getting warning about how cast from char*
-to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
-THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
-so this only applies to GCC. I.e.
-```C
-#ifdef GCC
-#pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
-#define ECU_TREE_NODE_GET_ENTRY() ....
-#end pragma
-#endif
-```
 1b. ntree.c pretty much done. All node_valid() asserts and correct paths done.
 2. Tests and documentation.
 
@@ -63,6 +34,8 @@ But can't find a good way to do it. I.e.
          var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
          var_ = ecu_ntnode_child_iterator_next(&iter_))
 ```
+
+5. **Probably rename to ntnode.h**
 
 This will break down if user uses multiple for-loops with same iter_ name. I.e.
 ```C

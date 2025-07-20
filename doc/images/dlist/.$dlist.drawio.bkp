@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2025-05-31T14:53:58.568Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="lILhQObItiUxw0Px59kL" version="21.1.2" type="device" pages="19">
+<mxfile host="Electron" modified="2025-05-31T14:54:39.062Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="BVB0JYOQFZfLV7MCJxmR" version="21.1.2" type="device" pages="19">
   <diagram id="fRW8w1BYCVWvNPVW3TLo" name="list_and_node_representation">
     <mxGraphModel dx="1418" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -593,7 +593,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="RTAvSx4hZHxbp8rBLNHj" name="ecu_dnode_insert_after">
-    <mxGraphModel dx="675" dy="394" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="810" dy="473" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -758,7 +758,7 @@
             <mxPoint x="1130" y="600" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="FwgVAcqo49BD-YxL-B-h-7" value="ecu_dnode_insert_after(&amp;amp;node2, &amp;amp;node1)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="FwgVAcqo49BD-YxL-B-h-6" vertex="1" connectable="0">
+        <mxCell id="FwgVAcqo49BD-YxL-B-h-7" value="ecu_dnode_insert_after(&amp;amp;node1, &amp;amp;node2)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="FwgVAcqo49BD-YxL-B-h-6" vertex="1" connectable="0">
           <mxGeometry x="0.2714" y="-2" relative="1" as="geometry">
             <mxPoint x="-2" y="24" as="offset" />
           </mxGeometry>

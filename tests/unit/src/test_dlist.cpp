@@ -563,7 +563,7 @@ struct dlist : public ecu_dlist
     dnode& at(std::size_t i)
     {
         assert( (i < ecu_dlist_size(this)) );
-        struct ecu_dlist_iterator iter;
+        ecu_dlist_iterator iter;
         ecu_dnode *pos = nullptr;
         std::size_t n = 0;
 
@@ -589,7 +589,7 @@ struct dlist : public ecu_dlist
     const dnode& at(std::size_t i) const
     {
         assert( (i < ecu_dlist_size(this)) );
-        struct ecu_dlist_citerator citer;
+        ecu_dlist_citerator citer;
         const ecu_dnode *pos = nullptr;
         std::size_t n = 0;
 
@@ -740,7 +740,6 @@ dnode& convert(ecu_dnode *n)
     return (*static_cast<dnode *>(n));
 }
 
-
 const dnode& convert(const ecu_dnode *n)
 {
     assert( (n) );
@@ -840,7 +839,7 @@ TEST_GROUP(DList)
 
     /// @brief Evaluation condition passed into function under test 
     /// @ref ecu_dlist_insert_before().
-    static bool insert_before(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data)
+    static bool insert_before(const ecu_dnode *node, const ecu_dnode *position, void *data)
     {
         assert( (node && position) );
         (void)data;
@@ -929,10 +928,10 @@ TEST(DList, DNodeGetEntry)
     nested_intrusive_node n1;
 
     /* Step 2: Action. */
-    intrusive_node *n0_entry = ECU_DNODE_GET_ENTRY(&n0.dnode, struct intrusive_node, dnode);
-    const intrusive_node *n0_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n0.dnode, struct intrusive_node, dnode);
-    nested_intrusive_node *n1_entry = ECU_DNODE_GET_ENTRY(&n1.group.dnode, struct nested_intrusive_node, group.dnode);
-    const nested_intrusive_node *n1_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n1.group.dnode, struct nested_intrusive_node, group.dnode);
+    intrusive_node *n0_entry = ECU_DNODE_GET_ENTRY(&n0.dnode, intrusive_node, dnode);
+    const intrusive_node *n0_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n0.dnode, intrusive_node, dnode);
+    nested_intrusive_node *n1_entry = ECU_DNODE_GET_ENTRY(&n1.group.dnode, nested_intrusive_node, group.dnode);
+    const nested_intrusive_node *n1_const_entry = ECU_DNODE_GET_CONST_ENTRY(&n1.group.dnode, nested_intrusive_node, group.dnode);
 
     /* Step 3: Assert. */
     POINTERS_EQUAL(&n0, n0_entry);
@@ -2854,7 +2853,7 @@ TEST(DList, DListValid)
 }
 
 /*------------------------------------------------------------*/
-/*------------------- TESTS - DLIST ITERATORS ----------------*/
+/*------------------- TESTS - DLIST ITERATOR -----------------*/
 /*------------------------------------------------------------*/
 
 /**
@@ -3002,7 +3001,6 @@ TEST(DList, IteratorRemoveAll)
     {
         /* Step 1: Arrange. */
         ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call in_list_visitor;
         node_remove remove_visitor;
         dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
 
@@ -3013,11 +3011,6 @@ TEST(DList, IteratorRemoveAll)
         }
 
         /* Step 3: Assert. Test fails if any nodes still in list. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(in_list_visitor);
-        }
-
         CHECK_TRUE( (ecu_dlist_empty(&list)) );
     }
     catch (const AssertException& e)
@@ -3027,276 +3020,332 @@ TEST(DList, IteratorRemoveAll)
     }
 }
 
-// /*------------------------------------------------------------*/
-// /*------------------ TESTS - DLIST AT ITERATORS --------------*/
-// /*------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*------------------ TESTS - DLIST AT ITERATORS --------------*/
+/*------------------------------------------------------------*/
 
-// /**
-//  * @brief General test. Iteration begins at start position 
-//  * and terminates at list end.
-//  */
-// TEST(DList, AtIterator)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+/**
+ * @brief General test. Verify correct nodes iterated over.
+ */
+TEST(DList, AtIterator)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
 
-//         /* Steps 2 Action. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node2)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief General test. Iteration begins at start position 
-//  * and terminates at list end.
-//  */
-// TEST(DList, ConstAtIterator)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+/**
+ * @brief General test. Verify correct nodes iterated over.
+ */
+TEST(DList, ConstAtIterator)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
 
-//         /* Steps 2 Action. */
-//         ECU_DLIST_CONST_AT_FOR_EACH(i, &m_citerator, &m_list, &m_node2)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(1))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief Not allowed. Starting node must be within a list.
-//  */
-// TEST(DList, AtIteartorStartNodeNotInList)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_dnode_remove(&m_node1);
-//         EXPECT_ASSERTION();
+/**
+ * @brief Not allowed. Starting node must be within a list.
+ */
+TEST(DList, AtIteartorStartNodeNotInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        EXPECT_ASSERTION();
+        dlist list{RW.at(0)};
 
-//         /* Step 2: Action. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node1)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
+        {
+            (void)n;
+        }
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief Not allowed. Starting node must be within a list.
-//  */
-// TEST(DList, ConstAtIteratorStartNodeNotInList)
-// {
-//     try
-//     {
+/**
+ * @brief Not allowed. Starting node must be within a list.
+ */
+TEST(DList, ConstAtIteratorStartNodeNotInList)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        dlist list{RW.at(0)};
+        EXPECT_ASSERTION();
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
+        /* Step 2: Action. */
+        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(1))
+        {
+            (void)n;
+        }
 
-// /**
-//  * @brief Not allowed. Starting node cannot be HEAD.
-//  */
-// TEST(DList, AtIteratorStartNodeIsHead)
-// {
-//     try
-//     {
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
+/**
+ * @brief Not allowed. Starting node cannot be HEAD.
+ */
+TEST(DList, AtIteratorStartNodeIsHead)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0)};
+        ecu_dlist_iterator iter;
+        EXPECT_ASSERTION();
 
-// /**
-//  * @brief Not allowed. Starting node cannot be HEAD.
-//  */
-// TEST(DList, ConstAtIteratorStartNodeIsHead)
-// {
-//     try
-//     {
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &list.head)
+        {
+            (void)n;
+        }
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* OK. */
-//         (void)e;
-//     }
-// }
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief Iteration should only be over the starting node.
-//  */
-// TEST(DList, AtIteratorListWithOneNode)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         ecu_dlist_clear(&m_list);
-//         ecu_dlist_push_back(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
+/**
+ * @brief Not allowed. Starting node cannot be HEAD.
+ */
+TEST(DList, ConstAtIteratorStartNodeIsHead)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        dlist list{RW.at(0)};
+        ecu_dlist_citerator citer;
+        EXPECT_ASSERTION();
 
-//         /* Step 2: Action. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, &m_node1)
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Step 2: Action. */
+        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &list.head)
+        {
+            (void)n;
+        }
 
-// /**
-//  * @brief Iteration should only be over the starting node.
-//  */
-// TEST(DList, ConstAtIteratorListWithOneNode)
-// {
-//     try
-//     {
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+/**
+ * @brief Iteration should only be over the starting node.
+ */
+TEST(DList, AtIteratorListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0)};
+        EXPECT_NODES_IN_LIST(RW.at(0));
 
-// /**
-//  * @brief Iteration should only be over the starting (tail) node.
-//  */
-// TEST(DList, AtIteratorStartNodeIsTail)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         CHECK_TRUE( (ecu_dlist_size(&m_list) > 1) ); /* Precondition. */
-//         EXPECT_NODE_IN_LIST(&m_list, ecu_dlist_cback(&m_list));
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-//         /* Step 2: Action. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_back(&m_list))
-//         {
-//             /* Step 3: Assert. */
-//             node_in_list_mock(&m_list, i);
-//         }
+/**
+ * @brief Iteration should only be over the starting node.
+ */
+TEST(DList, ConstAtIteratorListWithOneNode)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0)};
+        EXPECT_NODES_IN_LIST(RW.at(0));
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(0))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief Iteration should only be over the starting (tail) node.
-//  */
-// TEST(DList, ConstAtIteratorStartNodeIsTail)
-// {
-//     try
-//     {
+/**
+ * @brief Iteration should only be over the starting (tail) node.
+ */
+TEST(DList, AtIteratorStartNodeIsTail)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(2));
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(2))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-// /**
-//  * @brief Nodes can be removed in the middle of an iteration.
-//  * List must remain intact.
-//  */
-// TEST(DList, AtIteratorRemoveSome)
-// {
-//     try
-//     {
-//         /* Step 1: Arrange. */
-//         mock().strictOrder();
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node2);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node1);
-//         EXPECT_NODE_IN_LIST(&m_list, &m_node3);
+/**
+ * @brief Iteration should only be over the starting (tail) node.
+ */
+TEST(DList, ConstAtIteratorStartNodeIsTail)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_citerator citer;
+        node_obj_in_list_actual_call visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(2));
 
-//         /* Step 2: Action. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_front(&m_list))
-//         {
-//             /* Step 3: Assert. */
-//             if (i == &m_node2)
-//             {
-//                 ecu_dnode_remove(i);
-//             }
-//             node_in_list_mock(&m_list, i);
-//         }
+        /* Steps 2 and 3: Action and assert. */
+        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(2))
+        {
+            convert(n).accept(visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-//         /* Step 3: Assert. Iterate over list again. */
-//         ECU_DLIST_AT_FOR_EACH(i, &m_iterator, &m_list, ecu_dlist_front(&m_list))
-//         {
-//             node_in_list_mock(&m_list, i);
-//         }
+/**
+ * @brief Nodes can be removed in the middle of an iteration.
+ * List must remain intact.
+ */
+TEST(DList, AtIteratorRemoveSome)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_obj_in_list_actual_call in_list_visitor;
+        node_remove remove_visitor;
+        dlist list{RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1), RO.at(2)};
+        EXPECT_NODES_IN_LIST(RW.at(0), RO.at(0), RO.at(1), RO.at(2));
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
+        {
+            convert(n).accept(remove_visitor);
+        }
 
-// /**
-//  * @brief Verify all nodes removed and list before starting
-//  * node remains intact.
-//  */
-// TEST(DList, AtIteratorRemoveAll)
-// {
-//     try
-//     {
+        /* Step 3: Assert. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
+        {
+            convert(n).accept(in_list_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
-//     }
-//     catch (const AssertException& e)
-//     {
-//         /* FAIL. */
-//         (void)e;
-//     }
-// }
+/**
+ * @brief Verify all nodes removed and list is empty.
+ */
+TEST(DList, AtIteratorRemoveAll)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_dlist_iterator iter;
+        node_remove remove_visitor;
+        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+
+        /* Step 2: Action. */
+        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
+        {
+            convert(n).accept(remove_visitor);
+        }
+
+        /* Step 3: Assert. Test fails if any nodes still in list. */
+        CHECK_TRUE( (ecu_dlist_empty(&list)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}

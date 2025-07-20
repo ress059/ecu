@@ -233,7 +233,7 @@ struct hsm_state : public ecu_hsm_state
 struct test_hsm : public ecu_hsm, public Utest
 {
     /**
-     * @details Test HSM created:
+     * Test HSM created:
      * 
      * TOP
      * |

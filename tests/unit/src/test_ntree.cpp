@@ -3,71 +3,102 @@
  * @brief Unit tests for public API functions in @ref ntree.h. 
  * Test Summary:
  * 
+ * Api:
+ * 
+ * 
+ * 
+ * 
+ * Iterators:
+ * 
  * @ref ECU_NTNODE_CHILD_FOR_EACH(), @ref ECU_NTNODE_CONST_CHILD_FOR_EACH(),
  * @ref ecu_ntnode_child_iterator_begin(), @ref ecu_ntnode_child_iterator_end(),
  * @ref ecu_ntnode_child_iterator_next(), @ref ecu_ntnode_child_iterator_cbegin(),
- * @ref ecu_ntnode_child_iterator_cend(), @ref ecu_ntnode_child_iterator_cnext(),
- * @ref ecu_ntnode_push_back(), @ref ecu_ntnode_remove(), @ref ecu_ntnode_is_root(),
- * @ref ecu_ntnode_in_subtree()
- *      - TEST(NTree, ChildIterator)
- *      - TEST(NTree, ConstChildIterator)
- *      - TEST(NTree, ChildIteratorOneChild)
- *      - TEST(NTree, ConstChildIteratorOneChild)
- *      - TEST(NTree, ChildIteratorNoChildren)
- *      - TEST(NTree, ConstChildIteratorNoChildren)
- *      - TEST(NTree, ChildIteratorRemoveSome)
- *      - TEST(NTree, ChildIteratorRemoveAll)
+ * @ref ecu_ntnode_child_iterator_cend(), @ref ecu_ntnode_child_iterator_cnext()
+ *      - TEST(NtNode, ChildIterator)
+ *      - TEST(NtNode, ConstChildIterator)
+ *      - TEST(NtNode, ChildIteratorOneChild)
+ *      - TEST(NtNode, ConstChildIteratorOneChild)
+ *      - TEST(NtNode, ChildIteratorNoChildren)
+ *      - TEST(NtNode, ConstChildIteratorNoChildren)
+ *      - TEST(NtNode, ChildIteratorRemoveSome)
+ *      - TEST(NtNode, ChildIteratorRemoveAll)
  * 
  * @ref ECU_NTNODE_PARENT_FOR_EACH(), @ref ECU_NTNODE_CONST_PARENT_FOR_EACH(),
  * @ref ecu_ntnode_parent_iterator_begin(), @ref ecu_ntnode_parent_iterator_end(),
  * @ref ecu_ntnode_parent_iterator_next(), @ref ecu_ntnode_parent_iterator_cbegin(),
- * @ref ecu_ntnode_parent_iterator_cend(), @ref ecu_ntnode_parent_iterator_cnext(),
- * @ref ecu_ntnode_push_back(), @ref ecu_ntnode_push_front(), @ref ecu_ntnode_push_front(), 
- * @ref ecu_ntnode_remove(), @ref ecu_ntnode_in_subtree(), @ref ecu_ntnode_is_root()
- *      - TEST(NTree, ParentIteratorLeaf)
- *      - TEST(NTree, ConstParentIteratorLeaf)
- *      - TEST(NTree, ParentIteratorMiddleChild)
- *      - TEST(NTree, ConstParentIteratorMiddleChild)
- *      - TEST(NTree, ParentIteratorOneParent)
- *      - TEST(NTree, ConstParentIteratorOneParent)
- *      - TEST(NTree, ParentIteratorRoot)
- *      - TEST(NTree, ConstParentIteratorRoot)
- *      - TEST(NTree, ParentIteratorRemoveSome)
- *      - TEST(NTree, ParentIteratorRemoveAll)
+ * @ref ecu_ntnode_parent_iterator_cend(), @ref ecu_ntnode_parent_iterator_cnext()
+ *      - TEST(NtNode, ParentIteratorLeaf)
+ *      - TEST(NtNode, ConstParentIteratorLeaf)
+ *      - TEST(NtNode, ParentIteratorMiddleChild)
+ *      - TEST(NtNode, ConstParentIteratorMiddleChild)
+ *      - TEST(NtNode, ParentIteratorOneParent)
+ *      - TEST(NtNode, ConstParentIteratorOneParent)
+ *      - TEST(NtNode, ParentIteratorRoot)
+ *      - TEST(NtNode, ConstParentIteratorRoot)
+ *      - TEST(NtNode, ParentIteratorRemoveSome)
+ *      - TEST(NtNode, ParentIteratorRemoveAll)
  * 
- * @ref ECU_NTNODE_SIBLING_FOR_EACH(), @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH(),
- * @ref ecu_ntnode_sibling_iterator_begin(), @ref ecu_ntnode_sibling_iterator_end(),
- * @ref ecu_ntnode_sibling_iterator_next(), @ref ecu_ntnode_sibling_iterator_cbegin(),
- * @ref ecu_ntnode_sibling_iterator_cend(), @ref ecu_ntnode_sibling_iterator_cnext(),
- * @ref ecu_ntnode_push_back(), @ref ecu_ntnode_remove(), @ref ecu_ntnode_is_root(),
- * @ref ecu_ntnode_in_subtree()
- *      - TEST(NTree, SiblingIteratorFirst)
- *      - TEST(NTree, ConstSiblingIteratorFirst)
- *      - TEST(NTree, SiblingIteratorMiddle)
- *      - TEST(NTree, ConstSiblingIteratorMiddle)
- *      - TEST(NTree, SiblingIteratorLast)
- *      - TEST(NTree, ConstSiblingIteratorLast)
- *      - TEST(NTree, SiblingIteratorOneSibling)
- *      - TEST(NTree, ConstSiblingIteratorOneSibling)
- *      - TEST(NTree, SiblingIteratorNoSiblings)
- *      - TEST(NTree, ConstSiblingIteratorNoSiblings)
- *      - TEST(NTree, SiblingIteratorRemoveSome)
- *      - TEST(NTree, SiblingIteratorRemoveAll)
+ * @ref ECU_NTNODE_POSTORDER_FOR_EACH(), @ref ECU_NTNODE_CONST_POSTORDER_FOR_EACH(),
+ * @ref ecu_ntnode_postorder_iterator_begin(), @ref ecu_ntnode_postorder_iterator_end(),
+ * @ref ecu_ntnode_postorder_iterator_next(), @ref ecu_ntnode_postorder_iterator_cbegin(),
+ * @ref ecu_ntnode_postorder_iterator_cend(), @ref ecu_ntnode_postorder_iterator_cnext()
+ *      - TEST(NtNode, PostorderIterator)
+ *      - TEST(NtNode, ConstPostorderIterator)
+ *      - TEST(NtNode, PostorderIteratorLeftMostSubtree)
+ *      - TEST(NtNode, ConstPostorderIteratorLeftMostSubtree)
+ *      - TEST(NtNode, PostorderIteratorMiddleSubtree)
+ *      - TEST(NtNode, ConstPostorderIteratorMiddleSubtree)
+ *      - TEST(NtNode, PostorderIteratorRightMostSubtree)
+ *      - TEST(NtNode, ConstPostorderIteratorRightMostSubtree)
+ *      - TEST(NtNode, PostorderIteratorLeaf)
+ *      - TEST(NtNode, ConstPostorderIteratorLeaf)
+ *      - TEST(NtNode, PostorderIteratorEmptyRoot)
+ *      - TEST(NtNode, ConstPostorderIteratorEmptyRoot)
+ *      - TEST(NtNode, PostorderIteratorDegenerateTreeMiddle)
+ *      - TEST(NtNode, ConstPostorderIteratorDegenerateTreeMiddle)
+ *      - TEST(NtNode, PostorderIteratorDegenerateTreeRoot)
+ *      - TEST(NtNode, ConstPostorderIteratorDegenerateTreeRoot)
+ *      - TEST(NtNode, PostorderIteratorRemoveSome)
+ *      - TEST(NtNode, PostorderIteratorRemoveAll)
  * 
  * @ref ECU_NTNODE_PREORDER_FOR_EACH(), @ref ECU_NTNODE_CONST_PREORDER_FOR_EACH(),
  * @ref ecu_ntnode_preorder_iterator_begin(), @ref ecu_ntnode_preorder_iterator_end(),
  * @ref ecu_ntnode_preorder_iterator_next(), @ref ecu_ntnode_preorder_iterator_cbegin(),
- * @ref ecu_ntnode_preorder_iterator_cend(), @ref ecu_ntnode_preorder_iterator_cnext(),
- * @ref ecu_ntnode_push_back(), @ref ecu_ntnode_push_front()
- *      - TEST(NTree, PreorderIterator)
- *      - TEST(NTree, ConstPreorderIterator)
- *      - TEST(NTree, PreorderIteratorSubtree)
- *      - TEST(NTree, ConstPreorderIteratorSubtree)
- *      - TEST(NTree, PreorderIteratorSingleBranch)
- *      - TEST(NTree, ConstPreorderIteratorSingleBranch)
- *      - TEST(NTree, PreorderIteratorLeaf)
- *      - TEST(NTree, ConstPreorderIteratorLeaf)
- *      - TEST(NTree, PreorderIteratorRemove)
+ * @ref ecu_ntnode_preorder_iterator_cend(), @ref ecu_ntnode_preorder_iterator_cnext()
+ *      - TEST(NtNode, PreorderIterator)
+ *      - TEST(NtNode, ConstPreorderIterator)
+ *      - TEST(NtNode, PreorderIteratorLeftMostSubtree)
+ *      - TEST(NtNode, ConstPreorderIteratorLeftMostSubtree)
+ *      - TEST(NtNode, PreorderIteratorMiddleSubtree)
+ *      - TEST(NtNode, ConstPreorderIteratorMiddleSubtree)
+ *      - TEST(NtNode, PreorderIteratorRightMostSubtree)
+ *      - TEST(NtNode, ConstPreorderIteratorRightMostSubtree)
+ *      - TEST(NtNode, PreorderIteratorLeaf)
+ *      - TEST(NtNode, ConstPreorderIteratorLeaf)
+ *      - TEST(NtNode, PreorderIteratorEmptyRoot)
+ *      - TEST(NtNode, ConstPreorderIteratorEmptyRoot)
+ *      - TEST(NtNode, PreorderIteratorDegenerateTreeMiddle)
+ *      - TEST(NtNode, ConstPreorderIteratorDegenerateTreeMiddle)
+ *      - TEST(NtNode, PreorderIteratorDegenerateTreeRoot)
+ *      - TEST(NtNode, ConstPreorderIteratorDegenerateTreeRoot)
+ *      - TEST(NtNode, PreorderIteratorRemove)
+ * 
+ * @ref ECU_NTNODE_SIBLING_FOR_EACH(), @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH(),
+ * @ref ecu_ntnode_sibling_iterator_begin(), @ref ecu_ntnode_sibling_iterator_end(),
+ * @ref ecu_ntnode_sibling_iterator_next(), @ref ecu_ntnode_sibling_iterator_cbegin(),
+ * @ref ecu_ntnode_sibling_iterator_cend(), @ref ecu_ntnode_sibling_iterator_cnext()
+ *      - TEST(NtNode, SiblingIteratorFirst)
+ *      - TEST(NtNode, ConstSiblingIteratorFirst)
+ *      - TEST(NtNode, SiblingIteratorMiddle)
+ *      - TEST(NtNode, ConstSiblingIteratorMiddle)
+ *      - TEST(NtNode, SiblingIteratorLast)
+ *      - TEST(NtNode, ConstSiblingIteratorLast)
+ *      - TEST(NtNode, SiblingIteratorOneSibling)
+ *      - TEST(NtNode, ConstSiblingIteratorOneSibling)
+ *      - TEST(NtNode, SiblingIteratorNoSiblings)
+ *      - TEST(NtNode, ConstSiblingIteratorNoSiblings)
+ *      - TEST(NtNode, SiblingIteratorRemoveSome)
+ *      - TEST(NtNode, SiblingIteratorRemoveAll)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -100,508 +131,695 @@
 
 using namespace stubs;
 
+namespace {
+/*------------------------------------------------------------*/
+/*--------------- FILE-SCOPE FUNCTION DECLARATIONS -----------*/
+/*------------------------------------------------------------*/
+
+/* Forward declarations. */
+struct ntnode;
+struct rw_ntnode;
+struct ro_ntnode;
+
+/**
+ * @brief Safely converts (ecu_ntnode *) which is a C structure
+ * into the ntnode C++ wrapper class. Common use case would be
+ * converting (ecu_ntnode *) returned by C-based iterators under test.
+ * Asserts if ecu_ntnode_valid(n) fails.
+ */
+ntnode& convert(ecu_ntnode *n);
+
+/**
+ * @brief Safely converts (const ecu_ntnode *) which is a C structure
+ * into the ntnode C++ wrapper class. Common use case would be
+ * converting (ecu_ntnode *) returned by C-based iterators under test.
+ * Asserts if ecu_ntnode_valid(n) fails.
+ */
+const ntnode& convert(const ecu_ntnode *n);
+
+/*------------------------------------------------------------*/
+/*----------- FILE-SCOPE TYPES - VISITOR INTERFACE -----------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Visitor interface. Used to give tests more
+ * flexility in case test code is edited in the future.
+ */
+struct visitor
+{
+    /// @brief Virtual base class destructor.
+    virtual ~visitor() = default;
+
+    /// @brief Any operation applied to read-write node.
+    virtual void visit(rw_ntnode& n) = 0;
+
+    /// @brief Only read-only operations can be applied since
+    /// read-write node is const.
+    virtual void visit(const rw_ntnode& n) = 0;
+    
+    /// @brief Only read-only operations can be applied since
+    /// node is read-only type (and const).
+    virtual void visit(const ro_ntnode& n) = 0;
+
+protected:
+    /// @brief Default constructor.
+    visitor() = default;
+};
+
+/*------------------------------------------------------------*/
+/*-------------------- FILE-SCOPE TYPES - NODES --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Ntnode interface. This is a C++ wrapper class around C 
+ * structure under test, @ref ecu_ntnode. Used to create a C++ 
+ * interface for an @ref ecu_ntnode to facilitate easier test 
+ * development.
+ */
+struct ntnode : public ecu_ntnode
+{
+protected:
+    /// @brief Default constructor. Node's destroy callback
+    /// and ID are unused.
+    ntnode()
+    {
+        ecu_ntnode_ctor(this, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    }
+
+    /// @brief Constructor assigns supplied ID to node. Node's 
+    /// destroy callback unused.
+    ntnode(ecu_object_id id_)
+    {
+        ecu_ntnode_ctor(this, ECU_NTNODE_DESTROY_UNUSED, id_);
+    }
+
+    /// @brief Constructor assigns supplied destroy callback and 
+    /// optional ID to ecu_ntnode. Function takes in the C-structure
+    /// under test (ecu_ntnode *) to be compatible with the C API and
+    /// to avoid having to explicitly upcast. Do not convert into 
+    /// this C++ wrapper class (ntnode *), as ecu_ntnode_destroy() will
+    /// have already been called on the node, thus invalidating it.
+    ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    {
+        ecu_ntnode_ctor(this, destroy_, id_);
+    }
+
+public:
+    /// @brief Virtual base class destructor. C-destructor
+    /// ecu_ntnode_destroy() not called since tests call
+    /// it directly. Do not place in C++ destructor or else
+    /// ecu_ntnode_destroy() is called twice, first in the test
+    /// and then in this destructor. The 2nd call causes
+    /// problems because an invalidated node (next, prev, etc
+    /// reset to NULL from first ecu_ntnode_destroy call) is 
+    /// passed, causing ecu_ntnode_valid() to fail. This is
+    /// meant to happen since C-destructor under test does
+    /// not use dynamic memory allocation, so it only invalidates
+    /// the object.
+    virtual ~ntnode() = default;
+
+    /// @brief Runs concrete visitor on this node.
+    /// Pure virtual in order to perform double dispatching.
+    virtual void accept(visitor& v) = 0;
+
+    /// @brief Runs concrete visitor on this node.
+    /// Pure virtual in order to perform double dispatching.
+    virtual void accept(visitor& v) const = 0;
+};
+
+/**
+ * @brief Read-write node.
+ */
+struct rw_ntnode : public ntnode
+{
+    /// @brief Default constructor. Node's destroy callback
+    /// and ID are unused.
+    rw_ntnode() 
+        : ntnode()
+    {
+        
+    }
+
+    /// @brief Constructor assigns supplied ID to node. Node's 
+    /// destroy callback unused.
+    rw_ntnode(ecu_object_id id_)
+        : ntnode(std::move(id_))
+    {
+
+    }
+
+    /// @brief Constructor assigns supplied destroy callback and 
+    /// optional ID to ecu_ntnode. Function takes in the C-structure
+    /// under test (ecu_ntnode *) to be compatible with the C API and
+    /// to avoid having to explicitly upcast. Do not convert into 
+    /// the C++ base wrapper class (ntnode *), as ecu_ntnode_destroy() will
+    /// have already been called on the node, thus invalidating it.
+    rw_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+        : ntnode(std::move(destroy_), std::move(id_))
+    {
+
+    }
+
+    /// @brief Runs concrete visitor on this specific node type.
+    void accept(visitor& v) override
+    {
+        v.visit(*this);
+    }
+
+    /// @brief Runs concrete visitor on this specific node type.
+    void accept(visitor& v) const override
+    {
+        v.visit(*this);
+    }
+};
+
+/**
+ * @brief Read-only node.
+ */
+struct ro_ntnode : public ntnode
+{
+    /// @brief Default constructor. Node's destroy callback
+    /// and ID are unused.
+    ro_ntnode() 
+        : ntnode()
+    {
+
+    }
+
+    /// @brief Constructor assigns supplied ID to node. Node's 
+    /// destroy callback unused.
+    ro_ntnode(ecu_object_id id_)
+        : ntnode(std::move(id_))
+    {
+
+    }
+
+    /// @brief Constructor assigns supplied destroy callback and 
+    /// optional ID to ecu_ntnode. Function takes in the C-structure
+    /// under test (ecu_ntnode *) to be compatible with the C API and
+    /// to avoid having to explicitly upcast. Do not convert into 
+    /// the C++ base wrapper class (ntnode *), as ecu_ntnode_destroy() will
+    /// have already been called on the node, thus invalidating it.
+    ro_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+        : ntnode(std::move(destroy_), std::move(id_))
+    {
+        
+    }
+
+    /// @brief Runs concrete visitor on this specific node type.
+    void accept(visitor& v) override
+    {
+        v.visit(*this);
+    }
+
+    /// @brief Runs concrete visitor on this specific node type.
+    void accept(visitor& v) const override
+    {
+        v.visit(*this);
+    }
+};
+
+/*------------------------------------------------------------*/
+/*------------- FILE-SCOPE TYPES - CONCRETE VISITORS ---------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Concrete visitor that calls node in tree mock
+ * expectation, where value is the node object's address. 
+ * Applies to all node types.
+ */
+struct node_obj_in_tree_actual_call : public visitor
+{
+    /// @brief Calls node in tree mock expectation. 
+    /// Takes in base C++ wrapper to make this a common function.
+    static void call(const ntnode &n)
+    {
+        /* Note how n is explicitly upcasted to (const ecu_ntnode *) to standardize
+        pointers passed in. It is NOT guaranteed (const ecu_ntnode *) == (const ntnode *). 
+        Do const-qualified cast to allow const and non-const parameters. */
+        mock().actualCall("node_in_tree")
+              .withParameter("value", static_cast<const void *>((const ecu_ntnode *)&n));
+    }
+
+    /// @brief Calls node in tree mock expectation on non-const read-write node.
+    void visit(rw_ntnode& n) override
+    {
+        call(n);
+    }
+
+    /// @brief Calls node in tree mock expectation on const read-write node.
+    void visit(const rw_ntnode& n) override
+    {
+        call(n);
+    }
+
+    /// @brief Calls node in tree mock expectation on read-only node.
+    void visit(const ro_ntnode& n) override
+    {
+        call(n);
+    }
+};
+
+/**
+ * @brief Concrete visitor that removes node. Only applies
+ * to editable nodes. I.e. non-const read-write nodes are
+ * removed but read-only nodes are not.
+ */
+struct node_remove : public visitor
+{
+    /// @brief Removes non-const read-write node from the tree.
+    void visit(rw_ntnode& n) override
+    {
+        ecu_ntnode_remove(&n);
+    }
+
+    /// @brief Does nothing since const read-write node supplied.
+    void visit(const rw_ntnode& n) override
+    {
+        (void)n;
+    }
+
+    /// @brief Does nothing since read-only node supplied.
+    void visit(const ro_ntnode& n) override
+    {
+        (void)n;
+    }
+};
+
+/*------------------------------------------------------------*/
+/*---------------- FILE-SCOPE FUNCTION DEFINITIONS -----------*/
+/*------------------------------------------------------------*/
+
+ntnode& convert(ecu_ntnode *n)
+{
+    assert( (n) );
+    assert( (ecu_ntnode_valid(n)) );
+    return (*static_cast<ntnode *>(n));
+}
+
+const ntnode& convert(const ecu_ntnode *n)
+{
+    assert( (n) );
+    assert( (ecu_ntnode_valid(n)) );
+    return (*static_cast<const ntnode *>(n));
+}
+} /* namespace. */
+
+// /// @brief Strategy.
+// /// Interface to test ECU tree iterators which are in C.
+// /// begin(), end(), and next() functions return ecu_ntnode since
+// /// some iterators return dummy delimiters not apart of this C++
+// /// interface. The convert function acts a safety mechanism to
+// /// convert the C ecu_ntnode into our C++ interface ONLY if the 
+// /// returned node is valid (not a C delimiter).
+// struct iterator
+// {
+//     virtual ecu_ntnode *begin(ntnode& start) = 0;
+//     virtual ecu_ntnode *end() = 0;
+//     virtual ecu_ntnode *next() = 0;
+//     virtual ntnode& convert(ecu_ntnode *node) = 0;
+
+//     /// @brief Applies visitor to all nodes. Also tests FOR_EACH() macros.
+//     virtual void traverse(ntnode& start, visitor& v) = 0;
+
+// protected:
+//     iterator() = default;
+// };
+
+// struct const_iterator
+// {
+//     virtual const ecu_ntnode *cbegin(const ntnode& start) = 0;
+//     virtual const ecu_ntnode *cend() = 0;
+//     virtual const ecu_ntnode *cnext() = 0;
+//     virtual const ntnode& convert(const ecu_ntnode *node) = 0;
+
+//     /// @brief Applies visitor to all nodes. Also tests CONST_FOR_EACH() macros.
+//     virtual void traverse(const ntnode& start, visitor& v) = 0;
+
+// protected:
+//     const_iterator() = default;
+// };
+
+// struct child_iterator : public iterator
+// {
+//     ecu_ntnode *begin(ntnode& start) override
+//     {
+//         return ecu_ntnode_child_iterator_begin(&m_me, &start);
+//     }
+
+//     ecu_ntnode *end() override
+//     {
+//         return ecu_ntnode_child_iterator_end(&m_me);
+//     }
+
+//     ecu_ntnode *next() override
+//     {
+//         return ecu_ntnode_child_iterator_next(&m_me);
+//     }
+
+//     ntnode& convert(ecu_ntnode *node)
+//     {
+//         /* All children returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<ntnode *>(node);
+//     }
+
+//     void traverse(ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CHILD_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_child_iterator m_me;
+// };
+
+// struct const_child_iterator : public const_iterator
+// {
+//     const ecu_ntnode *cbegin(const ntnode& start) override
+//     {
+//         return ecu_ntnode_child_iterator_cbegin(&m_me, &start);
+//     }
+
+//     const ecu_ntnode *cend() override
+//     {
+//         return ecu_ntnode_child_iterator_cend(&m_me);
+//     }
+
+//     const ecu_ntnode *cnext() override
+//     {
+//         return ecu_ntnode_child_iterator_cnext(&m_me);
+//     }
+
+//     const ntnode& convert(const ecu_ntnode *node) override
+//     {
+//         /* All children returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<const ntnode *>(node);
+//     }
+
+//     void traverse(const ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_child_citerator m_me;
+// };
+
+// struct parent_iterator : public iterator
+// {
+//     ecu_ntnode *begin(ntnode& start) override
+//     {
+//         return ecu_ntnode_parent_iterator_begin(&m_me, &start);
+//     }
+
+//     ecu_ntnode *end() override
+//     {
+//         return ecu_ntnode_parent_iterator_end(&m_me);
+//     }
+
+//     ecu_ntnode *next() override
+//     {
+//         return ecu_ntnode_parent_iterator_next(&m_me);
+//     }
+
+//     ntnode& convert(ecu_ntnode *node) override
+//     {
+//         /* All parents returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<ntnode *>(node);
+//     }
+
+//     void traverse(ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_PARENT_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_parent_iterator m_me;
+// };
+
+// struct const_parent_iterator : public const_iterator
+// {
+//     const ecu_ntnode *cbegin(const ntnode& start) override
+//     {
+//         return ecu_ntnode_parent_iterator_cbegin(&m_me, &start);
+//     }
+
+//     const ecu_ntnode *cend() override
+//     {
+//         return ecu_ntnode_parent_iterator_cend(&m_me);
+//     }
+
+//     const ecu_ntnode *cnext() override
+//     {
+//         return ecu_ntnode_parent_iterator_cnext(&m_me);
+//     }
+
+//     const ntnode& convert(const ecu_ntnode *node) override
+//     {
+//         /* All parents returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<const ntnode *>(node);
+//     }
+
+//     void traverse(const ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_parent_citerator m_me;
+// };
+
+// struct sibling_iterator : public iterator
+// {
+//     ecu_ntnode *begin(ntnode& start) override
+//     {
+//         return ecu_ntnode_sibling_iterator_begin(&m_me, &start);
+//     }
+
+//     ecu_ntnode *end() override
+//     {
+//         return ecu_ntnode_sibling_iterator_end(&m_me);
+//     }
+
+//     ecu_ntnode *next() override
+//     {
+//         return ecu_ntnode_sibling_iterator_next(&m_me);
+//     }
+
+//     ntnode& convert(ecu_ntnode *node) override
+//     {
+//         /* All siblings returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<ntnode *>(node);
+//     }
+
+//     void traverse(ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_SIBLING_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_sibling_iterator m_me;
+// };
+
+// struct const_sibling_iterator : public const_iterator
+// {
+//     const ecu_ntnode *cbegin(const ntnode& start) override
+//     {
+//         return ecu_ntnode_sibling_iterator_cbegin(&m_me, &start);
+//     }
+
+//     const ecu_ntnode *cend() override
+//     {
+//         return ecu_ntnode_sibling_iterator_cend(&m_me);
+//     }
+
+//     const ecu_ntnode *cnext() override
+//     {
+//         return ecu_ntnode_sibling_iterator_cnext(&m_me);
+//     }
+
+//     const ntnode& convert(const ecu_ntnode *node) override
+//     {
+//         /* All siblings returned can be safely converted. */
+//         assert( (node) );
+//         return *static_cast<const ntnode *>(node);
+//     }
+
+//     void traverse(const ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_sibling_citerator m_me;
+// };
+
+// struct preorder_iterator : public iterator
+// {
+//     ecu_ntnode *begin(ntnode& start) override
+//     {
+//         return ecu_ntnode_preorder_iterator_begin(&m_me, &start);
+//     }
+
+//     ecu_ntnode *end() override
+//     {
+//         return ecu_ntnode_preorder_iterator_end(&m_me);
+//     }
+
+//     ecu_ntnode *next() override
+//     {
+//         return ecu_ntnode_preorder_iterator_next(&m_me);
+//     }
+
+//     ntnode& convert(ecu_ntnode *node) override
+//     {
+//         /* Delimiter node is in C-struct so cannot be converted. */
+//         assert( (node) );
+//         assert( (node != &m_me.delimiter) );
+//         return *static_cast<ntnode *>(node);
+//     }
+
+//     void traverse(ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_PREORDER_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_preorder_iterator m_me;
+// };
+
+// struct const_preorder_iterator : public const_iterator
+// {
+//     const ecu_ntnode *cbegin(const ntnode& start) override
+//     {
+//         return ecu_ntnode_preorder_iterator_cbegin(&m_me, &start);
+//     }
+
+//     const ecu_ntnode *cend() override
+//     {
+//         return ecu_ntnode_preorder_iterator_cend(&m_me);
+//     }
+
+//     const ecu_ntnode *cnext() override
+//     {
+//         return ecu_ntnode_preorder_iterator_cnext(&m_me);
+//     }
+
+//     const ntnode& convert(const ecu_ntnode *node) override
+//     {
+//         /* Delimiter node is in C-struct so cannot be converted. */
+//         assert( (node) );
+//         assert( (node != &m_me.delimiter) );
+//         return *static_cast<const ntnode *>(node);
+//     }
+
+//     void traverse(const ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_preorder_citerator m_me;
+// };
+
+// struct postorder_iterator : public iterator
+// {
+//     ecu_ntnode *begin(ntnode& start) override
+//     {
+//         return ecu_ntnode_postorder_iterator_begin(&m_me, &start);
+//     }
+
+//     ecu_ntnode *end() override
+//     {
+//         return ecu_ntnode_postorder_iterator_end(&m_me);
+//     }
+
+//     ecu_ntnode *next() override
+//     {
+//         return ecu_ntnode_postorder_iterator_next(&m_me);
+//     }
+
+//     ntnode& convert(ecu_ntnode *node) override
+//     {
+//         /* Delimiter node is in C-struct so cannot be converted. */
+//         assert( (node) );
+//         assert( (node != &m_me.delimiter) );
+//         return *static_cast<ntnode *>(node);
+//     }
+
+//     void traverse(ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_POSTORDER_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_postorder_iterator m_me;
+// };
+
+// struct const_postorder_iterator : public const_iterator
+// {
+//     const ecu_ntnode *cbegin(const ntnode& start) override
+//     {
+//         return ecu_ntnode_postorder_iterator_cbegin(&m_me, &start);
+//     }
+
+//     const ecu_ntnode *cend() override
+//     {
+//         return ecu_ntnode_postorder_iterator_cend(&m_me);
+//     }
+
+//     const ecu_ntnode *cnext() override
+//     {
+//         return ecu_ntnode_postorder_iterator_cnext(&m_me);
+//     }
+
+//     const ntnode& convert(const ecu_ntnode *node) override
+//     {
+//         /* Delimiter node is in C-struct so cannot be converted. */
+//         assert( (node) );
+//         assert( (node != &m_me.delimiter) );
+//         return *static_cast<const ntnode *>(node);
+//     }
+
+//     void traverse(const ntnode& start, visitor& v) override
+//     {
+//         ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &m_me, &start)
+//         {
+//             convert(n).accept(v);
+//         }
+//     }
+
+//     ecu_ntnode_postorder_citerator m_me;
+// };
+
 /*------------------------------------------------------------*/
 /*------------------------- TEST GROUPS ----------------------*/
 /*------------------------------------------------------------*/
 
-TEST_GROUP(NTree)
+TEST_GROUP(NtNode)
 {
-    struct visitor;
-
-    struct ntnode : public ecu_ntnode
-    {
-    protected:
-        ntnode()
-        {
-            ecu_ntnode_ctor(this, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        }
-
-    public:
-        virtual void accept(visitor& v) = 0;
-        virtual void accept(visitor& v) const = 0;
-
-        const ntnode *value() const
-        {
-            return this;
-        }
-    };
-
-    /// @brief Read-write node. Write operations can be applied to it.
-    struct rw_ntnode : public ntnode
-    {
-        void accept(visitor& v) override
-        {
-            v.visit(*this);
-        }
-
-        void accept(visitor& v) const override
-        {
-            v.visit(*this);
-        }
-    };
-
-    /// @brief Read-only node. Write operations cannot be applied to it.
-    struct ro_ntnode : public ntnode
-    {
-        void accept(visitor& v) override
-        {
-            v.visit(*this);
-        }
-
-        void accept(visitor& v) const override
-        {
-            v.visit(*this);
-        }
-    };
-
-    /// @brief Visitor interface.
-    struct visitor
-    {
-        /// @brief Any operation applied to read-write node.
-        virtual void visit(rw_ntnode& n) = 0;
-
-        /// @brief Only read-only operations can be applied since
-        /// read-write node is const.
-        virtual void visit(const rw_ntnode& n) = 0;
-        
-        /// @brief Only read-only operations can be applied since
-        /// node is read-only type (and const).
-        virtual void visit(const ro_ntnode& n) = 0;
-
-    protected:
-        visitor() = default;
-    };
-
-    struct apply_expectations : public visitor
-    {
-        void visit(rw_ntnode& n) override
-        {
-            mock().actualCall("node_in_tree")
-                  .withParameter("value", n.value());
-        }
-
-        void visit(const rw_ntnode& n) override
-        {
-            mock().actualCall("node_in_tree")
-                  .withParameter("value", n.value());
-        }
-
-        void visit(const ro_ntnode& n) override
-        {
-            mock().actualCall("node_in_tree")
-                  .withParameter("value", n.value());
-        }
-    };
-
-    struct remove : public visitor
-    {
-        void visit(rw_ntnode& n) override
-        {
-            ecu_ntnode_remove(&n);
-        }
-
-        void visit(const rw_ntnode& n) override
-        {
-            /* Do nothing since const. */
-            (void)n;
-        }
-
-        void visit(const ro_ntnode& n) override
-        {
-            /* Do nothing since read-only node. */
-            (void)n;
-        }
-    };
-
-    /// @brief Strategy.
-    /// Interface to test ECU tree iterators which are in C.
-    /// begin(), end(), and next() functions return ecu_ntnode since
-    /// some iterators return dummy delimiters not apart of this C++
-    /// interface. The convert function acts a safety mechanism to
-    /// convert the C ecu_ntnode into our C++ interface ONLY if the 
-    /// returned node is valid (not a C delimiter).
-    struct iterator
-    {
-        virtual ecu_ntnode *begin(ntnode& start) = 0;
-        virtual ecu_ntnode *end() = 0;
-        virtual ecu_ntnode *next() = 0;
-        virtual ntnode& convert(ecu_ntnode *node) = 0;
-
-        /// @brief Applies visitor to all nodes. Also tests FOR_EACH() macros.
-        virtual void traverse(ntnode& start, visitor& v) = 0;
-
-    protected:
-        iterator() = default;
-    };
-
-    struct const_iterator
-    {
-        virtual const ecu_ntnode *cbegin(const ntnode& start) = 0;
-        virtual const ecu_ntnode *cend() = 0;
-        virtual const ecu_ntnode *cnext() = 0;
-        virtual const ntnode& convert(const ecu_ntnode *node) = 0;
-
-        /// @brief Applies visitor to all nodes. Also tests CONST_FOR_EACH() macros.
-        virtual void traverse(const ntnode& start, visitor& v) = 0;
-
-    protected:
-        const_iterator() = default;
-    };
-
-    struct child_iterator : public iterator
-    {
-        ecu_ntnode *begin(ntnode& start) override
-        {
-            return ecu_ntnode_child_iterator_begin(&m_me, &start);
-        }
-
-        ecu_ntnode *end() override
-        {
-            return ecu_ntnode_child_iterator_end(&m_me);
-        }
-
-        ecu_ntnode *next() override
-        {
-            return ecu_ntnode_child_iterator_next(&m_me);
-        }
-
-        ntnode& convert(ecu_ntnode *node)
-        {
-            /* All children returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<ntnode *>(node);
-        }
-
-        void traverse(ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CHILD_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_child_iterator m_me;
-    };
-
-    struct const_child_iterator : public const_iterator
-    {
-        const ecu_ntnode *cbegin(const ntnode& start) override
-        {
-            return ecu_ntnode_child_iterator_cbegin(&m_me, &start);
-        }
-
-        const ecu_ntnode *cend() override
-        {
-            return ecu_ntnode_child_iterator_cend(&m_me);
-        }
-
-        const ecu_ntnode *cnext() override
-        {
-            return ecu_ntnode_child_iterator_cnext(&m_me);
-        }
-
-        const ntnode& convert(const ecu_ntnode *node) override
-        {
-            /* All children returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<const ntnode *>(node);
-        }
-
-        void traverse(const ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_child_citerator m_me;
-    };
-
-    struct parent_iterator : public iterator
-    {
-        ecu_ntnode *begin(ntnode& start) override
-        {
-            return ecu_ntnode_parent_iterator_begin(&m_me, &start);
-        }
-
-        ecu_ntnode *end() override
-        {
-            return ecu_ntnode_parent_iterator_end(&m_me);
-        }
-
-        ecu_ntnode *next() override
-        {
-            return ecu_ntnode_parent_iterator_next(&m_me);
-        }
-
-        ntnode& convert(ecu_ntnode *node) override
-        {
-            /* All parents returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<ntnode *>(node);
-        }
-
-        void traverse(ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_PARENT_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_parent_iterator m_me;
-    };
-
-    struct const_parent_iterator : public const_iterator
-    {
-        const ecu_ntnode *cbegin(const ntnode& start) override
-        {
-            return ecu_ntnode_parent_iterator_cbegin(&m_me, &start);
-        }
-
-        const ecu_ntnode *cend() override
-        {
-            return ecu_ntnode_parent_iterator_cend(&m_me);
-        }
-
-        const ecu_ntnode *cnext() override
-        {
-            return ecu_ntnode_parent_iterator_cnext(&m_me);
-        }
-
-        const ntnode& convert(const ecu_ntnode *node) override
-        {
-            /* All parents returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<const ntnode *>(node);
-        }
-
-        void traverse(const ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_parent_citerator m_me;
-    };
-
-    struct sibling_iterator : public iterator
-    {
-        ecu_ntnode *begin(ntnode& start) override
-        {
-            return ecu_ntnode_sibling_iterator_begin(&m_me, &start);
-        }
-
-        ecu_ntnode *end() override
-        {
-            return ecu_ntnode_sibling_iterator_end(&m_me);
-        }
-
-        ecu_ntnode *next() override
-        {
-            return ecu_ntnode_sibling_iterator_next(&m_me);
-        }
-
-        ntnode& convert(ecu_ntnode *node) override
-        {
-            /* All siblings returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<ntnode *>(node);
-        }
-
-        void traverse(ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_SIBLING_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_sibling_iterator m_me;
-    };
-
-    struct const_sibling_iterator : public const_iterator
-    {
-        const ecu_ntnode *cbegin(const ntnode& start) override
-        {
-            return ecu_ntnode_sibling_iterator_cbegin(&m_me, &start);
-        }
-
-        const ecu_ntnode *cend() override
-        {
-            return ecu_ntnode_sibling_iterator_cend(&m_me);
-        }
-
-        const ecu_ntnode *cnext() override
-        {
-            return ecu_ntnode_sibling_iterator_cnext(&m_me);
-        }
-
-        const ntnode& convert(const ecu_ntnode *node) override
-        {
-            /* All siblings returned can be safely converted. */
-            assert( (node) );
-            return *static_cast<const ntnode *>(node);
-        }
-
-        void traverse(const ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_sibling_citerator m_me;
-    };
-
-    struct preorder_iterator : public iterator
-    {
-        ecu_ntnode *begin(ntnode& start) override
-        {
-            return ecu_ntnode_preorder_iterator_begin(&m_me, &start);
-        }
-
-        ecu_ntnode *end() override
-        {
-            return ecu_ntnode_preorder_iterator_end(&m_me);
-        }
-
-        ecu_ntnode *next() override
-        {
-            return ecu_ntnode_preorder_iterator_next(&m_me);
-        }
-
-        ntnode& convert(ecu_ntnode *node) override
-        {
-            /* Delimiter node is in C-struct so cannot be converted. */
-            assert( (node) );
-            assert( (node != &m_me.delimiter) );
-            return *static_cast<ntnode *>(node);
-        }
-
-        void traverse(ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_PREORDER_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_preorder_iterator m_me;
-    };
-
-    struct const_preorder_iterator : public const_iterator
-    {
-        const ecu_ntnode *cbegin(const ntnode& start) override
-        {
-            return ecu_ntnode_preorder_iterator_cbegin(&m_me, &start);
-        }
-
-        const ecu_ntnode *cend() override
-        {
-            return ecu_ntnode_preorder_iterator_cend(&m_me);
-        }
-
-        const ecu_ntnode *cnext() override
-        {
-            return ecu_ntnode_preorder_iterator_cnext(&m_me);
-        }
-
-        const ntnode& convert(const ecu_ntnode *node) override
-        {
-            /* Delimiter node is in C-struct so cannot be converted. */
-            assert( (node) );
-            assert( (node != &m_me.delimiter) );
-            return *static_cast<const ntnode *>(node);
-        }
-
-        void traverse(const ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_preorder_citerator m_me;
-    };
-
-    struct postorder_iterator : public iterator
-    {
-        ecu_ntnode *begin(ntnode& start) override
-        {
-            return ecu_ntnode_postorder_iterator_begin(&m_me, &start);
-        }
-
-        ecu_ntnode *end() override
-        {
-            return ecu_ntnode_postorder_iterator_end(&m_me);
-        }
-
-        ecu_ntnode *next() override
-        {
-            return ecu_ntnode_postorder_iterator_next(&m_me);
-        }
-
-        ntnode& convert(ecu_ntnode *node) override
-        {
-            /* Delimiter node is in C-struct so cannot be converted. */
-            assert( (node) );
-            assert( (node != &m_me.delimiter) );
-            return *static_cast<ntnode *>(node);
-        }
-
-        void traverse(ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_POSTORDER_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_postorder_iterator m_me;
-    };
-
-    struct const_postorder_iterator : public const_iterator
-    {
-        const ecu_ntnode *cbegin(const ntnode& start) override
-        {
-            return ecu_ntnode_postorder_iterator_cbegin(&m_me, &start);
-        }
-
-        const ecu_ntnode *cend() override
-        {
-            return ecu_ntnode_postorder_iterator_cend(&m_me);
-        }
-
-        const ecu_ntnode *cnext() override
-        {
-            return ecu_ntnode_postorder_iterator_cnext(&m_me);
-        }
-
-        const ntnode& convert(const ecu_ntnode *node) override
-        {
-            /* Delimiter node is in C-struct so cannot be converted. */
-            assert( (node) );
-            assert( (node != &m_me.delimiter) );
-            return *static_cast<const ntnode *>(node);
-        }
-
-        void traverse(const ntnode& start, visitor& v) override
-        {
-            ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &m_me, &start)
-            {
-                convert(n).accept(v);
-            }
-        }
-
-        ecu_ntnode_postorder_citerator m_me;
-    };
-
     void setup() override
     {
         set_assert_handler(AssertResponse::FAIL);
@@ -613,52 +831,34 @@ TEST_GROUP(NTree)
         mock().clear();
     }
 
-    /// @brief Expect nodes to be in tree in specific order.
+    /// @brief Creates node_in_tree mock expectations on the nodes
+    /// in the order they are supplied. Value is the node object's address.
+    /// Note how only lvalue references can be supplied. Do not allow 
+    /// temporaries since object lifetime must outlive the mock.
     template<typename... Nodes>
-    requires ((std::is_base_of_v<ntnode, Nodes> && !std::is_same_v<ntnode, Nodes>) && ...)
-    static void EXPECT_NODES_IN_ORDER(const ntnode &n1, const Nodes&... n)
+    requires (std::is_base_of_v<ntnode, Nodes> && ...) /* Nodes type will never be reference since parameter passed by reference. */
+    static void EXPECT_NODES_IN_TREE(ntnode& n0, Nodes&... n)
     {
+        /* Note how parameters are explicitly upcasted to (const ecu_ntnode *) to standardize
+        pointers passed in. It is NOT guaranteed (const ecu_ntnode *) == (const ntnode *). 
+        Do const-qualified cast to allow const and non-const parameters. */
         mock().strictOrder();
         mock().expectOneCall("node_in_tree")
-              .withParameter("value", n1.value());
+              .withParameter("value", static_cast<const void *>((const ecu_ntnode *)&n0));
 
         if constexpr(sizeof...(Nodes) > 0)
         {
             (mock().expectOneCall("node_in_tree")
-                   .withParameter("value", n.value()), ...);
-        }
-    }
-
-    /// @brief Calls the node_in_tree mock on an entire tree/subtree.
-    /// Order of applied expectations depends on concrete iterator passed
-    /// in.
-    template<typename T>
-    requires ((std::is_base_of_v<iterator, T> && !std::is_same_v<iterator, T>) || 
-              (std::is_base_of_v<const_iterator, T> && !std::is_same_v<const_iterator, T>))
-    static void TREE_APPLY_EXPECTATIONS(ntnode& start, T&& iter)
-    {
-        apply_expectations expectations;
-        iter.traverse(start, expectations);
-    }
-
-    /// @brief Helper to create test tree. Adds any number of children to parent.
-    template<typename... Nodes>
-    requires ((std::is_base_of_v<ntnode, Nodes> && !std::is_same_v<ntnode, Nodes>) && ...)
-    static void add_children(ntnode& parent, ntnode& c0, Nodes&... cn)
-    {
-        ecu_ntnode_push_back(&parent, &c0);
-
-        if constexpr(sizeof...(Nodes) > 0)
-        {
-            (ecu_ntnode_push_back(&parent, &cn), ...);
+                   .withParameter("value", static_cast<const void *>((const ecu_ntnode *)&n)), ...);
         }
     }
 
     /// @brief Helper to create a test tree. Creates a branch by adding children,
-    /// grandchildren, etc. I.e. add_branch(0, 1, 2) means 1 is child of 0 and 
-    /// 2 is grandchild of 0.
+    /// grandchildren, etc to a parent. I.e. add_branch(0, 1, 2) means 1 is child 
+    /// of 0 and 2 is grandchild of 0. Has to be a recursive template since
+    /// parent node changes with each operation.
     template<typename... Nodes>
-    requires ((std::is_base_of_v<ntnode, Nodes> && !std::is_same_v<ntnode, Nodes>) && ...)
+    requires (std::is_base_of_v<ntnode, Nodes> && ...)
     static void add_branch(ntnode& root, ntnode& c0, Nodes&... cn)
     {
         add_branch(root, c0);
@@ -672,29 +872,58 @@ TEST_GROUP(NTree)
     /// @brief Helper method for template parameter pack overload.
     static void add_branch(ntnode& parent, ntnode& child)
     {
-        ecu_ntnode_push_front(&parent, &child);
+        ecu_ntnode_push_child_front(&parent, &child);
     }
 
-    /// @brief Helper to evaluate pre and post conditions for unit tests.
-    /// Applies supplied condition function to all nodes. Terminates
-    /// and returns false as soon as a false condition occurs. Otherwise
-    /// all nodes pass and this function returns true. If additional 
-    /// arguments must be passed to function use std::bind. Function takes
-    /// in pointer instead of reference so ECU tree functions can be supplied.
+    /// @brief Helper to create test tree. Adds any number of children to a parent.
     template<typename... Nodes>
-    requires ((std::is_base_of_v<ntnode, Nodes> && !std::is_same_v<ntnode, Nodes>) && ...)
-    static bool condition(const std::function<bool(const ntnode *)>& c, const ntnode& n1, const Nodes&... n)
+    requires (std::is_base_of_v<ntnode, Nodes> && ...)
+    static void add_children(ntnode& parent, ntnode& c0, Nodes&... cn)
     {
-        bool status = c(&n1);
+        ecu_ntnode_push_child_back(&parent, &c0);
 
         if constexpr(sizeof...(Nodes) > 0)
         {
-            status = status && ((c(&n)) && ...); /* Only keep evaluating if true return. */
+            (ecu_ntnode_push_child_back(&parent, &cn), ...);
+        }
+    }
+
+    /// @brief Returns true if all supplied nodes are in a tree.
+    /// False otherwise. Function immediately stops evaluating
+    /// when the first node not in a tree is processed.
+    template<typename... Nodes>
+    requires (std::is_base_of_v<ntnode, Nodes> && ...)
+    static bool in_subtree(const ntnode &n0, const Nodes&... n)
+    {
+        bool status = ecu_ntnode_in_subtree(&n0);
+
+        if constexpr(sizeof...(Nodes) > 0)
+        {
+            status = status && ((ecu_ntnode_in_subtree(&n)) && ...); /* Only keep evaluating if true return. */
         }
 
         return status;
     }
 
+    /// @brief Returns true if all supplied nodes are roots.
+    /// False otherwise. Function immediately stops evaluating
+    /// when the first node that is not a root is processed.
+    template<typename... Nodes>
+    requires (std::is_base_of_v<ntnode, Nodes> && ...)
+    static bool is_root(const ntnode &n0, const Nodes&... n)
+    {
+        bool status = ecu_ntnode_is_root(&n0);
+
+        if constexpr(sizeof...(Nodes) > 0)
+        {
+            status = status && ((ecu_ntnode_is_root(&n)) && ...); /* Only keep evaluating if true return. */
+        }
+
+        return status;
+    }
+
+    node_obj_in_tree_actual_call node_obj_in_tree_visitor;
+    node_remove node_remove_visitor;
     std::array<ro_ntnode, 50> RO; /**< Read-only nodes. */
     std::array<rw_ntnode, 50> RW; /**< Read-write nodes. */
 };
@@ -707,7 +936,7 @@ TEST_GROUP(NTree)
  * @brief General iteration test. Verify all children
  * iterated over.
  */
-TEST(NTree, ChildIterator)
+TEST(NtNode, ChildIterator)
 {
     try
     {
@@ -718,14 +947,16 @@ TEST(NTree, ChildIterator)
                 |
                 RW5 
         */
+        ecu_ntnode_child_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
         add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_ORDER(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), child_iterator());
-
-        /* Step 3: Assert. Test fails if expected children not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -738,7 +969,7 @@ TEST(NTree, ChildIterator)
  * @brief General iteration test. Verify all children
  * iterated over.
  */
-TEST(NTree, ConstChildIterator)
+TEST(NtNode, ConstChildIterator)
 {
     try
     {
@@ -749,14 +980,16 @@ TEST(NTree, ConstChildIterator)
                 |
                 RW5 
         */
+        ecu_ntnode_child_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
         add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_ORDER(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), const_child_iterator());
-
-        /* Step 3: Assert. Test fails if expected children not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -769,7 +1002,7 @@ TEST(NTree, ConstChildIterator)
  * @brief Perform a child iteration on a node that has
  * one child.
  */
-TEST(NTree, ChildIteratorOneChild)
+TEST(NtNode, ChildIteratorOneChild)
 {
     try
     {
@@ -780,14 +1013,16 @@ TEST(NTree, ChildIteratorOneChild)
                 |
                 RW5 
         */
+        ecu_ntnode_child_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
         add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_ORDER(RW.at(5));
+        EXPECT_NODES_IN_TREE(RW.at(5));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(2), child_iterator());
-
-        /* Step 3: Assert. Test fails if expected children not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -800,7 +1035,7 @@ TEST(NTree, ChildIteratorOneChild)
  * @brief Perform a child iteration on a node that has
  * one child.
  */
-TEST(NTree, ConstChildIteratorOneChild)
+TEST(NtNode, ConstChildIteratorOneChild)
 {
     try
     {
@@ -811,14 +1046,16 @@ TEST(NTree, ConstChildIteratorOneChild)
                 |
                 RW5 
         */
+        ecu_ntnode_child_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
         add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_ORDER(RW.at(5));
+        EXPECT_NODES_IN_TREE(RW.at(5));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(2), const_child_iterator());
-
-        /* Step 3: Assert. Test fails if expected children not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -831,7 +1068,7 @@ TEST(NTree, ConstChildIteratorOneChild)
  * @brief Perform a child iteration on a node that has
  * no children. Iteration should end immediately.
  */
-TEST(NTree, ChildIteratorNoChildren)
+TEST(NtNode, ChildIteratorNoChildren)
 {
     try
     {
@@ -840,12 +1077,14 @@ TEST(NTree, ChildIteratorNoChildren)
         |
         RW1 
         */
+        ecu_ntnode_child_iterator iter;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), child_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -858,7 +1097,7 @@ TEST(NTree, ChildIteratorNoChildren)
  * @brief Perform a child iteration on a node that has
  * no children. Iteration should end immediately.
  */
-TEST(NTree, ConstChildIteratorNoChildren)
+TEST(NtNode, ConstChildIteratorNoChildren)
 {
     try
     {
@@ -867,12 +1106,14 @@ TEST(NTree, ConstChildIteratorNoChildren)
         |
         RW1 
         */
+        ecu_ntnode_child_citerator citer;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), const_child_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -883,11 +1124,8 @@ TEST(NTree, ConstChildIteratorNoChildren)
 
 /**
  * @brief Remove some nodes in the middle of a child iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, ChildIteratorRemoveSome)
+TEST(NtNode, ChildIteratorRemoveSome)
 {
     try
     {
@@ -904,17 +1142,18 @@ TEST(NTree, ChildIteratorRemoveSome)
         |
         RO0-----RO1
         */
+        ecu_ntnode_child_iterator iter;
         add_children(RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(1), RO.at(0), RW.at(2), RO.at(1))) ); /* Precondition. */
 
         /* Step 2: Action. */
-        remove r;
-        child_iterator iter;
-        iter.traverse(RW.at(0), r);
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RO.at(0), RO.at(1))) );
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(1), RW.at(2))) );
+        /* Step 3: Assert. Proper nodes must be removed. */
+        CHECK_TRUE( (is_root(RW.at(1), RW.at(2))) );
+        CHECK_TRUE( (in_subtree(RO.at(0), RO.at(1))) );
     }
     catch (const AssertException& e)
     {
@@ -925,11 +1164,8 @@ TEST(NTree, ChildIteratorRemoveSome)
 
 /**
  * @brief Remove all nodes returned by child iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, ChildIteratorRemoveAll)
+TEST(NtNode, ChildIteratorRemoveAll)
 {
     try
     {
@@ -944,16 +1180,17 @@ TEST(NTree, ChildIteratorRemoveAll)
         After:
         RW0     RW1      RW2     RW3     RW4
         */
+        ecu_ntnode_child_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(1), RW.at(2), RW.at(3), RW.at(4))) ); /* Precondition. */
 
         /* Step 2: Action. */
-        remove r;
-        child_iterator iter;
-        iter.traverse(RW.at(0), r);
+        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
+        /* Step 3: Assert. All nodes must be removed. */
+        CHECK_TRUE( (is_root(RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
     }
     catch (const AssertException& e)
     {
@@ -970,7 +1207,7 @@ TEST(NTree, ChildIteratorRemoveAll)
  * @brief General iteration test where starting node
  * is a leaf.
  */
-TEST(NTree, ParentIteratorLeaf)
+TEST(NtNode, ParentIteratorLeaf)
 {
     try
     {
@@ -985,15 +1222,17 @@ TEST(NTree, ParentIteratorLeaf)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(5), parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1006,7 +1245,7 @@ TEST(NTree, ParentIteratorLeaf)
  * @brief General iteration test where starting node
  * is a leaf.
  */
-TEST(NTree, ConstParentIteratorLeaf)
+TEST(NtNode, ConstParentIteratorLeaf)
 {
     try
     {
@@ -1021,15 +1260,17 @@ TEST(NTree, ConstParentIteratorLeaf)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(5), const_parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1042,7 +1283,7 @@ TEST(NTree, ConstParentIteratorLeaf)
  * @brief General iteration test where starting node
  * is a middle child.
  */
-TEST(NTree, ParentIteratorMiddleChild)
+TEST(NtNode, ParentIteratorMiddleChild)
 {
     try
     {
@@ -1057,15 +1298,17 @@ TEST(NTree, ParentIteratorMiddleChild)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(2), RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(3), parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1078,7 +1321,7 @@ TEST(NTree, ParentIteratorMiddleChild)
  * @brief General iteration test where starting node
  * is a middle child.
  */
-TEST(NTree, ConstParentIteratorMiddleChild)
+TEST(NtNode, ConstParentIteratorMiddleChild)
 {
     try
     {
@@ -1093,15 +1336,17 @@ TEST(NTree, ConstParentIteratorMiddleChild)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(2), RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(3), const_parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1114,7 +1359,7 @@ TEST(NTree, ConstParentIteratorMiddleChild)
  * @brief Perform a parent iteration on a node that has
  * one parent (direct child of a root).
  */
-TEST(NTree, ParentIteratorOneParent)
+TEST(NtNode, ParentIteratorOneParent)
 {
     try
     {
@@ -1129,15 +1374,17 @@ TEST(NTree, ParentIteratorOneParent)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(6))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1150,7 +1397,7 @@ TEST(NTree, ParentIteratorOneParent)
  * @brief Perform a parent iteration on a node that has
  * one parent (direct child of a root).
  */
-TEST(NTree, ConstParentIteratorOneParent)
+TEST(NtNode, ConstParentIteratorOneParent)
 {
     try
     {
@@ -1165,15 +1412,17 @@ TEST(NTree, ConstParentIteratorOneParent)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_ORDER(RW.at(0));
+        EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), const_parent_iterator());
-
-        /* Step 3: Assert. Test fails if expected parents not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(6))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1186,7 +1435,7 @@ TEST(NTree, ConstParentIteratorOneParent)
  * @brief Perform a parent iteration on a node that has
  * no parent. Iteration should end immediately.
  */
-TEST(NTree, ParentIteratorRoot)
+TEST(NtNode, ParentIteratorRoot)
 {
     try
     {
@@ -1195,12 +1444,14 @@ TEST(NTree, ParentIteratorRoot)
         |
         RW1 
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), parent_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1213,7 +1464,7 @@ TEST(NTree, ParentIteratorRoot)
  * @brief Perform a parent iteration on a node that has
  * no parent. Iteration should end immediately.
  */
-TEST(NTree, ConstParentIteratorRoot)
+TEST(NtNode, ConstParentIteratorRoot)
 {
     try
     {
@@ -1222,12 +1473,14 @@ TEST(NTree, ConstParentIteratorRoot)
         |
         RW1 
         */
+        ecu_ntnode_parent_citerator citer;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), const_parent_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1238,11 +1491,8 @@ TEST(NTree, ConstParentIteratorRoot)
 
 /**
  * @brief Remove some nodes in the middle of a parent iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, ParentIteratorRemoveSome)
+TEST(NtNode, ParentIteratorRemoveSome)
 {
     try
     {
@@ -1267,19 +1517,20 @@ TEST(NTree, ParentIteratorRemoveSome)
                 |
                 RW5 
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RO.at(0), RW.at(0), RW.at(1), RW.at(4));
         add_branch(RW.at(1), RO.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(4), RW.at(5));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(3), RW.at(2), RO.at(1), RW.at(1))) ); /* Precondition. */
-        
-        /* Step 2: Action. */
-        remove r;
-        parent_iterator iter;
-        iter.traverse(RW.at(3), r);
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(3), RO.at(1))) );
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(2), RW.at(1))) );
+        /* Step 2: Action. */
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify correct nodes removed. */
+        CHECK_TRUE( (is_root(RW.at(2), RW.at(1))) );
+        CHECK_TRUE( (in_subtree(RW.at(3), RO.at(1))) );
     }
     catch (const AssertException& e)
     {
@@ -1290,11 +1541,8 @@ TEST(NTree, ParentIteratorRemoveSome)
 
 /**
  * @brief Remove all nodes returned by parent iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, ParentIteratorRemoveAll)
+TEST(NtNode, ParentIteratorRemoveAll)
 {
     try
     {
@@ -1317,23 +1565,653 @@ TEST(NTree, ParentIteratorRemoveAll)
         |               |
         RW1-----RW6     RW5
         */
+        ecu_ntnode_parent_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
         add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
         add_children(RW.at(6), RW.at(7));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(5), RW.at(4), RW.at(3), RW.at(2))) ); /* Precondition. */
         
         /* Step 2: Action. */
-        remove r;
-        parent_iterator iter;
-        iter.traverse(RW.at(5), r);
+        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (ecu_ntnode_in_subtree(&RW.at(5))) );
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(4), RW.at(3), RW.at(2))) );
+        /* Step 3: Assert. Verify all nodes removed. */
+        CHECK_TRUE( (is_root(RW.at(4), RW.at(3), RW.at(2))) );
+        CHECK_TRUE( (in_subtree(RW.at(5))) );
     }
     catch (const AssertException& e)
     {
         /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*----------------- TESTS - POSTORDER ITERATOR ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General iteration test. Verify all nodes iterated
+ * over.
+ */
+TEST(NtNode, PostorderIterator)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief General iteration test. Verify all nodes iterated
+ * over.
+ */
+TEST(NtNode, ConstPostorderIterator)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a left-most subtree.
+ */
+TEST(NtNode, PostorderIteratorLeftMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a left-most subtree.
+ */
+TEST(NtNode, ConstPostorderIteratorLeftMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a middle subtree.
+ */
+TEST(NtNode, PostorderIteratorMiddleSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a middle subtree.
+ */
+TEST(NtNode, ConstPostorderIteratorMiddleSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a right-most subtree.
+ */
+TEST(NtNode, PostorderIteratorRightMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a right-most subtree.
+ */
+TEST(NtNode, ConstPostorderIteratorRightMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at a leaf node. Only the leaf
+ * should be returned in the iteration.
+ */
+TEST(NtNode, PostorderIteratorLeaf)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at a leaf node. Only the leaf
+ * should be returned in the iteration.
+ */
+TEST(NtNode, ConstPostorderIteratorLeaf)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Perform iteration on empty tree. Only root
+ * node should be returned in the iteration.
+ */
+TEST(NtNode, PostorderIteratorEmptyRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Perform iteration on empty tree. Only root
+ * node should be returned in the iteration.
+ */
+TEST(NtNode, ConstPostorderIteratorEmptyRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at middle node of degenerate tree.
+ */
+TEST(NtNode, PostorderIteratorDegenerateTreeMiddle)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at middle node of degenerate tree.
+ */
+TEST(NtNode, ConstPostorderIteratorDegenerateTreeMiddle)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at root node of degenerate tree.
+ */
+TEST(NtNode, PostorderIteratorDegenerateTreeRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at root node of degenerate tree.
+ */
+TEST(NtNode, ConstPostorderIteratorDegenerateTreeRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove some nodes in a postorder iteration.
+ */
+TEST(NtNode, PostorderIteratorRemoveSome)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove all nodes in a postorder iteration.
+ */
+TEST(NtNode, PostorderIteratorRemoveAll)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------ TESTS - PREORDER ITERATOR ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief General iteration test. Verify all nodes iterated
+ * over.
+ */
+TEST(NtNode, PreorderIterator)
+{
+    // try
+    // {
+    //     /* Step 1: Arrange. Start iteration at RW0.
+    //     RW0
+    //     |
+    //     RW1---------------RW2---RW3-----RW4
+    //     |                       |       |
+    //     RW5---RW6---RW7         RW8     RW9
+    //                                     |
+    //                                     RW10----RW11
+    //                                     |
+    //                                     RW12
+    //     */
+    //    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    //    add_children(RW.at(1), RW.at(5), RW.at(6), RW.at(7));
+    //    add_children(RW.at(3), RW.at(8));
+    //    add_branch(RW.at(4), RW.at(9), RW.at(10), RW.at(12));
+    //    add_children(RW.at(9), RW.at(11));
+
+    //    EXPECT_NODES_IN_ORDER(RW.at(0), RW.at(1), RW.at(5), RW.at(6), RW.at(7),
+    //                          RW.at(2), RW.at(3), RW.at(8), RW.at(4), RW.at(9),
+    //                          RW.at(10), RW.at(12), RW.at(11));
+
+    //     /* Step 2: Action. */
+    //     TREE_APPLY_EXPECTATIONS(RW.at(0), preorder_iterator());
+
+    //     /* Step 3: Assert. Test fails if expected nodes not iterated over. */
+    // }
+    // catch (const AssertException& e)
+    // {
+    //     /* FAIL. */
+    //     (void)e;
+    // }
+}
+
+/**
+ * @brief General iteration test. Verify all nodes iterated
+ * over.
+ */
+TEST(NtNode, ConstPreorderIterator)
+{
+    // try
+    // {
+    //     /* Step 1: Arrange. Start iteration at RW0.
+    //     RW0
+    //     |
+    //     RW1---------------RW2---RW3-----RW4
+    //     |                       |       |
+    //     RW5---RW6---RW7         RW8     RW9
+    //                                     |
+    //                                     RW10----RW11
+    //                                     |
+    //                                     RW12
+    //     */
+    //    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    //    add_children(RW.at(1), RW.at(5), RW.at(6), RW.at(7));
+    //    add_children(RW.at(3), RW.at(8));
+    //    add_branch(RW.at(4), RW.at(9), RW.at(10), RW.at(12));
+    //    add_children(RW.at(9), RW.at(11));
+
+    //    EXPECT_NODES_IN_ORDER(RW.at(0), RW.at(1), RW.at(5), RW.at(6), RW.at(7),
+    //                          RW.at(2), RW.at(3), RW.at(8), RW.at(4), RW.at(9),
+    //                          RW.at(10), RW.at(12), RW.at(11));
+
+    //     /* Step 2: Action. */
+    //     TREE_APPLY_EXPECTATIONS(RW.at(0), const_preorder_iterator());
+
+    //     /* Step 3: Assert. Test fails if expected nodes not iterated over. */
+    // }
+    // catch (const AssertException& e)
+    // {
+    //     /* FAIL. */
+    //     (void)e;
+    // }
+}
+
+/**
+ * @brief Start iteration at node in a left-most subtree.
+ */
+TEST(NtNode, PreorderIteratorLeftMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a left-most subtree.
+ */
+TEST(NtNode, ConstPreorderIteratorLeftMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a middle subtree.
+ */
+TEST(NtNode, PreorderIteratorMiddleSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a middle subtree.
+ */
+TEST(NtNode, ConstPreorderIteratorMiddleSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a right-most subtree.
+ */
+TEST(NtNode, PreorderIteratorRightMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at node in a right-most subtree.
+ */
+TEST(NtNode, ConstPreorderIteratorRightMostSubtree)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at a leaf node. Only the leaf
+ * should be returned in the iteration.
+ */
+TEST(NtNode, PreorderIteratorLeaf)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at a leaf node. Only the leaf
+ * should be returned in the iteration.
+ */
+TEST(NtNode, ConstPreorderIteratorLeaf)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Perform iteration on empty tree. Only root
+ * node should be returned in the iteration.
+ */
+TEST(NtNode, PreorderIteratorEmptyRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Perform iteration on empty tree. Only root
+ * node should be returned in the iteration.
+ */
+TEST(NtNode, ConstPreorderIteratorEmptyRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at middle node of degenerate tree.
+ */
+TEST(NtNode, PreorderIteratorDegenerateTreeMiddle)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at middle node of degenerate tree.
+ */
+TEST(NtNode, ConstPreorderIteratorDegenerateTreeMiddle)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at root node of degenerate tree.
+ */
+TEST(NtNode, PreorderIteratorDegenerateTreeRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Start iteration at root node of degenerate tree.
+ */
+TEST(NtNode, ConstPreorderIteratorDegenerateTreeRoot)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Removing nodes is not allowed in a preorder iteration
+ * since it will corrupt the current iteration.
+ */
+TEST(NtNode, PreorderIteratorRemove)
+{
+    try
+    {
+
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
         (void)e;
     }
 }
@@ -1345,7 +2223,7 @@ TEST(NTree, ParentIteratorRemoveAll)
 /**
  * @brief Start iteration at first sibling.
  */
-TEST(NTree, SiblingIteratorFirst)
+TEST(NtNode, SiblingIteratorFirst)
 {
     try
     {
@@ -1356,15 +2234,17 @@ TEST(NTree, SiblingIteratorFirst)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(4), sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1376,7 +2256,7 @@ TEST(NTree, SiblingIteratorFirst)
 /**
  * @brief Start iteration at first sibling.
  */
-TEST(NTree, ConstSiblingIteratorFirst)
+TEST(NtNode, ConstSiblingIteratorFirst)
 {
     try
     {
@@ -1387,15 +2267,17 @@ TEST(NTree, ConstSiblingIteratorFirst)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(4), const_sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(4))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1407,7 +2289,7 @@ TEST(NTree, ConstSiblingIteratorFirst)
 /**
  * @brief Start iteration at middle sibling.
  */
-TEST(NTree, SiblingIteratorMiddle)
+TEST(NtNode, SiblingIteratorMiddle)
 {
     try
     {
@@ -1418,15 +2300,17 @@ TEST(NTree, SiblingIteratorMiddle)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(7), RW.at(8), RW.at(4), RW.at(5));
+        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(8), RW.at(4), RW.at(5));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(6), sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(6))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1438,7 +2322,7 @@ TEST(NTree, SiblingIteratorMiddle)
 /**
  * @brief Start iteration at middle sibling.
  */
-TEST(NTree, ConstSiblingIteratorMiddle)
+TEST(NtNode, ConstSiblingIteratorMiddle)
 {
     try
     {
@@ -1449,15 +2333,17 @@ TEST(NTree, ConstSiblingIteratorMiddle)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(7), RW.at(8), RW.at(4), RW.at(5));
+        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(8), RW.at(4), RW.at(5));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(6), const_sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(6))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1469,7 +2355,7 @@ TEST(NTree, ConstSiblingIteratorMiddle)
 /**
  * @brief Start iteration at last sibling.
  */
-TEST(NTree, SiblingIteratorLast)
+TEST(NtNode, SiblingIteratorLast)
 {
     try
     {
@@ -1480,15 +2366,17 @@ TEST(NTree, SiblingIteratorLast)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6), RW.at(7));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(8), sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1500,7 +2388,7 @@ TEST(NTree, SiblingIteratorLast)
 /**
  * @brief Start iteration at last sibling.
  */
-TEST(NTree, ConstSiblingIteratorLast)
+TEST(NtNode, ConstSiblingIteratorLast)
 {
     try
     {
@@ -1511,15 +2399,17 @@ TEST(NTree, ConstSiblingIteratorLast)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6), RW.at(7));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(8), const_sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1532,7 +2422,7 @@ TEST(NTree, ConstSiblingIteratorLast)
  * @brief Perform a sibling iteration on a node that has
  * one sibling.
  */
-TEST(NTree, SiblingIteratorOneSibling)
+TEST(NtNode, SiblingIteratorOneSibling)
 {
     try
     {
@@ -1543,15 +2433,17 @@ TEST(NTree, SiblingIteratorOneSibling)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(10));
+        EXPECT_NODES_IN_TREE(RW.at(10));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(9), sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(9))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1564,7 +2456,7 @@ TEST(NTree, SiblingIteratorOneSibling)
  * @brief Perform a sibling iteration on a node that has
  * one sibling.
  */
-TEST(NTree, ConstSiblingIteratorOneSibling)
+TEST(NtNode, ConstSiblingIteratorOneSibling)
 {
     try
     {
@@ -1575,15 +2467,17 @@ TEST(NTree, ConstSiblingIteratorOneSibling)
                 |                           |
                 RW4--RW5--RW6--RW7--RW8     RW9---RW10 
         */
+        ecu_ntnode_sibling_citerator citer;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
         add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
         add_children(RW.at(3), RW.at(9), RW.at(10));
-        EXPECT_NODES_IN_ORDER(RW.at(10));
+        EXPECT_NODES_IN_TREE(RW.at(10));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(9), const_sibling_iterator());
-
-        /* Step 3: Assert. Test fails if expected siblings not iterated over. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(9))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1596,7 +2490,7 @@ TEST(NTree, ConstSiblingIteratorOneSibling)
  * @brief Perform a sibling iteration on a node that has
  * no siblings. Iteration should end immediately.
  */
-TEST(NTree, SiblingIteratorNoSiblings)
+TEST(NtNode, SiblingIteratorNoSiblings)
 {
     try
     {
@@ -1605,12 +2499,14 @@ TEST(NTree, SiblingIteratorNoSiblings)
         |
         RW1 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), sibling_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1623,7 +2519,7 @@ TEST(NTree, SiblingIteratorNoSiblings)
  * @brief Perform a sibling iteration on a node that has
  * no siblings. Iteration should end immediately.
  */
-TEST(NTree, ConstSiblingIteratorNoSiblings)
+TEST(NtNode, ConstSiblingIteratorNoSiblings)
 {
     try
     {
@@ -1632,12 +2528,14 @@ TEST(NTree, ConstSiblingIteratorNoSiblings)
         |
         RW1 
         */
+        ecu_ntnode_sibling_citerator citer;
         add_children(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(1), const_sibling_iterator());
-
-        /* Step 3: Assert. Test fails if iteration does not terminate immediately. */
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
     }
     catch (const AssertException& e)
     {
@@ -1648,11 +2546,8 @@ TEST(NTree, ConstSiblingIteratorNoSiblings)
 
 /**
  * @brief Remove some nodes in the middle of a sibling iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, SiblingIteratorRemoveSome)
+TEST(NtNode, SiblingIteratorRemoveSome)
 {
     try
     {
@@ -1669,19 +2564,18 @@ TEST(NTree, SiblingIteratorRemoveSome)
         |
         RW1---RO0---RO1 
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RO.at(0), RW.at(2), RW.at(3), RO.at(1));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(1), RO.at(0), RW.at(2), RW.at(3), RO.at(1))) ); /* Precondition. */
 
         /* Step 2: Action. */
-        remove r;
-        sibling_iterator iter;
-        iter.traverse(RW.at(1), r);
-        iter.traverse(RW.at(1), r); /* Run iteration a few more times to verify no more nodes removed. */
-        iter.traverse(RW.at(1), r); /* Run iteration a few more times to verify no more nodes removed. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(1), RO.at(0), RO.at(1))) );
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(2), RW.at(3))) );
+        /* Step 3: Assert. Verify correct nodes removed. */
+        CHECK_TRUE( (is_root(RW.at(2), RW.at(3))) );
+        CHECK_TRUE( (in_subtree(RW.at(1), RO.at(0), RO.at(1))) );
     }
     catch (const AssertException& e)
     {
@@ -1692,11 +2586,8 @@ TEST(NTree, SiblingIteratorRemoveSome)
 
 /**
  * @brief Remove all nodes returned by sibling iteration.
- * 
- * @note Nodes are only checked if they are in a tree or not
- * for test verification to limit dependencies.
  */
-TEST(NTree, SiblingIteratorRemoveAll)
+TEST(NtNode, SiblingIteratorRemoveAll)
 {
     try
     {
@@ -1713,227 +2604,22 @@ TEST(NTree, SiblingIteratorRemoveAll)
         |
         RW1
         */
+        ecu_ntnode_sibling_iterator iter;
         add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        CHECK_TRUE( (condition(&ecu_ntnode_in_subtree, RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5))) ); /* Precondition. */
 
         /* Step 2: Action. */
-        remove r;
-        sibling_iterator iter;
-        iter.traverse(RW.at(1), r);
-        iter.traverse(RW.at(1), r); /* Run iteration a few more times to verify no more nodes removed. */
-        iter.traverse(RW.at(1), r); /* Run iteration a few more times to verify no more nodes removed. */
+        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
 
-        /* Step 3: Assert. Test fails if proper nodes not removed. */
-        CHECK_TRUE( (ecu_ntnode_in_subtree(&RW.at(1))) );
-        CHECK_TRUE( (condition(&ecu_ntnode_is_root, RW.at(2), RW.at(3), RW.at(4), RW.at(5))) );
+        /* Step 3: Assert. Verify correct nodes removed. */
+        CHECK_TRUE( (is_root(RW.at(2), RW.at(3), RW.at(4), RW.at(5))) );
+        CHECK_TRUE( (in_subtree(RW.at(1))) );
     }
     catch (const AssertException& e)
     {
         /* FAIL. */
-        (void)e;
-    }
-}
-
-/*------------------------------------------------------------*/
-/*------------------ TESTS - PREORDER ITERATOR ---------------*/
-/*------------------------------------------------------------*/
-
-/**
- * @brief General iteration test. Verify all nodes
- * iterated over.
- */
-TEST(NTree, PreorderIterator)
-{
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1---------------RW2---RW3-----RW4
-        |                       |       |
-        RW5---RW6---RW7         RW8     RW9
-                                        |
-                                        RW10----RW11
-                                        |
-                                        RW12
-        */
-       add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-       add_children(RW.at(1), RW.at(5), RW.at(6), RW.at(7));
-       add_children(RW.at(3), RW.at(8));
-       add_branch(RW.at(4), RW.at(9), RW.at(10), RW.at(12));
-       add_children(RW.at(9), RW.at(11));
-
-       EXPECT_NODES_IN_ORDER(RW.at(0), RW.at(1), RW.at(5), RW.at(6), RW.at(7),
-                             RW.at(2), RW.at(3), RW.at(8), RW.at(4), RW.at(9),
-                             RW.at(10), RW.at(12), RW.at(11));
-
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), preorder_iterator());
-
-        /* Step 3: Assert. Test fails if expected nodes not iterated over. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief General iteration test. Verify all nodes
- * iterated over.
- */
-TEST(NTree, ConstPreorderIterator)
-{
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1---------------RW2---RW3-----RW4
-        |                       |       |
-        RW5---RW6---RW7         RW8     RW9
-                                        |
-                                        RW10----RW11
-                                        |
-                                        RW12
-        */
-       add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-       add_children(RW.at(1), RW.at(5), RW.at(6), RW.at(7));
-       add_children(RW.at(3), RW.at(8));
-       add_branch(RW.at(4), RW.at(9), RW.at(10), RW.at(12));
-       add_children(RW.at(9), RW.at(11));
-
-       EXPECT_NODES_IN_ORDER(RW.at(0), RW.at(1), RW.at(5), RW.at(6), RW.at(7),
-                             RW.at(2), RW.at(3), RW.at(8), RW.at(4), RW.at(9),
-                             RW.at(10), RW.at(12), RW.at(11));
-
-        /* Step 2: Action. */
-        TREE_APPLY_EXPECTATIONS(RW.at(0), const_preorder_iterator());
-
-        /* Step 3: Assert. Test fails if expected nodes not iterated over. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Start iteration at a node that is in a tree.
- */
-TEST(NTree, PreorderIteratorSubtree)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Start iteration at a node that is in a tree.
- */
-TEST(NTree, ConstPreorderIteratorSubtree)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Iterate over tree that has a single branch.
- */
-TEST(NTree, PreorderIteratorSingleBranch)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Iterate over a tree that has a single branch.
- */
-TEST(NTree, ConstPreorderIteratorSingleBranch)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Start iteration at a leaf node. Iteration should
- * return the leaf then exit. This is the same behavior as
- * starting at an empty root.
- */
-TEST(NTree, PreorderIteratorLeaf)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Start iteration at a leaf node. Iteration should
- * return the leaf then exit. This is the same behavior as
- * starting at an empty root.
- */
-TEST(NTree, ConstPreorderIteratorLeaf)
-{
-    try
-    {
-        /* code */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Removing nodes in the middle of a preorder
- * iteration is prohibited. Assert should fire.
- */
-TEST(NTree, PreorderIteratorRemove)
-{
-    try
-    {
-        /* code */
-        // EXPECT_ASSERTION();
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
         (void)e;
     }
 }

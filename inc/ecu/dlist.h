@@ -20,11 +20,12 @@
 
 /* STDLib. */
 #include <stdbool.h>
-#include <stddef.h> /* offsetof() */
+#include <stddef.h>
 #include <stdint.h>
 
-/* ecu_dnode::id */
+/* ECU. */
 #include "ecu/object_id.h"
+#include "ecu/utils.h"
 
 /*------------------------------------------------------------*/
 /*---------------------- DEFINES AND MACROS ------------------*/
@@ -40,72 +41,45 @@
 
 /**
  * @brief Convenience define for @ref ecu_dnode_ctor().
- * @details Pass this value to @ref ecu_dnode_ctor() if
+ * Pass this value to @ref ecu_dnode_ctor() if
  * a user-defined node destructor is not needed.
  */
 #define ECU_DNODE_DESTROY_UNUSED \
     ((void (*)(struct ecu_dnode *, ecu_object_id))0)
 
 /**
- * @brief Access user-defined data stored in a dlist node. Converts
- * a dlist node into the user-defined type stored in the list.
+ * @brief Retrieves user data from an intrusive @ref ecu_dnode 
+ * by converting the supplied @ref ecu_dnode back into the 
+ * user's node type.
  *
- * @param ptr_ Address of dlist node within the user-defined @p type_.
- * This should always be of type (struct ecu_dnode *), never
- * (const struct ecu_dnode *).
- * @param type_ User-defined node type stored in the list.
- * Const specifier should never be supplied. I.e. struct my_type,
- * never const struct my_type.
- * @param member_ Member name of the dlist node within @p type_.
+ * @param ptr_ Pointer to intrusive @ref ecu_dnode.
+ * This must be pointer to non-const. I.e. (struct ecu_dnode *).
+ * @param type_ User's node type containing the intrusive
+ * @ref ecu_dnode. Do not use const specifier. I.e. (struct my_type),
+ * never (const struct my_type).
+ * @param member_ Name of @ref ecu_dnode member within user's
+ * type.
  */
 #define ECU_DNODE_GET_ENTRY(ptr_, type_, member_) \
-    ((type_ *)((uint8_t *)(ptr_) - offsetof(type_, member_)))
+    ECU_CONTAINER_OF(ptr_, type_, member_)
 
 /**
  * @brief Const-qualified version of @ref ECU_DNODE_GET_ENTRY().
- * Read user-defined data stored in a dlist node. Converts
- * a dlist node into the user-defined type stored in the list.
+ * Retrieves user data from an intrusive @ref ecu_dnode 
+ * by converting the supplied @ref ecu_dnode back into the 
+ * user's node type.
  *
- * @param ptr_ Address of dlist node within the user-defined @p type_.
- * This can be of type (struct ecu_dnode *) or (const struct ecu_dnode *).
- * @param type_ User-defined node type stored in the list.
- * Const specifier should never be supplied. I.e. struct my_type,
- * never const struct my_type.
- * @param member_ Member name of the dlist node within @p type_.
+ * @param ptr_ Pointer to intrusive @ref ecu_dnode. This can be
+ * pointer to const or non-const. I.e. (struct ecu_dnode *) or 
+ * (const struct ecu_dnode *).
+ * @param type_ User's node type containing the intrusive
+ * @ref ecu_dnode. Do not use const specifier. I.e. (struct my_type),
+ * never (const struct my_type).
+ * @param member_ Name of @ref ecu_dnode member within user's
+ * type.
  */
 #define ECU_DNODE_GET_CONST_ENTRY(ptr_, type_, member_) \
-    ((const type_ *)((const uint8_t *)(ptr_) - offsetof(type_, member_)))
-
-/**
- * @brief Helper macro that iterates over an entire list, starting 
- * at HEAD. Use of this macro also protects the application from 
- * iterator API changes. It is safe to remove the current node
- * in the iteration.
- *
- * @param var_ Loop variable name. This variable will store the current 
- * node in the iteration and will be a pointer to @ref ecu_dnode.
- * @param iter_ Pointer to @ref ecu_dlist_iterator.
- * @param list_ Pointer to @ref ecu_dlist to iterate over.
- */
-#define ECU_DLIST_FOR_EACH(var_, iter_, list_)                            \
-    for (struct ecu_dnode *var_ = ecu_dlist_iterator_begin(iter_, list_); \
-         var_ != ecu_dlist_iterator_end(iter_);                           \
-         var_ = ecu_dlist_iterator_next(iter_))
-
-/**
- * @brief Helper macro that const iterates over an entire list, 
- * starting at HEAD. Use of this macro also protects the application 
- * from iterator API changes.
- *
- * @param var_ Loop variable name. This variable will store the current 
- * node in the iteration and will be a pointer to const @ref ecu_dnode.
- * @param citer_ Pointer to @ref ecu_dlist_citerator.
- * @param list_ Pointer to @ref ecu_dlist to iterate over.
- */
-#define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                               \
-    for (const struct ecu_dnode *var_ = ecu_dlist_iterator_cbegin(citer_, list_);   \
-         var_ != ecu_dlist_iterator_cend(citer_);                                   \
-         var_ = ecu_dlist_iterator_cnext(citer_))
+    ECU_CONST_CONTAINER_OF(ptr_, type_, member_)
 
 /**
  * @brief Helper macro that iterates over an entire list, starting
@@ -140,6 +114,37 @@
 #define ECU_DLIST_CONST_AT_FOR_EACH(var_, citer_, list_, start_)                        \
     for (const struct ecu_dnode *var_ = ecu_dlist_iterator_cat(citer_, list_, start_);  \
          var_ != ecu_dlist_iterator_cend(citer_);                                       \
+         var_ = ecu_dlist_iterator_cnext(citer_))
+
+/**
+ * @brief Helper macro that iterates over an entire list, starting 
+ * at HEAD. Use of this macro also protects the application from 
+ * iterator API changes. It is safe to remove the current node
+ * in the iteration.
+ *
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_dnode.
+ * @param iter_ Pointer to @ref ecu_dlist_iterator.
+ * @param list_ Pointer to @ref ecu_dlist to iterate over.
+ */
+#define ECU_DLIST_FOR_EACH(var_, iter_, list_)                            \
+    for (struct ecu_dnode *var_ = ecu_dlist_iterator_begin(iter_, list_); \
+         var_ != ecu_dlist_iterator_end(iter_);                           \
+         var_ = ecu_dlist_iterator_next(iter_))
+
+/**
+ * @brief Helper macro that const iterates over an entire list, 
+ * starting at HEAD. Use of this macro also protects the application 
+ * from iterator API changes.
+ *
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_dnode.
+ * @param citer_ Pointer to @ref ecu_dlist_citerator.
+ * @param list_ Pointer to @ref ecu_dlist to iterate over.
+ */
+#define ECU_DLIST_CONST_FOR_EACH(var_, citer_, list_)                               \
+    for (const struct ecu_dnode *var_ = ecu_dlist_iterator_cbegin(citer_, list_);   \
+         var_ != ecu_dlist_iterator_cend(citer_);                                   \
          var_ = ecu_dlist_iterator_cnext(citer_))
 
 /*------------------------------------------------------------*/
@@ -268,7 +273,7 @@ extern void ecu_dnode_ctor(struct ecu_dnode *me,
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Node destructor.
- * @details Removes node if it is in a list. Executes the user-defined
+ * Removes node if it is in a list. Executes the user-defined
  * destructor if one was supplied to @ref ecu_dnode_ctor(). Node must
  * be reconstructed via @ref ecu_dnode_ctor() in order to be used again.
  *
@@ -408,7 +413,7 @@ extern void ecu_dlist_ctor(struct ecu_dlist *me);
 /**
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @brief List destructor.
- * @details Destroys list and all nodes within the list. List and nodes
+ * Destroys list and all nodes within the list. List and nodes
  * must be reconstructed in order to be used again.
  *
  * @warning Memory is not freed since ECU is meant to be used without
@@ -488,7 +493,7 @@ extern const struct ecu_dnode *ecu_dlist_cfront(const struct ecu_dlist *me);
  * @pre @p me previously constructed via call to @ref ecu_dlist_ctor().
  * @pre @p node previously constructed via call to @ref ecu_dnode_ctor().
  * @brief Insert node before position specified by condition function.
- * @details Starting from HEAD, all nodes within the list are iterated over. Each
+ * Starting from HEAD, all nodes within the list are iterated over. Each
  * node is passed as the position parameter to the condition function. User specifies
  * whether node should be inserted before this position by returning true. Function
  * exits as soon as node is inserted.
@@ -602,7 +607,7 @@ extern bool ecu_dlist_valid(const struct ecu_dlist *me);
 /*------------------------------------------------------------*/
 
 /**
- * @name Non-const Iterator Member Functions
+ * @name Iterators
  */
 /**@{*/
 /**
@@ -662,16 +667,11 @@ extern struct ecu_dnode *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me);
  * @param me Non-const iterator.
  */
 extern struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me);
-/**@}*/
 
 /*------------------------------------------------------------*/
 /*------------- CONST ITERATOR MEMBER FUNCTIONS --------------*/
 /*------------------------------------------------------------*/
 
-/**
- * @name Const Iterator Member Functions
- */
-/**@{*/
 /**
  * @pre Memory already allocated for @p me
  * @pre @p list previously constructed via call to @ref ecu_dlist_ctor().
