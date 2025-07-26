@@ -36,6 +36,7 @@ to view in-depth documentation and APIs for each library module.
     hsm.h <hsm_h/index>
     ntnode.h <ntnode_h/index>
     object_id.h <object_id_h/index>
+    rbuf.h <rbuf_h/index>
     timer.h <timer_h/index>
     utils.h <utils_h/index>
 

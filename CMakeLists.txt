@@ -23,6 +23,7 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/hsm.c
     ${CMAKE_CURRENT_LIST_DIR}/src/ntnode.c
     ${CMAKE_CURRENT_LIST_DIR}/src/object_id.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/rbuf.c
     ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
 )
 

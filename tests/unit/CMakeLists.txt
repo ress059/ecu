@@ -46,6 +46,7 @@ add_executable(ECU_UNIT_TEST
     ${CMAKE_CURRENT_LIST_DIR}/src/test_fsm.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_hsm.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_ntnode.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/test_rbuf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_timer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_utils.cpp
 
