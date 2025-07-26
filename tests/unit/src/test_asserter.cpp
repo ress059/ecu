@@ -10,7 +10,7 @@
  *      - TEST(Asserter, ECUEventAssert)
  *      - TEST(Asserter, ECUFsmAssert)
  *      - TEST(Asserter, ECUHsmAssert)
- *      - TEST(Asserter, ECUNTreeAssert)
+ *      - TEST(Asserter, ECUNtnodeAssert)
  *      - TEST(Asserter, ECUTimerAssert)
  * 
  * @author Ian Ress
@@ -30,7 +30,7 @@
 #include "ecu/fsm.h"
 #include "ecu/hsm.h"
 #include "ecu/timer.h"
-#include "ecu/ntree.h"
+#include "ecu/ntnode.h"
 
 /* Stubs. */
 #include "stubs/stub_asserter.hpp"
@@ -193,14 +193,14 @@ TEST(Asserter, ECUHsmAssert)
 
 /**
  * @brief Verify file name is correct when assert fires
- * in ntree.c
+ * in ntnode.c
  */
-TEST(Asserter, ECUNTreeAssert)
+TEST(Asserter, ECUNtnodeAssert)
 {
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/ntree.c");
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/ntnode.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_ntnode_ctor(nullptr, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);

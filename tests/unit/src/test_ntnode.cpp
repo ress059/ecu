@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Unit tests for public API functions in @ref ntree.h. 
+ * @brief Unit tests for public API functions in @ref ntnode.h. 
  * Test Summary:
  * 
  * Api:
@@ -301,7 +301,7 @@
 /*------------------------------------------------------------*/
 
 /* Files under test. */
-#include "ecu/ntree.h"
+#include "ecu/ntnode.h"
 
 /* STDLib. */
 #include <cassert>

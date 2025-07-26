@@ -2,7 +2,7 @@
  * @file
  * @brief Generic n-ary tree. See
  * @rst
- * See :ref:`ntree.h section <ntree_h>` in Sphinx documentation.
+ * See :ref:`ntnode.h section <ntnode_h>` in Sphinx documentation.
  * @endrst
  * 
  * @author Ian Ress
@@ -16,7 +16,7 @@
 /*------------------------------------------------------------*/
 
 /* Translation unit. */
-#include "ecu/ntree.h"
+#include "ecu/ntnode.h"
 
 /* ECU. */
 #include "ecu/asserter.h"
@@ -25,7 +25,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/ntree.c")
+ECU_ASSERT_DEFINE_NAME("ecu/ntnode.c")
 
 /*------------------------------------------------------------*/
 /*---------------------------- DEFINES -----------------------*/
@@ -153,7 +153,7 @@ static const struct ecu_ntnode *get_cleaf(const struct ecu_ntnode *ntnode)
 }
 
 /*------------------------------------------------------------*/
-/*----------------- NTREE NODE MEMBER FUNCTIONS --------------*/
+/*------------------ NTNODE MEMBER FUNCTIONS -----------------*/
 /*------------------------------------------------------------*/
 
 void ecu_ntnode_ctor(struct ecu_ntnode *me, 

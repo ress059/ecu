@@ -2,7 +2,7 @@
  * @file
  * @brief Generic n-ary tree. See
  * @rst
- * See :ref:`ntree.h section <ntree_h>` in Sphinx documentation.
+ * See :ref:`ntnode.h section <ntnode_h>` in Sphinx documentation.
  * @endrst
  * 
  * @author Ian Ress
@@ -11,8 +11,8 @@
  * @copyright Copyright (c) 2025
  */
 
-#ifndef NTREE_H_
-#define NTREE_H_
+#ifndef NTNODE_H_
+#define NTNODE_H_
 
 /*------------------------------------------------------------*/
 /*------------------------- INCLUDES -------------------------*/
@@ -294,13 +294,13 @@
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
- * @param iter_ Iterator to initialize. This will be a pointer
+ * @param citer_ Iterator to initialize. This will be a pointer
  * to @ref ecu_ntnode_sibling_citerator.
  * @param start_ Starting node of the iteration. This node IS
  * included in the iteration and is returned first. This will
  * be a pointer to const @ref ecu_ntnode.
  */
-#define ECU_NTNODE_SIBLING_CONST_AT_FOR_EACH(var_, citer_, start_)                          \
+#define ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH(var_, citer_, start_)                          \
     for (const struct ecu_ntnode *var_ = ecu_ntnode_sibling_iterator_cat(citer_, start_);   \
          var_ != ecu_ntnode_sibling_iterator_cend(citer_);                                  \
          var_ = ecu_ntnode_sibling_iterator_cnext(citer_))
@@ -326,7 +326,7 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_SIBLING_FOR_EACH().
- * Same as @ref ECU_NTNODE_SIBLING_CONST_AT_FOR_EACH() but excludes
+ * Same as @ref ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH() but excludes
  * the starting node from the iteration. Returns next sibling,
  * next sibling, ..., NULL. Returned nodes are read-only.
  * 
@@ -1082,7 +1082,7 @@ extern const struct ecu_ntnode *ecu_ntnode_parent_iterator_cat(struct ecu_ntnode
 /**
  * @pre Memory already allocated for @p me.
  * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
- * @brief Const-qualified version of @ref ecu_ntnode_parent_begin().
+ * @brief Const-qualified version of @ref ecu_ntnode_parent_iterator_begin().
  * Starts an iteration over all parents, excluding the supplied
  * starting node. If the starting node has parents, its parent is returned.
  * Otherwise NULL is returned, signifying the end of the iteration.
@@ -1436,4 +1436,4 @@ extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cnext(struct ecu_ntn
 }
 #endif
 
-#endif /* NTREE_H_ */
+#endif /* NTNODE_H_ */

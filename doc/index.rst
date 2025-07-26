@@ -34,6 +34,7 @@ to view in-depth documentation and APIs for each library module.
     endian.h <endian_h/index>
     fsm.h <fsm_h/index>
     hsm.h <hsm_h/index>
+    ntnode.h <ntnode_h/index>
     object_id.h <object_id_h/index>
     timer.h <timer_h/index>
     utils.h <utils_h/index>
