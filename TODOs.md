@@ -1,54 +1,104 @@
 Completed.
-1. asserter.h/.c DONE.
-2. attributes.h. DONE.
+1. asserter.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+2. attributes.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 3. dlist.h/.c. DONE.
-4. endian.h. DONE.
-5. event.h/.c DONE. TODO May delete this.
-6. fsm.h/.c. DONE.
-7. hsm.h/.c. DONE.
-8. object_id.h/.c. DONE.
-9. timer.h/.c. DONE.
-10. tree.h/.c. Tests done. TODO Code cleanup and Documentation. May refactor.
+4. endian.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+5. event.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc). Keep. In sphinx docs show example of creating event base class for fsm/hsm modules.
+6. fsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+7. hsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+10. ntree.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
 11. utils.h. DONE.
 
 ## Ring buffer
 1. Add ring buffer module (currently stashed). Add tests and documentation.
 
-## DList
-1. In ECU_DNODE_GET_ENTRY() macro call, getting warning about how cast from char*
-to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
-THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
-so this only applies to GCC. I.e.
-```C
-#ifdef GCC
-#pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
-#define ECU_DNODE_GET_ENTRY() ....
-#end pragma
-#endif
-```
 
-2. Refactor EXPECT_NODE_IN_LIST() to be a varidic template if you have time.
+# ALL
+1. Public functions now in alphabetical order. Edit code and documentation.
+2. Expose valid() functions publically so they can be used by other modules.
+3. Remove @details directive for **everything**.
 
 
 ## Tree
-1. In ECU_TREE_NODE_GET_ENTRY() macro call, getting warning about how cast from char*
-to struct ecu_timer* increases alignment requirements (when cross-compiling for 32-bit ARM). 
-THIS IS OK. Maybe add GCC pragmas to get rid of warning? Wrap this in an #ifdef GCC macro
-so this only applies to GCC. I.e.
-```C
-#ifdef GCC
-#pragma GCC -wnocast-align //whatever syntax to ignore wcast-align warnings
-#define ECU_TREE_NODE_GET_ENTRY() ....
-#end pragma
-#endif
-```
-2. Add add_sibling_left() and add_sibling_right() function. 
-3. NULL check all parameters!!!!!!! You cant assume the node_valid() function will NULL check. It can change!!
-4. Write tests for ecu_tree_node_check_object_id() and ecu_tree_node_get_object_id().
-5. Finished (done!) tree.c cleanup and code verification (asserts, style, etc).
-6. Finished (done!) destructor tests and tests for adding nodes in middle of iteration. 
-7. Just need to do cleanup and documentation. Stopped at ecu_tree_remove_node() function.
+1b. ntree.c pretty much done. All node_valid() asserts and correct paths done.
+2. Tests and documentation.
 
+4. Trying to encapsulate concrete iterator declaration inside FOR_EACH() macro declaration. 
+But can't find a good way to do it. I.e. 
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+    struct ecu_ntnode_child_iterator iter_;                                         \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))
+```
+
+5. **Probably rename to ntnode.h**
+
+This will break down if user uses multiple for-loops with same iter_ name. I.e.
+```C
+// RESULTS IN ERROR
+ECU_NTNODE_CHILD_FOR_EACH(n, iter_, parent_)
+{
+
+}
+
+ECU_NTNODE_CHILD_FOR_EACH(n, iter_, parent_)
+{
+
+}
+// ...
+
+struct ecu_ntnode_child_iterator iter_;
+for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_);
+        var_ != ecu_ntnode_child_iterator_end(&iter_);
+        var_ = ecu_ntnode_child_iterator_next(&iter_))
+{
+    // stuff
+}
+
+struct ecu_ntnode_child_iterator iter_;   // ERROR
+for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_);
+        var_ != ecu_ntnode_child_iterator_end(&iter_);
+        var_ = ecu_ntnode_child_iterator_next(&iter_))
+{
+    // stuff
+}
+```
+
+I cannot put in block-scope because {} brackets needed after for-loop. I.e. can't do:
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+{                                                                                   \
+    struct ecu_ntnode_child_iterator iter_;                                         \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))                                 \
+}
+```
+
+And obviously can't declare variables of different types in same for-loop like so:
+```C
+#define ECU_NTNODE_CHILD_FOR_EACH(var_, iter_, parent_)                             \
+    for (struct ecu_ntnode_child_iterator iter_,                                    \
+         struct ecu_ntnode *var_ = ecu_ntnode_child_iterator_begin(&iter_, parent_); \
+         var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
+         var_ = ecu_ntnode_child_iterator_next(&iter_))
+```
+
+5. Stuff decided on:
+    a. me->parent == me if no parent.
+    b. parent function returns null if no parent.
+    c. next functions return null if no siblings or is last sibling.
+    d. prev functions return null if no siblings or is first sibling.
+    e. Root is iterated over for preorder, postorder iterations.
+    f. Start node is not iterated over in parent iterator.
+    g. Start node is not iterated over in sibling iterator. Otherwise code can not figure out when to terminate.
+    h. No separate structure for tree/root. Just nodes.
+    
+6. Maybe make a ECU_DLIST_SIBLING_AT_FOR_EACH() iterator. Iterates over siblings until end (rightmost) reached.
 
 ## Unit Tests
 1. Prefix all **helper** class members with m_. TEST_GROUP classes do not have to follow this. 

@@ -145,8 +145,8 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
 
 static bool hsm_is_valid(const struct ecu_hsm *hsm)
 {
-    bool status = false;
     ECU_RUNTIME_ASSERT( (hsm) );
+    bool status = false;
 
     if (state_is_valid(hsm->state) && 
         state_is_valid(hsm->top) &&
@@ -160,8 +160,8 @@ static bool hsm_is_valid(const struct ecu_hsm *hsm)
 
 static bool state_is_valid(const struct ecu_hsm_state *state)
 {
-    bool status = false;
     ECU_RUNTIME_ASSERT( (state) );
+    bool status = false;
 
     if (state->handler && state->parent != state)
     {
@@ -207,9 +207,9 @@ static bool is_parent_of(const struct ecu_hsm *hsm,
                          const struct ecu_hsm_state *parent,
                          const struct ecu_hsm_state *state)
 {
+    ECU_RUNTIME_ASSERT( (hsm && parent && state) );
     bool status = false;
     uint8_t height = 0;
-    ECU_RUNTIME_ASSERT( (hsm && parent && state) );
 
     /* Notice how this also handles case where parent == state. */
     for (const struct ecu_hsm_state *s = state; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
@@ -237,10 +237,10 @@ static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
                                              const struct ecu_hsm_state *leaf,
                                              const struct ecu_hsm_state *state)
 {
-    const struct ecu_hsm_state *s = (const struct ecu_hsm_state *)0;
     ECU_RUNTIME_ASSERT( (hsm && state && leaf) );
     ECU_RUNTIME_ASSERT( (state != leaf) );
     ECU_RUNTIME_ASSERT( (is_parent_of(hsm, state, leaf)) );
+    const struct ecu_hsm_state *s = (const struct ecu_hsm_state *)0;
 
     for (s = leaf; s->parent != state; s = s->parent)
     {
@@ -254,9 +254,9 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
                                            const struct ecu_hsm_state *s1, 
                                            const struct ecu_hsm_state *s2)
 {
+    ECU_RUNTIME_ASSERT( (hsm && s1 && s2) );
     uint8_t height = 0;
     const struct ecu_hsm_state *lca = (const struct ecu_hsm_state *)0;
-    ECU_RUNTIME_ASSERT( (hsm && s1 && s2) );
 
     /* Notice how this also handles the case of s1 == s2. */
     for (const struct ecu_hsm_state *s = s1; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
@@ -295,10 +295,9 @@ void ecu_hsm_ctor(struct ecu_hsm *me,
 
 void ecu_hsm_start(struct ecu_hsm *me)
 {
-    const struct ecu_hsm_state *trace = (const struct ecu_hsm_state *)0;
     ECU_RUNTIME_ASSERT( (me) );
     ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
-    trace = me->top;
+    const struct ecu_hsm_state *trace = me->top;
 
     /* Run entry handlers from top to current state. Entry handler of current state not ran. */
     while (trace != me->state)

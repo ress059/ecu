@@ -70,6 +70,8 @@ using namespace stubs;
 /*----------------------- FILE-SCOPE TYPES -------------------*/
 /*------------------------------------------------------------*/
 
+namespace
+{
 struct test_timer : public ecu_timer
 {
     test_timer()
@@ -174,6 +176,7 @@ struct test_tlist : public ecu_tlist
         ecu_tlist_service(this, elapsed);
     }
 };
+}
 
 /*------------------------------------------------------------*/
 /*----------------------- TEST GROUPS ------------------------*/

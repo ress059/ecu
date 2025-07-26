@@ -10,8 +10,8 @@
  *      - TEST(Asserter, ECUEventAssert)
  *      - TEST(Asserter, ECUFsmAssert)
  *      - TEST(Asserter, ECUHsmAssert)
+ *      - TEST(Asserter, ECUNtnodeAssert)
  *      - TEST(Asserter, ECUTimerAssert)
- *      - TEST(Asserter, ECUTreeAssert)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -22,7 +22,7 @@
 /*------------------------------------------------------------*/
 /*------------------------- INCLUDES -------------------------*/
 /*------------------------------------------------------------*/
-#warning "TODO: Uncomment files once done."
+
 /* Files under test. */
 #include "ecu/asserter.h"
 #include "ecu/dlist.h"
@@ -30,7 +30,7 @@
 #include "ecu/fsm.h"
 #include "ecu/hsm.h"
 #include "ecu/timer.h"
-// #include "ecu/tree.h"
+#include "ecu/ntnode.h"
 
 /* Stubs. */
 #include "stubs/stub_asserter.hpp"
@@ -123,7 +123,7 @@ TEST(Asserter, ECUDListAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/dlist.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_dlist_ctor(reinterpret_cast<ecu_dlist *>(0));
+        ecu_dlist_ctor(nullptr);
     }
     catch (const AssertException& e)
     {
@@ -143,7 +143,7 @@ TEST(Asserter, ECUEventAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_event_ctor(reinterpret_cast<ecu_event *>(0), 0);
+        ecu_event_ctor(nullptr, 0);
     }
     catch (const AssertException& e)
     {
@@ -163,7 +163,7 @@ TEST(Asserter, ECUFsmAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/fsm.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_fsm_ctor(reinterpret_cast<ecu_fsm *>(0), reinterpret_cast<const ecu_fsm_state *>(0));
+        ecu_fsm_ctor(nullptr, nullptr);
     }
     catch (const AssertException& e)
     {
@@ -183,8 +183,27 @@ TEST(Asserter, ECUHsmAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/hsm.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_hsm_ctor(reinterpret_cast<ecu_hsm *>(0), reinterpret_cast<ecu_hsm_state *>(0),
-                     reinterpret_cast<ecu_hsm_state *>(0), 0);
+        ecu_hsm_ctor(nullptr, nullptr, nullptr, 0);
+    }
+    catch (const AssertException& e)
+    {
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify file name is correct when assert fires
+ * in ntnode.c
+ */
+TEST(Asserter, ECUNtnodeAssert)
+{
+    try 
+    {
+        /* Step 1: Arrange. */
+        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/ntnode.c");
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_ctor(nullptr, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     }
     catch (const AssertException& e)
     {
@@ -211,23 +230,3 @@ TEST(Asserter, ECUTimerAssert)
         (void)e;
     }
 }
-
-// /**
-//  * @brief Verify file name is correct when assert fires
-//  * in tree.c
-//  */
-// TEST(Asserter, ECUTreeAssert)
-// {
-//     try 
-//     {
-//         /* Step 1: Arrange. */
-//         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/tree.c");
-
-//         /* Steps 2 and 3: Action and assert. */
-//         ecu_tree_node_ctor(reinterpret_cast<ecu_tree_node *>(0), reinterpret_cast<void (*)(ecu_tree_node *)>(0), 0);
-//     }
-//     catch (const AssertException& e)
-//     {
-//         (void)e;
-//     }
-// }
