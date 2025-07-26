@@ -1117,7 +1117,8 @@ const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_ntnode_pr
 struct ecu_ntnode *ecu_ntnode_sibling_iterator_at(struct ecu_ntnode_sibling_iterator *me,
                                                   struct ecu_ntnode *start)
 {
-    #warning "TODO"
+#pragma message("TODO")
+    (void)me;
     return start;
 }
 
@@ -1186,7 +1187,8 @@ struct ecu_ntnode *ecu_ntnode_sibling_iterator_next(struct ecu_ntnode_sibling_it
 const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cat(struct ecu_ntnode_sibling_citerator *me,
                                                          const struct ecu_ntnode *start)
 {
-    #warning "TODO"
+#pragma message("TODO")
+    (void)me;
     return start;
 }
 
