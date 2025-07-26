@@ -11,8 +11,8 @@
  * @copyright Copyright (c) 2025
  */
 
-#ifndef NTNODE_H_
-#define NTNODE_H_
+#ifndef ECU_NTNODE_H_
+#define ECU_NTNODE_H_
 
 /*------------------------------------------------------------*/
 /*------------------------- INCLUDES -------------------------*/
@@ -1436,4 +1436,4 @@ extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cnext(struct ecu_ntn
 }
 #endif
 
-#endif /* NTNODE_H_ */
+#endif /* ECU_NTNODE_H_ */
