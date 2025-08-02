@@ -18,8 +18,9 @@
 /* Translation unit. */
 #include "ecu/object_id.h"
 
-/* Static assert. */
+/* ECU. */
 #include "ecu/asserter.h"
+#include "ecu/utils.h"
 
 /*------------------------------------------------------------*/
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
@@ -31,8 +32,7 @@ ECU_ASSERT_DEFINE_NAME("ecu/object_id.c")
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
-/* Produce compilation error if ecu_object_id is an unsigned type. */
-ECU_STATIC_ASSERT( (((ecu_object_id)(-1)) < ((ecu_object_id)(0))), "ecu_object_id must be a signed type." );
+ECU_STATIC_ASSERT( (ECU_IS_SIGNED(ecu_object_id)), "ecu_object_id must be a signed type." );
 
 /* The start of object IDs that users can define must always be 0 for future compatibility. */
 ECU_STATIC_ASSERT( (ECU_USER_OBJECT_ID_BEGIN == 0), "ECU_USER_OBJECT_ID_BEGIN must equal 0." );

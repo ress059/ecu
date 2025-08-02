@@ -18,8 +18,9 @@
 /* Translation unit. */
 #include "ecu/timer.h"
 
-/* Runtime asserts. */
+/* ECU. */
 #include "ecu/asserter.h"
+#include "ecu/utils.h"
 
 /*------------------------------------------------------------*/
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
@@ -60,8 +61,7 @@ static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
-/* Produce compilation error if ecu_tick_t is a signed type. */
-ECU_STATIC_ASSERT( (((ecu_tick_t)-1) > ((ecu_tick_t)0)), "ecu_tick_t must be an unsigned type." );
+ECU_STATIC_ASSERT( (ECU_IS_UNSIGNED(ecu_tick_t)), "ecu_tick_t must be an unsigned type." );
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/

@@ -113,9 +113,9 @@ data to be retrieved by converting an :ecudoxygen:`ecu_dnode` back into the user
 :ecudoxygen:`ECU_DNODE_GET_ENTRY() <ECU_DNODE_GET_ENTRY>` and 
 :ecudoxygen:`ECU_DNODE_GET_CONST_ENTRY() <ECU_DNODE_GET_CONST_ENTRY>` take in three parameters:
 
-    1. ``ptr_`` = Pointer to intrusive ecu_dnode. In this case, ``n``.
-    2. ``type_`` = User's node type. In this case, ``struct user_node``.
-    3. ``member_`` = Name of ecu_dnode member within the user's node type. In this case, ``node``.
+    #. ``ptr_`` = Pointer to intrusive ecu_dnode. In this case, ``n``.
+    #. ``type_`` = User's node type. In this case, ``struct user_node``.
+    #. ``member_`` = Name of ecu_dnode member within the user's node type. In this case, ``node``.
 
 .. figure:: /images/dlist/getting_node_data_ecu_dnode_get_entry.svg
   :width: 500
@@ -1181,10 +1181,10 @@ in :ecudoxygen:`ecu_dlist` are valid. False otherwise.
     ecu_dlist_valid(&list); /* Returns true. */
 
 Iterators
--------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ECU_DLIST_AT_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 .. _dlist_ecu_dlist_at_for_each:
 
 Iterates over an :ecudoxygen:`ecu_dlist`, starting at the specified position.
@@ -1291,12 +1291,12 @@ It is recommended to use the iteration macros instead of for-loops since they sh
 the application from future API changes, and require less typing.
 
 ECU_DLIST_CONST_AT_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Const-qualified version of :ref:`ECU_DLIST_AT_FOR_EACH() <dlist_ecu_dlist_at_for_each>`. Nodes 
 cannot be edited or removed in the middle of an iteration since this is a const iterator.
 
 ECU_DLIST_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 .. _dlist_ecu_dlist_for_each:
 
 Iterates over an :ecudoxygen:`ecu_dlist`, starting at HEAD. Immediately exits
@@ -1399,6 +1399,6 @@ It is recommended to use the iteration macros instead of for-loops since they sh
 the application from future API changes, and require less typing.
 
 ECU_DLIST_CONST_FOR_EACH()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Const-qualified version of :ref:`ECU_DLIST_FOR_EACH() <dlist_ecu_dlist_for_each>`. Nodes 
 cannot be edited or removed in the middle of an iteration since this is a const iterator.
