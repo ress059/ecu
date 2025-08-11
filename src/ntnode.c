@@ -187,7 +187,7 @@ void ecu_ntnode_destroy(struct ecu_ntnode *me)
     {
         /* Precondition in order to safely destroy children list. Postorder 
         iteratation should guarantee this condition is always met. */
-        ECU_RUNTIME_ASSERT( (ecu_ntnode_count(n) == 0) );
+        ECU_RUNTIME_ASSERT( (ecu_ntnode_is_leaf(n)) );
 
         /* Cache ID since it is cleared in dnode destructor. Begin destroying node. */
         id = ecu_ntnode_id(n);
@@ -285,7 +285,9 @@ bool ecu_ntnode_in_tree(const struct ecu_ntnode *me)
     ECU_RUNTIME_ASSERT( (ecu_ntnode_valid(me)) );
     bool status = false;
 
-    if (ecu_dnode_in_list(&me->dnode) || !ecu_dlist_empty(&me->children))
+    /* || !ecu_dlist_empty(&me->children) to handle root node. */
+    if ((ecu_dnode_in_list(&me->dnode)) || 
+        (!ecu_dlist_empty(&me->children)))
     {
         /* Node is descendent or non-empty root. */
         status = true;

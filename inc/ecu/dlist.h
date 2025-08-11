@@ -464,7 +464,7 @@ extern void ecu_dlist_clear(struct ecu_dlist *me);
  * @brief Returns true if list is empty. False otherwise.
  *
  * @note An empty list means the list only has HEAD (@ref ecu_dlist.head), 
- * which is a dummy delimeter.
+ * which is a dummy delimiter.
  *
  * @param me List to check.
  */
@@ -557,7 +557,7 @@ extern struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me);
  * @brief Returns number of nodes in a list. Returns 0 if list is empty.
  *
  * @note An empty list means the list only has HEAD(@ref ecu_dlist.head), 
- * which is a dummy delimeter.
+ * which is a dummy delimiter.
  * @note All nodes in list are iterated over in this function, making it O(n).
  *
  * @param me List to check.
