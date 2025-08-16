@@ -1,4 +1,4 @@
-name: CI
+name: Builds and Unit Tests
 
 on: push
 
@@ -32,17 +32,11 @@ jobs:
         cmake --build --preset unit-test
     - name: Run tests
       run: ctest --preset unit-test
-    - name: Create code coverage
-      run: |
-        sudo apt-get install -y gcovr
-        gcovr --filter=src/ --json-pretty > coverage.json
-    - name: Show coverage report (debugging)
-      run: cat coverage.json
     - name: Upload code coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
         disable_search: true
         fail_ci_if_error: true
-        files: coverage.json
+        gcov: true
         token: ${{ secrets.CODECOV_TOKEN }}
       
