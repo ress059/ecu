@@ -1,3 +1,21 @@
+codecov: 
+  token: 757ea88d-662c-47d2-8b5d-4e11b4387261
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
+
 parsers:
   gcov:
   branch_detection:
