@@ -15,245 +15,390 @@ Overview
     the shorthand name for this project.
     
 Provides a portable way to send and receive data in a specific endianness. 
-No edits are required if the endianness of your target hardware ever changes.
-Also provides general-purpose byte swapping macros.
+No code changes are required if the target's endianness changes.
 
 
-Receiving Little Endian Data 
+Theory 
 =================================================
-.. _receiving_le_data:
 
-The following macros allow your application to correctly read little endian 
-encoded data, regardless of your CPU's endianness.
+Endianness Problem
+-------------------------------------------------
+Data is stored in memory differently depending on the hardware target:
 
-    - :ecudoxygen:`ECU_LE16_TO_CPU_COMPILETIME() <ECU_LE16_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_LE16_TO_CPU_RUNTIME() <ECU_LE16_TO_CPU_RUNTIME>`
-    - :ecudoxygen:`ECU_LE32_TO_CPU_COMPILETIME() <ECU_LE32_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_LE32_TO_CPU_RUNTIME() <ECU_LE32_TO_CPU_RUNTIME>`
-    - :ecudoxygen:`ECU_LE64_TO_CPU_COMPILETIME() <ECU_LE64_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_LE64_TO_CPU_RUNTIME() <ECU_LE64_TO_CPU_RUNTIME>`
+.. figure:: /images/endian/theory_endianness.svg
+    :width: 500
+    :align: center
 
-The images below depict this:
+    Endianness
 
-.. figure:: /images/endian/endian_bus_to_cpu_no_macro.svg
-  :width: 400
-  :align: center
-  
-  Without ECU Macro
-
-.. figure:: /images/endian/endian_bus_to_cpu_with_macro.svg
-  :width: 500
-  :align: center
-
-  With ECU Macro
-
-Raw little endian data will be misinterpreted on big endian machines. A common
-solution is to manually swap bytes, however this makes the application unportable.
-It will now break when using a little endian CPU. 
-
-Instead, the ECU endian macros should be used. They will only swap bytes when
-necessary, otherwise they will do nothing. In this example, the ECU macros will 
-swap bytes if compiling on a big endian CPU. They will do nothing if compiling 
-on a little endian CPU, thus making your application fully portable. In 
-pseudocode this would look something like:
+In most cases this can be ignored since endianness is automatically handled
+by the compiler. However use cases arise where it cannot be ignored.
+For example, when sending serialized data over a bus. In the example below,
+0x1234 must be sent over a little endian bus. Sending data directly only
+works on a little endian target:
 
 .. code-block:: c
 
-    #include "ecu/attributes.h"
-    #include "ecu/endian.h"
+    uint16_t value = 0x1234;
 
-    /* CANOpen is little endian protocol. */
-    struct canopen_rx_pdo1
-    {
-        uint16_t switches;
-        uint16_t height;
-        uint32_t direction;
-    } ECU_ATTRIBUTED_PACKED;
+    /* Only works on little endian target. */
+    send_data_over_le_bus(&value); /* Byte by byte. */
 
-    void foo(void)
-    {
-        struct canopen_tx_pdo1 msg;
-        can_bus_receive(&msg); /* Receive little endian encoded data, byte by byte. */
+.. figure:: /images/endian/ecu_cpu_to_le_raw_write.svg
+    :width: 600
+    :align: center
 
-        /* Data will always be correctly interpreted.
-        Macros do nothing if you are compiling on little endian machine.
-        Macros will swap bytes if you are compiling on a big endian machine. */
-        uint16_t switch_data    = ECU_LE16_TO_CPU_RUNTIME(msg.switches);
-        uint16_t height_data    = ECU_LE16_TO_CPU_RUNTIME(msg.height);
-        uint32_t direction_data = ECU_LE32_TO_CPU_RUNTIME(msg.direction);
-    }
+    Sending Little Endian Data without ECU
 
-
-Receiving Big Endian Data 
-=================================================
-.. _receiving_be_data:
-
-Same logic as :ref:`Receiving Little Endian Data Section <receiving_le_data>`. 
-However this set of macros is for reading big endian encoded data. Bytes will 
-be swapped if compiling on a little endian CPU. Nothing will be done if compiling 
-on a big endian CPU.
-
-    - :ecudoxygen:`ECU_BE16_TO_CPU_COMPILETIME() <ECU_BE16_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_BE16_TO_CPU_RUNTIME() <ECU_BE16_TO_CPU_RUNTIME>`
-    - :ecudoxygen:`ECU_BE32_TO_CPU_COMPILETIME() <ECU_BE32_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_BE32_TO_CPU_RUNTIME() <ECU_BE32_TO_CPU_RUNTIME>`
-    - :ecudoxygen:`ECU_BE64_TO_CPU_COMPILETIME() <ECU_BE64_TO_CPU_COMPILETIME>`
-    - :ecudoxygen:`ECU_BE64_TO_CPU_RUNTIME() <ECU_BE64_TO_CPU_RUNTIME>`
-
-
-Sending Little Endian Data 
-=================================================
-.. _sending_le_data:
-
-The following macros always store data in little endian encoded format, regardless 
-of your CPU's endianness.
-
-    - :ecudoxygen:`ECU_CPU_TO_LE16_COMPILETIME() <ECU_CPU_TO_LE16_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_LE16_RUNTIME() <ECU_CPU_TO_LE16_RUNTIME>`
-    - :ecudoxygen:`ECU_CPU_TO_LE32_COMPILETIME() <ECU_CPU_TO_LE32_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_LE32_RUNTIME() <ECU_CPU_TO_LE32_RUNTIME>`
-    - :ecudoxygen:`ECU_CPU_TO_LE64_COMPILETIME() <ECU_CPU_TO_LE64_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_LE64_RUNTIME() <ECU_CPU_TO_LE64_RUNTIME>`
-
-The images below depict this:
-
-.. figure:: /images/endian/endian_cpu_to_bus_no_macro.svg
-  :width: 500
-  :align: center
-  
-  Without ECU Macro
-
-.. figure:: /images/endian/endian_cpu_to_bus_with_macro.svg
-  :width: 500
-  :align: center
-
-  With ECU Macro
-
-The stored value's bytes must be swapped on a big endian machine before 
-sending data byte-by-byte over a little endian bus. A common solution is 
-to do this manually, however this makes the application unportable. It will 
-now break when using a little endian CPU. 
-
-Instead, the ECU endian macros should be used. They will only swap bytes when
-necessary, otherwise they will do nothing. In this example the ECU macros will 
-swap bytes if compiling on a big endian CPU. They will do nothing if compiling 
-on a little endian CPU, thus making your application fully portable. In 
-pseudocode this would look something like:
+Unfortunately, a common solution is to manually swap bytes in order
+to port the code over to a big endian target. However this reverses the issue.
+Now code only works for a big endian target:
 
 .. code-block:: c
 
-    #include "ecu/attributes.h"
-    #include "ecu/endian.h"
+    uint16_t value = 0x1234;
 
-    /* CANOpen is little endian protocol. */
-    struct canopen_tx_pdo1
-    {
-        uint16_t temperature;
-        uint16_t speed;
-        uint32_t acceleration;
-    } ECU_ATTRIBUTED_PACKED;
+    /* Hard-coded to only work for big endian targets. */
+    value = ((value & 0xFF) << 8) | ((value & 0xFF00) >> 8);
+    send_data_over_le_bus(&value); /* Byte by byte. */
 
-    static void setup_tx_pdo1(struct canopen_tx_pdo1 *pdo, uint16_t temperature, uint16_t speed, uint32_t acceleration)
-    {
-        pdo->temperature    = ECU_CPU_TO_LE16_RUNTIME(temperature);
-        pdo->speed          = ECU_CPU_TO_LE16_RUNTIME(speed);
-        pdo->acceleration   = ECU_CPU_TO_LE32_RUNTIME(acceleration);
-    }
+.. figure:: /images/endian/ecu_cpu_to_le_manual_byte_swap.svg
+    :width: 600
+    :align: center
 
-    void foo()
-    {
-        uint8_t msg[8];
+    Sending Little Endian Data without ECU
 
-        struct canopen_tx_pdo1 pdo;
-        setup_tx_pdo1(&pdo, 0x1234, 0x5678, 0x12345678);
-        memcpy((void *)&msg, (const void *)&pdo, 8);
+This is unportable. If the target ever changes back to a little endian
+machine, every byte swapping operation scattered throughout the codebase 
+would have to be manually changed. 
 
-        /* Send data over the little endian CAN bus, byte by byte. 
-        temperature ------- 0x34 0x12 
-        speed ------- 0x78 0x56 
-        acceleration ------ 0x78 0x56 0x34 0x12 */
-        can_bus_send(&msg); 
-    }
+The macros in this module provide a portable solution by selectively
+swapping bytes based on the target's endianness. In this case, bytes
+are only swapped when compiling on a big endian machine. Otherwise
+the macro does nothing:
 
+.. code-block:: c
 
-Sending Big Endian Data 
-=================================================
-.. _sending_be_data:
+    /* Portable. Works on both little and big endian targets. */
+    uint16_t value = ECU_CPU_TO_LE16_RUNTIME(0x1234);
+    send_data_over_le_bus(&value); /* Byte by byte. */
 
-Same logic as :ref:`Sending Little Endian Data Section <sending_le_data>`. 
-However this set of macros always stores data in big endian format, and 
-is meant for sending data across a big endian bus. Bytes will be swapped 
-if compiling on a little endian CPU. Nothing will be done if compiling 
-on a big endian CPU.
+.. figure:: /images/endian/ecu_cpu_to_le.svg
+    :width: 700
+    :align: center
 
-    - :ecudoxygen:`ECU_CPU_TO_BE16_COMPILETIME() <ECU_CPU_TO_BE16_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_BE16_RUNTIME() <ECU_CPU_TO_BE16_RUNTIME>`
-    - :ecudoxygen:`ECU_CPU_TO_BE32_COMPILETIME() <ECU_CPU_TO_BE32_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_BE32_RUNTIME() <ECU_CPU_TO_BE32_RUNTIME>`
-    - :ecudoxygen:`ECU_CPU_TO_BE64_COMPILETIME() <ECU_CPU_TO_BE64_COMPILETIME>`
-    - :ecudoxygen:`ECU_CPU_TO_BE64_RUNTIME() <ECU_CPU_TO_BE64_RUNTIME>`
-
+    Sending Little Endian Data with ECU
 
 Detecting Endianness
-=================================================
-ECU attempts to automatically detect the endianness of your target by using 
+-------------------------------------------------
+The endianness of the target must be known so the macros explained 
+in the previous section expand to the proper operations. ``ECU_LITTLE_ENDIAN`` 
+must be defined for a little endian target. ``ECU_BIG_ENDIAN`` must be defined
+for a big endian target.
+
+ECU attempts to detect the endianness of the target and automatically define
+either ``ECU_LITTLE_ENDIAN`` or ``ECU_BIG_ENDIAN`` by using 
 the CMake variable `CMAKE_C_BYTE_ORDER <https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_BYTE_ORDER.html>`_.
 If this is unsuccessful, a warning message will be printed in the console at 
 configuration time. A compilation error will also occur if this module is 
 used in this case:
 
 .. figure:: /images/endian/endian_warning_message.PNG
-  :width: 400
+  :width: 500
   :align: center
 
   Warning Message
 
-If auto-detection fails or you are not using a CMake build system you can 
-manually specify the endianness of your target by passing ``-D ECU_LITTLE_ENDIAN`` 
-or ``-D ECU_BIG_ENDIAN`` to the preprocessor.
+If auto-detection fails or a CMake build system is not being used,
+the endianness of the target can be manually specified by passing
+``-DECU_LITTLE_ENDIAN`` or ``-DECU_BIG_ENDIAN`` compiler flags.
 
 
-Byte Swapping Macros
+API 
 =================================================
-This module also provides general-purpose byte swapping macros. The macros for 
-compile-time byte swapping are:
+.. toctree::
+    :maxdepth: 1
 
-    - :ecudoxygen:`ECU_SWAP16_COMPILETIME() <ECU_SWAP16_COMPILETIME>`
-    - :ecudoxygen:`ECU_SWAP32_COMPILETIME() <ECU_SWAP32_COMPILETIME>`
-    - :ecudoxygen:`ECU_SWAP64_COMPILETIME() <ECU_SWAP64_COMPILETIME>`
+    endian.h </doxygen/html/endian_8h>
 
-The functions for run-time byte swapping are:
+Macros
+-------------------------------------------------
 
-    - :ecudoxygen:`ecu_swap16_runtime() <ecu_swap16_runtime>`
-    - :ecudoxygen:`ecu_swap32_runtime() <ecu_swap32_runtime>`
-    - :ecudoxygen:`ecu_swap64_runtime() <ecu_swap64_runtime>` 
+Reading Big Endian Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _endian_reading_big_endian_data:
 
-For example:
+The following macros provide a portable way to read big endian encoded data.
+Reading data directly only works on a big endian target:
 
 .. code-block:: c
 
-    #include "ecu/endian.h"
+    uint16_t value;
+    read_be_data(&value); /* memcpy. */
 
-    static const uint16_t val = ECU_SWAP16_COMPILETIME(0x1234);
-
-    int main()
+    /* Only works on big endian target. */
+    if (value == 0x1234) 
     {
-        uint32_t val2 = ecu_swap32_runtime(0x12345678);
-        return 0;
+        do_stuff();
     }
 
-.. note:: 
+.. figure:: /images/endian/ecu_be_to_cpu_raw_read.svg
+    :width: 600
+    :align: center
 
-    These macros will **always** swap bytes, reglardless of the endianness 
-    of your CPU.
+    Reading Big Endian Data without ECU
 
-    Use the macros explained in the previous sections if you wish to selectively
-    swap bytes based on your CPU's endianness.
+Manually swapping bytes to make the code work for a little endian target
+reverses the issue. The code now only works for a little endian target:
+
+.. code-block:: c
+
+    uint16_t value;
+    read_be_data(&value); /* memcpy. */
+
+    /* Hard-coded to only work on little endian target. */
+    value = ((value & 0xFF) << 8) | ((value & 0xFF00) >> 8);
+    if (value == 0x1234) 
+    {
+        do_stuff();
+    }
+
+.. figure:: /images/endian/ecu_be_to_cpu_manual_byte_swap.svg
+    :width: 600
+    :align: center
+
+    Reading Big Endian Data without ECU
+
+These macros provide a portable solution by selectively swapping bytes
+based on the target's endianness. Bytes are only swapped when compiling
+on a little endian machine. Otherwise these macros do nothing:
+
+.. code-block:: c
+
+    uint16_t value;
+    read_be_data(&value); /* memcpy. */
+
+    /* Portable. Works on both little and big endian targets. */
+    if (ECU_BE16_TO_CPU_RUNTIME(value) == 0x1234) 
+    {
+        do_stuff();
+    }
+
+.. figure:: /images/endian/ecu_be_to_cpu.svg
+    :width: 700
+    :align: center
+
+    Reading Big Endian Data with ECU
+
+ECU_BE16_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_BE32_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_BE64_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_BE32_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_BE64_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_BE16_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. raw:: html
+
+   <hr>
+
+Reading Little Endian Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following macros provide a portable way to read little endian encoded data.
+Exact same logic as :ref:`ECU_BE_TO_CPU() macros <endian_reading_big_endian_data>` 
+but for little endian data.
 
 
-API
-=================================================
-.. toctree:: 
-    :maxdepth: 1
+.. The following macros provide a portable way to read little endian encoded data.
+.. Reading data directly only works on a little endian target:
 
-    API </doxygen/html/endian_8h>
+.. .. code-block:: c
+
+..     uint16_t value;
+..     read_le_data(&value); /* memcpy. */
+
+..     /* Only works on little endian target. */
+..     if (value == 0x1234) 
+..     {
+..         do_stuff();
+..     }
+
+.. .. figure:: /images/endian/ecu_le_to_cpu_raw_read.svg
+..     :width: 500
+..     :align: center
+
+..     Reading Little Endian Data without ECU
+
+.. Manually swapping bytes to make the code work for a big endian target
+.. reverses the issue. The code now only works for a big endian target:
+
+.. .. code-block:: c
+
+..     uint16_t value;
+..     read_le_data(&value); /* memcpy. */
+
+..     /* Hard-coded to only work on big endian target. */
+..     value = ((value & 0xFF) << 8) | ((value & 0xFF00) >> 8);
+..     if (value == 0x1234) 
+..     {
+..         do_stuff();
+..     }
+
+.. .. figure:: /images/endian/ecu_le_to_cpu_manual_byte_swap.svg
+..     :width: 500
+..     :align: center
+
+..     Reading Little Endian Data without ECU
+
+.. These macros provide a portable solution by selectively swapping bytes
+.. based on the target's endianness. Bytes are only swapped when compiling
+.. on a big endian machine. Otherwise this macro does nothing:
+
+.. .. code-block:: c
+
+..     uint16_t value;
+..     read_le_data(&value); /* memcpy. */
+
+..     /* Portable. Works on both little and big endian targets. */
+..     if (ECU_LE16_TO_CPU_RUNTIME(value) == 0x1234) 
+..     {
+..         do_stuff();
+..     }
+
+.. .. figure:: /images/endian/ecu_le_to_cpu.svg
+..     :width: 500
+..     :align: center
+
+..     Reading Little Endian Data with ECU
+
+ECU_LE16_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_LE32_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_LE64_TO_CPU_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_LE16_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_LE32_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_LE64_TO_CPU_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. raw:: html
+
+   <hr>
+
+Sending Big Endian Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _endian_sending_big_endian_data:
+
+The following macros provide a portable way to send data in
+big endian format. Sending data directly only works on a big
+endian target:
+
+.. code-block:: c
+
+    uint16_t value = 0x1234;
+
+    /* Only works on big endian target. */
+    send_data_over_be_bus(&value); /* Byte by byte. */
+
+.. figure:: /images/endian/ecu_cpu_to_be_raw_write.svg
+    :width: 600
+    :align: center
+
+    Sending Big Endian Data without ECU
+
+Manually swapping bytes to make the code work for a little endian target
+reverses the issue. The code now only works for a little endian target:
+
+.. code-block:: c
+
+    uint16_t value = 0x1234;
+
+    /* Hard-coded to only work for little endian targets. */
+    value = ((value & 0xFF) << 8) | ((value & 0xFF00) >> 8);
+    send_data_over_be_bus(&value); /* Byte by byte. */
+
+.. figure:: /images/endian/ecu_cpu_to_be_manual_byte_swap.svg
+    :width: 600
+    :align: center
+
+    Sending Big Endian Data without ECU
+
+These macros provide a portable solution by selectively swapping bytes
+based on the target's endianness. Bytes are only swapped when compiling
+on a little endian machine. Otherwise these macros do nothing:
+
+.. code-block:: c
+
+    /* Portable. Works on both little and big endian targets. */
+    uint16_t value = ECU_CPU_TO_BE16_RUNTIME(0x1234);
+    send_data_over_be_bus(&value); /* Byte by byte. */
+
+.. figure:: /images/endian/ecu_cpu_to_be.svg
+    :width: 700
+    :align: center
+
+    Sending Big Endian Data with ECU
+
+ECU_CPU_TO_BE16_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_BE32_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_BE64_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_BE16_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_BE32_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_BE64_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. raw:: html
+
+   <hr>
+
+Sending Little Endian Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following macros provide a portable way to send data in
+little endian format. Exact same logic as :ref:`ECU_CPU_TO_BE() macros <endian_sending_big_endian_data>`
+but for sending little endian data.
+
+ECU_CPU_TO_LE16_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_LE32_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_LE64_COMPILETIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_LE16_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_LE32_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+ECU_CPU_TO_LE64_RUNTIME()
+"""""""""""""""""""""""""""""""""""""""""""""""""

@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Generic n-ary tree. See
+ * @brief
  * @rst
  * See :ref:`ntnode.h section <ntnode_h>` in Sphinx documentation.
  * @endrst
