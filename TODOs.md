@@ -8,7 +8,7 @@ Completed.
 7. hsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
-10. ntree.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
+10. ntnode.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
 11. utils.h. DONE.
 
 ## Ring buffer
@@ -34,8 +34,6 @@ But can't find a good way to do it. I.e.
          var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
          var_ = ecu_ntnode_child_iterator_next(&iter_))
 ```
-
-5. **Probably rename to ntnode.h**
 
 This will break down if user uses multiple for-loops with same iter_ name. I.e.
 ```C
@@ -94,7 +92,6 @@ And obviously can't declare variables of different types in same for-loop like s
     c. next functions return null if no siblings or is last sibling.
     d. prev functions return null if no siblings or is first sibling.
     e. Root is iterated over for preorder, postorder iterations.
-    f. Start node is not iterated over in parent iterator.
     g. Start node is not iterated over in sibling iterator. Otherwise code can not figure out when to terminate.
     h. No separate structure for tree/root. Just nodes.
     

@@ -11,8 +11,8 @@
  * @copyright Copyright (c) 2025
  */
 
-#ifndef NTNODE_H_
-#define NTNODE_H_
+#ifndef ECU_NTNODE_H_
+#define ECU_NTNODE_H_
 
 /*------------------------------------------------------------*/
 /*------------------------- INCLUDES -------------------------*/
@@ -81,7 +81,7 @@
     ECU_CONST_CONTAINER_OF(ptr_, type_, member_)
 
 /**
- * @brief Iterates over all direct children. Grandchildren, 
+ * @brief Iterates (for-loops) over all direct children. Grandchildren, 
  * great-grandchildren, etc are not included in the iteration. 
  * It is safe to remove or destroy the current node in the iteration.
  * 
@@ -99,7 +99,7 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_CHILD_FOR_EACH().
- * Iterates over all direct children. Grandchildren, 
+ * Iterates (for-loops) over all direct children. Grandchildren, 
  * great-grandchildren, etc are not included in the iteration.
  * Returned nodes are read-only.
  * 
@@ -116,9 +116,81 @@
          var_ = ecu_ntnode_child_iterator_cnext(citer_))
 
 /**
- * @brief Iterates over all parents, including the starting node.
- * Returns start, parent, grandparent, ..., root. It is safe to 
- * remove or destroy the current node in the iteration.
+ * @brief Iterates (for-loops) over all next (right) siblings,
+ * including the supplied starting node. Terminates after the 
+ * last (rightmost) sibling is reached. It is safe to remove 
+ * or destroy the current node in the iteration.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_ntnode.
+ * @param iter_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_next_sibling_iterator.
+ * @param start_ Starting node of the iteration. This node IS
+ * included in the iteration and is returned first. This will
+ * be a pointer to @ref ecu_ntnode.
+ */
+#define ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(var_, iter_, start_)                        \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_next_sibling_iterator_at(iter_, start_);  \
+         var_ != ecu_ntnode_next_sibling_iterator_end(iter_);                           \
+         var_ = ecu_ntnode_next_sibling_iterator_next(iter_))
+
+/**
+ * @brief Const-qualified version of @ref ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH().
+ * Iterates (for-loops) over all next (right) siblings,
+ * including the supplied starting node. Terminates after the 
+ * last (rightmost) sibling is reached. Returned nodes are read-only.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_ntnode.
+ * @param citer_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_next_sibling_citerator.
+ * @param start_ Starting node of the iteration. This node IS
+ * included in the iteration and is returned first. This will
+ * be a pointer to const @ref ecu_ntnode.
+ */
+#define ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(var_, citer_, start_)                          \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_next_sibling_iterator_cat(citer_, start_);   \
+         var_ != ecu_ntnode_next_sibling_iterator_cend(citer_);                                  \
+         var_ = ecu_ntnode_next_sibling_iterator_cnext(citer_))
+
+/**
+ * @brief Same as @ref ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH()
+ * but excludes the starting node from the iteration.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_ntnode.
+ * @param iter_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_next_sibling_iterator.
+ * @param start_ Starting node of the iteration. This will
+ * be a pointer to @ref ecu_ntnode. This node is NOT included 
+ * in the iteration. The node next to this one is returned first. 
+ */
+#define ECU_NTNODE_NEXT_SIBLING_FOR_EACH(var_, iter_, start_)                               \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_next_sibling_iterator_begin(iter_, start_);   \
+         var_ != ecu_ntnode_next_sibling_iterator_end(iter_);                               \
+         var_ = ecu_ntnode_next_sibling_iterator_next(iter_))
+
+/**
+ * @brief Same as @ref ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH()
+ * but excludes the starting node from the iteration.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_ntnode.
+ * @param citer_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_next_sibling_citerator.
+ * @param start_ Starting node of the iteration. This will
+ * be a pointer to const @ref ecu_ntnode. This node is NOT included 
+ * in the iteration. The node next to this one is returned first. 
+ */     
+#define ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(var_, citer_, start_)                                \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_next_sibling_iterator_cbegin(citer_, start_);   \
+         var_ != ecu_ntnode_next_sibling_iterator_cend(citer_);                                     \
+         var_ = ecu_ntnode_next_sibling_iterator_cnext(citer_))
+
+/**
+ * @brief Iterates (for-loops) over all parents, including the supplied 
+ * starting node, by traversing up the tree. It is safe to remove or 
+ * destroy the current node in the iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
@@ -135,9 +207,9 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_PARENT_AT_FOR_EACH().
- * Iterates over all parents, including the starting node.
- * Returns start, parent, grandparent, ..., root. Returned
- * nodes are read-only.
+ * Iterates (for-loops) over all parents, including the supplied 
+ * starting node, by traversing up the tree. Returned nodes are 
+ * read-only.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
@@ -154,9 +226,7 @@
 
 /**
  * @brief Same as @ref ECU_NTNODE_PARENT_AT_FOR_EACH() but excludes
- * the starting node from the iteration. Returns parent, 
- * grandparent, ..., root. It is safe to remove or destroy the 
- * current node in the iteration.
+ * the starting node from the iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
@@ -172,10 +242,8 @@
          var_ = ecu_ntnode_parent_iterator_next(iter_))
 
 /**
- * @brief Const-qualified version of @ref ECU_NTNODE_PARENT_FOR_EACH().
- * Same as @ref ECU_NTNODE_CONST_PARENT_AT_FOR_EACH() but excludes the
- * starting node from the iteration. Returns parent, grandparent, ..., root. 
- * Returned nodes are read-only.
+ * @brief Same as @ref ECU_NTNODE_CONST_PARENT_AT_FOR_EACH() 
+ * but excludes the starting node from the iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
@@ -191,9 +259,9 @@
          var_ = ecu_ntnode_parent_iterator_cnext(citer_))
 
 /**
- * @brief Performs a postorder iteration over a tree. The root
- * node is included in the iteration. It is safe to remove or
- * destroy the current node in the iteration.
+ * @brief Performs a postorder iteration (for-loop) over a tree. 
+ * The root node is included in the iteration. It is safe to remove 
+ * or destroy the current node in the iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
@@ -211,9 +279,9 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_POSTORDER_FOR_EACH().
- * Performs a postorder iteration over a tree. The root
- * node is included in the iteration. Returned nodes are
- * read-only.
+ * Performs a postorder iteration (for-loop) over a tree. 
+ * The root node is included in the iteration. Returned nodes 
+ * are read-only.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
@@ -230,10 +298,10 @@
          var_ = ecu_ntnode_postorder_iterator_cnext(citer_))
 
 /**
- * @brief Performs a preorder iteration over a tree. The root
- * node is included in the iteration. Removing or destroying 
+ * @brief Performs a preorder iteration (for-loop) over a tree. 
+ * The root node is included in the iteration. Removing or destroying 
  * the current node in the iteration is NOT allowed since this 
- * is an unsafe operation.
+ * is an unsafe operation during preorder traversal.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
@@ -251,8 +319,9 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_PREORDER_FOR_EACH().
- * Performs a preorder iteration over a tree. The root node is included 
- * in the iteration. Returned nodes are read-only.
+ * Performs a preorder iteration (for-loop) over a tree. 
+ * The root node is included in the iteration. Returned 
+ * nodes are read-only.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
@@ -269,47 +338,87 @@
          var_ = ecu_ntnode_preorder_iterator_cnext(citer_))
 
 /**
- * @brief Iterates over all siblings, including the starting node.
- * Returns start, next sibling, next sibling, ...NULL. It is safe
- * to remove or destroy the current node in the iteration.
+ * @brief Iterates (for-loops) over all previous (left) siblings, 
+ * including the supplied starting node. Terminates after the
+ * first (leftmost) sibling is reached. It is safe to remove 
+ * or destroy the current node in the iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
  * @param iter_ Iterator to initialize. This will be a pointer
- * to @ref ecu_ntnode_sibling_iterator.
+ * to @ref ecu_ntnode_prev_sibling_iterator.
  * @param start_ Starting node of the iteration. This node IS
  * included in the iteration and is returned first. This will
  * be a pointer to @ref ecu_ntnode.
  */
-#define ECU_NTNODE_SIBLING_AT_FOR_EACH(var_, iter_, start_)                         \
-    for (struct ecu_ntnode *var_ = ecu_ntnode_sibling_iterator_at(iter_, start_);   \
-         var_ != ecu_ntnode_sibling_iterator_end(iter_);                            \
-         var_ = ecu_ntnode_sibling_iterator_next(iter_))
+#define ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(var_, iter_, start_)                        \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_prev_sibling_iterator_at(iter_, start_);  \
+         var_ != ecu_ntnode_prev_sibling_iterator_end(iter_);                           \
+         var_ = ecu_ntnode_prev_sibling_iterator_next(iter_))
 
 /**
- * @brief Const-qualified version of @ref ECU_NTNODE_SIBLING_AT_FOR_EACH().
- * Iterates over all siblings, including the starting node.
- * Returns start, next sibling, next sibling, ...NULL. Returned
- * nodes are read-only.
+ * @brief Const-qualified version of @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH().
+ * Iterates (for-loops) over all previous (left) siblings, 
+ * including the supplied starting node. Terminates after the
+ * first (leftmost) sibling is reached. Returned nodes are read-only.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
  * @param citer_ Iterator to initialize. This will be a pointer
- * to @ref ecu_ntnode_sibling_citerator.
+ * to @ref ecu_ntnode_prev_sibling_citerator.
  * @param start_ Starting node of the iteration. This node IS
  * included in the iteration and is returned first. This will
  * be a pointer to const @ref ecu_ntnode.
  */
-#define ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH(var_, citer_, start_)                          \
-    for (const struct ecu_ntnode *var_ = ecu_ntnode_sibling_iterator_cat(citer_, start_);   \
-         var_ != ecu_ntnode_sibling_iterator_cend(citer_);                                  \
-         var_ = ecu_ntnode_sibling_iterator_cnext(citer_))
+#define ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(var_, citer_, start_)                          \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_prev_sibling_iterator_cat(citer_, start_);   \
+         var_ != ecu_ntnode_prev_sibling_iterator_cend(citer_);                                  \
+         var_ = ecu_ntnode_prev_sibling_iterator_cnext(citer_))
 
 /**
- * @brief Same as @ref ECU_NTNODE_SIBLING_AT_FOR_EACH() but excludes
- * the starting node from the iteration. Returns next sibling,
- * next sibling, ..., NULL. It is safe to remove or destroy
- * the current node in the iteration.
+ * @brief Same as @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH()
+ * but excludes the starting node from the iteration.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to @ref ecu_ntnode.
+ * @param iter_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_prev_sibling_iterator.
+ * @param start_ Starting node of the iteration. This will
+ * be a pointer to @ref ecu_ntnode. This node is NOT included 
+ * in the iteration. The node previous to this one is returned first. 
+ */
+#define ECU_NTNODE_PREV_SIBLING_FOR_EACH(var_, iter_, start_)                               \
+    for (struct ecu_ntnode *var_ = ecu_ntnode_prev_sibling_iterator_begin(iter_, start_);   \
+         var_ != ecu_ntnode_prev_sibling_iterator_end(iter_);                               \
+         var_ = ecu_ntnode_prev_sibling_iterator_next(iter_))
+
+/**
+ * @brief Same as @ref ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH()
+ * but excludes the starting node from the iteration.
+ * 
+ * @param var_ Loop variable name. This variable will store the current 
+ * node in the iteration and will be a pointer to const @ref ecu_ntnode.
+ * @param citer_ Iterator to initialize. This will be a pointer
+ * to @ref ecu_ntnode_prev_sibling_citerator.
+ * @param start_ Starting node of the iteration. This will
+ * be a pointer to const @ref ecu_ntnode. This node is NOT included 
+ * in the iteration. The node previous to this one is returned first. 
+ */     
+#define ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(var_, citer_, start_)                                \
+    for (const struct ecu_ntnode *var_ = ecu_ntnode_prev_sibling_iterator_cbegin(citer_, start_);   \
+         var_ != ecu_ntnode_prev_sibling_iterator_cend(citer_);                                     \
+         var_ = ecu_ntnode_prev_sibling_iterator_cnext(citer_))
+
+/**
+ * @brief Iterates (for-loops) over all siblings, excluding the 
+ * starting node. Performs wraparound if starting sibling is not the 
+ * first sibling. It is safe to remove or destroy the current 
+ * node in the iteration.
+ * 
+ * @note If the starting node must be included in the iteration
+ * use a child iterator instead. SIBLING_AT() will not be supported
+ * since it is impossible to determine when to terminate the
+ * iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to @ref ecu_ntnode.
@@ -326,9 +435,14 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_SIBLING_FOR_EACH().
- * Same as @ref ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH() but excludes
- * the starting node from the iteration. Returns next sibling,
- * next sibling, ..., NULL. Returned nodes are read-only.
+ * Iterates (for-loops) over all siblings, excluding the starting 
+ * node. Performs wraparound if starting sibling is not the 
+ * first sibling.
+ * 
+ * @note If the starting node must be included in the iteration
+ * use a child iterator instead. SIBLING_AT() will not be supported
+ * since it is impossible to determine when to terminate the
+ * iteration.
  * 
  * @param var_ Loop variable name. This variable will store the current 
  * node in the iteration and will be a pointer to const @ref ecu_ntnode.
@@ -447,6 +561,42 @@ struct ecu_ntnode_parent_citerator
 };
 
 /*------------------------------------------------------------*/
+/*--------------- NTNODE NEXT SIBLING ITERATOR ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Non-const next sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_next_sibling_iterator
+{
+    /// @brief Current node in the iteration.
+    struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    struct ecu_ntnode *next;
+};
+
+/**
+ * @brief Const next sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_next_sibling_citerator
+{
+    /// @brief Current node in the iteration.
+    const struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration. Kept to remain 
+    /// consistent with non-const iterator implementation.
+    const struct ecu_ntnode *next;
+};
+
+/*------------------------------------------------------------*/
 /*------------------- NTNODE POSTORDER ITERATOR --------------*/
 /*------------------------------------------------------------*/
 
@@ -458,7 +608,7 @@ struct ecu_ntnode_parent_citerator
  */
 struct ecu_ntnode_postorder_iterator
 {
-    /// @brief Dummy delimeter returned at the end of the iteration.
+    /// @brief Dummy delimiter returned at the end of the iteration.
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
@@ -482,7 +632,7 @@ struct ecu_ntnode_postorder_iterator
  */
 struct ecu_ntnode_postorder_citerator
 {
-    /// @brief Dummy delimeter returned at the end of the iteration.
+    /// @brief Dummy delimiter returned at the end of the iteration.
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
@@ -510,7 +660,7 @@ struct ecu_ntnode_postorder_citerator
  */
 struct ecu_ntnode_preorder_iterator
 {
-    /// @brief Dummy delimeter returned at the end of the iteration.
+    /// @brief Dummy delimiter returned at the end of the iteration.
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
@@ -530,7 +680,7 @@ struct ecu_ntnode_preorder_iterator
  */
 struct ecu_ntnode_preorder_citerator
 {
-    /// @brief Dummy delimeter returned at the end of the iteration.
+    /// @brief Dummy delimiter returned at the end of the iteration.
     /// Not apart of user's tree. Allows iteration over entire tree.
     struct ecu_ntnode delimiter;
 
@@ -540,6 +690,42 @@ struct ecu_ntnode_preorder_citerator
 
     /// @brief Current node in the iteration.
     const struct ecu_ntnode *current;
+};
+
+/*------------------------------------------------------------*/
+/*--------------- NTNODE PREV SIBLING ITERATOR ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Non-const previous sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_prev_sibling_iterator
+{
+    /// @brief Current node in the iteration.
+    struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration to allow safe removal
+    /// of current node.
+    struct ecu_ntnode *next;
+};
+
+/**
+ * @brief Const previous sibling iterator.
+ * 
+ * @warning PRIVATE. Unless otherwise specified, all
+ * members can only be edited via the public API.
+ */
+struct ecu_ntnode_prev_sibling_citerator
+{
+    /// @brief Current node in the iteration.
+    const struct ecu_ntnode *current;
+
+    /// @brief Next node in the iteration. Kept to remain 
+    /// consistent with non-const iterator implementation.
+    const struct ecu_ntnode *next;
 };
 
 /*------------------------------------------------------------*/
@@ -554,9 +740,10 @@ struct ecu_ntnode_preorder_citerator
  */
 struct ecu_ntnode_sibling_iterator
 {
-    /// @brief Starting node of iteration. Not included
-    /// in iteration to allow safe removal of current node.
-    struct ecu_ntnode *start;
+    /// @brief Starting node of iteration which is also the 
+    /// ending node. Not included in iteration to allow safe 
+    /// removal of current node.
+    struct ecu_ntnode *end;
 
     /// @brief Current node in the iteration.
     struct ecu_ntnode *current;
@@ -574,20 +761,21 @@ struct ecu_ntnode_sibling_iterator
  */
 struct ecu_ntnode_sibling_citerator
 {
-    /// @brief Starting node of iteration. Not included
-    /// in iteration to allow safe removal of current node.
-    const struct ecu_ntnode *start;
+    /// @brief Starting node of iteration which is also the 
+    /// ending node. Not included in iteration to allow safe 
+    /// removal of current node.
+    const struct ecu_ntnode *end;
 
     /// @brief Current node in the iteration.
     const struct ecu_ntnode *current;
 
-    /// @brief Next node in the iteration to allow safe removal
-    /// of current node.
+    /// @brief Next node in the iteration. Kept to remain 
+    /// consistent with non-const iterator implementation.
     const struct ecu_ntnode *next;
 };
 
 /*------------------------------------------------------------*/
-/*------------------- NTNODE MEMBER FUNCTIONS ----------------*/
+/*------------------ NTNODE MEMBER FUNCTIONS -----------------*/
 /*------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -622,8 +810,8 @@ extern void ecu_ntnode_ctor(struct ecu_ntnode *me,
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Node destructor. Destroyed the supplied node, and
- * all nodes in its subtree (children, grandchildren, etc).
+ * @brief Node destructor. Destroys the supplied node and
+ * all of its descendants (children, grandchildren, etc).
  * All destroyed nodes must be reconstructed in order to be
  * used again.
  *
@@ -645,9 +833,9 @@ extern void ecu_ntnode_destroy(struct ecu_ntnode *me);
 /**@{*/
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Removes node from a tree. The node's entire subtree
- * is also removed. All nodes can be reused and added to
- * another tree without reconstruction.
+ * @brief Removes the supplied node and all of its descendants from
+ * a tree. All nodes can be reused and added to another tree without 
+ * reconstruction.
  * 
  * @param me Node to remove. Its entire subtree will also be removed.
  */
@@ -655,9 +843,9 @@ extern void ecu_ntnode_clear(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns number of direct children the supplied node
+ * @brief Returns the number of direct children the supplied node
  * has. Grandchildren, great-granchildren, etc are not counted.
- * Returns 0 if the node is a leaf and has no children.
+ * Returns 0 if the node has no children.
  * 
  * @param me Node to check.
  */
@@ -665,18 +853,8 @@ extern size_t ecu_ntnode_count(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns true if the supplied node is a root that
- * has no children. False otherwise. Note that this returns
- * false if the node is in a tree (not a root) and has no children.
- * 
- * @param me Node to check.
- */
-extern bool ecu_ntnode_empty(const struct ecu_ntnode *me);
-
-/**
- * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Returns the node's first (leftmost) child. NULL is returned
- * if the node is a leaf and has no children.
+ * if the node has no children.
  * 
  * @param me Node to check.
  */
@@ -686,7 +864,7 @@ extern struct ecu_ntnode *ecu_ntnode_first_child(struct ecu_ntnode *me);
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_first_child().
  * Returns the node's first (leftmost) child. NULL is returned
- * if the node is a leaf and has no children.
+ * if the node has no children.
  * 
  * @param me Node to check.
  */
@@ -694,7 +872,7 @@ extern const struct ecu_ntnode *ecu_ntnode_first_cchild(const struct ecu_ntnode 
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns node ID assigned when node was constructed
+ * @brief Returns the node's ID assigned when it was constructed
  * in @ref ecu_ntnode_ctor().
  * 
  * @param me Node to check.
@@ -703,12 +881,12 @@ extern ecu_object_id ecu_ntnode_id(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns true if the node is in a tree and not a root. 
- * False otherwise.
+ * @brief Returns true if the node is in a tree. False otherwise.
+ * Note that this returns true for a root node that has children.
  * 
  * @param me Node to check.
  */
-extern bool ecu_ntnode_in_subtree(const struct ecu_ntnode *me);
+extern bool ecu_ntnode_in_tree(const struct ecu_ntnode *me);
 
 /**
  * @pre @p pos and @p sibling previously constructed via @ref ecu_ntnode_ctor().
@@ -718,7 +896,8 @@ extern bool ecu_ntnode_in_subtree(const struct ecu_ntnode *me);
  * @param pos Position node. Node is inserted after this position. 
  * This cannot be a root.
  * @param sibling Node to insert. This cannot already be within a tree
- * unless this is a root node.
+ * unless this is a root node. If this is a root of an existing tree,
+ * its tree remains intact.
  */
 extern void ecu_ntnode_insert_sibling_after(struct ecu_ntnode *pos, struct ecu_ntnode *sibling);
 
@@ -730,14 +909,25 @@ extern void ecu_ntnode_insert_sibling_after(struct ecu_ntnode *pos, struct ecu_n
  * @param pos Position node. Node is inserted before this position. 
  * This cannot be a root.
  * @param sibling Node to insert. This cannot already be within a tree
- * unless this is a root node.
+ * unless this is a root node. If this is a root of an existing tree,
+ * its tree remains intact.
  */
 extern void ecu_ntnode_insert_sibling_before(struct ecu_ntnode *pos, struct ecu_ntnode *sibling);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns true if the node is a leaf, meaning it has no
- * children. False otherwise.
+ * @brief Returns true if the node is in a tree and is not the
+ * root. False otherwise.
+ * 
+ * @param me Node to check.
+ */
+extern bool ecu_ntnode_is_descendant(const struct ecu_ntnode *me);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Returns true if the node is a leaf, meaning it has no 
+ * children. False otherwise. Note that this returns true for
+ * an empty node since that is technically a leaf.
  * 
  * @param me Node to check.
  */
@@ -746,7 +936,8 @@ extern bool ecu_ntnode_is_leaf(const struct ecu_ntnode *me);
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Returns true if the node is a root, meaning it has no
- * parent. False otherwise.
+ * parent. False otherwise. Note that this returns true for an
+ * empty node since that is techincally a root.
  * 
  * @param me Node to check.
  */
@@ -755,7 +946,7 @@ extern bool ecu_ntnode_is_root(const struct ecu_ntnode *me);
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Returns the node's last (rightmost) child. NULL is returned
- * if the node is a leaf and has no children.
+ * if the node has no children.
  * 
  * @param me Node to check.
  */
@@ -765,7 +956,7 @@ extern struct ecu_ntnode *ecu_ntnode_last_child(struct ecu_ntnode *me);
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_last_child().
  * Returns the node's last (rightmost) child. NULL is returned
- * if the node is a leaf and has no children.
+ * if the node has no children.
  * 
  * @param me Node to check.
  */
@@ -796,8 +987,8 @@ extern const struct ecu_ntnode *ecu_ntnode_clca(const struct ecu_ntnode *n1, con
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns which level the supplied node is in. I.e. 0, 1,
- * 2, 3, etc. Returns 0 if the supplied node is a root.
+ * @brief Returns which level of the tree the supplied node is in. 
+ * Returns 0 if the supplied node is a root.
  * 
  * @param me Node to check.
  */
@@ -805,8 +996,8 @@ extern size_t ecu_ntnode_level(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's next sibling. NULL is returned
- * if the node is the last sibling, or is a root and has no siblings.
+ * @brief Returns the node's next (right) sibling. NULL is returned
+ * if the node is the last (rightmost) sibling or has no siblings.
  * 
  * @param me Node to check.
  */
@@ -815,8 +1006,8 @@ extern struct ecu_ntnode *ecu_ntnode_next(struct ecu_ntnode *me);
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_next().
- * Returns the node's next sibling. NULL is returned
- * if the node is the last sibling, or is a root and has no siblings.
+ * Returns the node's next (right) sibling. NULL is returned
+ * if the node is the last (rightmost) sibling or has no siblings.
  * 
  * @param me Node to check.
  */
@@ -824,8 +1015,8 @@ extern const struct ecu_ntnode *ecu_ntnode_cnext(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the supplied node's parent. If the node is
- * a root and has no parent, NULL is returned.
+ * @brief Returns the supplied node's parent. NULL is returned
+ * if the node is a root.
  * 
  * @param me Node to check.
  */
@@ -834,8 +1025,8 @@ extern struct ecu_ntnode *ecu_ntnode_parent(struct ecu_ntnode *me);
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_parent().
- * Returns the supplied node's parent. If the node is
- * a root and has no parent, NULL is returned.
+ * Returns the supplied node's parent. NULL is returned
+ * if the node is a root.
  * 
  * @param me Node to check.
  */
@@ -843,8 +1034,8 @@ extern const struct ecu_ntnode *ecu_ntnode_cparent(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns the node's previous sibling. NULL is returned
- * if the node is the first sibling, or is a root and has no siblings.
+ * @brief Returns the node's previous (left) sibling. NULL is returned
+ * if the node is the first (leftmost) sibling or has no siblings.
  * 
  * @param me Node to check.
  */
@@ -853,8 +1044,8 @@ extern struct ecu_ntnode *ecu_ntnode_prev(struct ecu_ntnode *me);
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_prev().
- * Returns the node's previous sibling. NULL is returned
- * if the node is the first sibling, or is a root and has no siblings.
+ * Returns the node's previous (left) sibling. NULL is returned
+ * if the node is the first (leftmost) sibling or has no siblings.
  * 
  * @param me Node to check.
  */
@@ -862,8 +1053,8 @@ extern const struct ecu_ntnode *ecu_ntnode_cprev(const struct ecu_ntnode *me);
 
 /**
  * @pre @p parent and @p child previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a child node into the tree. @p child becomes @p parent's 
- * last child.
+ * @brief Inserts a rightmost child node into the tree. @p child 
+ * becomes @p parent's last (rightmost) child.
  * 
  * @param parent Parent node to add child to.
  * @param child Node to insert. This will become @p parent's last child.
@@ -873,8 +1064,8 @@ extern void ecu_ntnode_push_child_back(struct ecu_ntnode *parent, struct ecu_ntn
 
 /**
  * @pre @p parent and @p child previously constructed via @ref ecu_ntnode_ctor().
- * @brief Inserts a child node into the tree. @p child becomes @p parent's 
- * first child.
+ * @brief Inserts a leftmost child node into the tree. @p child 
+ * becomes @p parent's first (leftmost) child.
  * 
  * @param parent Parent node to add child to.
  * @param child Node to insert. This will become @p parent's first child.
@@ -884,9 +1075,9 @@ extern void ecu_ntnode_push_child_front(struct ecu_ntnode *parent, struct ecu_nt
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Removes node from a tree while keeping its subtree
- * intact, thus making it a root. Node can be reused and 
- * added to another tree without reconstruction. 
+ * @brief Removes node from a tree. If the removed node has descendants, 
+ * the node becomes a new root with its tree intact. The tree remains 
+ * unchanged if an empty or root node is supplied.
  * 
  * @param me Node to remove.
  */
@@ -894,10 +1085,8 @@ extern void ecu_ntnode_remove(struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
- * @brief Returns total number of nodes in supplied node's
- * subtree. I.e. total number of children, grandchildren, etc.
- * The supplied node is not included in the size count so
- * 0 is returned if the supplied node is a leaf with no subtree.
+ * @brief Returns the total number of descendants (children, grandchildren,
+ * etc) the node has. Returns 0 if the node has no descendants.
  * 
  * @param me Node to check.
  */
@@ -905,7 +1094,7 @@ extern size_t ecu_ntnode_size(const struct ecu_ntnode *me);
 
 /**
  * @brief Returns true if supplied node has been constructed
- * via @ref ecu_ntnode_ctor(). False otherwise.
+ * via @ref ecu_ntnode_ctor() and can be used. False otherwise.
  * 
  * @param me Node to check.
  */
@@ -1000,6 +1189,127 @@ extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cend(struct ecu_ntnode
  * @param me Const child iterator.
  */
 extern const struct ecu_ntnode *ecu_ntnode_child_iterator_cnext(struct ecu_ntnode_child_citerator *me);
+/**@}*/
+
+/*------------------------------------------------------------*/
+/*------------------- NEXT SIBLING ITERATOR ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @name Next Sibling Iterator
+ */
+/**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over all next (right) siblings, including
+ * the supplied starting node. The supplied starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const next sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_at(struct ecu_ntnode_next_sibling_iterator *me,
+                                                              struct ecu_ntnode *start);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over all next (right) siblings, excluding
+ * the supplied starting node. If the starting node has siblings the next
+ * (right) sibling to it is returned. Otherwise NULL is returned, signifying
+ * the end of the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_NEXT_SIBLING_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const next sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_begin(struct ecu_ntnode_next_sibling_iterator *me,
+                                                                 struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_next_sibling_iterator_at() or @ref ecu_ntnode_next_sibling_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is NULL.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_NEXT_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Non-const next sibling iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_end(struct ecu_ntnode_next_sibling_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_next_sibling_iterator_at() or @ref ecu_ntnode_next_sibling_iterator_begin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_NEXT_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Non-const next sibling iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_next(struct ecu_ntnode_next_sibling_iterator *me);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified version of @ref ecu_ntnode_next_sibling_iterator_at().
+ * Starts an iteration over all next (right) siblings, including
+ * the supplied starting node. The supplied starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const next sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_cat(struct ecu_ntnode_next_sibling_citerator *me,
+                                                                     const struct ecu_ntnode *start);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified version of @ref ecu_ntnode_next_sibling_iterator_begin().
+ * Starts an iteration over all next (right) siblings, excluding
+ * the supplied starting node. If the starting node has siblings the next
+ * (right) sibling to it is returned. Otherwise NULL is returned, signifying
+ * the end of the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const next sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_cbegin(struct ecu_ntnode_next_sibling_citerator *me,
+                                                                        const struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_next_sibling_iterator_cat() or @ref ecu_ntnode_next_sibling_iterator_cbegin().
+ * @brief Const-qualified version of @ref ecu_ntnode_next_sibling_iterator_end().
+ * Returns the ending node in the iteration, which is NULL.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Const next sibling iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_cend(struct ecu_ntnode_next_sibling_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_next_sibling_iterator_cat() or @ref ecu_ntnode_next_sibling_iterator_cbegin().
+ * @brief Const-qualified version of @ref ecu_ntnode_next_sibling_iterator_next().
+ * Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Const next sibling iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_next_sibling_iterator_cnext(struct ecu_ntnode_next_sibling_citerator *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -1312,6 +1622,127 @@ extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_nt
 /**@}*/
 
 /*------------------------------------------------------------*/
+/*------------------- PREV SIBLING ITERATOR ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @name Previous Sibling Iterator
+ */
+/**@{*/
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over all previous (left) siblings, including
+ * the supplied starting node. The supplied starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const prev sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_at(struct ecu_ntnode_prev_sibling_iterator *me,
+                                                              struct ecu_ntnode *start);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Starts an iteration over all previous (left) siblings, excluding
+ * the supplied starting node. If the starting node has siblings the previous
+ * (left) sibling to it is returned. Otherwise NULL is returned, signifying
+ * the end of the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREV_SIBLING_FOR_EACH()
+ * instead.
+ * 
+ * @param me Non-const prev sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_begin(struct ecu_ntnode_prev_sibling_iterator *me,
+                                                                 struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_prev_sibling_iterator_at() or @ref ecu_ntnode_prev_sibling_iterator_begin().
+ * @brief Returns the ending node in the iteration, which is NULL.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_PREV_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Non-const prev sibling iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_end(struct ecu_ntnode_prev_sibling_iterator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_prev_sibling_iterator_at() or @ref ecu_ntnode_prev_sibling_iterator_begin().
+ * @brief Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_PREV_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Non-const prev sibling iterator.
+ */
+extern struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_next(struct ecu_ntnode_prev_sibling_iterator *me);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified version of @ref ecu_ntnode_prev_sibling_iterator_at().
+ * Starts an iteration over all previous (left) siblings, including
+ * the supplied starting node. The supplied starting node is returned.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const prev sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_cat(struct ecu_ntnode_prev_sibling_citerator *me,
+                                                                     const struct ecu_ntnode *start);
+
+/**
+ * @pre Memory already allocated for @p me.
+ * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
+ * @brief Const-qualified version of @ref ecu_ntnode_prev_sibling_iterator_begin().
+ * Starts an iteration over all previous (left) siblings, excluding
+ * the supplied starting node. If the starting node has siblings the previous
+ * (left) sibling to it is returned. Otherwise NULL is returned, signifying
+ * the end of the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH()
+ * instead.
+ * 
+ * @param me Const prev sibling iterator to initialize.
+ * @param start Starting node of the iteration.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_cbegin(struct ecu_ntnode_prev_sibling_citerator *me,
+                                                                        const struct ecu_ntnode *start);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_prev_sibling_iterator_cat() or @ref ecu_ntnode_prev_sibling_iterator_cbegin().
+ * @brief Const-qualified version of @ref ecu_ntnode_prev_sibling_iterator_end().
+ * Returns the ending node in the iteration, which is NULL.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Const prev sibling iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_cend(struct ecu_ntnode_prev_sibling_citerator *me);
+
+/**
+ * @pre @p me started via @ref ecu_ntnode_prev_sibling_iterator_cat() or @ref ecu_ntnode_prev_sibling_iterator_cbegin().
+ * @brief Const-qualified version of @ref ecu_ntnode_prev_sibling_iterator_next().
+ * Returns the next node in the iteration.
+ * 
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH() 
+ * or @ref ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH() instead.
+ * 
+ * @param me Const prev sibling iterator.
+ */
+extern const struct ecu_ntnode *ecu_ntnode_prev_sibling_iterator_cnext(struct ecu_ntnode_prev_sibling_citerator *me);
+/**@}*/
+
+/*------------------------------------------------------------*/
 /*----------------------- SIBLING ITERATOR -------------------*/
 /*------------------------------------------------------------*/
 
@@ -1322,25 +1753,8 @@ extern const struct ecu_ntnode *ecu_ntnode_preorder_iterator_cnext(struct ecu_nt
 /**
  * @pre Memory already allocated for @p me.
  * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
- * @brief Starts an iteration over all siblings, including the supplied
- * starting node. The supplied starting node is returned.
- * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_AT_FOR_EACH()
- * instead.
- * 
- * @param me Non-const sibling iterator to initialize.
- * @param start Starting node of the iteration.
- */
-extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_at(struct ecu_ntnode_sibling_iterator *me,
-                                                         struct ecu_ntnode *start);
-
-/**
- * @pre Memory already allocated for @p me.
- * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
  * @brief Starts an iteration over all siblings, excluding the supplied
- * starting node. If the starting node has siblings, its next (right)
- * sibling is returned. Otherwise NULL is returned, signifying the end
- * of the iteration.
+ * starting node.
  * 
  * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_FOR_EACH()
  * instead.
@@ -1352,22 +1766,22 @@ extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_begin(struct ecu_ntnode_si
                                                             struct ecu_ntnode *start);
 
 /**
- * @pre @p me started via @ref ecu_ntnode_sibling_iterator_at() or @ref ecu_ntnode_sibling_iterator_begin().
- * @brief Returns the ending node in the iteration, which is NULL.
+ * @pre @p me started via @ref ecu_ntnode_sibling_iterator_begin().
+ * @brief Returns the ending node in the iteration.
  * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_AT_FOR_EACH()
- * or @ref ECU_NTNODE_SIBLING_FOR_EACH() instead.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_FOR_EACH()
+ * instead.
  * 
  * @param me Non-const sibling iterator.
  */
 extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_end(struct ecu_ntnode_sibling_iterator *me);
 
 /**
- * @pre @p me started via @ref ecu_ntnode_sibling_iterator_at() or @ref ecu_ntnode_sibling_iterator_begin().
+ * @pre @p me started via @ref ecu_ntnode_sibling_iterator_begin().
  * @brief Returns the next sibling in the iteration.
  * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_AT_FOR_EACH()
- * or @ref ECU_NTNODE_SIBLING_FOR_EACH() instead.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_SIBLING_FOR_EACH()
+ * instead.
  * 
  * @param me Non-const sibling iterator.
  */
@@ -1376,27 +1790,9 @@ extern struct ecu_ntnode *ecu_ntnode_sibling_iterator_next(struct ecu_ntnode_sib
 /**
  * @pre Memory already allocated for @p me.
  * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
- * @brief Const-qualified version of @ref ecu_ntnode_sibling_iterator_at().
- * Starts an iteration over all siblings, including the supplied
- * starting node. The supplied starting node is returned.
- * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH()
- * instead.
- * 
- * @param me Const sibling iterator to initialize.
- * @param start Starting node of the iteration.
- */
-extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cat(struct ecu_ntnode_sibling_citerator *me,
-                                                                const struct ecu_ntnode *start);
-
-/**
- * @pre Memory already allocated for @p me.
- * @pre @p start previously constructed via @ref ecu_ntnode_ctor().
  * @brief Const-qualified version of @ref ecu_ntnode_sibling_iterator_begin().
  * Starts an iteration over all siblings, excluding the supplied
- * starting node. If the starting node has siblings, its next (right)
- * sibling is returned. Otherwise NULL is returned, signifying the end
- * of the iteration.
+ * starting node.
  * 
  * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH()
  * instead.
@@ -1408,24 +1804,24 @@ extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cbegin(struct ecu_nt
                                                                    const struct ecu_ntnode *start);
 
 /**
- * @pre @p me started via @ref ecu_ntnode_sibling_iterator_cat() or @ref ecu_ntnode_sibling_iterator_cbegin().
+ * @pre @p me started via @ref ecu_ntnode_sibling_iterator_cbegin().
  * @brief Const-qualified version of @ref ecu_ntnode_sibling_iterator_end().
- * Returns the ending node in the iteration, which is NULL.
+ * Returns the ending node in the iteration.
  * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH()
- * or @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH() instead.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH()
+ * instead.
  * 
  * @param me Const sibling iterator.
  */
 extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cend(struct ecu_ntnode_sibling_citerator *me);
 
 /**
- * @pre @p me started via @ref ecu_ntnode_sibling_iterator_cat() or @ref ecu_ntnode_sibling_iterator_cbegin().
+ * @pre @p me started via @ref ecu_ntnode_sibling_iterator_cbegin().
  * @brief Const-qualified version of @ref ecu_ntnode_sibling_iterator_next().
  * Returns the next sibling in the iteration.
  * 
- * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_AT_FOR_EACH()
- * or @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH() instead.
+ * @warning Not meant to be used directly. Use @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH()
+ * instead.
  * 
  * @param me Const sibling iterator.
  */
@@ -1436,4 +1832,4 @@ extern const struct ecu_ntnode *ecu_ntnode_sibling_iterator_cnext(struct ecu_ntn
 }
 #endif
 
-#endif /* NTNODE_H_ */
+#endif /* ECU_NTNODE_H_ */

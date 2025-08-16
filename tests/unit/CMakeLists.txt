@@ -34,7 +34,7 @@ target_compile_options(CppUTestExt
 #------------------------------------------------------------#
 #---------------------- UNIT TEST SETTINGS ------------------#
 #------------------------------------------------------------#
-add_executable(ECU_UNIT_TEST
+add_executable(ecu_unit_test
     # Main
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp 
 
@@ -53,18 +53,18 @@ add_executable(ECU_UNIT_TEST
     ${CMAKE_CURRENT_LIST_DIR}/stubs/stub_asserter.cpp
 )
 
-target_compile_features(ECU_UNIT_TEST
+target_compile_features(ecu_unit_test
     PRIVATE 
         # Need C++20 concepts for our unit tests.
         cxx_std_20
 )
 
-target_include_directories(ECU_UNIT_TEST
+target_include_directories(ecu_unit_test
     PRIVATE 
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-target_compile_options(ECU_UNIT_TEST
+target_compile_options(ecu_unit_test
     PRIVATE
         # C++ compiler flags. We know unit tests will be C++ so we can use this generator expression.
         $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
@@ -82,7 +82,12 @@ target_compile_options(ECU_UNIT_TEST
 #------------------------------------------------------------#
 #------------------------- LINKING --------------------------#
 #------------------------------------------------------------#
-target_link_libraries(ECU_UNIT_TEST
+target_link_options(ecu_unit_test
+    PRIVATE
+        $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
+)
+
+target_link_libraries(ecu_unit_test
     PRIVATE 
         ecu             # Strict warnings. All of them enabled for actual library. See top CMake file.
         CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
@@ -90,7 +95,7 @@ target_link_libraries(ECU_UNIT_TEST
 )
 
 #------------------------------------------------------------#
-#-------------------------- CTEST ---------------------------#
+#---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
 include(CppUTest)
-cpputest_discover_tests(ECU_UNIT_TEST)
+cpputest_discover_tests(ecu_unit_test)

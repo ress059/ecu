@@ -77,7 +77,7 @@ target_compile_options(ecu_warning_flags
 # Warn the user that run-time asserts are being disabled. It is
 # not recommended to disable run-time asserts but we have this
 # as an option to decrease overhead of the library.
-if(${ECU_DISABLE_RUNTIME_ASSERTS})
+if(ECU_DISABLE_RUNTIME_ASSERTS)
     message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts "
                     "will not fire in this library. Are you sure you wish to disable asserts??")
 
@@ -105,7 +105,13 @@ target_link_libraries(ecu
 #------------------------------------------------------------#
 #---------------------- INTERNAL TESTS ----------------------#
 #------------------------------------------------------------#
-if(${ECU_ENABLE_UNIT_TESTING})
+if(ECU_ENABLE_UNIT_TESTING)
+    target_compile_options(ecu
+        PRIVATE
+            # Compile for code coverage for ECU source code.
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path>
+    )
+
     target_compile_definitions(ecu
         PUBLIC 
             ECU_UNIT_TEST 
@@ -116,6 +122,6 @@ if(${ECU_ENABLE_UNIT_TESTING})
     include(CTest)
     enable_testing()
     add_subdirectory(tests/unit)
-elseif(${ECU_ENABLE_BUILD_TESTING})
+elseif(ECU_ENABLE_BUILD_TESTING)
     add_subdirectory(tests/build)
 endif()

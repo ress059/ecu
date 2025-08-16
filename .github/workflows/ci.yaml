@@ -1,50 +1,40 @@
-name: CI
+name: Builds and Unit Tests
 
-on:
-  push:
-  pull_request:
-    branches: 
-      - 'main'
+on: push
 
 jobs:
   build:
     name: Build
-
     runs-on: [ubuntu-24.04]
-
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
-
       matrix:
         # TODO: Add stm32l432xc-build-test, and other cross-compilation stuff later.
         preset: [linux-build-test]
         assert: [ECU_DISABLE_RUNTIME_ASSERTS=OFF, ECU_DISABLE_RUNTIME_ASSERTS=ON]
-
     steps:
     - uses: actions/checkout@v4
-
-    - name: Configure CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
-      run: cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
-
     - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
-      run: cmake --build --clean-first --preset ${{matrix.preset}}
+      run: |
+        cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
+        cmake --build --clean-first --preset ${{matrix.preset}}
 
   test:
     name: Unit Test
-
     needs: [build]
-
     runs-on: [ubuntu-24.04]
-
     steps:
     - uses: actions/checkout@v4
-
-    - name: Configure CMake preset unit-test
-      run: cmake --preset unit-test
-
-    - name: Build CMake preset unit-test
-      run: cmake --build --preset unit-test
-
-    - name: Run CMake preset unit-test
+    - name: Build tests
+      run: |
+        cmake --preset unit-test
+        cmake --build --preset unit-test
+    - name: Run tests
       run: ctest --preset unit-test
+    - name: Upload code coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+      

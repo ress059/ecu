@@ -68,8 +68,9 @@
     (sizeof(((type_ *)0)->member_))
 
 /**
- * @brief Returns true if derived class correctly inherits 
- * base class via C-style inheritance. False otherwise.
+ * @brief Verifies, at compile-time, that derived class 
+ * correctly inherits base class via C-style inheritance. 
+ * Returns true if this condition is satisfied. False otherwise.
  * 
  * @param base_ Name of base class member within 
  * user's @p derived_ type.
@@ -77,5 +78,25 @@
  */
 #define ECU_IS_BASE_OF(base_, derived_) \
     ((bool)(offsetof(derived_, base_) == (size_t)0))
+
+/**
+ * @brief Verifies, at compile-time, that supplied type is 
+ * signed. Returns true if this condition is satisfied. 
+ * False otherwise.
+ * 
+ * @param type_ Type to check. I.e. int8_t, uint8_t, etc.
+ */
+#define ECU_IS_SIGNED(type_) \
+    ((bool)((type_)-1 < (type_)0))
+
+/**
+ * @brief Verifies, at compile-time, that supplied type is 
+ * unsigned. Returns true if this condition is satisfied. 
+ * False otherwise
+ * 
+ * @param type_ Type to check. I.e. int8_t, uint8_t, etc.
+ */    
+#define ECU_IS_UNSIGNED(type_) \
+    ((bool)((type_)-1 > (type_)0))
 
 #endif /* ECU_UTILS_H_ */

@@ -17,19 +17,6 @@
 			}
 		},
 		{
-			"name": "unit-test",
-            "displayName": "unit-test",
-            "description": "Build unit tests. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
-            "binaryDir": "bin/tests/unit",
-            "toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
-			"cacheVariables": 
-			{
-				"ECU_ENABLE_UNIT_TESTING": true,
-				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
-				"CMAKE_BUILD_TYPE": "Debug"
-			}
-		},
-		{
 			"name": "linux-build-test",
 			"inherits": "build-test",
 			"displayName": "linux-build-test",
@@ -52,14 +39,22 @@
             {
                 "MCU": "stm32l432xc"
             }
+		},
+		{
+			"name": "unit-test",
+            "displayName": "unit-test",
+            "description": "Build unit tests with code coverage. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
+            "binaryDir": "bin/tests/unit",
+            "toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
+			"cacheVariables": 
+			{
+				"ECU_ENABLE_UNIT_TESTING": true,
+				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
 		}
     ],
 	"buildPresets": [
-        {
-			"name": "unit-test",
-			"displayName": "unit-test",
-			"configurePreset": "unit-test"
-		},
         {
 			"name": "linux-build-test",
 			"displayName": "linux-build-test",
@@ -71,6 +66,11 @@
 			"displayName": "stm32l432xc-build-test",
 			"configurePreset": "stm32l432xc-build-test",
 			"verbose": true
+		},
+        {
+			"name": "unit-test",
+			"displayName": "unit-test",
+			"configurePreset": "unit-test"
 		}
 	],
     "testPresets": [

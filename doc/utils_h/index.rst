@@ -211,3 +211,31 @@ if this condition is satisfied. False otherwise:
 
     /* Compilation error. */
     ECU_STATIC_ASSERT( (ECU_IS_BASEOF(base, struct my_derived_incorrect)), "struct my_base must be first member.");
+
+ECU_IS_SIGNED()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Verifies, at compile-time, that supplied type is signed. Returns true
+if this condition is satisfied. False otherwise:
+
+.. code-block:: c 
+
+    /* Passes. */
+    ECU_STATIC_ASSERT( (ECU_IS_SIGNED(int8_t)), "type must be signed." );
+    ECU_STATIC_ASSERT( (ECU_IS_SIGNED(float)), "type must be signed." );
+
+    /* Fails. */
+    ECU_STATIC_ASSERT( (ECU_IS_SIGNED(uint8_t)), "type must be signed." );
+
+ECU_IS_UNSIGNED()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Verifies, at compile-time, that supplied type is unsigned. Returns true
+if this condition is satisfied. False otherwise:
+
+.. code-block:: c 
+
+    /* Passes. */
+    ECU_STATIC_ASSERT( (ECU_IS_UNSIGNED(uint8_t)), "type must be unsigned." );
+
+    /* Fails. */
+    ECU_STATIC_ASSERT( (ECU_IS_UNSIGNED(int8_t)), "type must be unsigned." );
+    ECU_STATIC_ASSERT( (ECU_IS_UNSIGNED(float)), "type must be unsigned." );

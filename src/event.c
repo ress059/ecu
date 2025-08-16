@@ -18,8 +18,9 @@
 /* Translation unit. */
 #include "ecu/event.h"
 
-/* Asserts. */
+/* ECU. */
 #include "ecu/asserter.h"
+#include "ecu/utils.h"
 
 /*------------------------------------------------------------*/
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
@@ -31,8 +32,7 @@ ECU_ASSERT_DEFINE_NAME("ecu/event.c")
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
-/* Produce compilation error if ecu_event_id is an unsigned type. */
-ECU_STATIC_ASSERT( (((ecu_event_id)(-1)) < ((ecu_event_id)(0))), "ecu_event_id must be a signed type." );
+ECU_STATIC_ASSERT( (ECU_IS_SIGNED(ecu_event_id)), "ecu_event_id must be a signed type." );
 
 /* The start of event IDs that users can define must always be 0 for future compatibility. */
 ECU_STATIC_ASSERT( (ECU_USER_EVENT_ID_BEGIN == 0), "ECU_USER_EVENT_ID_BEGIN must equal 0." );

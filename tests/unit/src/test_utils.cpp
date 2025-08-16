@@ -13,6 +13,22 @@
  * @ref ECU_FIELD_SIZEOF()
  *      - TEST(Utils, FieldSizeOf)
  * 
+ * @ref ECU_IS_BASE_OF()
+ *      - TEST(Utils, IsBaseOfCorrectCInheritance)
+ *      - TEST(Utils, IsBaseOfIncorrectCInheritance)
+ * 
+ * @ref ECU_IS_SIGNED()
+ *      - TEST(Utils, IsSignedTypeIsSignedInteger)
+ *      - TEST(Utils, IsSignedTypeIsUnsignedInteger)
+ *      - TEST(Utils, IsSignedTypeIsFloat)
+ *      - TEST(Utils, IsSignedTypeIsDouble)
+ * 
+ * @ref ECU_IS_UNSIGNED()
+ *      - TEST(Utils, IsUnsignedTypeIsSignedInteger)
+ *      - TEST(Utils, IsUnsignedTypeIsUnsignedInteger)
+ *      - TEST(Utils, IsUnsignedTypeIsFloat)
+ *      - TEST(Utils, IsUnsignedTypeIsDouble)
+ * 
  * @author Ian Ress
  * @version 0.1
  * @date 2025-07-14
@@ -76,10 +92,38 @@ TEST_GROUP(Utils)
         std::uint8_t c;
         std::uint32_t d;
     };
+
+    /**
+     * @brief Used to test @ref ECU_IS_BASE_OF().
+     */
+    struct base
+    {
+        std::uint8_t a;
+    };
+
+    /**
+     * @brief Used to test @ref ECU_IS_BASE_OF().
+     */
+    struct correct_derived
+    {
+        base super;
+        std::uint8_t b;
+        std::uint8_t c;
+    };
+
+    /**
+     * @brief Used to test @ref ECU_IS_BASE_OF().
+     */
+    struct incorrect_derived
+    {
+        std::uint8_t b;
+        base super;
+        std::uint8_t c;
+    };
 };
 
 /*------------------------------------------------------------*/
-/*--------------------- TESTS - CONTAINER_OF -----------------*/
+/*------------------ TESTS - ECU_CONTAINER_OF ----------------*/
 /*------------------------------------------------------------*/
 
 /**
@@ -217,7 +261,7 @@ TEST(Utils, ConstContainerOf)
 }
 
 /*------------------------------------------------------------*/
-/*--------------------- TESTS - FIELD_SIZEOF -----------------*/
+/*------------------- TESTS - ECU_FIELD_SIZEOF ---------------*/
 /*------------------------------------------------------------*/
 
 /**
@@ -237,6 +281,188 @@ TEST(Utils, FieldSizeOf)
         /* Steps 2 and 3: Action and assert. */
         CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, a) == sizeof(std::uint8_t)) );
         CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, b) == sizeof(std::uint32_t)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - ECU_IS_BASE_OF -----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Returns true.
+ */
+TEST(Utils, IsBaseOfCorrectCInheritance)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ECU_IS_BASE_OF(super, correct_derived)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns false.
+ */
+TEST(Utils, IsBaseOfIncorrectCInheritance)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ECU_IS_BASE_OF(super, incorrect_derived)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - ECU_IS_SIGNED ------------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Returns true.
+ */
+TEST(Utils, IsSignedTypeIsSignedInteger)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ECU_IS_SIGNED(signed int)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns false.
+ */
+TEST(Utils, IsSignedTypeIsUnsignedInteger)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ECU_IS_SIGNED(unsigned int)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns true.
+ */
+TEST(Utils, IsSignedTypeIsFloat)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ECU_IS_SIGNED(float)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns true.
+ */
+TEST(Utils, IsSignedTypeIsDouble)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ECU_IS_SIGNED(double)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------ TESTS - ECU_IS_UNSIGNED -----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Returns false.
+ */
+TEST(Utils, IsUnsignedTypeIsSignedInteger)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ECU_IS_UNSIGNED(signed int)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns true.
+ */
+TEST(Utils, IsUnsignedTypeIsUnsignedInteger)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_TRUE( (ECU_IS_UNSIGNED(unsigned int)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns false.
+ */
+TEST(Utils, IsUnsignedTypeIsFloat)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ECU_IS_UNSIGNED(float)) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Returns false.
+ */
+TEST(Utils, IsUnsignedTypeIsDouble)
+{
+    try
+    {
+        /* Steps 2 and 3: Action and assert. */
+        CHECK_FALSE( (ECU_IS_UNSIGNED(double)) );
     }
     catch (const AssertException& e)
     {
