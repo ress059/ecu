@@ -35,12 +35,14 @@ jobs:
     - name: Create code coverage
       run: |
         sudo apt-get install -y gcovr
-        gcovr --json-pretty > coverage.json
+        gcovr --filter=src/ --json-pretty > coverage.json
+    - name: Show coverage report (debugging)
+      run: cat coverage.json
     - name: Upload code coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
-        disable_search:
-        fail_ci_if_error:
+        disable_search: true
+        fail_ci_if_error: true
         files: coverage.json
         token: ${{ secrets.CODECOV_TOKEN }}
       
