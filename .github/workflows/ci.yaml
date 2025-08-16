@@ -16,8 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
-      run: cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
-      run: cmake --build --clean-first --preset ${{matrix.preset}}
+      run: |
+        cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
+        cmake --build --clean-first --preset ${{matrix.preset}}
 
   test:
     name: Unit Test
@@ -26,8 +27,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build tests
-      run: cmake --preset unit-test
-      run: cmake --build --preset unit-test
+      run: |
+        cmake --preset unit-test
+        cmake --build --preset unit-test
     - name: Run tests
       run: ctest --preset unit-test
     - name: Upload code coverage to Codecov
