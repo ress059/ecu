@@ -1,5 +1,4 @@
-codecov: 
-  token: 757ea88d-662c-47d2-8b5d-4e11b4387261
+codecov:
   status:
     project:
       default:
@@ -18,8 +17,8 @@ comment:
 
 parsers:
   gcov:
-  branch_detection:
-    conditional: yes
-    loop: yes
-    method: yes
-    macro: no
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: yes
+      macro: no
