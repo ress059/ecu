@@ -82,12 +82,10 @@ target_compile_options(ecu_unit_test
 #------------------------------------------------------------#
 #------------------------- LINKING --------------------------#
 #------------------------------------------------------------#
-if(ECU_ENABLE_CODE_COVERAGE)
-    target_link_options(ecu_unit_test
-        PRIVATE
-            $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
-    )
-endif()
+target_link_options(ecu_unit_test
+    PRIVATE
+        $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
+)
 
 target_link_libraries(ecu_unit_test
     PRIVATE 
@@ -97,22 +95,7 @@ target_link_libraries(ecu_unit_test
 )
 
 #------------------------------------------------------------#
-#----- CODE COVERAGE OR CTEST DEPENDING ON CONFIGURATION ----#
+#---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
-if(ECU_ENABLE_CODE_COVERAGE)
-    if(NOT DEFINED GCOV)
-        message(FATAL_ERROR "GCOV variable must point to toolchain's code coverage tool. Usually defined from cmake toolchain file.")
-    endif()
-
-    add_custom_target(ecu_code_coverage ALL
-        COMMAND
-            ecu_unit_test # Run unit test executable to generate .gcda files.
-        COMMAND
-            gcovr --gcov-executable ${GCOV} # Run GCC gcov created in linux-gnu-x86_64.cmake toolchain file.
-                --json-pretty > ${CMAKE_BINARY_DIR}/coverage.json # Generate bin/coverage/coverage.json that Codecov can understand. Use .json instead of .xml so gcovr v5.1 (default in Ubuntu 22.04) can be used.
-                --root ${CMAKE_SOURCE_DIR} # Top-level directory. gcovr recursively searches in this directory for .gcda files and maps to source files.
-    )
-else()
-    include(CppUTest)
-    cpputest_discover_tests(ecu_unit_test)
-endif()
+include(CppUTest)
+cpputest_discover_tests(ecu_unit_test)

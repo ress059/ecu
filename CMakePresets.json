@@ -17,19 +17,6 @@
 			}
 		},
 		{
-			"name": "code-coverage",
-            "displayName": "code-coverage",
-            "description": "Build and run unit tests. Generate code coverage report. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
-            "binaryDir": "bin/coverage",
-            "toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
-			"cacheVariables": 
-			{
-				"ECU_ENABLE_CODE_COVERAGE": true,
-				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
-				"CMAKE_BUILD_TYPE": "Debug"
-			}
-		},
-		{
 			"name": "linux-build-test",
 			"inherits": "build-test",
 			"displayName": "linux-build-test",
@@ -56,7 +43,7 @@
 		{
 			"name": "unit-test",
             "displayName": "unit-test",
-            "description": "Build unit tests. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
+            "description": "Build unit tests with code coverage. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
             "binaryDir": "bin/tests/unit",
             "toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
 			"cacheVariables": 
@@ -68,11 +55,6 @@
 		}
     ],
 	"buildPresets": [
-		{	"name": "code-coverage",
-			"displayName": "code-coverage",
-			"configurePreset": "code-coverage",
-			"verbose": true
-		},
         {
 			"name": "linux-build-test",
 			"displayName": "linux-build-test",

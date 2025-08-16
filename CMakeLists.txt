@@ -94,15 +94,6 @@ if(ECU_DISABLE_RUNTIME_ASSERTS)
     )
 endif()
 
-# Pass necessary compiler flags only for ECU source code if compiling
-# for code coverage report generation.
-if(ECU_ENABLE_CODE_COVERAGE)
-    target_compile_options(ecu
-        PRIVATE
-            $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path>
-    )
-endif()
-
 # Note how ECU-specific warning flags are private so it is not propogated
 # to the user's application. However our internal tests can still use 
 # ecu_warning_flags target to get all of the warning flags.
@@ -114,7 +105,13 @@ target_link_libraries(ecu
 #------------------------------------------------------------#
 #---------------------- INTERNAL TESTS ----------------------#
 #------------------------------------------------------------#
-if(ECU_ENABLE_CODE_COVERAGE OR ECU_ENABLE_UNIT_TESTING)
+if(ECU_ENABLE_UNIT_TESTING)
+    target_compile_options(ecu
+        PRIVATE
+            # Compile for code coverage for ECU source code.
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path>
+    )
+
     target_compile_definitions(ecu
         PUBLIC 
             ECU_UNIT_TEST 
