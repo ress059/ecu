@@ -33,7 +33,9 @@ jobs:
     - name: Run tests
       run: ctest --preset unit-test
     - name: Create code coverage
-      run: gcovr --json-pretty > coverage.json
+      run: |
+        sudo apt-get install -y gcovr
+        gcovr --json-pretty > coverage.json
     - name: Upload code coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
