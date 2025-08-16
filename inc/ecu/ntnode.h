@@ -410,8 +410,8 @@
          var_ = ecu_ntnode_prev_sibling_iterator_cnext(citer_))
 
 /**
- * @brief Iterates over all siblings, excluding the starting 
- * node. Performs wraparound if starting sibling is not the 
+ * @brief Iterates (for-loops) over all siblings, excluding the 
+ * starting node. Performs wraparound if starting sibling is not the 
  * first sibling. It is safe to remove or destroy the current 
  * node in the iteration.
  * 
@@ -435,7 +435,7 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_NTNODE_SIBLING_FOR_EACH().
- * Iterates over all siblings, excluding the starting 
+ * Iterates (for-loops) over all siblings, excluding the starting 
  * node. Performs wraparound if starting sibling is not the 
  * first sibling.
  * 

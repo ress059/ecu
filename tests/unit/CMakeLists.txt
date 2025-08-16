@@ -34,7 +34,7 @@ target_compile_options(CppUTestExt
 #------------------------------------------------------------#
 #---------------------- UNIT TEST SETTINGS ------------------#
 #------------------------------------------------------------#
-add_executable(ECU_UNIT_TEST
+add_executable(ecu_unit_test
     # Main
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp 
 
@@ -53,18 +53,18 @@ add_executable(ECU_UNIT_TEST
     ${CMAKE_CURRENT_LIST_DIR}/stubs/stub_asserter.cpp
 )
 
-target_compile_features(ECU_UNIT_TEST
+target_compile_features(ecu_unit_test
     PRIVATE 
         # Need C++20 concepts for our unit tests.
         cxx_std_20
 )
 
-target_include_directories(ECU_UNIT_TEST
+target_include_directories(ecu_unit_test
     PRIVATE 
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-target_compile_options(ECU_UNIT_TEST
+target_compile_options(ecu_unit_test
     PRIVATE
         # C++ compiler flags. We know unit tests will be C++ so we can use this generator expression.
         $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
@@ -82,7 +82,14 @@ target_compile_options(ECU_UNIT_TEST
 #------------------------------------------------------------#
 #------------------------- LINKING --------------------------#
 #------------------------------------------------------------#
-target_link_libraries(ECU_UNIT_TEST
+if(ECU_ENABLE_CODE_COVERAGE)
+    target_link_options(ecu_unit_test
+        PRIVATE
+            $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
+    )
+endif()
+
+target_link_libraries(ecu_unit_test
     PRIVATE 
         ecu             # Strict warnings. All of them enabled for actual library. See top CMake file.
         CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
@@ -90,7 +97,22 @@ target_link_libraries(ECU_UNIT_TEST
 )
 
 #------------------------------------------------------------#
-#-------------------------- CTEST ---------------------------#
+#----- CODE COVERAGE OR CTEST DEPENDING ON CONFIGURATION ----#
 #------------------------------------------------------------#
-include(CppUTest)
-cpputest_discover_tests(ECU_UNIT_TEST)
+if(ECU_ENABLE_CODE_COVERAGE)
+    if(NOT DEFINED GCOV)
+        message(FATAL_ERROR "GCOV variable must point to toolchain's code coverage tool. Usually defined from cmake toolchain file.")
+    endif()
+
+    add_custom_target(ecu_code_coverage ALL
+        COMMAND
+            ecu_unit_test # Run unit test executable to generate .gcda files.
+        COMMAND
+            gcovr --gcov-executable ${GCOV} # Run GCC gcov created in linux-gnu-x86_64.cmake toolchain file.
+                --json-pretty > ${CMAKE_BINARY_DIR}/coverage.json # Generate bin/coverage/coverage.json that Codecov can understand. Use .json instead of .xml so gcovr v5.1 (default in Ubuntu 22.04) can be used.
+                --root ${CMAKE_SOURCE_DIR} # Top-level directory. gcovr recursively searches in this directory for .gcda files and maps to source files.
+    )
+else()
+    include(CppUTest)
+    cpputest_discover_tests(ecu_unit_test)
+endif()

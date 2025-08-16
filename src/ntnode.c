@@ -225,21 +225,6 @@ size_t ecu_ntnode_count(const struct ecu_ntnode *me)
     return (ecu_dlist_size(&me->children));
 }
 
-bool ecu_ntnode_empty(const struct ecu_ntnode *me)
-{
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_ntnode_valid(me)) );
-    bool status = false;
-
-    if ((ecu_ntnode_is_root(me)) &&
-        (ecu_ntnode_count(me) == 0))
-    {
-        status = true;
-    }
-
-    return status;
-}
-
 struct ecu_ntnode *ecu_ntnode_first_child(struct ecu_ntnode *me)
 {
     ECU_RUNTIME_ASSERT( (me) );

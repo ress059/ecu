@@ -328,6 +328,54 @@
  *      - TEST(NtNode, PreorderIteratorMultipleTimes)
  *      - TEST(NtNode, ConstPreorderIteratorMultipleTimes)
  * 
+ * @ref ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(), @ref ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(),
+ * @ref ecu_ntnode_prev_sibling_iterator_at(), @ref ecu_ntnode_prev_sibling_iterator_end(),
+ * @ref ecu_ntnode_prev_sibling_iterator_next(), @ref ecu_ntnode_prev_sibling_iterator_cat(),
+ * @ref ecu_ntnode_prev_sibling_iterator_cend(), @ref ecu_ntnode_prev_sibling_iterator_cnext()
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsFirstSibling)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorStartIsFirstSibling)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsMiddleSibling)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorStartIsMiddleSibling)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsLastSibling)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorStartIsLastSibling)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsRoot)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorStartIsRoot)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartHasOneSibling)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorStartHasOneSibling)
+ *      - TEST(NtNode, PrevSiblingAtIteratorRemoveSome)
+ *      - TEST(NtNode, PrevSiblingAtIteratorRemoveAll)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsRootRemoveRoot)
+ *      - TEST(NtNode, PrevSiblingAtIteratorDestroySome)
+ *      - TEST(NtNode, PrevSiblingAtIteratorDestroyAll)
+ *      - TEST(NtNode, PrevSiblingAtIteratorStartIsRootDestroyRoot)
+ *      - TEST(NtNode, PrevSiblingAtIteratorNextAfterDone)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorNextAfterDone)
+ *      - TEST(NtNode, PrevSiblingAtIteratorMultipleTimes)
+ *      - TEST(NtNode, ConstPrevSiblingAtIteratorMultipleTimes)
+ * 
+ * @ref ECU_NTNODE_PREV_SIBLING_FOR_EACH(), @ref ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(),
+ * @ref ecu_ntnode_prev_sibling_iterator_begin(), @ref ecu_ntnode_prev_sibling_iterator_end(),
+ * @ref ecu_ntnode_prev_sibling_iterator_next(), @ref ecu_ntnode_prev_sibling_iterator_cbegin(),
+ * @ref ecu_ntnode_prev_sibling_iterator_cend(), @ref ecu_ntnode_prev_sibling_iterator_cnext()
+ *      - TEST(NtNode, PrevSiblingIteratorStartIsFirstSibling)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorStartIsFirstSibling)
+ *      - TEST(NtNode, PrevSiblingIteratorStartIsMiddleSibling)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorStartIsMiddleSibling)
+ *      - TEST(NtNode, PrevSiblingIteratorStartIsLastSibling)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorStartIsLastSibling)
+ *      - TEST(NtNode, PrevSiblingIteratorStartIsRoot)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorStartIsRoot)
+ *      - TEST(NtNode, PrevSiblingIteratorStartHasOneSibling)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorStartHasOneSibling)
+ *      - TEST(NtNode, PrevSiblingIteratorRemoveSome)
+ *      - TEST(NtNode, PrevSiblingIteratorRemoveAll)
+ *      - TEST(NtNode, PrevSiblingIteratorDestroySome)
+ *      - TEST(NtNode, PrevSiblingIteratorDestroyAll)
+ *      - TEST(NtNode, PrevSiblingIteratorNextAfterDone)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorNextAfterDone)
+ *      - TEST(NtNode, PrevSiblingIteratorMultipleTimes)
+ *      - TEST(NtNode, ConstPrevSiblingIteratorMultipleTimes)
+ * 
  * @ref ECU_NTNODE_SIBLING_FOR_EACH(), @ref ECU_NTNODE_CONST_SIBLING_FOR_EACH(),
  * @ref ecu_ntnode_sibling_iterator_begin(), @ref ecu_ntnode_sibling_iterator_end(),
  * @ref ecu_ntnode_sibling_iterator_next(), @ref ecu_ntnode_sibling_iterator_cbegin(),
@@ -350,8 +398,6 @@
  *      - TEST(NtNode, ConstSiblingIteratorNextAfterDone)
  *      - TEST(NtNode, SiblingIteratorMultipleTimes)
  *      - TEST(NtNode, ConstSiblingIteratorMultipleTimes)
- * 
- * !!! TODO sibling prev, and sibling at prev iterators!!!!
  * 
  * @author Ian Ress
  * @version 0.1
@@ -6051,7 +6097,6 @@ TEST(NtNode, NextSiblingAtIteratorDestroyAll)
 
 /**
  * @brief Iteration should be able to exit after root destroyed.
- * @warning Test validation requires working postorder iterator.
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsRootDestroyRoot)
 {
@@ -10306,13 +10351,1447 @@ TEST(NtNode, ConstPreorderIteratorMultipleTimes)
 /*------------------------------------------------------------*/
 /*-------------- TESTS - PREV SIBLING AT ITERATOR ------------*/
 /*------------------------------------------------------------*/
-!!!! TODO Stopped here. Prev sibling iterator tests and proofread ntnode docs.
-#warning "TODO!!"
+
+/**
+ * @brief Starting node returned then iteration ends.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsFirstSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Starting node returned then iteration ends.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorStartIsFirstSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsMiddleSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3---RW4---RW5---RW6
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorStartIsMiddleSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3---RW4---RW5---RW6
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsLastSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2---------------------RW3
+        |       |                       |
+        RW4     RW5---RW6---RW7---RW8   RW9---RW10
+                |           |
+                RW11        RW12
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        add_children(RW.at(1), RW.at(4));
+        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        add_children(RW.at(3), RW.at(9), RW.at(10));
+        add_children(RW.at(5), RW.at(11));
+        add_children(RW.at(7), RW.at(12));
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorStartIsLastSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2---------------------RW3
+        |       |                       |
+        RW4     RW5---RW6---RW7---RW8   RW9---RW10
+                |           |
+                RW11        RW12
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        add_children(RW.at(1), RW.at(4));
+        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        add_children(RW.at(3), RW.at(9), RW.at(10));
+        add_children(RW.at(5), RW.at(11));
+        add_children(RW.at(7), RW.at(12));
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Root returned then iteration ends.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsRoot)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_NODES_IN_TREE(empty_root);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Root returned then iteration ends.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorStartIsRoot)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_NODES_IN_TREE(empty_root);
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartHasOneSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        |
+        RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(1), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorStartHasOneSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        |
+        RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(1), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove some nodes in the middle of an iteration. 
+ * Verify trees intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingAtIteratorRemoveSome)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1---RW2---RO0-----RO1
+        |           |       |
+        RW3---RW4   RW5     RW6---RW7
+        
+        After:
+        RW0                 RW1         RW2
+        |                   |
+        RO0-----RO1         RW3---RW4
+        |       |
+        RW5     RW6---RW7
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1));
+        add_children(RW.at(1), RW.at(3), RW.at(4));
+        add_children(RO.at(0), RW.at(5));
+        add_children(RO.at(1), RW.at(6), RW.at(7));
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RO.at(1))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(5), RO.at(0), RW.at(6), RW.at(7), RO.at(1), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+
+        /* Step 3: Assert. Verify removed trees intact. */
+        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        CHECK_TRUE( (not_in_tree(RW.at(2))) );
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove all nodes in the iteration. Verify
+ * trees intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingAtIteratorRemoveAll)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1---RW2---RW3-----RW4
+        |                   |
+        RW5---RW6           RW8---RW9
+        
+        After:
+        RW0     RW1         RW2     RW3     RW4
+                |                           |
+                RW5---RW6                   RW8---RW9
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+        add_children(RW.at(1), RW.at(5), RW.at(6));
+        add_children(RW.at(4), RW.at(8), RW.at(9));
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(4))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        CHECK_TRUE( (not_in_tree(RW.at(0))) );
+
+        /* Step 3: Assert. Verify removed trees intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Nothing happens to tree.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsRootRemoveRoot)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Destroy some nodes in the middle of an iteration. 
+ * Verify remaining tree intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingAtIteratorDestroySome)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1-----DN0---------RW2-----DN1
+        |       |           |       |
+        RW3     RW4---RW5   RW6     RW7
+        |
+        RW8
+        
+        After:
+        RW0
+        |
+        RW1-----RW2
+        |       |
+        RW3     RW6
+        |
+        RW8
+        */
+        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
+        add_children(RW.at(1), RW.at(3));
+        add_children(DN.at(0), RW.at(4), RW.at(5));
+        add_children(RW.at(2), RW.at(6));
+        add_children(DN.at(1), RW.at(7));
+        add_children(RW.at(3), RW.at(8));
+        EXPECT_NODES_DESTROYED(DN.at(1), RW.at(7), DN.at(0), RW.at(4), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(1))
+        {
+            convert(n).accept(node_destroy_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Destroy all nodes in the iteration. Verify
+ * remaining tree intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingAtIteratorDestroyAll)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1
+        |
+        DN0-----DN1---------DN2-----DN3
+        |       |           |       |
+        RW2     RW3---RW4   RW5     RW6
+        |
+        RW7 
+        
+        After:
+        RW0
+        |
+        RW1
+        */
+        add_children(RW.at(0), RW.at(1));
+        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+        add_children(DN.at(0), RW.at(2));
+        add_children(DN.at(1), RW.at(3), RW.at(4));
+        add_children(DN.at(2), RW.at(5));
+        add_children(DN.at(3), RW.at(6));
+        add_children(RW.at(2), RW.at(7));
+        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2),
+                               RW.at(5), DN.at(3), RW.at(6));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(3))
+        {
+            convert(n).accept(node_destroy_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration should be able to exit after root destroyed.
+ */
+TEST(NtNode, PrevSiblingAtIteratorStartIsRootDestroyRoot)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
+        {
+            ecu_ntnode_destroy(n);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Calling next() after an iteration is finished
+ * is not allowed.
+ */
+TEST(NtNode, PrevSiblingAtIteratorNextAfterDone)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
+        {
+            (void)n;
+        }
+        (void)ecu_ntnode_prev_sibling_iterator_next(&iter);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException &e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Calling cnext() after an iteration is finished
+ * is not allowed.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorNextAfterDone)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
+        {
+            (void)n;
+        }
+        (void)ecu_ntnode_prev_sibling_iterator_cnext(&citer);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException &e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration can be conducted multiple times in a row.
+ */
+TEST(NtNode, PrevSiblingAtIteratorMultipleTimes)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2---RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
+        ecu_ntnode_prev_sibling_iterator iter;
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration can be conducted multiple times in a row.
+ */
+TEST(NtNode, ConstPrevSiblingAtIteratorMultipleTimes)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2---RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
+        ecu_ntnode_prev_sibling_citerator citer;
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException &e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
 /*------------------------------------------------------------*/
 /*--------------- TESTS - PREV SIBLING ITERATOR --------------*/
 /*------------------------------------------------------------*/
-#warning "TODO!!"
+
+/**
+ * @brief Iteration immediately ends.
+ */
+TEST(NtNode, PrevSiblingIteratorStartIsFirstSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration immediately ends.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorStartIsFirstSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, PrevSiblingIteratorStartIsMiddleSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3---RW4---RW5---RW6
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorStartIsMiddleSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2
+                |
+                RW3---RW4---RW5---RW6
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(5))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, PrevSiblingIteratorStartIsLastSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2---------------------RW3
+        |       |                       |
+        RW4     RW5---RW6---RW7---RW8   RW9---RW10
+                |           |
+                RW11        RW12
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        add_children(RW.at(1), RW.at(4));
+        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        add_children(RW.at(3), RW.at(9), RW.at(10));
+        add_children(RW.at(5), RW.at(11));
+        add_children(RW.at(7), RW.at(12));
+        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Verify correct nodes in iteration returned.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorStartIsLastSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1-----RW2---------------------RW3
+        |       |                       |
+        RW4     RW5---RW6---RW7---RW8   RW9---RW10
+                |           |
+                RW11        RW12
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        add_children(RW.at(1), RW.at(4));
+        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+        add_children(RW.at(3), RW.at(9), RW.at(10));
+        add_children(RW.at(5), RW.at(11));
+        add_children(RW.at(7), RW.at(12));
+        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(8))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration immediately ends.
+ */
+TEST(NtNode, PrevSiblingIteratorStartIsRoot)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &empty_root)
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration immediately ends.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorStartIsRoot)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &empty_root)
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Sibling returned then iteration ends.
+ */
+TEST(NtNode, PrevSiblingIteratorStartHasOneSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        |
+        RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(1), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Sibling returned then iteration ends.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorStartHasOneSibling)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2
+        |
+        RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2));
+        add_children(RW.at(1), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(1));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove some nodes in the middle of an iteration. 
+ * Verify trees intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingIteratorRemoveSome)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1---RW2---RW3-----RW4
+        |           |       |
+        RW5---RW6   RW7     RW8---RW9
+        
+        After:
+        RW0                         RW1
+        |                           |
+        RW2-----RW3-----RW4         RW5---RW6
+                |       |
+                RW7     RW8---RW9
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+        add_children(RW.at(1), RW.at(5), RW.at(6));
+        add_children(RW.at(3), RW.at(7));
+        add_children(RW.at(4), RW.at(8), RW.at(9));
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(7), RW.at(3), RW.at(8), RW.at(9), RW.at(4), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+
+        /* Step 3: Assert. Verify removed trees intact. */
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Remove all nodes in the iteration. Verify
+ * trees intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingIteratorRemoveAll)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1---RW2---RW3-----RW4
+        |                   |
+        RW5---RW6           RW8---RW9
+        
+        After:
+        RW0         RW1         RW2     RW3
+        |           |
+        RW4         RW5---RW6
+        |
+        RW8---RW9
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+        add_children(RW.at(1), RW.at(5), RW.at(6));
+        add_children(RW.at(4), RW.at(8), RW.at(9));
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
+        {
+            convert(n).accept(node_remove_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+
+        /* Step 3: Assert. Verify removed trees intact. */
+        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Destroy some nodes in the middle of an iteration. 
+ * Verify remaining tree intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingIteratorDestroySome)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1-----DN0---------RW2-----DN1
+        |       |           |       |
+        RW3     RW4---RW5   RW6     RW7
+        |
+        RW8
+        
+        After:
+        RW0
+        |
+        RW1-----RW2-----DN1
+        |       |       |
+        RW3     RW6     RW7
+        |
+        RW8
+        */
+        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
+        add_children(RW.at(1), RW.at(3));
+        add_children(DN.at(0), RW.at(4), RW.at(5));
+        add_children(RW.at(2), RW.at(6));
+        add_children(DN.at(1), RW.at(7));
+        add_children(RW.at(3), RW.at(8));
+        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(4), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(1))
+        {
+            convert(n).accept(node_destroy_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(7), DN.at(1), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Destroy all nodes in the iteration. Verify
+ * remaining tree intact.
+ * @warning Test validation requires working postorder iterator.
+ */
+TEST(NtNode, PrevSiblingIteratorDestroyAll)
+{
+    try
+    {
+        /* Step 1: Arrange.
+
+        Before:
+        RW0
+        |
+        RW1
+        |
+        DN0-----DN1---------DN2-----DN3
+        |       |           |       |
+        RW2     RW3---RW4   RW5     RW6
+        |
+        RW7 
+        
+        After:
+        RW0
+        |
+        RW1
+        |
+        DN3
+        |
+        RW6
+        */
+        add_children(RW.at(0), RW.at(1));
+        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+        add_children(DN.at(0), RW.at(2));
+        add_children(DN.at(1), RW.at(3), RW.at(4));
+        add_children(DN.at(2), RW.at(5));
+        add_children(DN.at(3), RW.at(6));
+        add_children(RW.at(2), RW.at(7));
+        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2), RW.at(5));
+
+        /* Steps 2 and 3: Action and assert. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(3))
+        {
+            convert(n).accept(node_destroy_visitor);
+        }
+
+        /* Step 3: Assert. Verify remaining tree intact. */
+        ecu_ntnode_postorder_citerator citer;
+        EXPECT_NODES_IN_TREE(RW.at(6), DN.at(3), RW.at(1), RW.at(0));
+        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Calling next() after an iteration is finished
+ * is not allowed.
+ */
+TEST(NtNode, PrevSiblingIteratorNextAfterDone)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_iterator iter;
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &empty_root)
+        {
+            (void)n;
+        }
+        (void)ecu_ntnode_prev_sibling_iterator_next(&iter);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Calling cnext() after an iteration is finished
+ * is not allowed.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorNextAfterDone)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        rw_ntnode empty_root;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_ntnode_prev_sibling_citerator citer;
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &empty_root)
+        {
+            (void)n;
+        }
+        (void)ecu_ntnode_prev_sibling_iterator_cnext(&citer);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration can be conducted multiple times in a row.
+ */
+TEST(NtNode, PrevSiblingIteratorMultipleTimes)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2---RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
+        ecu_ntnode_prev_sibling_iterator iter;
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Iteration can be conducted multiple times in a row.
+ */
+TEST(NtNode, ConstPrevSiblingIteratorMultipleTimes)
+{
+    try
+    {
+        /* Step 1: Arrange.
+        RW0
+        |
+        RW1---RW2---RW3
+        */
+        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
+        ecu_ntnode_prev_sibling_citerator citer;
+
+        /* Steps 2 and 3: Action and assert. */
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
+        {
+            convert(n).accept(node_obj_in_tree_visitor);
+        }
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
 
 /*------------------------------------------------------------*/
 /*----------------- TESTS - SIBLING ITERATOR -----------------*/
