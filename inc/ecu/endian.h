@@ -36,9 +36,9 @@
  * these standards mandate size of int is at least 2 bytes 
  * and uint16_t is defined.
  */
-#define ECU_SWAP16_COMPILETIME(x_)      \
-    (uint16_t)((((x_) & 0xFF00) >> 8) | \
-               (((x_) & 0x00FF) << 8))
+#define ECU_SWAP16_COMPILETIME(x_)          \
+    ((uint16_t)((((x_) & 0xFF00) >> 8) |    \
+                (((x_) & 0x00FF) << 8)))
 
 /**
  * @brief Returns byte-swapped value (switches endianness)
@@ -47,11 +47,11 @@
  * these standards mandate size of unsigned long (UL) is 
  * at least 4 bytes and uint32_t is defined.
  */
-#define ECU_SWAP32_COMPILETIME(x_)             \
-    (uint32_t)((((x_) & 0xFF000000UL) >> 24) | \
-               (((x_) & 0x00FF0000UL) >> 8) |  \
-               (((x_) & 0x0000FF00UL) << 8) |  \
-               (((x_) & 0x000000FFUL) << 24))
+#define ECU_SWAP32_COMPILETIME(x_)              \
+    ((uint32_t)((((x_) & 0xFF000000UL) >> 24) | \
+                (((x_) & 0x00FF0000UL) >> 8) |  \
+                (((x_) & 0x0000FF00UL) << 8) |  \
+                (((x_) & 0x000000FFUL) << 24)))
 
 /**
  * @brief Returns byte-swapped value (switches endianness)
@@ -60,15 +60,15 @@
  * these standards mandate size of unsigned long long (ULL) 
  * is at least 8 bytes and uint64_t is defined.
  */
-#define ECU_SWAP64_COMPILETIME(x_)                      \
-    (uint64_t)((((x_) & 0xFF00000000000000ULL) >> 56) | \
-               (((x_) & 0x00FF000000000000ULL) >> 40) | \
-               (((x_) & 0x0000FF0000000000ULL) >> 24) | \
-               (((x_) & 0x000000FF00000000ULL) >> 8) |  \
-               (((x_) & 0x00000000FF000000ULL) << 8) |  \
-               (((x_) & 0x0000000000FF0000ULL) << 24) | \
-               (((x_) & 0x000000000000FF00ULL) << 40) | \
-               (((x_) & 0x00000000000000FFULL) << 56))
+#define ECU_SWAP64_COMPILETIME(x_)                          \
+    ((uint64_t)((((x_) & 0xFF00000000000000ULL) >> 56) |    \
+                (((x_) & 0x00FF000000000000ULL) >> 40) |    \
+                (((x_) & 0x0000FF0000000000ULL) >> 24) |    \
+                (((x_) & 0x000000FF00000000ULL) >> 8) |     \
+                (((x_) & 0x00000000FF000000ULL) << 8) |     \
+                (((x_) & 0x0000000000FF0000ULL) << 24) |    \
+                (((x_) & 0x000000000000FF00ULL) << 40) |    \
+                (((x_) & 0x00000000000000FFULL) << 56)))
 /**@}*/
 
 /*------------------------------------------------------------*/
