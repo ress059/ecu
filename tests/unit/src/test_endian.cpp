@@ -8,42 +8,42 @@
  * @ref ECU_CPU_TO_LE16_COMPILETIME(), @ref ECU_CPU_TO_LE32_COMPILETIME(),
  * @ref ECU_CPU_TO_LE64_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
  * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
- *      - TEST(CPUToLittleEndian, CompileTime)
+ *      - TEST(Endian, CPUToLittleEndianCompileTime)
  * 
  * @ref ECU_CPU_TO_LE16_RUNTIME(), @ref ECU_CPU_TO_LE32_RUNTIME(),
  * @ref ECU_CPU_TO_LE64_RUNTIME(), @ref ecu_swap16_runtime(),
  * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
- *      - TEST(CPUToLittleEndian, RunTime)
+ *      - TEST(Endian, CPUToLittleEndianRuntime)
  * 
  * @ref ECU_CPU_TO_BE16_COMPILETIME(), @ref ECU_CPU_TO_BE32_COMPILETIME(),
  * @ref ECU_CPU_TO_BE64_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
  * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
- *      - TEST(CPUToBigEndian, CompileTime)
+ *      - TEST(Endian, CPUToBigEndianCompileTime)
  * 
  * @ref ECU_CPU_TO_BE16_RUNTIME(), @ref ECU_CPU_TO_BE32_RUNTIME(),
  * @ref ECU_CPU_TO_BE64_RUNTIME(), @ref ecu_swap16_runtime(),
  * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
- *      - TEST(CPUToBigEndian, RunTime)
+ *      - TEST(Endian, CPUToBigEndianRuntime)
  * 
  * @ref ECU_LE16_TO_CPU_COMPILETIME(), @ref ECU_LE32_TO_CPU_COMPILETIME(),
  * @ref ECU_LE64_TO_CPU_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
  * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
- *      - TEST(LittleEndianToCPU, CompileTime)
+ *      - TEST(Endian, LittleEndianToCPUCompileTime)
  * 
  * @ref ECU_LE16_TO_CPU_RUNTIME(), @ref ECU_LE32_TO_CPU_RUNTIME(),
  * @ref ECU_LE64_TO_CPU_RUNTIME(), @ref ecu_swap16_runtime(),
  * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
- *      - TEST(LittleEndianToCPU, RunTime)
+ *      - TEST(Endian, LittleEndianToCPURunTime)
  * 
  * @ref ECU_BE16_TO_CPU_COMPILETIME(), @ref ECU_BE32_TO_CPU_COMPILETIME(),
  * @ref ECU_BE64_TO_CPU_COMPILETIME(), @ref ECU_SWAP16_COMPILETIME(),
  * @ref ECU_SWAP32_COMPILETIME(), @ref ECU_SWAP64_COMPILETIME()
- *      - TEST(BigEndianToCPU, CompileTime)
+ *      - TEST(Endian, BigEndianToCPUCompileTime)
  * 
  * @ref ECU_BE16_TO_CPU_RUNTIME(), @ref ECU_BE32_TO_CPU_RUNTIME(),
  * @ref ECU_BE64_TO_CPU_RUNTIME(), @ref ecu_swap16_runtime(),
  * @ref ecu_swap32_runtime(), @ref ecu_swap64_runtime()
- *      - TEST(BigEndianToCPU, RunTime)
+ *      - TEST(Endian, BigEndianToCPURunTime)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -56,7 +56,9 @@
 /*------------------------------------------------------------*/
 
 /* STDLib. */
+#include <cassert>
 #include <cstdint>
+#include <type_traits>
 
 /* Files under test. */
 #include "ecu/endian.h"
@@ -68,400 +70,397 @@
 /*------------------------------------------------------------*/
 /*----------------------- TEST GROUPS ------------------------*/
 /*------------------------------------------------------------*/
-/* Make signed integers negative for all test groups. */
 
-TEST_GROUP(CPUToLittleEndian)
+TEST_GROUP(Endian)
 {
-    std::int16_t m_s16_le_runtime{0};
-    std::uint16_t m_u16_le_runtime{0};
-    std::int32_t m_s32_le_runtime{0};
-    std::uint32_t m_u32_le_runtime{0};
-    std::int64_t m_s64_le_runtime{0};
-    std::uint64_t m_u64_le_runtime{0};
+    /**
+     * @brief Returns true if actual stores the expected
+     * value in big endian. False if actual stores the
+     * expected value in little endian or it stores a completely
+     * different value.
+     */
+    template<typename T>
+    requires std::is_integral_v<T>
+    static bool is_big_endian(T expected, const T& actual)
+    {
+        assert( (expected != 0) ); /* Test produces pointless results if test value is 0. */
+        bool status = true;
+        std::uint8_t expected_byte = 0;
+        std::uint8_t actual_byte = 0;
 
-    static constexpr std::int16_t m_s16{static_cast<std::int16_t>(0xFF12)};
-    static constexpr std::uint16_t m_u16{static_cast<std::uint16_t>(0x1234)};
-    static constexpr std::int32_t m_s32{static_cast<std::int32_t>(0xFF123456)};
-    static constexpr std::uint32_t m_u32{static_cast<std::uint32_t>(0x12345678)};
-    static constexpr std::int64_t m_s64{static_cast<std::int64_t>(0xFF11223344556677)};
-    static constexpr std::uint64_t m_u64{static_cast<std::uint64_t>(0x1122334455667788)};
+        for (std::size_t i = 0; i < sizeof(T); i++)
+        {
+            /* Calculate the byte to test for, starting at MSB. I.e. if
+            value == 0x1234, first byte == 0x12, next 
+            byte (next for-loop iteration) == 0x34, etc. */
+            T mask = (0xFFULL << (8ULL * (sizeof(T) - 1 - i)));
+            expected_byte = (std::uint8_t)((expected & mask) >> (8U * (sizeof(T) - 1 - i)));
 
-    static constexpr std::int16_t m_s16_le_compiletime = ECU_CPU_TO_LE16_COMPILETIME(m_s16);
-    static constexpr std::uint16_t m_u16_le_compiletime = ECU_CPU_TO_LE16_COMPILETIME(m_u16);
-    static constexpr std::int32_t m_s32_le_compiletime = ECU_CPU_TO_LE32_COMPILETIME(m_s32);
-    static constexpr std::uint32_t m_u32_le_compiletime = ECU_CPU_TO_LE32_COMPILETIME(m_u32);
-    static constexpr std::int64_t m_s64_le_compiletime = ECU_CPU_TO_LE64_COMPILETIME(m_s64);
-    static constexpr std::uint64_t m_u64_le_compiletime = ECU_CPU_TO_LE64_COMPILETIME(m_u64);
-};
+            actual_byte = *((const std::uint8_t *)&actual + i);
+            if (expected_byte != actual_byte)
+            {
+                status = false;
+                break;
+            }
+        }
 
-TEST_GROUP(CPUToBigEndian)
-{
-    std::int16_t m_s16_be_runtime{0};
-    std::uint16_t m_u16_be_runtime{0};
-    std::int32_t m_s32_be_runtime{0};
-    std::uint32_t m_u32_be_runtime{0};
-    std::int64_t m_s64_be_runtime{0};
-    std::uint64_t m_u64_be_runtime{0};
+        return status;
+    }
 
-    static constexpr std::int16_t m_s16{static_cast<std::int16_t>(0xFF12)};
-    static constexpr std::uint16_t m_u16{static_cast<std::uint16_t>(0x1234)};
-    static constexpr std::int32_t m_s32{static_cast<std::int32_t>(0xFF123456)};
-    static constexpr std::uint32_t m_u32{static_cast<std::uint32_t>(0x12345678)};
-    static constexpr std::int64_t m_s64{static_cast<std::int64_t>(0xFF11223344556677)};
-    static constexpr std::uint64_t m_u64{static_cast<std::uint64_t>(0x1122334455667788)};
+    /**
+     * @brief Returns true if actual stores the expected
+     * value in little endian. False if actual stores the
+     * expected value in big endian or it stores a completely
+     * different value.
+     */
+    template<typename T>
+    requires std::is_integral_v<T>
+    static bool is_little_endian(T expected, const T& actual)
+    {
+        assert( (expected != 0) ); /* Test produces pointless results if test value is 0. */
 
-    static constexpr std::int16_t m_s16_be_compiletime = ECU_CPU_TO_BE16_COMPILETIME(m_s16);
-    static constexpr std::uint16_t m_u16_be_compiletime = ECU_CPU_TO_BE16_COMPILETIME(m_u16);
-    static constexpr std::int32_t m_s32_be_compiletime = ECU_CPU_TO_BE32_COMPILETIME(m_s32);
-    static constexpr std::uint32_t m_u32_be_compiletime = ECU_CPU_TO_BE32_COMPILETIME(m_u32);
-    static constexpr std::int64_t m_s64_be_compiletime = ECU_CPU_TO_BE64_COMPILETIME(m_s64);
-    static constexpr std::uint64_t m_u64_be_compiletime = ECU_CPU_TO_BE64_COMPILETIME(m_u64);
-};
+        bool status = true;
+        std::uint8_t expected_byte = 0;
+        std::uint8_t actual_byte = 0;
 
-TEST_GROUP(LittleEndianToCPU)
-{
-    std::int16_t m_s16_le_runtime{0};
-    std::uint16_t m_u16_le_runtime{0};
-    std::int32_t m_s32_le_runtime{0};
-    std::uint32_t m_u32_le_runtime{0};
-    std::int64_t m_s64_le_runtime{0};
-    std::uint64_t m_u64_le_runtime{0};
+        for (std::size_t i = 0; i < sizeof(T); i++)
+        {
+            /* Calculate the byte to test for, starting at LSB. I.e. if
+            value == 0x1234, first byte == 0x34, next 
+            byte (next for-loop iteration) == 0x12, etc. */
+            T mask = (0xFFULL << (8ULL * i));
+            expected_byte = (std::uint8_t)((expected & mask) >> (8U * i));
 
-    static constexpr std::int16_t m_s16_le{ECU_CPU_TO_LE16_COMPILETIME(static_cast<std::int16_t>(0xFF12))};
-    static constexpr std::uint16_t m_u16_le{ECU_CPU_TO_LE16_COMPILETIME(static_cast<std::uint16_t>(0x1234))};
-    static constexpr std::int32_t m_s32_le{ECU_CPU_TO_LE32_COMPILETIME(static_cast<std::int32_t>(0xFF123456))};
-    static constexpr std::uint32_t m_u32_le{ECU_CPU_TO_LE32_COMPILETIME(static_cast<std::uint32_t>(0x12345678))};
-    static constexpr std::int64_t m_s64_le{ECU_CPU_TO_LE64_COMPILETIME(static_cast<std::int64_t>(0xFF11223344556677))};
-    static constexpr std::uint64_t m_u64_le{ECU_CPU_TO_LE64_COMPILETIME(static_cast<std::uint64_t>(0x1122334455667788))};
+            actual_byte = *((const std::uint8_t *)&actual + i);
+            if (expected_byte != actual_byte)
+            {
+                status = false;
+                break;
+            }
+        }
 
-    static constexpr std::int16_t m_s16_le_compiletime = ECU_LE16_TO_CPU_COMPILETIME(m_s16_le);
-    static constexpr std::uint16_t m_u16_le_compiletime = ECU_LE16_TO_CPU_COMPILETIME(m_u16_le);
-    static constexpr std::int32_t m_s32_le_compiletime = ECU_LE32_TO_CPU_COMPILETIME(m_s32_le);
-    static constexpr std::uint32_t m_u32_le_compiletime = ECU_LE32_TO_CPU_COMPILETIME(m_u32_le);
-    static constexpr std::int64_t m_s64_le_compiletime = ECU_LE64_TO_CPU_COMPILETIME(m_s64_le);
-    static constexpr std::uint64_t m_u64_le_compiletime = ECU_LE64_TO_CPU_COMPILETIME(m_u64_le);
-};
+        return status;
+    }
 
-TEST_GROUP(BigEndianToCPU)
-{
-    std::int16_t m_s16_be_runtime{0};
-    std::uint16_t m_u16_be_runtime{0};
-    std::int32_t m_s32_be_runtime{0};
-    std::uint32_t m_u32_be_runtime{0};
-    std::int64_t m_s64_be_runtime{0};
-    std::uint64_t m_u64_be_runtime{0};
+    /**
+     * @brief Stores supplied value in big endian.
+     */
+    template<typename T>
+    requires std::is_integral_v<T>
+    static void store_in_big_endian(T value, T& storage)
+    {
+        assert( (value != 0) ); /* Test produces pointless results if test value is 0. */
+        std::uint8_t byte = 0;
 
-    static constexpr std::int16_t m_s16_be{ECU_CPU_TO_BE16_COMPILETIME(static_cast<std::int16_t>(0xFF12))};
-    static constexpr std::uint16_t m_u16_be{ECU_CPU_TO_BE16_COMPILETIME(static_cast<std::uint16_t>(0x1234))};
-    static constexpr std::int32_t m_s32_be{ECU_CPU_TO_BE32_COMPILETIME(static_cast<std::int32_t>(0xFF123456))};
-    static constexpr std::uint32_t m_u32_be{ECU_CPU_TO_BE32_COMPILETIME(static_cast<std::uint32_t>(0x12345678))};
-    static constexpr std::int64_t m_s64_be{ECU_CPU_TO_BE64_COMPILETIME(static_cast<std::int64_t>(0xFF11223344556677))};
-    static constexpr std::uint64_t m_u64_be{ECU_CPU_TO_BE64_COMPILETIME(static_cast<std::uint64_t>(0x1122334455667788))};
+        for (std::size_t i = 0; i < sizeof(T); i++)
+        {
+            /* Calculate the next byte in value to use, starting at MSB. I.e. if
+            value == 0x1234, first byte == 0x12, next 
+            byte (next for-loop iteration) == 0x34, etc. */
+            T mask = (0xFFULL << (8ULL * (sizeof(T) - 1 - i)));
+            byte = (std::uint8_t)((value & mask) >> (8U * (sizeof(T) - 1 - i)));
+            *((std::uint8_t *)&storage + i) = byte;
+        }
+    }
 
-    static constexpr std::int16_t m_s16_be_compiletime = ECU_BE16_TO_CPU_COMPILETIME(m_s16_be);
-    static constexpr std::uint16_t m_u16_be_compiletime = ECU_BE16_TO_CPU_COMPILETIME(m_u16_be);
-    static constexpr std::int32_t m_s32_be_compiletime = ECU_BE32_TO_CPU_COMPILETIME(m_s32_be);
-    static constexpr std::uint32_t m_u32_be_compiletime = ECU_BE32_TO_CPU_COMPILETIME(m_u32_be);
-    static constexpr std::int64_t m_s64_be_compiletime = ECU_BE64_TO_CPU_COMPILETIME(m_s64_be);
-    static constexpr std::uint64_t m_u64_be_compiletime = ECU_BE64_TO_CPU_COMPILETIME(m_u64_be);
+    /**
+     * @brief Stores supplied value in little endian.
+     */
+    template<typename T>
+    requires std::is_integral_v<T>
+    static void store_in_little_endian(T value, T& storage)
+    {
+        assert( (value != 0) ); /* Test produces pointless results if test value is 0. */
+        std::uint8_t byte = 0;
+
+        for (std::size_t i = 0; i < sizeof(T); i++)
+        {
+            /* Calculate the next byte in value to use, starting at LSB. I.e. if
+            value == 0x1234, first byte == 0x34, next 
+            byte (next for-loop iteration) == 0x12, etc. */
+            T mask = (0xFFULL << (8ULL * i));
+            byte = (std::uint8_t)((value & mask) >> (8U * i));
+            *((std::uint8_t *)&storage + i) = byte;
+        }
+    }
+
+    /**
+     * @brief For testing ECU_CPU_TO_LE_COMPILETIME() and
+     * ECU_LE_TO_CPU_COMPILETIME() macros.
+     */
+    struct le_compiletime
+    {
+        /* Raw test values. Make signed integers negative. */
+        static constexpr std::int16_t s16_raw = static_cast<std::int16_t>(0xFF12);
+        static constexpr std::uint16_t u16_raw =static_cast<std::uint16_t>(0x1234);
+        static constexpr std::int32_t s32_raw =static_cast<std::int32_t>(0xFF123456);
+        static constexpr std::uint32_t u32_raw =static_cast<std::uint32_t>(0x12345678);
+        static constexpr std::int64_t s64_raw =static_cast<std::int64_t>(0xFF11223344556677);
+        static constexpr std::uint64_t u64_raw =static_cast<std::uint64_t>(0x1122334455667788);
+
+        /* These should store raw values defined above in little endian. */
+        static constexpr std::int16_t s16_cpu_to_le = ECU_CPU_TO_LE16_COMPILETIME(s16_raw);
+        static constexpr std::uint16_t u16_cpu_to_le = ECU_CPU_TO_LE16_COMPILETIME(u16_raw);
+        static constexpr std::int32_t s32_cpu_to_le = ECU_CPU_TO_LE32_COMPILETIME(s32_raw);
+        static constexpr std::uint32_t u32_cpu_to_le = ECU_CPU_TO_LE32_COMPILETIME(u32_raw);
+        static constexpr std::int64_t s64_cpu_to_le = ECU_CPU_TO_LE64_COMPILETIME(s64_raw);
+        static constexpr std::uint64_t u64_cpu_to_le = ECU_CPU_TO_LE64_COMPILETIME(u64_raw);
+
+        /* These should convert the values stored in little endian back into the original 
+        raw values the CPU can understand. 
+        WARNING: Requires ECU_CPU_TO_LE_COMPILETIME() macros to be working!! */
+        static constexpr std::int16_t s16_le_to_cpu = ECU_LE16_TO_CPU_COMPILETIME(s16_cpu_to_le);
+        static constexpr std::uint16_t u16_le_to_cpu = ECU_LE16_TO_CPU_COMPILETIME(u16_cpu_to_le);
+        static constexpr std::int32_t s32_le_to_cpu = ECU_LE32_TO_CPU_COMPILETIME(s32_cpu_to_le);
+        static constexpr std::uint32_t u32_le_to_cpu = ECU_LE32_TO_CPU_COMPILETIME(u32_cpu_to_le);
+        static constexpr std::int64_t s64_le_to_cpu = ECU_LE64_TO_CPU_COMPILETIME(s64_cpu_to_le);
+        static constexpr std::uint64_t u64_le_to_cpu = ECU_LE64_TO_CPU_COMPILETIME(u64_cpu_to_le);
+    };
+
+    /**
+     * @brief For testing ECU_CPU_TO_BE_COMPILETIME() and 
+     * ECU_BE_TO_CPU_COMPILETIME() macros.
+     */
+    struct be_compiletime
+    {
+        /* Raw test values. Make signed integers negative. */
+        static constexpr std::int16_t s16_raw = static_cast<std::int16_t>(0xFF12);
+        static constexpr std::uint16_t u16_raw =static_cast<std::uint16_t>(0x1234);
+        static constexpr std::int32_t s32_raw =static_cast<std::int32_t>(0xFF123456);
+        static constexpr std::uint32_t u32_raw =static_cast<std::uint32_t>(0x12345678);
+        static constexpr std::int64_t s64_raw =static_cast<std::int64_t>(0xFF11223344556677);
+        static constexpr std::uint64_t u64_raw =static_cast<std::uint64_t>(0x1122334455667788);
+
+        /* These should store raw values defined above in big endian. */
+        static constexpr std::int16_t s16_cpu_to_be = ECU_CPU_TO_BE16_COMPILETIME(s16_raw);
+        static constexpr std::uint16_t u16_cpu_to_be = ECU_CPU_TO_BE16_COMPILETIME(u16_raw);
+        static constexpr std::int32_t s32_cpu_to_be = ECU_CPU_TO_BE32_COMPILETIME(s32_raw);
+        static constexpr std::uint32_t u32_cpu_to_be = ECU_CPU_TO_BE32_COMPILETIME(u32_raw);
+        static constexpr std::int64_t s64_cpu_to_be = ECU_CPU_TO_BE64_COMPILETIME(s64_raw);
+        static constexpr std::uint64_t u64_cpu_to_be = ECU_CPU_TO_BE64_COMPILETIME(u64_raw);
+
+        /* These should convert the values stored in big endian back into the original 
+        raw values the CPU can understand. 
+        WARNING: Requires ECU_CPU_TO_BE_COMPILETIME() macros to be working!! */
+        static constexpr std::int16_t s16_be_to_cpu = ECU_BE16_TO_CPU_COMPILETIME(s16_cpu_to_be);
+        static constexpr std::uint16_t u16_be_to_cpu = ECU_BE16_TO_CPU_COMPILETIME(u16_cpu_to_be);
+        static constexpr std::int32_t s32_be_to_cpu = ECU_BE32_TO_CPU_COMPILETIME(s32_cpu_to_be);
+        static constexpr std::uint32_t u32_be_to_cpu = ECU_BE32_TO_CPU_COMPILETIME(u32_cpu_to_be);
+        static constexpr std::int64_t s64_be_to_cpu = ECU_BE64_TO_CPU_COMPILETIME(s64_cpu_to_be);
+        static constexpr std::uint64_t u64_be_to_cpu = ECU_BE64_TO_CPU_COMPILETIME(u64_cpu_to_be);
+    };
+
+    /* Raw test values for runtime tests. Make signed integers negative. */
+    std::int16_t s16_raw = static_cast<std::int16_t>(0xFF12);
+    std::uint16_t u16_raw =static_cast<std::uint16_t>(0x1234);
+    std::int32_t s32_raw =static_cast<std::int32_t>(0xFF123456);
+    std::uint32_t u32_raw =static_cast<std::uint32_t>(0x12345678);
+    std::int64_t s64_raw =static_cast<std::int64_t>(0xFF11223344556677);
+    std::uint64_t u64_raw =static_cast<std::uint64_t>(0x1122334455667788);
 };
 
 /*------------------------------------------------------------*/
-/*----------------------------- TESTS ------------------------*/
+/*------------ TESTS - ECU_CPU_TO_LE_COMPILETIME() -----------*/
 /*------------------------------------------------------------*/
 
 /**
- * @brief Verify CPU puts data into little endian format at compile time.
+ * @brief Verify data stored in little endian at compile time.
  */
-TEST(CPUToLittleEndian, CompileTime)
+TEST(Endian, CPUToLittleEndianCompileTime)
 {
     /* Step 3: Assert. */
-    /* int16_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_compiletime) + 1)));
-
-    /* uint16_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_compiletime) + 1)));
-
-    /* int32_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_compiletime) + 3)));
-
-    /* uint32_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_compiletime) + 3)));
-
-    /* int64_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 3)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 4)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 5)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 6)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_compiletime) + 7)));
-
-    /* uint64_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 3)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 4)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 5)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 6)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_compiletime) + 7)));
+    CHECK_TRUE( (is_little_endian(le_compiletime::s16_raw, le_compiletime::s16_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(le_compiletime::u16_raw, le_compiletime::u16_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(le_compiletime::u32_raw, le_compiletime::u32_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(le_compiletime::s32_raw, le_compiletime::s32_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(le_compiletime::u64_raw, le_compiletime::u64_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(le_compiletime::s64_raw, le_compiletime::s64_cpu_to_le)) );
 }
+
+/*------------------------------------------------------------*/
+/*-------------- TESTS - ECU_CPU_TO_LE_RUNTIME() -------------*/
+/*------------------------------------------------------------*/
 
 /**
- * @brief Verify CPU puts data into little endian format at run time.
+ * @brief Verify data stored in little endian at run time.
  */
-TEST(CPUToLittleEndian, RunTime)
+TEST(Endian, CPUToLittleEndianRuntime)
 {
-    /* Step 2: Action. Make signed integers negative. */
-    m_s16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(static_cast<std::int16_t>(0xFF12));
-    m_u16_le_runtime = ECU_CPU_TO_LE16_RUNTIME(static_cast<std::uint16_t>(0x1234));
-    m_s32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(static_cast<std::int32_t>(0xFF123456));
-    m_u32_le_runtime = ECU_CPU_TO_LE32_RUNTIME(static_cast<std::uint32_t>(0x12345678));
-    m_s64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(static_cast<std::int64_t>(0xFF11223344556677));
-    m_u64_le_runtime = ECU_CPU_TO_LE64_RUNTIME(static_cast<std::uint64_t>(0x1122334455667788));
+    /* Step 2: Action. */
+    std::int16_t s16_cpu_to_le = ECU_CPU_TO_LE16_RUNTIME(s16_raw);
+    std::uint16_t u16_cpu_to_le = ECU_CPU_TO_LE16_RUNTIME(u16_raw);
+    std::int32_t s32_cpu_to_le = ECU_CPU_TO_LE32_RUNTIME(s32_raw);
+    std::uint32_t u32_cpu_to_le = ECU_CPU_TO_LE32_RUNTIME(u32_raw);
+    std::int64_t s64_cpu_to_le = ECU_CPU_TO_LE64_RUNTIME(s64_raw);
+    std::uint64_t u64_cpu_to_le = ECU_CPU_TO_LE64_RUNTIME(u64_raw);
 
     /* Step 3: Assert. */
-    /* int16_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_le_runtime) + 1)));
-
-    /* uint16_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_le_runtime) + 1)));
-
-    /* int32_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_le_runtime) + 3)));
-
-    /* uint32_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_le_runtime) + 3)));
-
-    /* int64_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 3)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 4)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 5)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 6)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_le_runtime) + 7)));
-
-    /* uint64_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 3)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 4)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 5)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 6)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_le_runtime) + 7)));
+    CHECK_TRUE( (is_little_endian(s16_raw, s16_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(u16_raw, u16_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(s32_raw, s32_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(u32_raw, u32_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(s64_raw, s64_cpu_to_le)) );
+    CHECK_TRUE( (is_little_endian(u64_raw, u64_cpu_to_le)) );
 }
+
+/*------------------------------------------------------------*/
+/*------------ TESTS - ECU_CPU_TO_BE_COMPILETIME() -----------*/
+/*------------------------------------------------------------*/
 
 /**
- * @brief Verify CPU puts data into big endian format at compile time.
+ * @brief Verify data stored in big endian at compile time.
  */
-TEST(CPUToBigEndian, CompileTime)
+TEST(Endian, CPUToBigEndianCompileTime)
 {
     /* Step 3: Assert. */
-    /* int16_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_compiletime) + 1)));
-
-    /* uint16_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_compiletime) + 1)));
-
-    /* int32_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_compiletime) + 3)));
-
-    /* uint32_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_compiletime) + 3)));
-
-    /* int64_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 3)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 4)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 5)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 6)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_compiletime) + 7)));
-
-    /* uint64_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 3)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 4)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 5)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 6)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_compiletime) + 7)));
+    CHECK_TRUE( (is_big_endian(be_compiletime::s16_raw, be_compiletime::s16_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(be_compiletime::u16_raw, be_compiletime::u16_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(be_compiletime::u32_raw, be_compiletime::u32_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(be_compiletime::s32_raw, be_compiletime::s32_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(be_compiletime::u64_raw, be_compiletime::u64_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(be_compiletime::s64_raw, be_compiletime::s64_cpu_to_be)) );
 }
+
+/*------------------------------------------------------------*/
+/*-------------- TESTS - ECU_CPU_TO_BE_RUNTIME() -------------*/
+/*------------------------------------------------------------*/
 
 /**
- * @brief Verify CPU puts data into big endian format at run time.
+ * @brief Verify data stored in big endian at run time.
  */
-TEST(CPUToBigEndian, RunTime)
+TEST(Endian, CPUToBigEndianRuntime)
 {
-    /* Step 2: Action. Make signed integers negative. */
-    m_s16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(static_cast<std::int16_t>(0xFF12));
-    m_u16_be_runtime = ECU_CPU_TO_BE16_RUNTIME(static_cast<std::uint16_t>(0x1234));
-    m_s32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(static_cast<std::int32_t>(0xFF123456));
-    m_u32_be_runtime = ECU_CPU_TO_BE32_RUNTIME(static_cast<std::uint32_t>(0x12345678));
-    m_s64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(static_cast<std::int64_t>(0xFF11223344556677));
-    m_u64_be_runtime = ECU_CPU_TO_BE64_RUNTIME(static_cast<std::uint64_t>(0x1122334455667788));
+    /* Step 2: Action. */
+    std::int16_t s16_cpu_to_be = ECU_CPU_TO_BE16_RUNTIME(s16_raw);
+    std::uint16_t u16_cpu_to_be = ECU_CPU_TO_BE16_RUNTIME(u16_raw);
+    std::int32_t s32_cpu_to_be = ECU_CPU_TO_BE32_RUNTIME(s32_raw);
+    std::uint32_t u32_cpu_to_be = ECU_CPU_TO_BE32_RUNTIME(u32_raw);
+    std::int64_t s64_cpu_to_be = ECU_CPU_TO_BE64_RUNTIME(s64_raw);
+    std::uint64_t u64_cpu_to_be = ECU_CPU_TO_BE64_RUNTIME(u64_raw);
 
     /* Step 3: Assert. */
-    /* int16_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s16_be_runtime) + 1)));
-
-    /* uint16_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u16_be_runtime) + 1)));
-
-    /* int32_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x12), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x34), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x56), (*(reinterpret_cast<const std::int8_t*>(&m_s32_be_runtime) + 3)));
-
-    /* uint32_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x12), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x34), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x56), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x78), (*(reinterpret_cast<const std::uint8_t*>(&m_u32_be_runtime) + 3)));
-
-    /* int64_t */
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0xFF), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime))));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x11), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 1)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x22), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 2)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x33), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 3)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x44), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 4)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x55), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 5)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x66), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 6)));
-    SIGNED_BYTES_EQUAL(static_cast<std::int8_t>(0x77), (*(reinterpret_cast<const std::int8_t*>(&m_s64_be_runtime) + 7)));
-
-    /* uint64_t */
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x11), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime))));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x22), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 1)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x33), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 2)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x44), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 3)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x55), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 4)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x66), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 5)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x77), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 6)));
-    BYTES_EQUAL(static_cast<std::uint8_t>(0x88), (*(reinterpret_cast<const std::uint8_t*>(&m_u64_be_runtime) + 7)));
+    CHECK_TRUE( (is_big_endian(s16_raw, s16_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(u16_raw, u16_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(s32_raw, s32_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(u32_raw, u32_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(s64_raw, s64_cpu_to_be)) );
+    CHECK_TRUE( (is_big_endian(u64_raw, u64_cpu_to_be)) );
 }
+
+/*------------------------------------------------------------*/
+/*------------ TESTS - ECU_LE_TO_CPU_COMPILETIME() -----------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Verify CPU correctly reads little endian encoded data.
+ * @warning Requires ECU_CPU_TO_LE_COMPILETIME() macros to be working.
+ */
+TEST(Endian, LittleEndianToCPUCompileTime)
+{
+    /* Step 3: Assert. */
+    CHECK_TRUE( (le_compiletime::s16_le_to_cpu == le_compiletime::s16_raw) );
+    CHECK_TRUE( (le_compiletime::u16_le_to_cpu == le_compiletime::u16_raw) );
+    CHECK_TRUE( (le_compiletime::s32_le_to_cpu == le_compiletime::s32_raw) );
+    CHECK_TRUE( (le_compiletime::u32_le_to_cpu == le_compiletime::u32_raw) );
+    CHECK_TRUE( (le_compiletime::s64_le_to_cpu == le_compiletime::s64_raw) );
+    CHECK_TRUE( (le_compiletime::u64_le_to_cpu == le_compiletime::u64_raw) );
+}
+
+/*------------------------------------------------------------*/
+/*-------------- TESTS - ECU_LE_TO_CPU_RUNTIME() -------------*/
+/*------------------------------------------------------------*/
 
 /**
  * @brief Verify CPU correctly reads little endian encoded data.
  */
-TEST(LittleEndianToCPU, CompileTime)
+TEST(Endian, LittleEndianToCPURunTime)
 {
+    /* Step 1: Arrange. */
+    std::int16_t s16_cpu_to_le;
+    std::uint16_t u16_cpu_to_le;
+    std::int32_t s32_cpu_to_le;
+    std::uint32_t u32_cpu_to_le;
+    std::int64_t s64_cpu_to_le;
+    std::uint64_t u64_cpu_to_le;
+    store_in_little_endian(s16_raw, s16_cpu_to_le);
+    store_in_little_endian(u16_raw, u16_cpu_to_le);
+    store_in_little_endian(s32_raw, s32_cpu_to_le);
+    store_in_little_endian(u32_raw, u32_cpu_to_le);
+    store_in_little_endian(s64_raw, s64_cpu_to_le);
+    store_in_little_endian(u64_raw, u64_cpu_to_le);
+
+    /* Step 2: Action. */
+    std::int16_t s16_le_to_cpu = ECU_LE16_TO_CPU_RUNTIME(s16_cpu_to_le);
+    std::uint16_t u16_le_to_cpu = ECU_LE16_TO_CPU_RUNTIME(u16_cpu_to_le);
+    std::int32_t s32_le_to_cpu = ECU_LE32_TO_CPU_RUNTIME(s32_cpu_to_le);
+    std::uint32_t u32_le_to_cpu = ECU_LE32_TO_CPU_RUNTIME(u32_cpu_to_le);
+    std::int64_t s64_le_to_cpu = ECU_LE64_TO_CPU_RUNTIME(s64_cpu_to_le);
+    std::uint64_t u64_le_to_cpu = ECU_LE64_TO_CPU_RUNTIME(u64_cpu_to_le);
+
     /* Step 3: Assert. */
-    /* int16_t and uint16_t */
-    LONGS_EQUAL(static_cast<std::int16_t>(0xFF12), m_s16_le_compiletime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint16_t>(0x1234), m_u16_le_compiletime);
-
-    /* int32_t and uint32_t */
-    LONGS_EQUAL(static_cast<std::int32_t>(0xFF123456), m_s32_le_compiletime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint32_t>(0x12345678), m_u32_le_compiletime);
-
-    /* int64_t and uint64_t */
-    LONGLONGS_EQUAL(static_cast<std::int64_t>(0xFF11223344556677), m_s64_le_compiletime);
-    UNSIGNED_LONGLONGS_EQUAL(static_cast<std::uint64_t>(0x1122334455667788), m_u64_le_compiletime);
+    CHECK_TRUE( (s16_le_to_cpu == s16_raw) );
+    CHECK_TRUE( (u16_le_to_cpu == u16_raw) );
+    CHECK_TRUE( (s32_le_to_cpu == s32_raw) );
+    CHECK_TRUE( (u32_le_to_cpu == u32_raw) );
+    CHECK_TRUE( (s64_le_to_cpu == s64_raw) );
+    CHECK_TRUE( (u64_le_to_cpu == u64_raw) );
 }
+
+/*------------------------------------------------------------*/
+/*------------ TESTS - ECU_BE_TO_CPU_COMPILETIME() -----------*/
+/*------------------------------------------------------------*/
 
 /**
- * @brief Verify CPU correctly reads little endian encoded data.
+ * @brief Verify CPU correctly reads big endian encoded data.
+ * @warning Requires ECU_CPU_TO_BE_COMPILETIME() macros to be working.
  */
-TEST(LittleEndianToCPU, RunTime)
+TEST(Endian, BigEndianToCPUCompileTime)
 {
-    /* Step 2: Action. */
-    m_s16_le_runtime = ECU_LE16_TO_CPU_RUNTIME(m_s16_le);
-    m_u16_le_runtime = ECU_LE16_TO_CPU_RUNTIME(m_u16_le);
-    m_s32_le_runtime = ECU_LE32_TO_CPU_RUNTIME(m_s32_le);
-    m_u32_le_runtime = ECU_LE32_TO_CPU_RUNTIME(m_u32_le);
-    m_s64_le_runtime = ECU_LE64_TO_CPU_RUNTIME(m_s64_le);
-    m_u64_le_runtime = ECU_LE64_TO_CPU_RUNTIME(m_u64_le);
-
     /* Step 3: Assert. */
-    /* int16_t and uint16_t */
-    LONGS_EQUAL(static_cast<std::int16_t>(0xFF12), m_s16_le_runtime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint16_t>(0x1234), m_u16_le_runtime);
-
-    /* int32_t and uint32_t */
-    LONGS_EQUAL(static_cast<std::int32_t>(0xFF123456), m_s32_le_runtime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint32_t>(0x12345678), m_u32_le_runtime);
-
-    /* int64_t and uint64_t */
-    LONGLONGS_EQUAL(static_cast<std::int64_t>(0xFF11223344556677), m_s64_le_runtime);
-    UNSIGNED_LONGLONGS_EQUAL(static_cast<std::uint64_t>(0x1122334455667788), m_u64_le_runtime);
+    CHECK_TRUE( (be_compiletime::s16_be_to_cpu == be_compiletime::s16_raw) );
+    CHECK_TRUE( (be_compiletime::u16_be_to_cpu == be_compiletime::u16_raw) );
+    CHECK_TRUE( (be_compiletime::s32_be_to_cpu == be_compiletime::s32_raw) );
+    CHECK_TRUE( (be_compiletime::u32_be_to_cpu == be_compiletime::u32_raw) );
+    CHECK_TRUE( (be_compiletime::s64_be_to_cpu == be_compiletime::s64_raw) );
+    CHECK_TRUE( (be_compiletime::u64_be_to_cpu == be_compiletime::u64_raw) );
 }
+
+/*------------------------------------------------------------*/
+/*-------------- TESTS - ECU_BE_TO_CPU_RUNTIME() -------------*/
+/*------------------------------------------------------------*/
 
 /**
  * @brief Verify CPU correctly reads big endian encoded data.
  */
-TEST(BigEndianToCPU, CompileTime)
+TEST(Endian, BigEndianToCPURunTime)
 {
-    /* Step 3: Assert. */
-    /* int16_t and uint16_t */
-    LONGS_EQUAL(static_cast<std::int16_t>(0xFF12), m_s16_be_compiletime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint16_t>(0x1234), m_u16_be_compiletime);
+    /* Step 1: Arrange. */
+    std::int16_t s16_cpu_to_be;
+    std::uint16_t u16_cpu_to_be;
+    std::int32_t s32_cpu_to_be;
+    std::uint32_t u32_cpu_to_be;
+    std::int64_t s64_cpu_to_be;
+    std::uint64_t u64_cpu_to_be;
+    store_in_big_endian(s16_raw, s16_cpu_to_be);
+    store_in_big_endian(u16_raw, u16_cpu_to_be);
+    store_in_big_endian(s32_raw, s32_cpu_to_be);
+    store_in_big_endian(u32_raw, u32_cpu_to_be);
+    store_in_big_endian(s64_raw, s64_cpu_to_be);
+    store_in_big_endian(u64_raw, u64_cpu_to_be);
 
-    /* int32_t and uint32_t */
-    LONGS_EQUAL(static_cast<std::int32_t>(0xFF123456), m_s32_be_compiletime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint32_t>(0x12345678), m_u32_be_compiletime);
-
-    /* int64_t and uint64_t */
-    LONGLONGS_EQUAL(static_cast<std::int64_t>(0xFF11223344556677), m_s64_be_compiletime);
-    UNSIGNED_LONGLONGS_EQUAL(static_cast<std::uint64_t>(0x1122334455667788), m_u64_be_compiletime);
-}
-
-/**
- * @brief Verify CPU correctly reads big endian encoded data.
- */
-TEST(BigEndianToCPU, RunTime)
-{
     /* Step 2: Action. */
-    m_s16_be_runtime = ECU_BE16_TO_CPU_RUNTIME(m_s16_be);
-    m_u16_be_runtime = ECU_BE16_TO_CPU_RUNTIME(m_u16_be);
-    m_s32_be_runtime = ECU_BE32_TO_CPU_RUNTIME(m_s32_be);
-    m_u32_be_runtime = ECU_BE32_TO_CPU_RUNTIME(m_u32_be);
-    m_s64_be_runtime = ECU_BE64_TO_CPU_RUNTIME(m_s64_be);
-    m_u64_be_runtime = ECU_BE64_TO_CPU_RUNTIME(m_u64_be);
+    std::int16_t s16_be_to_cpu = ECU_BE16_TO_CPU_RUNTIME(s16_cpu_to_be);
+    std::uint16_t u16_be_to_cpu = ECU_BE16_TO_CPU_RUNTIME(u16_cpu_to_be);
+    std::int32_t s32_be_to_cpu = ECU_BE32_TO_CPU_RUNTIME(s32_cpu_to_be);
+    std::uint32_t u32_be_to_cpu = ECU_BE32_TO_CPU_RUNTIME(u32_cpu_to_be);
+    std::int64_t s64_be_to_cpu = ECU_BE64_TO_CPU_RUNTIME(s64_cpu_to_be);
+    std::uint64_t u64_be_to_cpu = ECU_BE64_TO_CPU_RUNTIME(u64_cpu_to_be);
 
     /* Step 3: Assert. */
-    /* int16_t and uint16_t */
-    LONGS_EQUAL(static_cast<std::int16_t>(0xFF12), m_s16_be_runtime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint16_t>(0x1234), m_u16_be_runtime);
-
-    /* int32_t and uint32_t */
-    LONGS_EQUAL(static_cast<std::int32_t>(0xFF123456), m_s32_be_runtime);
-    UNSIGNED_LONGS_EQUAL(static_cast<std::uint32_t>(0x12345678), m_u32_be_runtime);
-
-    /* int64_t and uint64_t */
-    LONGLONGS_EQUAL(static_cast<std::int64_t>(0xFF11223344556677), m_s64_be_runtime);
-    UNSIGNED_LONGLONGS_EQUAL(static_cast<std::uint64_t>(0x1122334455667788), m_u64_be_runtime);
+    CHECK_TRUE( (s16_be_to_cpu == s16_raw) );
+    CHECK_TRUE( (u16_be_to_cpu == u16_raw) );
+    CHECK_TRUE( (s32_be_to_cpu == s32_raw) );
+    CHECK_TRUE( (u32_be_to_cpu == u32_raw) );
+    CHECK_TRUE( (s64_be_to_cpu == s64_raw) );
+    CHECK_TRUE( (u64_be_to_cpu == u64_raw) );
 }
