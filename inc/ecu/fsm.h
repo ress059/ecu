@@ -43,7 +43,7 @@
  * type.
  */
 #define ECU_FSM_GET_CONTEXT(ecu_fsm_ptr_, type_, member_) \
-    ECU_CONTAINER_OF(ecu_fsm_ptr, type_, member_)
+    ECU_CONTAINER_OF(ecu_fsm_ptr_, type_, member_)
 
 /**
  * @brief Helper macro supplied to @ref ECU_FSM_STATE_CTOR()

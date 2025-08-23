@@ -14,127 +14,23 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Event-driven **finite state machine (FSM)** framework that applications inherit from to 
-create their own state machines. The complexity of running the FSM and handling state
-transitions are fully encapsulated within this API.
+Framework that creates and runs finite state machines (FSMs). Any user-defined 
+FSM can use this framework by containing an intrusive :ecudoxygen:`ecu_fsm` member.
 
 
 Theory
 =================================================
-This section showcases proper use of the framework and explains its design rationale.
-It is recommended to read this section before using the framework.
 
+.. note:: 
 
-State Machine Representation
--------------------------------------------------
-.. _fsm_state_machine_representation:
-
-A state machine is represented by an :ecudoxygen:`ecu_fsm` base class. Application-specific
-state machines are defined by **inheriting** this base class via C-style inheritance.
-This is accomplished by declaring an :ecudoxygen:`ecu_fsm` object as the **first struct member**.
-
-.. code-block:: c 
-
-    struct app_fsm
-    {
-        /* Inherit by declaring ecu_fsm object as first member. */
-        struct ecu_fsm fsm;
-
-        /* Additional members unique to application-specific fsm. */
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-Inheritance provides a common interface between this module and the application's type.
-This API has no knowledge of the application, so it is a base class that takes in
-a base class type (struct ecu_fsm \*). Derived types are passed into the API by upcasting:
-
-.. code-block:: c 
-
-    struct app_fsm APP_FSM;
-    ecu_fsm_ctor((struct ecu_fsm *)&APP_FSM, &INIT_STATE);
-    ecu_fsm_start((struct ecu_fsm *)&APP_FSM);
-    // ....
-
-For better encapsulation, this cast should be wrapped within :ecudoxygen:`TODO_WAS_FSM_BASE_CAST_BEFORE!!() <TODO_WAS_FSM_BASE_CAST_BEFORE!!>`:
-
-.. code-block:: c 
-
-    struct app_fsm APP_FSM;
-    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &INIT_STATE);
-    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM));
-    // ....
-
-Inheritance in C is accomplished this way. The example above is **functionally** equivalent
-to the following C++ code:
-
-.. code-block:: cpp
-
-    class ecu_fsm
-    {
-        void ecu_fsm_start()
-        {
-            // ...
-        }
-
-        // ...rest of API functions.
-    };
-
-    class app_fsm : public ecu_fsm
-    {
-    public:
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    app_fsm APP_FSM;
-    APP_FSM.ecu_fsm_start();
-
-**Upcasting in this manner is always legal and safe as long as** :ecudoxygen:`ecu_fsm` **is the first member**.
-The C standard mandates there is no struct padding before the first member so a derived pointer can
-always be represented as a base pointer. Inheritance is only unsafe if :ecudoxygen:`ecu_fsm` is not 
-the first member due to misaligned access:
-
-.. figure:: /images/fsm/inheritance.svg
-  :width: 800
-  :align: center
-
-  Inheritance
-
-:ecudoxygen:`ECU_FSM_IS_BASEOF() <ECU_FSM_IS_BASEOF>` macro returns true if :ecudoxygen:`ecu_fsm` is 
-correctly inherited. Otherwise it returns false. These values are evaluated at compile-time so the 
-condition can be statically asserted:
-
-.. code-block:: c 
-
-    struct correct_fsm
-    {
-        struct ecu_fsm fsm;
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    struct incorrect_fsm
-    {
-        uint8_t counter1;
-        struct ecu_fsm fsm;
-        uint8_t counter2;
-    };
-
-    /* Passes. */
-    ECU_STATIC_ASSERT( (ECU_FSM_IS_BASEOF(fsm, struct correct_fsm)), "ecu_fsm must be first member.");
-
-    /* Compilation error. */
-    ECU_STATIC_ASSERT( (ECU_FSM_IS_BASEOF(fsm, struct incorrect_fsm)), "ecu_fsm must be first member.");
-
+    It is recommended to read all sections as they build off of one another.
 
 State Representation
 -------------------------------------------------
 .. _fsm_state_representation:
 
-States are represented as an :ecudoxygen:`ecu_fsm_state` object that contains 
-a set of handler functions. **The contents of the struct are const-qualified,
-meaning that states must be initialized at compile-time.**
+States are represented by the :ecudoxygen:`ecu_fsm_state` struct. It contains
+a set of handler functions that the user defines to describe the state's behavior:
 
 .. code-block:: c 
 
@@ -146,315 +42,482 @@ meaning that states must be initialized at compile-time.**
     };
 
 - **entry()** is an optional function that executes when the state is first entered.
+  Set to :ecudoxygen:`ECU_FSM_STATE_ENTRY_UNUSED` if unused.
 - **exit()** is an optional function that executes when the state is exited.
+  Set to :ecudoxygen:`ECU_FSM_STATE_EXIT_UNUSED` if unused.
 - **handler()** is a mandatory function that executes when the FSM is running in this state.
 
-To create a state, these functions are defined and assigned to an :ecudoxygen:`ecu_fsm_state`
-object through use of the :ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` macro:
+**The contents are const-qualified, forcing every state to be created at compile-time.**
+This can be done through the :ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` macro:
 
-.. code-block:: c 
+.. code-block:: c
+
+    /* Defined by user. */
+    static void running_state_on_entry(struct ecu_fsm *fsm);
+    static void running_state_on_exit(struct ecu_fsm *fsm);
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event);
+
+    static const struct ecu_fsm_state RUNNING_STATE = ECU_FSM_STATE_CTOR(
+        &running_state_on_entry, &running_state_on_exit, &running_state_handler
+    );
+
+Or if the option entry and exit handlers are unused:
+
+.. code-block:: c
+
+    /* Defined by user. */
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event);
+
+    static const struct ecu_fsm_state RUNNING_STATE = ECU_FSM_STATE_CTOR(
+        ECU_FSM_STATE_ENTRY_UNUSED, ECU_FSM_STATE_EXIT_UNUSED, &running_state_handler
+    );
+
+Representing states as objects allows multiple instances of the same FSM to use
+the same states. No additional memory or overhead is required:
+
+.. figure:: /images/fsm/state_representation_state_reuse.svg
+    :width: 500
+    :align: center
+
+    State Reuse
+
+State Machine Representation
+-------------------------------------------------
+.. _fsm_state_machine_representation:
+
+FSMs are represented by the :ecudoxygen:`ecu_fsm` struct. Application-specific FSMs
+use this framework by containing :ecudoxygen:`ecu_fsm` as an intrusive member:
+
+.. code-block:: c
 
     struct app_fsm
     {
-        /* Inherit by declaring ecu_fsm object as first member. */
-        struct ecu_fsm fsm;
-
-        /* Additional members unique to application-specific fsm. */
-        uint8_t counter1;
-        uint8_t counter2;
+        int app_data1;
+        struct ecu_fsm fsm_member;
+        int app_data2;
     };
 
-    static void state1_on_entry(struct app_fsm *me)
+This type is retrieved within the FSM's definition of each state via the
+:ecudoxygen:`ECU_FSM_GET_CONTEXT() <ECU_FSM_GET_CONTEXT>` macro:
+
+.. code-block:: c
+
+    static void running_state_on_entry(struct ecu_fsm *fsm)
     {
-        me->counter1++;
-        me->counter2++;
-        printf("state1 entered!\n");
+        struct app_fsm *me = ECU_FSM_GET_CONTEXT(fsm, struct app_fsm, fsm_member);
+        me->app_data1 = 0;
+        me->app_data2 = 0;
     }
 
-    static void state1_on_exit(struct app_fsm *me)
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event)
     {
-        me->counter1--;
-        me->counter2--;
-        printf("state1 exited!\n");
+        struct app_fsm *me = ECU_FSM_GET_CONTEXT(fsm, struct app_fsm, fsm_member);
+
+        if (event == relevant)
+        {
+            do_work(me);
+        }
     }
 
-    static void state1_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state1 handled!\n");
-    }
+This allows the framework to interact with the application through a common interface
+(the :ecudoxygen:`ecu_fsm` struct), without inheritance. The macro takes in
+three parameters:
 
-    static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
-        &state1_on_entry, &state1_on_exit, &state1_handler
-    );
+    #. ``ecu_fsm_ptr_`` = Pointer to intrusive ecu_fsm member. In this case, ``fsm``.
+    #. ``type_`` = User's FSM type. In this case, ``struct app_fsm``.
+    #. ``member_`` = Name of ecu_fsm member within the user's type. In this case, ``fsm_member``.
 
-**Notice how state functions take in the user's FSM type (struct app_fsm *) but** 
-:ecudoxygen:`ecu_fsm_state` **stores functions that take in (struct ecu_fsm \*)**.
+.. figure:: /images/fsm/ecu_fsm_get_context.svg
+    :width: 500
+    :align: center
+  
+    ECU_FSM_GET_CONTEXT()
 
-States must be able to work with the user's FSM in order to be useful, however this 
-framework has no knowledge of the application and its types. As explained in the
-:ref:`State Machine Representation Section <fsm_state_machine_representation>`,
-this dilemna is solved by inheritance. User FSMs must inherit :ecudoxygen:`ecu_fsm`.
-Therefore :ecudoxygen:`ecu_fsm` is a base class that acts as a common interface 
-between the application and this framework, allowing these functions to be assigned 
-to a state by upcasting.
-
-:ecudoxygen:`ECU_FSM_STATE_CTOR() <ECU_FSM_STATE_CTOR>` performs these upcasts
-and expands to the full struct initialization of :ecudoxygen:`ecu_fsm_state`.
-The following is equivalent to the code snippet above:
-
-.. code-block:: c 
-
-    static const struct ecu_fsm_state STATE1 = 
-    {
-        .entry = (void (*)(struct ecu_fsm *))(&state1_on_entry),
-        .exit = (void (*)(struct ecu_fsm *))(&state1_on_exit),
-        .handler = (void (*)(struct ecu_fsm *, const void *))(&state1_handler)
-    };
-
-The :ref:`State Machine Representation Section <fsm_state_machine_representation>`
-explains why these casts are always safe.
-It is recommended to use this macro for better encapsulation as it contains 
-all upcasts and protects the application from any changes to the 
-:ecudoxygen:`ecu_fsm_state` struct.
-
-:ecudoxygen:`ECU_FSM_STATE_ENTRY_UNUSED` and :ecudoxygen:`ECU_FSM_STATE_EXIT_UNUSED` can be supplied 
-if entry() and exit() functions are unused. In this case, only the mandatory handler() function 
-will run for this state:
-
-.. code-block:: c 
-
-    static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
-        ECU_FSM_STATE_ENTRY_UNUSED, ECU_FSM_STATE_EXIT_UNUSED, &state1_handler
-    );
-
+Under the hood, this macro performs pointer arithmetic to do the conversion.
+The details of this operation are fully explained in 
+:ref:`ECU_CONTAINER_OF() <utils_container_of>`.
 
 State Transitions
 -------------------------------------------------
-.. _fsm_state_transitions:
 
-State machine behavior is abstracted away through the use of this API.
-Internally, this framework will execute the proper entry(), exit(), and handler() 
-functions for each state defined in the user's state machine. 
+The FSM's definition calls :ecudoxygen:`ecu_fsm_change_state() <ecu_fsm_change_state>` to signal
+a state transition:
 
-For example if the user's FSM transitions from STATE1 to STATE2, the framework will execute the 
-following in order:
+.. code-block:: c
 
-.. figure:: /images/fsm/single_state_transition.svg
-  :width: 600
-  :align: center
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event)
+    {
+        if (event == causes state transition)
+        {
+            ecu_fsm_change_state(fsm, &new_state_to_transition_into);
+        }
+    }
 
-  Single State Transition
+If used, the current state's exit handler is ran then the new state's entry handler is ran.
+The following example transitions the FSM from the RUNNING_STATE to the STOPPED_STATE when
+a STOP_EVENT is received. This is a **single state transition**:
 
-Accompanying pseudocode defining this behavior is shown below:
+.. figure:: /images/fsm/state_transitions_single_state_transition.svg
+    :width: 500
+    :align: center
+  
+    Single State Transition
+
+.. code-block:: c
+
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event)
+    {
+        if (event == STOP_EVENT)
+        {
+            ecu_fsm_change_state(fsm, &STOPPED_STATE);
+        }
+    }
+
+The full execution order is:
+
+#. ecu_fsm_dispatch(fsm, STOP_EVENT)
+#. RUNNING_STATE::handler()
+#. RUNNING_STATE::exit()
+#. STOPPED_STATE::entry()
+
+.. warning:: 
+
+    No state transitions are allowed in the exit handler. This is pointless since
+    when the exit handler runs, that state is already being exited:
+
+    .. figure:: /images/fsm/state_transitions_transition_on_exit.svg
+        :width: 500
+        :align: center
+    
+        Transition on Exit Not Allowed
+
+    .. code-block:: c
+
+        static void state1_on_exit(struct ecu_fsm *fsm)
+        {
+            ecu_fsm_change_state(fsm, &STATE2); /* NOT ALLOWED! */
+        }
+
+A **Consecutive state transition** can occur by calling :ecudoxygen:`ecu_fsm_change_state() <ecu_fsm_change_state>`
+in a state's entry handler. The following example transitions the FSM from the
+STOPPED_STATE to the PREOPERATIONAL_STATE then to the OPERATIONAL_STATE when a
+START_EVENT is received:
+
+.. figure:: /images/fsm/state_transitions_consecutive_state_transition.svg
+    :width: 500
+    :align: center
+  
+    Consecutive State Transition
+
+.. code-block:: c
+
+    static void stopped_state_handler(struct ecu_fsm *fsm, const void *event)
+    {
+        if (event == START_EVENT)
+        {
+            ecu_fsm_change_state(fsm, &PREOPERATIONAL_STATE);
+        }
+    }
+
+    static void preoperational_state_on_entry(struct ecu_fsm *fsm)
+    {
+        do_preoperational_work(fsm);
+        ecu_fsm_change_state(fsm, &OPERATIONAL_STATE);
+    }
+
+The full execution order is:
+
+#. ecu_fsm_dispatch(fsm, START_EVENT)
+#. STOPPED_STATE::handler()
+#. STOPPED_STATE::exit()
+#. PREOPERATIONAL_STATE::entry()
+#. PREOPERATIONAL_STATE::exit()
+#. OPERATIONAL_STATE::entry()
+
+.. warning:: 
+
+    A self-state transition is not allowed in the entry handler as this
+    causes an infinite loop:
+
+    .. figure:: /images/fsm/state_transitions_self_transition_on_entry.svg
+        :width: 500
+        :align: center
+    
+        Self Transition on Entry Not Allowed
+
+    .. code-block:: c
+
+        static void state1_on_entry(struct ecu_fsm *fsm)
+        {
+            ecu_fsm_change_state(fsm, &STATE1); /* NOT ALLOWED! */
+        }
+
+A **self-state transition** can occur by supplying the current state to
+`ecu_fsm_change_state() <ecu_fsm_change_state>` within the state's handler:
+
+.. figure:: /images/fsm/state_transitions_self_transition.svg
+    :width: 500
+    :align: center
+
+    Self-State Transition
 
 .. code-block:: c 
 
-    /*--------------------- STATE1 definition ---------------------*/
-    static void state1_on_entry(struct app_fsm *me)
+    static void running_state_handler(struct ecu_fsm *fsm, const void *event)
     {
-        printf("state1 entered!");
-    }
-
-    static void state1_on_exit(struct app_fsm *me)
-    {
-        printf("state1 exited!");
-    }
-
-    static void state1_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state1 handler!");
-        if (event causes transition to STATE2)
+        if (event == RESET_EVENT)
         {
-            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
+            /* Current state is RUNNING_STATE. Self-transition. */
+            ecu_fsm_change_state(fsm, &RUNNING_STATE); 
         }
     }
 
-    /*--------------------- STATE2 definition ---------------------*/
-    static void state2_on_entry(struct app_fsm *me)
-    {
-        printf("state2 entered!");
-    }
+The full execution order is:
 
-    static void state2_on_exit(struct app_fsm *me)
-    {
-        printf("state2 exited!");
-    }
-
-    static void state2_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state2 handler!");
-    }
-
-    static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
-        &state1_on_entry, &state1_on_exit, &state1_handler
-    );
-
-    static const struct ecu_fsm_state STATE2 = ECU_FSM_STATE_CTOR(
-        &state2_on_entry, &state2_on_exit, &state2_handler
-    );
-
-    struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_transition_to_STATE2);
-
-In this case the code execution order is:
-
-.. code-block:: text 
-
-    "state1 handler!" -> "state1 exited!" -> "state2 entered!"
-
-Once complete, the FSM is now in STATE2. If an event is dispatched 
-via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`, it will be processed 
-in state2_handler().
-
-Consecutive state transitions are also allowed by calling :ecudoxygen:`ecu_fsm_change_state() <ecu_fsm_change_state>`
-within a state's entry() function. For example:
-
-.. figure:: /images/fsm/consecutive_state_transition.svg
-  :width: 800
-  :align: center
-
-  Consecutive State Transition
-
-.. code-block:: c 
-
-    /*--------------------- STATE1 definition ---------------------*/
-    static void state1_on_entry(struct app_fsm *me)
-    {
-        printf("state1 entered!");
-    }
-
-    static void state1_on_exit(struct app_fsm *me)
-    {
-        printf("state1 exited!");
-    }
-
-    static void state1_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state1 handler!");
-        if (event causes transition to STATE2)
-        {
-            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
-        }
-    }
-
-    /*--------------------- STATE2 definition ---------------------*/
-    static void state2_on_entry(struct app_fsm *me)
-    {
-        printf("state2 entered!");
-        if (fsm needs to transition to STATE3)
-        {
-            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE3);
-        }
-    }
-
-    static void state2_on_exit(struct app_fsm *me)
-    {
-        printf("state2 exited!");
-    }
-
-    static void state2_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state2 handler!");
-    }
-
-    /*--------------------- STATE3 definition ---------------------*/
-    static void state3_on_entry(struct app_fsm *me)
-    {
-        printf("state3 entered!");
-    }
-
-    static void state3_on_exit(struct app_fsm *me)
-    {
-        printf("state3 exited!");
-    }
-
-    static void state3_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state3 handler!");
-    }
-
-    static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
-        &state1_on_entry, &state1_on_exit, &state1_handler
-    );
-
-    static const struct ecu_fsm_state STATE2 = ECU_FSM_STATE_CTOR(
-        &state2_on_entry, &state2_on_exit, &state2_handler
-    );
-
-    static const struct ecu_fsm_state STATE3 = ECU_FSM_STATE_CTOR(
-        &state3_on_entry, &state3_on_exit, &state3_handler
-    );
-
-    struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_transition_to_STATE2);
-
-Assuming the FSM needs to transition to STATE3 in state2_entry(), the code 
-execution order is:
-
-.. code-block:: text 
-
-    "state1 handler!" -> "state1 exited!" -> "state2 entered!" -> "state2 exited!" -> "state3 entered!"
-
-Once complete, the FSM is now in STATE3. If an event is dispatched 
-via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`, it will be processed 
-in state3_handler().
-
-Finally, self-state transitions are also allowed. This is often done to reset a state:
-
-.. figure:: /images/fsm/self_state_transition.svg
-  :width: 600
-  :align: center
-
-  Self State Transition
-
-.. code-block:: c 
-
-    /*--------------------- STATE1 definition ---------------------*/
-    static void state1_on_entry(struct app_fsm *me)
-    {
-        printf("state1 entered!");
-        reinitialize(me);
-    }
-
-    static void state1_on_exit(struct app_fsm *me)
-    {
-        printf("state1 exited!");
-        clear(me);
-    }
-
-    static void state1_handler(struct app_fsm *me, const void *event)
-    {
-        printf("state1 handler!");
-        if (event causes state reset)
-        {
-            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE1);
-        }
-    }
-
-    static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
-        &state1_on_entry, &state1_on_exit, &state1_handler
-    );
-
-    struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_state_reset);
-
-In this case the code execution order is:
-
-.. code-block:: text 
-
-    "state1 handler!" -> "state1 exited!" -> "state1 entered!"
-
-Once complete, the FSM is still in STATE1. If an event is dispatched 
-via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`, it will still be 
-processed in state1_handler().
-
+#. ecu_fsm_dispatch(fsm, RESET_EVENT)
+#. RUNNING_STATE::handler()
+#. RUNNING_STATE::exit()
+#. RUNNING_STATE::entry()
 
 Event-Driven Paradigm
 -------------------------------------------------
-.. _fsm_event_driven_paradigm:
+The application interacts with state machines generated by this framework through **events.**
+Events are objects that describe the type of event and contain any relevant data:
+
+.. code-block:: c
+
+    enum event_id
+    {
+        STOP_EVENT,
+        START_EVENT,
+        RESET_EVENT
+    };
+
+    struct event
+    {
+        enum event_id id;
+        int data;
+        int more_data;
+    };
+
+When an event occurs, it is sent to the state machine via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`:
+The application treats it as a black-box and blindly dispatches events to it: 
+
+.. code-block:: c
+
+    int main()
+    {
+        if (requested to stop)
+        {
+            ecu_fsm_dispatch(fsm, &stop_event);
+        }
+    } 
+
+.. figure:: /images/fsm/event_driven_paradigm_event_driven_state_machine.svg
+    :width: 500
+    :align: center
+
+    Event-Driven State Machine
+
+This pattern naturally decouples the FSM from the application as all forms of communication 
+between the two are limited to event dispatching. Therefore the state machine's implementation 
+details are fully encapsulated. 
+
+Compare this to the traditional polling state machine that is unfortunately most
+commonly used:
+
+.. figure:: /images/fsm/event_driven_paradigm_polling_state_machine.svg
+    :width: 500
+    :align: center
+
+    Polling State Machine
+
+Polling state machines tightly couple themselves to the application as the two must
+communicate with each other through extensive use of global flags. An event-driven
+approach is far superior because the decoupling offers these advantages compared to 
+a polling state machine:
+
+#. An event-driven state machine's implementation is fully reusable and encapsulated. 
+   Porting the state machine to a new application simply involves dispatching events 
+   under different conditions. Applications also remain uneffected if the state machine's 
+   internal details were to ever change:
+
+    .. code-block:: c
+
+        /* Application #1. */
+        int main()
+        {
+            if (button pressed 5 times)
+            {
+                ecu_fsm_dispatch(&fsm, &STOP_EVENT);
+            }
+        }
+
+    .. code-block:: c
+
+        /* Application #2. */
+        int main()
+        {
+            if (button pressed once)
+            {
+                ecu_fsm_dispatch(&fsm, &STOP_EVENT);
+            }
+        }
+
+    A polling state machine's implementation is neither reusable nor encapsulated:
+
+    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine.svg
+        :width: 500
+        :align: center
+
+    Polling State Machine
+
+    Offloading the button press logic to the application does not fix the coupling
+    since a different global flag must be used instead:
+
+    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine2.svg
+        :width: 500
+        :align: center
+
+    Polling State Machine
+
+    Porting a polled state machine to a new application is not trivial because it must
+    carefully edit these global flags in a predefined fashion. If the state machine's 
+    details change, every application that uses it would have to be refactored.
+
+#. Multiple instances of the same event-driven state machine can be created, with each
+   instance operating **independently** from one another:
+
+    .. code-block:: c
+
+        struct led_fsm led1;
+        struct led_fsm led2;
+
+        int main()
+        {
+            ecu_fsm_dispatch(&led1, &ON_EVENT);
+            ecu_fsm_dispatch(&led2, &OFF_EVENT);
+        }
+
+    .. figure:: /images/fsm/event_driven_paradigm_event_driven_state_machine_multiple_instances.svg
+        :width: 500
+        :align: center
+
+    Event-Driven State Machine Multiple Instances
+
+    A polling state machine can only have one instance since global communication flags 
+    are used:
+
+    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine_multiple_instances.svg
+        :width: 500
+        :align: center
+
+    Polling State Machine Multiple Instances
+
+#. An event-driven state machine is far easier to test. Test code simply creates an event, dispatches 
+   it to the state machine, and verifies its output. The state machine can be easily reset since multiple
+   independent instances can be created:
+
+    .. code-block:: c
+
+        TEST()
+        {
+            struct fsm test_fsm;
+
+            create(&test_fsm);
+            ecu_fsm_dispatch(&test_fsm, &EVENT);
+            verify_behavior();
+        }
+
+    Polling state machines are extremely difficult to test since it is basically a singleton.
+    The state machine's state is also often stored as a static variable in a local function,
+    making it impossible to reset without preprocessor directives and condition compilation:
+
+    .. code-block:: c
+
+        static void polled_fsm_implementation(void)
+        {
+            /* Good luck resetting this. */
+            static enum {ON_STATE, OFF_STATE} state;
+
+            switch (state)
+            {
+                case ON_STATE:
+                    /* Good luck resetting global flags and maintaining that in test code. */
+                    if (off_flag)
+                    {
+                        off_flag = false;
+                        state = OFF_STATE;
+                    }
+                    break;
+
+                // ...
+            }
+        } 
+
+
+!!!!!!!!!! TODO Stopped here !!!
+
+#. Thread-safety is trivial. Events are **not** shared resources since they 
+   are represented as an **object**. Each thread can create their own events. The only shared 
+   resource is the FSM object instance which can be delegated to a separate task with an 
+   event queue. This is discussed in the :ref:`Run to Completion Semantics Section <fsm_run_to_completion_semantics>`.
+
+#. Less CPU overhead. The state machine only performs work when it needs to.
+
+#. Representing the state machine as an **object** allows multiple instances of the same 
+   FSM to be created that operate **independently from one another**.
+
+
+
+
+Disadvantages of the polling state machine are:
+
+Polling state machines like the one above are anti-patterns because:
+
+#. They are tightly coupled to the application, making them not reusable.
+   Porting a polled FSM to different applications is not trivial since each 
+   global flag must be properly initialized and handled by every application that uses it.
+   
+#. If the FSM's implementation ever changes, then every application that uses it must 
+   also change how it edits these global flags.
+
+#. The state machine is **not** an object so only one instance can be created.
+   Even worse, its implementation is controlled by static flags that test code 
+   cannot change.
+
+#. The state machine is very difficult to test due to the reasonings in the previous points.
+
+#. Thread-safety is **not** trivial since every single global flag and the FSM are shared
+   resources.
+
+#. The state machine has to repeatedly run, even when no processing is required most of the time.
+
+#. The state machine is essentially a shared and editable singleton, which is an anti-pattern
+   in most cases.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+State machines built with this framework are **event-driven**. They only perform work
+when an event is dispatched to it via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`:
+
+
+
+The application treats the state machine as a black-box and blindly dispatches events
+to it. Thus, the state machine's implementation details are fully encapsulated.
+
+
 
 State machines built with this framework only perform work when events (button press, value change, etc)
 are dispatched via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`. All processing is 
@@ -462,14 +525,9 @@ encapsulated within the FSM's implementation. **The application never cares abou
 the state machine's internal details. It treats it as a black-box and simply dispatches events 
 to it.**
 
-.. figure:: /images/fsm/event_driven_state_machine.svg
-  :width: 600
-  :align: center
 
-  Event-Driven State Machine
 
-This pattern naturally decouples the FSM from the application, as all 
-forms of communication between the two are limited to event dispatching.
+
 This is fully showcased in the :ref:`Example Section <fsm_example>`.
 
 Notable advantages an event-driven approach provides are:
@@ -661,6 +719,16 @@ all reads and writes to it are guaranteed to be thread safe.
 Run to completion is always satisfied because the event processing is conducted
 within app_fsm_task(), which is an RTOS task. A task cannot pre-empt itself, therefore
 all calls to :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>` are guaranteed to finish.
+
+
+
+
+
+
+!!! TODO STopped here
+
+
+run the fsm in a task that is synchronized by an event queue.
 
 
 Example

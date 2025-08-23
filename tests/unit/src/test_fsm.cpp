@@ -3,7 +3,11 @@
  * @brief Unit tests for public API functions in @ref fsm.h. 
  * Test Summary:
  * 
+ * @ref ECU_FSM_GET_CONTEXT()
+ *      - TEST(Fsm, GetContext)
+ * 
  * @ref @ref ecu_fsm_start(), @ref ecu_fsm_change_state()
+ *      - TEST(Fsm, StartStateHasNoHandler)
  *      - TEST(Fsm, StartNoTransition)
  *      - TEST(Fsm, StartSingleStateTransition)
  *      - TEST(Fsm, StartConsecutiveStateTransition)
@@ -15,6 +19,7 @@
  *      - TEST(Fsm, StartSelfTransitionOnThirdEntry)
  * 
  * @ref @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
+ *      - TEST(Fsm, DispatchStateHasNoHandler)
  *      - TEST(Fsm, DispatchSelfTransition)
  *      - TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
  *      - TEST(Fsm, DispatchSingleStateTransition)
@@ -483,8 +488,70 @@ TEST_GROUP(Fsm)
 };
 
 /*------------------------------------------------------------*/
+/*----------------- TESTS - ECU_FSM_GET_CONTEXT --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Convert intrusive fsm into application fsm type.
+ * Verifies returned pointer points to start of user's type.
+ */
+TEST(Fsm, GetContext)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        struct app_fsm_t
+        {
+            std::uint8_t a;
+            ecu_fsm fsm;
+            int b;
+            std::uint8_t c;
+        } app_fsm;
+
+        /* Step 2: Action. */
+        app_fsm_t *app_fsm_ptr = ECU_FSM_GET_CONTEXT(&app_fsm.fsm, app_fsm_t, fsm);
+
+        /* Step 3: Assert. */
+        POINTERS_EQUAL(&app_fsm, app_fsm_ptr);
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
 /*-------------------- TESTS - ECU_FSM_START -----------------*/
 /*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed. All states must have a handler.
+ */
+TEST(Fsm, StartStateHasNoHandler)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_handler_unused()
+                                .with_entry()
+                                .with_exit();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
 /**
  * @brief FSM started with no transition.
@@ -810,6 +877,34 @@ TEST(Fsm, StartSelfTransitionOnThirdEntry)
 /*------------------------------------------------------------*/
 /*------------------- TESTS - ECU_FSM_DISPATCH ---------------*/
 /*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed. All states must have a handler.
+ */
+TEST(Fsm, DispatchStateHasNoHandler)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_handler_unused()
+                                .with_entry()
+                                .with_exit();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
 /**
  * @brief Transition to self within handler function.
