@@ -18,9 +18,8 @@
 /* Translation unit. */
 #include "ecu/fsm.h"
 
-/* Asserts and utilities. */
+/* ECU. */
 #include "ecu/asserter.h"
-#include "ecu/utils.h"
 
 /*------------------------------------------------------------*/
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
@@ -137,45 +136,6 @@ void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state)
     clear_all_transitions(me);
 }
 
-void ecu_fsm_start(struct ecu_fsm *me)
-{
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
-    ECU_RUNTIME_ASSERT( (me->state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
-    const struct ecu_fsm_state *prev_state = me->state;
-
-    /* Run entry handler of current state if one was supplied.
-    State transitions are handled by running exit handler of previous state
-    and entry handler of current state. Reject user from state transitions
-    in exit handler as that makes no sense - we are already exiting the State.
-    Reject user from self-transitions in entry handler. Pointless and causes
-    infinite loop. */
-    if (me->state->entry)
-    {
-        (*me->state->entry)(me);
-        ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
-
-        while (transition_is_active(me, FSM_STATE_TRANSITION))
-        {
-            clear_all_transitions(me);
-
-            if (prev_state->exit)
-            {
-                (*prev_state->exit)(me);
-                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
-            }
-
-            prev_state = me->state;
-            if (me->state->entry)
-            {
-                (*me->state->entry)(me);
-                ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
-            }
-        }
-    }
-}
-
 void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state *state)
 {
     ECU_RUNTIME_ASSERT( (me && state) );
@@ -242,6 +202,45 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event)
         {
             (*me->state->entry)(me);
             ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+        }
+    }
+}
+
+void ecu_fsm_start(struct ecu_fsm *me)
+{
+    ECU_RUNTIME_ASSERT( (me) );
+    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
+    ECU_RUNTIME_ASSERT( (me->state) );
+    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
+    const struct ecu_fsm_state *prev_state = me->state;
+
+    /* Run entry handler of current state if one was supplied.
+    State transitions are handled by running exit handler of previous state
+    and entry handler of current state. Reject user from state transitions
+    in exit handler as that makes no sense - we are already exiting the State.
+    Reject user from self-transitions in entry handler. Pointless and causes
+    infinite loop. */
+    if (me->state->entry)
+    {
+        (*me->state->entry)(me);
+        ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+
+        while (transition_is_active(me, FSM_STATE_TRANSITION))
+        {
+            clear_all_transitions(me);
+
+            if (prev_state->exit)
+            {
+                (*prev_state->exit)(me);
+                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+            }
+
+            prev_state = me->state;
+            if (me->state->entry)
+            {
+                (*me->state->entry)(me);
+                ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+            }
         }
     }
 }

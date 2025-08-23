@@ -23,33 +23,27 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* ECU. */
+#include "ecu/utils.h"
+
 /*------------------------------------------------------------*/
 /*---------------------- DEFINES AND MACROS ------------------*/
 /*------------------------------------------------------------*/
 
 /**
- * @brief Verifies, at compile-time, that derived fsm
- * correctly inherits @ref ecu_fsm base class. Returns
- * true if correctly inherited. False otherwise.
- * 
- * @param base_ Name of @ref ecu_fsm <b>member</b> within 
- * user's @p derived_ fsm type.
- * @param derived_ Derived fsm type to check.
+ * @brief Converts intrusive @ref ecu_fsm member into the
+ * user's FSM type.
+ *
+ * @param ecu_fsm_ptr_ Pointer to intrusive @ref ecu_fsm.
+ * This must be pointer to non-const. I.e. (struct ecu_fsm *).
+ * @param type_ User's FSM type containing the intrusive
+ * @ref ecu_fsm member. Do not use const specifier. I.e. 
+ * (struct my_type), never (const struct my_type).
+ * @param member_ Name of @ref ecu_fsm member within user's
+ * type.
  */
-#define ECU_FSM_IS_BASEOF(base_, derived_) \
-    ((bool)(offsetof(derived_, base_) == (size_t)0))
-
-/**
- * @brief Upcasts derived fsm pointer into @ref ecu_fsm
- * base class pointer. This macro encapsulates the cast
- * and allows derived fsms to be passed into base class 
- * functions defined in this module.
- * 
- * @param me_ Pointer to derived fsm. This must inherit
- * @ref ecu_fsm base class and must be pointer to non-const.
- */
-#define ECU_FSM_BASE_CAST(me_) \
-    ((struct ecu_fsm *)(me_))
+#define ECU_FSM_GET_CONTEXT(ecu_fsm_ptr_, type_, member_) \
+    ECU_CONTAINER_OF(ecu_fsm_ptr, type_, member_)
 
 /**
  * @brief Helper macro supplied to @ref ECU_FSM_STATE_CTOR()
@@ -66,12 +60,7 @@
     ((void (*)(struct ecu_fsm *))0)
 
 /**
- * @brief Creates a state at compile-time. Supplied state
- * functions taking in a derived fsm pointer are upcasted
- * to state functions taking in an @ref ecu_fsm base class
- * pointer. The results of these casts are assigned to
- * members of @ref ecu_fsm_state. This macro encapsulates
- * all casts and member initializations of @ref ecu_fsm_state.
+ * @brief Creates an @ref ecu_fsm_state at compile-time.
  * Example usage:
  * @code{.c}
  * static const struct ecu_fsm_state STATE1 = ECU_FSM_STATE_CTOR(
@@ -80,17 +69,20 @@
  * @endcode
  * 
  * @param entry_ Optional function that executes when state is 
- * first entered. Supply @ref ECU_FSM_STATE_ENTRY_UNUSED if unused.
+ * first entered. This must be of type (void (*)(struct ecu_fsm *)).
+ * Supply @ref ECU_FSM_STATE_ENTRY_UNUSED if unused.
  * @param exit_ Optional function that executes when state exits.
+ * This must be of type (void (*)(struct ecu_fsm *)).
  * Supply @ref ECU_FSM_STATE_EXIT_UNUSED if unused.
  * @param handler_ Mandatory function that processes events
- * dispatched to this state.
+ * dispatched to this state. This must be of type
+ * (void (*)(struct ecu_fsm *, const void *)).
  */
-#define ECU_FSM_STATE_CTOR(entry_, exit_, handler_)                     \
-    {                                                                   \
-        .entry = (void (*)(struct ecu_fsm *))(entry_),                  \
-        .exit = (void (*)(struct ecu_fsm *))(exit_),                    \
-        .handler = (void (*)(struct ecu_fsm *, const void *))(handler_) \
+#define ECU_FSM_STATE_CTOR(entry_, exit_, handler_) \
+    {                                               \
+        .entry = (entry_),                          \
+        .exit = (exit_),                            \
+        .handler = (handler_)                       \
     }
 
 /*------------------------------------------------------------*/
@@ -135,7 +127,8 @@ struct ecu_fsm_state
 };
 
 /**
- * @brief Base fsm class.
+ * @brief Finite state machine. Users create their own
+ * FSMs by containing this as an intrusive member.
  * 
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
@@ -158,13 +151,16 @@ extern "C" {
 #endif
 
 /**
- * @name Fsm Constructor
+ * @name Constructors
  */
 /**@{*/
 /**
  * @pre Memory already allocated for @p me.
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
  * @brief Fsm constructor.
+ * 
+ * @warning Supplied FSM cannot be active, otherwise behavior
+ * is undefined.
  * 
  * @param me Fsm to construct.
  * @param state Fsm's initial state. 
@@ -173,24 +169,9 @@ extern void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state);
 /**@}*/
 
 /**
- * @name Fsm Member Functions
+ * @name Member Functions
  */
 /**@{*/
-/**
- * @pre @p me constructed via @ref ecu_fsm_ctor().
- * @brief Runs the initial state's entry handler and manages 
- * all state transition logic if any state changes were siganlled 
- * via @ref ecu_fsm_change_state(). This function does nothing
- * if the initial state's entry handler is unused.
- * 
- * @warning This function should only be called once on
- * startup and must run to completion.
- * 
- * @param me Fsm to start. This should not be an already 
- * running fsm.
- */
-extern void ecu_fsm_start(struct ecu_fsm *me);
-
 /**
  * @pre @p me constructed via @ref ecu_fsm_ctor().
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
@@ -218,6 +199,21 @@ extern void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state 
  * @param event Event to dispatch. This cannot be NULL.
  */
 extern void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event);
+
+/**
+ * @pre @p me constructed via @ref ecu_fsm_ctor().
+ * @brief Runs the initial state's entry handler and manages 
+ * all state transition logic if any state changes were siganlled 
+ * via @ref ecu_fsm_change_state(). This function does nothing
+ * if the initial state's entry handler is unused.
+ * 
+ * @warning This function should only be called once on
+ * startup and must run to completion.
+ * 
+ * @param me Fsm to start. This should not be an already 
+ * running fsm.
+ */
+extern void ecu_fsm_start(struct ecu_fsm *me);
 /**@}*/
 
 #ifdef __cplusplus

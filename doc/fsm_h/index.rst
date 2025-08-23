@@ -56,13 +56,13 @@ a base class type (struct ecu_fsm \*). Derived types are passed into the API by 
     ecu_fsm_start((struct ecu_fsm *)&APP_FSM);
     // ....
 
-For better encapsulation, this cast should be wrapped within :ecudoxygen:`ECU_FSM_BASE_CAST() <ECU_FSM_BASE_CAST>`:
+For better encapsulation, this cast should be wrapped within :ecudoxygen:`TODO_WAS_FSM_BASE_CAST_BEFORE!!() <TODO_WAS_FSM_BASE_CAST_BEFORE!!>`:
 
 .. code-block:: c 
 
     struct app_fsm APP_FSM;
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&APP_FSM), &INIT_STATE);
-    ecu_fsm_start(ECU_FSM_BASE_CAST(&APP_FSM));
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &INIT_STATE);
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM));
     // ....
 
 Inheritance in C is accomplished this way. The example above is **functionally** equivalent
@@ -265,7 +265,7 @@ Accompanying pseudocode defining this behavior is shown below:
         printf("state1 handler!");
         if (event causes transition to STATE2)
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
         }
     }
 
@@ -294,8 +294,8 @@ Accompanying pseudocode defining this behavior is shown below:
     );
 
     struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(&APP_FSM), &event_that_causes_transition_to_STATE2);
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
+    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_transition_to_STATE2);
 
 In this case the code execution order is:
 
@@ -334,7 +334,7 @@ within a state's entry() function. For example:
         printf("state1 handler!");
         if (event causes transition to STATE2)
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
         }
     }
 
@@ -344,7 +344,7 @@ within a state's entry() function. For example:
         printf("state2 entered!");
         if (fsm needs to transition to STATE3)
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE3);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE3);
         }
     }
 
@@ -387,8 +387,8 @@ within a state's entry() function. For example:
     );
 
     struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(&APP_FSM), &event_that_causes_transition_to_STATE2);
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
+    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_transition_to_STATE2);
 
 Assuming the FSM needs to transition to STATE3 in state2_entry(), the code 
 execution order is:
@@ -429,7 +429,7 @@ Finally, self-state transitions are also allowed. This is often done to reset a 
         printf("state1 handler!");
         if (event causes state reset)
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE1);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE1);
         }
     }
 
@@ -438,8 +438,8 @@ Finally, self-state transitions are also allowed. This is often done to reset a 
     );
 
     struct app_fsm APP_FSM; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&APP_FSM), &STATE1);
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(&APP_FSM), &event_that_causes_state_reset);
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &STATE1);
+    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event_that_causes_state_reset);
 
 In this case the code execution order is:
 
@@ -644,7 +644,7 @@ its own event queue.
             if (!queue_empty(&event_queue))
             {
                 event = queue_read(&event_queue);
-                ecu_fsm_dispatch(ECU_FSM_BASE_CAST(&APP_FSM), &event);
+                ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event);
             }
         }
     }
@@ -789,13 +789,13 @@ The main takeaways are:
         {
             case LED_OFF_REQUEST_EVENT:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
                 break;
             }
 
             case LED_BUTTON_PRESS_EVENT:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
                 break;
             }
 
@@ -821,13 +821,13 @@ The main takeaways are:
         {
             case LED_ON_REQUEST_EVENT:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_ON_STATE);
                 break;
             }
 
             case LED_BUTTON_PRESS_EVENT:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_ON_STATE);
                 break;
             }
             
@@ -856,7 +856,7 @@ The main takeaways are:
                   void (*turn_off)(void *obj),
                   void *obj)
     {
-        ecu_fsm_ctor(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+        ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
         me->api.turn_on = turn_on;
         me->api.turn_off = turn_off;
         me->api.obj = obj;
@@ -865,7 +865,7 @@ The main takeaways are:
     void led_dispatch(struct led *me, const struct led_event *event)
     {
         /* Notice how this wrapper can be used to enforce a specific event type. */
-        ecu_fsm_dispatch(ECU_FSM_BASE_CAST(me), event);
+        ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), event);
     }
 
 
@@ -997,7 +997,7 @@ the same LED FSM defined in ``led.h`` and ``led.c``. The main takeaways are:
         struct led TEST_LED;
         led_ctor(&TEST_LED, &turn_led_on, &turn_led_off, NULL);
 
-        ecu_fsm_start(ECU_FSM_BASE_CAST(&TEST_LED));    /* "LED turned off!" */
+        ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&TEST_LED));    /* "LED turned off!" */
         led_dispatch(&TEST_LED, &ON_REQUEST_EVENT);     /* "LED turned on!" */
         led_dispatch(&TEST_LED, &ON_REQUEST_EVENT);     /* Nothing. */
         led_dispatch(&TEST_LED, &BUTTON_PRESS_EVENT);   /* "LED turned off! */
@@ -1069,10 +1069,10 @@ Sets the starting state the FSM should be in.
 .. code-block:: c 
 
     struct app_fsm fsm;  /* Must inherit ecu_fsm. User must allocate memory before constructor. */
-    ecu_fsm_start(ECU_FSM_BASE_CAST(&fsm)); /* ILLEGAL. Must construct before using. */
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm)); /* ILLEGAL. Must construct before using. */
 
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&fsm), &INIT_STATE);
-    ecu_fsm_start(ECU_FSM_BASE_CAST(&fsm)); /* Ok. */
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm), &INIT_STATE);
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm)); /* Ok. */
 
 
 Member Functions
@@ -1107,7 +1107,7 @@ the :ecudoxygen:`ecu_fsm` base class:
     ECU_STATIC_ASSERT( (ECU_FSM_IS_BASEOF(fsm, struct incorrect_fsm)), "ecu_fsm must be first member.");
   
 
-ECU_FSM_BASE_CAST()
+TODO_WAS_FSM_BASE_CAST_BEFORE!!()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Upcasts a user's derived FSM type back into the :ecudoxygen:`ecu_fsm` 
 base class. This macro encapsulates the cast and allows derived FSMs 
@@ -1126,8 +1126,8 @@ to be passed into base class functions defined in this framework.
     };
 
     struct app_fsm fsm;
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&fsm), &INIT_STATE);
-    ecu_fsm_start(ECU_FSM_BASE_CAST(&fsm));
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm), &INIT_STATE);
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm));
     // ...
 
 
@@ -1142,7 +1142,7 @@ fully explains how this framework handles transitions.
     static void state1_entry(struct app_fsm *me)
     {
         printf("S1 entered!");
-        ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
+        ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
     }
 
     static void state1_exit(struct app_fsm *me)
@@ -1179,8 +1179,8 @@ fully explains how this framework handles transitions.
     );
 
     struct app_fsm fsm; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&fsm), &STATE1);
-    ecu_fsm_start(ECU_FSM_BASE_CAST(&fsm));
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm), &STATE1);
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm));
 
 ecu_fsm_start() causes the following code execution order:
 
@@ -1230,7 +1230,7 @@ to read the :ref:`Event Driven Paradigm Section <fsm_event_driven_paradigm>`.
         printf("S1 handled!");
         if (event causes transition to STATE2)
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &STATE2);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &STATE2);
         }
     }
 
@@ -1258,8 +1258,8 @@ to read the :ref:`Event Driven Paradigm Section <fsm_event_driven_paradigm>`.
     );
 
     struct app_fsm fsm; /* Must inherit ecu_fsm. */
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(&fsm), &STATE1);
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(&fsm), &event_that_causes_transition_to_STATE2);
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm), &STATE1);
+    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&fsm), &event_that_causes_transition_to_STATE2);
 
 ecu_fsm_dispatch() causes the following code execution order:
 

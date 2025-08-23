@@ -120,13 +120,13 @@ static void led_on_handler(struct led *me, const void *event)
     {
         case LED_OFF_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
             break;
         }
 
         case LED_BUTTON_PRESS_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
             break;
         }
 
@@ -154,13 +154,13 @@ static void led_off_handler(struct led *me, const void *event)
     {
         case LED_ON_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_ON_STATE);
             break;
         }
 
         case LED_BUTTON_PRESS_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+            ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_ON_STATE);
             break;
         }
         
@@ -183,7 +183,7 @@ void led_ctor(struct led *me,
 {
     ECU_RUNTIME_ASSERT( (me && turn_on && turn_off) );
 
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+    ecu_fsm_ctor(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &LED_OFF_STATE);
     ecu_dnode_ctor(&me->node, &led_cleanup, ECU_OBJECT_ID_UNUSED);
     me->api.turn_on = turn_on;
     me->api.turn_off = turn_off;
@@ -193,7 +193,7 @@ void led_ctor(struct led *me,
 void led_start(struct led *me)
 {
     ECU_RUNTIME_ASSERT( (led_is_constructed(me)) );
-    ecu_fsm_start(ECU_FSM_BASE_CAST(me));
+    ecu_fsm_start(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me));
 }
 
 void led_destroy(struct led *me)
@@ -216,5 +216,5 @@ void led_dispatch(struct led *me, const struct led_event *event)
 {
     ECU_RUNTIME_ASSERT( (event) );
     ECU_RUNTIME_ASSERT( (led_is_constructed(me)) );
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(me), event);
+    ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), event);
 }

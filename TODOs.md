@@ -20,6 +20,9 @@ Completed.
 2. Expose valid() functions publically so they can be used by other modules.
 3. Remove @details directive for **everything**.
 
+4. **In DLIST_GET_ENTRY() and NTNODE_GET_ENTRY() update ptr_ to ecu_dnode_ptr_ and ecu_ntnode_ptr_**
+***respectivly. Includes code changes and documentation changes!!!**
+
 
 ## Tree
 1b. ntree.c pretty much done. All node_valid() asserts and correct paths done.
