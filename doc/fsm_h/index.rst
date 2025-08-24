@@ -301,7 +301,7 @@ Events are objects that describe the type of event and contain any relevant data
     };
 
 When an event occurs, it is sent to the state machine via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`:
-The application treats it as a black-box and blindly dispatches events to it: 
+The application treats the state machine as a black-box and blindly dispatches events to it: 
 
 .. code-block:: c
 
@@ -333,9 +333,8 @@ commonly used:
     Polling State Machine
 
 Polling state machines tightly couple themselves to the application as the two must
-communicate with each other through extensive use of global flags. An event-driven
-approach is far superior because the decoupling offers these advantages compared to 
-a polling state machine:
+communicate with each other through extensive use of global flags. **The points below
+expand upon this and further explain why event-driven is the superior approach**:
 
 #. An event-driven state machine's implementation is fully reusable and encapsulated. 
    Porting the state machine to a new application simply involves dispatching events 
@@ -364,26 +363,26 @@ a polling state machine:
             }
         }
 
-    A polling state machine's implementation is neither reusable nor encapsulated:
+   A polling state machine's implementation is neither reusable nor encapsulated:
 
     .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine.svg
         :width: 500
         :align: center
 
-    Polling State Machine
+        Polling State Machine
 
-    Offloading the button press logic to the application does not fix the coupling
-    since a different global flag must be used instead:
+   Offloading the button press logic to the application does not fix the coupling.
+   It just changes which global flags are used to facilitate communication between the two:
 
-    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine2.svg
+    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine_different_global_flags.svg
         :width: 500
         :align: center
 
-    Polling State Machine
+        Polling State Machine Different Global Flags
 
-    Porting a polled state machine to a new application is not trivial because it must
-    carefully edit these global flags in a predefined fashion. If the state machine's 
-    details change, every application that uses it would have to be refactored.
+   Porting this state machine to a new application is not trivial because it must
+   carefully edit these global flags in a predefined fashion. Also if the state machine's 
+   details change, every application that uses it would have to be refactored.
 
 #. Multiple instances of the same event-driven state machine can be created, with each
    instance operating **independently** from one another:
@@ -403,16 +402,16 @@ a polling state machine:
         :width: 500
         :align: center
 
-    Event-Driven State Machine Multiple Instances
+        Event-Driven State Machine Multiple Instances
 
-    A polling state machine can only have one instance since global communication flags 
-    are used:
+   A polling state machine can only have one instance since global communication flags 
+   are used:
 
     .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine_multiple_instances.svg
         :width: 500
         :align: center
 
-    Polling State Machine Multiple Instances
+        Polling State Machine Multiple Instances
 
 #. An event-driven state machine is far easier to test. Test code simply creates an event, dispatches 
    it to the state machine, and verifies its output. The state machine can be easily reset since multiple
@@ -426,12 +425,12 @@ a polling state machine:
 
             create(&test_fsm);
             ecu_fsm_dispatch(&test_fsm, &EVENT);
-            verify_behavior();
+            verify_output();
         }
 
-    Polling state machines are extremely difficult to test since it is basically a singleton.
-    The state machine's state is also often stored as a static variable in a local function,
-    making it impossible to reset without preprocessor directives and condition compilation:
+   Polling state machines are extremely difficult to test since it is basically a singleton.
+   The state machine's state is also often stored as a static variable in a local function,
+   making it impossible to reset without preprocessor directives and condition compilation:
 
     .. code-block:: c
 
@@ -453,287 +452,70 @@ a polling state machine:
 
                 // ...
             }
-        } 
+        }
 
-
-!!!!!!!!!! TODO Stopped here !!!
-
-#. Thread-safety is trivial. Events are **not** shared resources since they 
-   are represented as an **object**. Each thread can create their own events. The only shared 
-   resource is the FSM object instance which can be delegated to a separate task with an 
-   event queue. This is discussed in the :ref:`Run to Completion Semantics Section <fsm_run_to_completion_semantics>`.
-
-#. Less CPU overhead. The state machine only performs work when it needs to.
-
-#. Representing the state machine as an **object** allows multiple instances of the same 
-   FSM to be created that operate **independently from one another**.
-
-
-
-
-Disadvantages of the polling state machine are:
-
-Polling state machines like the one above are anti-patterns because:
-
-#. They are tightly coupled to the application, making them not reusable.
-   Porting a polled FSM to different applications is not trivial since each 
-   global flag must be properly initialized and handled by every application that uses it.
+#. Thread-safety is trivial for event-driven state machines. Events are **not** shared resources
+   since they are represented as **objects**. Each thread can create their own events, giving them
+   exclusive access:
    
-#. If the FSM's implementation ever changes, then every application that uses it must 
-   also change how it edits these global flags.
+    .. figure:: /images/fsm/event_driven_paradigm_exclusive_access_to_events.svg
+        :width: 500
+        :align: center
 
-#. The state machine is **not** an object so only one instance can be created.
-   Even worse, its implementation is controlled by static flags that test code 
-   cannot change.
-
-#. The state machine is very difficult to test due to the reasonings in the previous points.
-
-#. Thread-safety is **not** trivial since every single global flag and the FSM are shared
-   resources.
-
-#. The state machine has to repeatedly run, even when no processing is required most of the time.
-
-#. The state machine is essentially a shared and editable singleton, which is an anti-pattern
-   in most cases.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-State machines built with this framework are **event-driven**. They only perform work
-when an event is dispatched to it via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`:
-
-
-
-The application treats the state machine as a black-box and blindly dispatches events
-to it. Thus, the state machine's implementation details are fully encapsulated.
-
-
-
-State machines built with this framework only perform work when events (button press, value change, etc)
-are dispatched via :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`. All processing is 
-encapsulated within the FSM's implementation. **The application never cares about
-the state machine's internal details. It treats it as a black-box and simply dispatches events 
-to it.**
-
-
-
-
-This is fully showcased in the :ref:`Example Section <fsm_example>`.
-
-Notable advantages an event-driven approach provides are:
-
-#. The FSM implementation is fully reusable across multiple applications running
-   on different targets. 
-
-#. The decoupling makes code far easier to test. Test code simply creates an event, dispatches 
-   it to the state machine, and verifies its output.
-
-#. The decoupling makes thread-safety trivial. Events are **not** shared resources since they 
-   are represented as an **object**. Each thread can create their own events. The only shared 
-   resource is the FSM object instance which can be delegated to a separate task with an 
-   event queue. This is discussed in the :ref:`Run to Completion Semantics Section <fsm_run_to_completion_semantics>`.
-
-#. Less CPU overhead. The state machine only performs work when it needs to.
-
-#. Representing the state machine as an **object** allows multiple instances of the same 
-   FSM to be created that operate **independently from one another**.
-
-Compare this to the traditional polling state machine that is unfortunately most commonly used.
-The FSM's implementation and communication with the application is usually facilitated 
-through extensive use of flags:
-
-.. code-block:: c 
-
-    /*-------------------------- led.h --------------------------*/
-    enum state_t{LED_ON_STATE, LED_OFF_STATE};
-    extern bool button_pressed;
-    extern state_t requested_state;
-    extern void polled_led_fsm_run(void);
-
-    /*-------------------------- led.c --------------------------*/
-    bool button_pressed = false;
-    state_t requested_state = LED_OFF_STATE;
-
-    void polled_led_fsm_run(void)
-    {
-        /* The FSM is implemented through extensive use of internal flags. 
-        Even worse, the FSM and application communicate through global flags. */
-        static enum state_t state = LED_OFF_STATE;
-        static bool do_work = false;
-
-        switch (state)
-        {
-            case LED_ON_STATE:
-            {
-                if (!do_work)
-                {
-                    turn_led_on();
-                    do_work = true;
-                }
-
-                if (button_pressed || requested_state == LED_OFF_STATE)
-                {
-                    state = LED_OFF_STATE;
-                    button_pressed = false;
-                    do_work = false;
-                }
-                break;
-            }
-
-            case LED_OFF_STATE:
-            {
-                if (!do_work)
-                {
-                    turn_led_off();
-                    do_work = true;
-                }
-
-                if (button_pressed || requested_state == LED_ON_STATE)
-                {
-                    state = LED_ON_STATE;
-                    button_pressed = false;
-                    do_work = false;
-                }
-                break;
-            }
-
-            default:
-            {
-                break;
-            }
-        }
-    }
-
-    /*------------------------- main.c --------------------------*/
-    #include "led.h" /* Polled FSM that is tightly coupled and not reusable. */
-
-    while (1)
-    {
-        /* The polled FSM and application communicate through global flags. */
-        button_pressed = button_read();
-        if (need to go to OFF STATE)
-        {
-            requested_state = LED_OFF_STATE;
-        }
-        else if (need to go to ON STATE)
-        {
-            requested_state = LED_ON_STATE;
-        }
-
-        polled_led_fsm_run();
-    }
-
-Compare this to the :ref:`event-driven FSM example <fsm_example>`, which is the 
-far superior approach. Polling state machines like the one above are anti-patterns because:
-
-#. They are tightly coupled to the application, making them not reusable.
-   Porting a polled FSM to different applications is not trivial since each 
-   global flag must be properly initialized and handled by every application that uses it.
+        Exclusive Access to Events
    
-#. If the FSM's implementation ever changes, then every application that uses it must 
-   also change how it edits these global flags.
+   This makes the only shared resource the state machine. :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`
+   must run to completion and cannot be pre-empted. This requirement is easily satisfied by delegating the
+   state machine to its own RTOS thread that blocks on an **event queue**:
 
-#. The state machine is **not** an object so only one instance can be created.
-   Even worse, its implementation is controlled by static flags that test code 
-   cannot change.
+    .. figure:: /images/fsm/event_driven_paradigm_event_queue.svg
+        :width: 500
+        :align: center
 
-#. The state machine is very difficult to test due to the reasonings in the previous points.
+        State Machine's Event Queue
 
-#. Thread-safety is **not** trivial since every single global flag and the FSM are shared
-   resources.
+   Other threads can only iteract with the state machine by posting events to its queue.
+   Queues are a thread-synchronization primitive provided by the RTOS vendor so reads and writes are
+   guaranteed to be thread-safe. The state machine performs work (processes events) in its
+   own thread. A thread cannot pre-empt itself, so :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`
+   is guaranteed to run to completion.
+   
+    .. figure:: /images/fsm/event_driven_paradigm_posting_to_event_queue.svg
+        :width: 500
+        :align: center
 
-#. The state machine has to repeatedly run, even when no processing is required most of the time.
+        Posted to State Machine's Event Queue
 
-#. The state machine is essentially a shared and editable singleton, which is an anti-pattern
-   in most cases.
+   Also notice how the state machine is naturally decoupled from the RTOS.
+   The implementation (state machine box) is simply wrapped in an RTOS thread. Porting to a different
+   RTOS (or bare-metal) simply involves using the same state machine implementation code and wrapping 
+   it in RTOS-specific primitives.
 
+   Thread safety is **not** trivial for polling state machines. Every global flag is a shared
+   resource that must be carefully guarded:
 
-Run to Completion Semantics
--------------------------------------------------
-.. _fsm_run_to_completion_semantics:
+    .. figure:: /images/fsm/event_driven_paradigm_polling_state_machine_thread_safety.svg
+        :width: 500
+        :align: center
 
-As discussed in the :ref:`previous section <fsm_event_driven_paradigm>`, event-driven state 
-machines make thread-safety trivial as they naturally decouple themselves from the application.
-The only shared resource is the FSM object instance, which **must run to completion** to ensure
-thread safety.
+        Polling State Machine Thread Safety
 
-This means that when an event is dispatched, the FSM must finish processing it before the next one
-is processed. Violations of this rule include:
-
-#. Pre-empting calls to this API. Primarily :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>`.
-
-#. Misuse of this framework by calling the API (besides :ecudoxygen:`ecu_fsm_change_state() <ecu_fsm_change_state>`)
-   within a state's function.
-
-The following assumes the framework is used correctly, so only the first point is a concern.
-Thread safety is trivial as the FSM object instance can be offloaded to an RTOS task with 
-its own event queue.
-
-.. figure:: /images/fsm/queued_fsm.svg
-  :width: 600
-  :align: center
-
-  Queued State Machine
-
-.. code-block:: c
-
-    /*--------------------- app_fsm_task.c ----------------------*/
-    #include "app_fsm.h" /* Reusable state machine implementation. */
-    struct rtos_queue event_queue; /* The event queue is the only shared resource. */
-
-    /* RTOS task. */
-    static void app_fsm_task(..)
-    {
-        /* Create state machine object instance that will run in this task. */
-        struct app_fsm APP_FSM;
-        
-        while (1)
-        {
-            if (!queue_empty(&event_queue))
-            {
-                event = queue_read(&event_queue);
-                ecu_fsm_dispatch(TODO_WAS_FSM_BASE_CAST_BEFORE!!(&APP_FSM), &event);
-            }
-        }
-    }
-
-    /*------------------------- main.c --------------------------*/
-    queue_write(&event_queue, &event1);
-    queue_write(&event_queue, &event2);
-    queue_write(&event_queue, &event3);
-
-The application posts events to the task's queue instead of directly dispatching them.
-The only shared resource is the event queue, which is provided by the RTOS. Therefore 
-all reads and writes to it are guaranteed to be thread safe.
-
-Run to completion is always satisfied because the event processing is conducted
-within app_fsm_task(), which is an RTOS task. A task cannot pre-empt itself, therefore
-all calls to :ecudoxygen:`ecu_fsm_dispatch() <ecu_fsm_dispatch>` are guaranteed to finish.
-
-
-
-
-
-
-!!! TODO STopped here
-
-
-run the fsm in a task that is synchronized by an event queue.
-
+   It is extremely difficult to analyze how different threads will effect the behavior of each global
+   flag, and thus the behavior of the state machine. The state machine and application are also now 
+   both tightly coupled to the RTOS. Porting to a different RTOS requires changes everywhere 
+   (in this case using a new mutex API). 
+   
+   The above figures also showcase how much less efficient a polling state machine is. Blocking and CPU processing
+   is required every time the state machine is polled (which is repeatedly). Blocking and CPU processing only occurs 
+   for event-driven state machines when they need to actually perform work (post an event or process an event).
 
 Example
 -------------------------------------------------
-.. _fsm_example:
+!! TODO
+
+
+
+
 
 This in-depth example uses this state machine framework to create 
 the following LED FSM:

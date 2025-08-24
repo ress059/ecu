@@ -937,7 +937,7 @@ extern bool ecu_ntnode_is_leaf(const struct ecu_ntnode *me);
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
  * @brief Returns true if the node is a root, meaning it has no
  * parent. False otherwise. Note that this returns true for an
- * empty node since that is techincally a root.
+ * empty node since that is technically a root.
  * 
  * @param me Node to check.
  */

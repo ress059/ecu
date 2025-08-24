@@ -569,7 +569,7 @@ Consider the following example tree:
 ecu_ntnode_is_root()
 """""""""""""""""""""""""""""""""""""""""""""""""
 Returns true if the node is a root, meaning it has no parent. False otherwise. 
-Note that this returns true for an empty node since that is techincally a root.
+Note that this returns true for an empty node since that is technically a root.
 Consider the following example tree:
 
 .. figure:: /images/ntnode/ecu_ntnode_is_root.svg
