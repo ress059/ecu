@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2025-08-24T15:29:51.701Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="jEKQ-uflZKHCmI0_iAGg" version="21.1.2" type="device" pages="17">
+<mxfile host="Electron" modified="2025-08-27T01:46:09.083Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="kZUp7oaSWBroh49y52P5" version="21.1.2" type="device" pages="17">
   <diagram id="cz8aX_4aQq5yqWqZPQht" name="state_representation_state_reuse">
     <mxGraphModel dx="1418" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -245,7 +245,7 @@
         <mxCell id="vzyMFPJZGYbN5SmR1_f5-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" parent="1" source="0xvkM1sQomykO_5ILLYh-1" target="vzyMFPJZGYbN5SmR1_f5-1" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="vGLxh1W04k1fisXiRNxk-3" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;if (button_pressed &amp;gt;= 5)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;button_pressed = 0;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="vzyMFPJZGYbN5SmR1_f5-3" vertex="1" connectable="0">
+        <mxCell id="vGLxh1W04k1fisXiRNxk-3" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;if (button_pressed &amp;gt;= 5)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;button_pressed = 0;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="vzyMFPJZGYbN5SmR1_f5-3" vertex="1" connectable="0">
           <mxGeometry x="0.2754" y="1" relative="1" as="geometry">
             <mxPoint x="-19" y="22" as="offset" />
           </mxGeometry>
@@ -256,7 +256,7 @@
         <mxCell id="vzyMFPJZGYbN5SmR1_f5-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" parent="1" source="vzyMFPJZGYbN5SmR1_f5-1" target="0xvkM1sQomykO_5ILLYh-1" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="vzyMFPJZGYbN5SmR1_f5-5" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="vzyMFPJZGYbN5SmR1_f5-2" vertex="1" connectable="0">
+        <mxCell id="vzyMFPJZGYbN5SmR1_f5-5" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="vzyMFPJZGYbN5SmR1_f5-2" vertex="1" connectable="0">
           <mxGeometry x="0.325" y="-2" relative="1" as="geometry">
             <mxPoint x="-48" y="-36" as="offset" />
           </mxGeometry>
@@ -267,7 +267,7 @@
         <mxCell id="vGLxh1W04k1fisXiRNxk-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" parent="1" source="vGLxh1W04k1fisXiRNxk-6" target="vGLxh1W04k1fisXiRNxk-9" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="vGLxh1W04k1fisXiRNxk-5" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;if (stop_flag)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;stop_flag&amp;nbsp;= false;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="vGLxh1W04k1fisXiRNxk-4" vertex="1" connectable="0">
+        <mxCell id="vGLxh1W04k1fisXiRNxk-5" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;if (stop_flag)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;stop_flag&amp;nbsp;= false;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="vGLxh1W04k1fisXiRNxk-4" vertex="1" connectable="0">
           <mxGeometry x="0.2754" y="1" relative="1" as="geometry">
             <mxPoint x="-19" y="22" as="offset" />
           </mxGeometry>
@@ -278,7 +278,7 @@
         <mxCell id="vGLxh1W04k1fisXiRNxk-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" parent="1" source="vGLxh1W04k1fisXiRNxk-9" target="vGLxh1W04k1fisXiRNxk-6" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="vGLxh1W04k1fisXiRNxk-8" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;if (button_pressed &amp;gt;= 5)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;stop_flag = true;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="vGLxh1W04k1fisXiRNxk-7" vertex="1" connectable="0">
+        <mxCell id="vGLxh1W04k1fisXiRNxk-8" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;if (button_pressed &amp;gt;= 5)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;stop_flag = true;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="vGLxh1W04k1fisXiRNxk-7" vertex="1" connectable="0">
           <mxGeometry x="0.325" y="-2" relative="1" as="geometry">
             <mxPoint x="-48" y="-26" as="offset" />
           </mxGeometry>
@@ -315,7 +315,7 @@
         <mxCell id="VYzmYGjZj4b4zv2shXgu-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" parent="1" source="VYzmYGjZj4b4zv2shXgu-3" target="VYzmYGjZj4b4zv2shXgu-6" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="VYzmYGjZj4b4zv2shXgu-2" value="case OFF_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;if (on_flag)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;on_flag&amp;nbsp;= false;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;state = ON_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="VYzmYGjZj4b4zv2shXgu-1" vertex="1" connectable="0">
+        <mxCell id="VYzmYGjZj4b4zv2shXgu-2" value="case OFF_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;if (on_flag)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;on_flag&amp;nbsp;= false;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;state = ON_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" parent="VYzmYGjZj4b4zv2shXgu-1" vertex="1" connectable="0">
           <mxGeometry x="0.2754" y="1" relative="1" as="geometry">
             <mxPoint x="-9" y="22" as="offset" />
           </mxGeometry>
@@ -567,7 +567,7 @@
         <mxCell id="qaqrBV0Ph_WqgRfkhFXA-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="qaqrBV0Ph_WqgRfkhFXA-3" target="qaqrBV0Ph_WqgRfkhFXA-6">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="qaqrBV0Ph_WqgRfkhFXA-2" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;mutex_take();&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;if (button_pressed &amp;gt;= 5)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;button_pressed = 0;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;mutex_release();&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="qaqrBV0Ph_WqgRfkhFXA-1">
+        <mxCell id="qaqrBV0Ph_WqgRfkhFXA-2" value="case RUNNING_STATE:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;mutex_take();&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;if (button_pressed &amp;gt;= 5)&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;{&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;button_pressed = 0;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;state = STOPPED_STATE;&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;}&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;mutex_release();&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;&lt;/span&gt;break;" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="qaqrBV0Ph_WqgRfkhFXA-1">
           <mxGeometry x="0.2754" y="1" relative="1" as="geometry">
             <mxPoint x="-19" y="22" as="offset" />
           </mxGeometry>
@@ -578,7 +578,7 @@
         <mxCell id="qaqrBV0Ph_WqgRfkhFXA-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="qaqrBV0Ph_WqgRfkhFXA-6" target="qaqrBV0Ph_WqgRfkhFXA-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="qaqrBV0Ph_WqgRfkhFXA-5" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;mutex_take();&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;	&lt;/span&gt;mutex_release();&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="qaqrBV0Ph_WqgRfkhFXA-4">
+        <mxCell id="qaqrBV0Ph_WqgRfkhFXA-5" value="&lt;div style=&quot;text-align: left;&quot;&gt;if (button was pressed)&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;{&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;mutex_take();&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;button_pressed++;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt; &lt;/span&gt;mutex_release();&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;}&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="qaqrBV0Ph_WqgRfkhFXA-4">
           <mxGeometry x="0.325" y="-2" relative="1" as="geometry">
             <mxPoint x="-48" y="-36" as="offset" />
           </mxGeometry>
@@ -588,6 +588,49 @@
         </mxCell>
         <mxCell id="qaqrBV0Ph_WqgRfkhFXA-7" value="" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.x;fillColor=#FF1900;" vertex="1" parent="1">
           <mxGeometry x="520" y="200" width="80" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="8I_pm15_ZxuvNdHiXpPO" name="example">
+    <mxGraphModel dx="978" dy="571" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="un4xFOZ4VY06HUW24fwX-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="un4xFOZ4VY06HUW24fwX-1" target="un4xFOZ4VY06HUW24fwX-2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-9" value="LED_OFF_EVENT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-8" vertex="1" connectable="0">
+          <mxGeometry x="-0.1748" y="1" relative="1" as="geometry">
+            <mxPoint x="-10" y="9" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-1" value="LED_ON_STATE" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="320" y="360" width="160" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="un4xFOZ4VY06HUW24fwX-2" target="un4xFOZ4VY06HUW24fwX-1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-7" value="LED_ON_EVENT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-6" vertex="1" connectable="0">
+          <mxGeometry x="-0.0554" y="3" relative="1" as="geometry">
+            <mxPoint x="4" y="-7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-2" value="LED_OFF_STATE" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="360" width="160" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="OmlZQH77rvaDIAOkosyO-2" target="un4xFOZ4VY06HUW24fwX-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="70" y="275" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="un4xFOZ4VY06HUW24fwX-5" value="initial" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-4" vertex="1" connectable="0">
+          <mxGeometry x="-0.4937" y="1" relative="1" as="geometry">
+            <mxPoint x="-38" y="19" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OmlZQH77rvaDIAOkosyO-2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="70" y="270" width="20" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
@@ -835,47 +878,6 @@
         </mxCell>
         <mxCell id="eJQCOVJrdcA63mDH1NKP-29" value="" style="html=1;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;shadow=0;dashed=0;strokeWidth=2;shape=mxgraph.ios7.misc.loading_circle;" parent="1" vertex="1">
           <mxGeometry x="499.5" y="637" width="43" height="42.5" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-  <diagram id="8I_pm15_ZxuvNdHiXpPO" name="example">
-    <mxGraphModel dx="1182" dy="690" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="un4xFOZ4VY06HUW24fwX-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="un4xFOZ4VY06HUW24fwX-1" target="un4xFOZ4VY06HUW24fwX-2" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-9" value="LED_BUTTON_PRESS_EVENT&lt;br&gt;LED_OFF_REQUEST_EVENT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-8" vertex="1" connectable="0">
-          <mxGeometry x="-0.1748" y="1" relative="1" as="geometry">
-            <mxPoint x="-18" y="19" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-1" value="LED_ON_STATE" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="480" y="360" width="240" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="un4xFOZ4VY06HUW24fwX-2" target="un4xFOZ4VY06HUW24fwX-1" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-7" value="LED_BUTTON_PRESS_EVENT&lt;br&gt;LED_ON_REQUEST_EVENT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-6" vertex="1" connectable="0">
-          <mxGeometry x="-0.0554" y="3" relative="1" as="geometry">
-            <mxPoint x="4" y="-17" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-2" value="LED_OFF_STATE" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="40" y="360" width="240" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="un4xFOZ4VY06HUW24fwX-3" target="un4xFOZ4VY06HUW24fwX-2" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-5" value="Starting State" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="un4xFOZ4VY06HUW24fwX-4" vertex="1" connectable="0">
-          <mxGeometry x="-0.4937" y="1" relative="1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="un4xFOZ4VY06HUW24fwX-3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="145" y="210" width="30" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
