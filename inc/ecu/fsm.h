@@ -32,7 +32,8 @@
 
 /**
  * @brief Converts intrusive @ref ecu_fsm member into the
- * user's FSM type.
+ * user's FSM type. This should be used inside each state's 
+ * definition.
  *
  * @param ecu_fsm_ptr_ Pointer to intrusive @ref ecu_fsm.
  * This must be pointer to non-const. I.e. (struct ecu_fsm *).
@@ -203,7 +204,7 @@ extern void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event);
 /**
  * @pre @p me constructed via @ref ecu_fsm_ctor().
  * @brief Runs the initial state's entry handler and manages 
- * all state transition logic if any state changes were siganlled 
+ * all state transition logic if any state changes were signalled 
  * via @ref ecu_fsm_change_state(). This function does nothing
  * if the initial state's entry handler is unused.
  * 
