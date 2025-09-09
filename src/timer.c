@@ -26,7 +26,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/timer.c")
+ECU_ASSERT_DEFINE_FILE("ecu/timer.c")
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
@@ -71,7 +71,7 @@ static bool insert_here(const struct ecu_dnode *node,
                         const struct ecu_dnode *position,
                         void *obj)
 {
-    ECU_RUNTIME_ASSERT( (node && position) );
+    ECU_ASSERT( (node && position) );
     (void)obj;
     bool status = false;
     const struct ecu_timer *me = ECU_DNODE_GET_CONST_ENTRY(node, struct ecu_timer, dnode);
@@ -88,8 +88,8 @@ static bool insert_here(const struct ecu_dnode *node,
 
 static void expire_timer(struct ecu_timer *timer, struct ecu_tlist *tlist)
 {
-    ECU_RUNTIME_ASSERT( (timer && tlist) );
-    ECU_RUNTIME_ASSERT( (timer->callback) );
+    ECU_ASSERT( (timer && tlist) );
+    ECU_ASSERT( (timer->callback) );
 
     if (timer->type == ECU_TIMER_TYPE_ONE_SHOT)
     {
@@ -132,7 +132,7 @@ void ecu_timer_ctor(struct ecu_timer *me,
                     bool (*callback)(struct ecu_timer *me, void *obj),
                     void *obj)
 {
-    ECU_RUNTIME_ASSERT( (me && callback) );
+    ECU_ASSERT( (me && callback) );
 
     me->expiration = 0;
     me->period = 0;
@@ -146,9 +146,9 @@ void ecu_timer_set(struct ecu_timer *me,
                    ecu_tick_t period,
                    enum ecu_timer_type type)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (period > 0) );
-    ECU_RUNTIME_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (period > 0) );
+    ECU_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
 
     ecu_timer_disarm(me);
     me->period = period;
@@ -157,13 +157,13 @@ void ecu_timer_set(struct ecu_timer *me,
 
 void ecu_timer_disarm(struct ecu_timer *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     ecu_dnode_remove(&me->dnode);
 }
 
 bool ecu_timer_is_active(const struct ecu_timer *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     return (ecu_dnode_in_list(&me->dnode));
 }
 
@@ -173,7 +173,7 @@ bool ecu_timer_is_active(const struct ecu_timer *me)
 
 void ecu_tlist_ctor(struct ecu_tlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
 
     me->current = 0;
     me->overflowed = false;
@@ -186,8 +186,8 @@ void ecu_tlist_timer_arm(struct ecu_tlist *me,
                          ecu_tick_t period, 
                          enum ecu_timer_type type)
 {
-    ECU_RUNTIME_ASSERT( (me && timer) );
-    ECU_RUNTIME_ASSERT( (timer->callback) );
+    ECU_ASSERT( (me && timer) );
+    ECU_ASSERT( (timer->callback) );
 
     ecu_timer_set(timer, period, type);
     timer->expiration = me->current + period; /* Unsigned overflow OK since we store absolute ticks. */
@@ -207,10 +207,10 @@ void ecu_tlist_timer_arm(struct ecu_tlist *me,
 
 void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 {
-    ECU_RUNTIME_ASSERT( (me && timer) );
-    ECU_RUNTIME_ASSERT( (timer->period > 0) );
-    ECU_RUNTIME_ASSERT( (timer->type >= 0 && timer->type < ECU_TIMER_TYPES_COUNT) );
-    ECU_RUNTIME_ASSERT( (timer->callback) );
+    ECU_ASSERT( (me && timer) );
+    ECU_ASSERT( (timer->period > 0) );
+    ECU_ASSERT( (timer->type >= 0 && timer->type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( (timer->callback) );
 
     ecu_timer_disarm(timer);
     timer->expiration = me->current + timer->period; /* Unsigned overflow OK since we store absolute ticks. */
@@ -230,7 +230,7 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 
 void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     ecu_tick_t prev = 0;
     struct ecu_dlist_iterator iterator;
     struct ecu_timer *t = (struct ecu_timer *)0;
@@ -259,12 +259,12 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
             {
                 /* Everything in me->timers list has expired if me->current counter overflowed. */
                 t = ECU_DNODE_GET_ENTRY(node, struct ecu_timer, dnode);
-                ECU_RUNTIME_ASSERT( (t->callback) );
+                ECU_ASSERT( (t->callback) );
                 expire_timer(t, me);
             }
 
             /* Reset the "engine". */
-            ECU_RUNTIME_ASSERT( (ecu_dlist_empty(&me->timers)) ); /* All timers rearmed during this operation should be in me->wraparounds list. */
+            ECU_ASSERT( (ecu_dlist_empty(&me->timers)) ); /* All timers rearmed during this operation should be in me->wraparounds list. */
             ecu_dlist_swap(&me->timers, &me->wraparounds);
             me->overflowed = false; /* Done. Timer rearm logic follows normal conditions. */
 
@@ -278,7 +278,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 
                     if (me->current >= t->expiration)
                     {
-                        ECU_RUNTIME_ASSERT( (t->callback) );
+                        ECU_ASSERT( (t->callback) );
                         expire_timer(t, me);
                     }
                     else
@@ -298,7 +298,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 
                 if (me->current >= t->expiration)
                 {
-                    ECU_RUNTIME_ASSERT( (t->callback) );
+                    ECU_ASSERT( (t->callback) );
                     expire_timer(t, me);
                 }
                 else
