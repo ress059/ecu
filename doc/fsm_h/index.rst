@@ -472,6 +472,14 @@ expand upon this and further explain why the event-driven approach is superior**
             }
         }
 
+        TEST()
+        {
+            set state == ON_STATE;
+            off_flag = true;
+            polled_fsm_implementation();
+            verify_output();
+        }
+
 #. Thread-safety is trivial for event-driven state machines. Events are **not** shared resources
    since they are represented as **objects**. Each thread can create their own events, giving them
    exclusive access:
