@@ -26,7 +26,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/event.c")
+ECU_ASSERT_DEFINE_FILE("ecu/event.c")
 
 /*------------------------------------------------------------*/
 /*---------------------- STATIC ASSERTS ----------------------*/
@@ -44,6 +44,6 @@ ECU_STATIC_ASSERT( (ECU_USER_EVENT_ID_BEGIN == 0), "ECU_USER_EVENT_ID_BEGIN must
 void ecu_event_ctor(struct ecu_event *me,
                     ecu_event_id id)
 {
-    ECU_RUNTIME_ASSERT( ((me) && (id >= ECU_VALID_EVENT_ID_BEGIN)) );
+    ECU_ASSERT( ((me) && (id >= ECU_VALID_EVENT_ID_BEGIN)) );
     me->id = id;
 }

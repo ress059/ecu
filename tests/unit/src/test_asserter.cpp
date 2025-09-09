@@ -4,14 +4,14 @@
  * must NOT be defined.
  * Test Summary:
  * 
- * @ref ECU_ASSERT_DEFINE_NAME(), @ref ECU_RUNTIME_ASSERT(), @ref ecu_assert_handler()
- *      - TEST(Asserter, DefineNameMacro)
- *      - TEST(Asserter, ECUDListAssert)
- *      - TEST(Asserter, ECUEventAssert)
- *      - TEST(Asserter, ECUFsmAssert)
- *      - TEST(Asserter, ECUHsmAssert)
- *      - TEST(Asserter, ECUNtnodeAssert)
- *      - TEST(Asserter, ECUTimerAssert)
+ * @ref ECU_ASSERT_DEFINE_FILE(), @ref ECU_ASSERT(), @ref ecu_assert_handler()
+ *      - TEST(Asserter, DefineFile)
+ *      - TEST(Asserter, DList)
+ *      - TEST(Asserter, Event)
+ *      - TEST(Asserter, Fsm)
+ *      - TEST(Asserter, Hsm)
+ *      - TEST(Asserter, NtNode)
+ *      - TEST(Asserter, Timer)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -49,7 +49,7 @@ using namespace stubs;
 /*--------------- DEFINE FILE NAME FOR ASSERTS ---------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("test_asserter.cpp")
+ECU_ASSERT_DEFINE_FILE("test_asserter.cpp")
 
 /*------------------------------------------------------------*/
 /*--------------- STATIC FUNCTION DECLARATIONS ---------------*/
@@ -92,10 +92,10 @@ TEST_GROUP(Asserter)
 /*------------------------------------------------------------*/
 
 /**
- * @brief Verify @ref ECU_ASSERT_DEFINE_NAME() macro
+ * @brief Verify @ref ECU_ASSERT_DEFINE_FILE() macro
  * works correctly in this module.
  */
-TEST(Asserter, DefineNameMacro)
+TEST(Asserter, DefineFile)
 {
     try 
     {
@@ -103,7 +103,7 @@ TEST(Asserter, DefineNameMacro)
         mock().expectOneCall("assert_handler").withParameter("p1", "test_asserter.cpp");
 
         /* Steps 2 and 3: Action and assert. */
-        ECU_RUNTIME_ASSERT( (false) );
+        ECU_ASSERT( (false) );
     }
     catch (const AssertException& e)
     {
@@ -115,7 +115,7 @@ TEST(Asserter, DefineNameMacro)
  * @brief Verify file name is correct when assert fires
  * in dlist.c
  */
-TEST(Asserter, ECUDListAssert)
+TEST(Asserter, DList)
 {
     try 
     {
@@ -135,7 +135,7 @@ TEST(Asserter, ECUDListAssert)
  * @brief Verify file name is correct when assert fires
  * in event.c
  */
-TEST(Asserter, ECUEventAssert)
+TEST(Asserter, Event)
 {
     try 
     {
@@ -155,7 +155,7 @@ TEST(Asserter, ECUEventAssert)
  * @brief Verify file name is correct when assert fires
  * in fsm.c
  */
-TEST(Asserter, ECUFsmAssert)
+TEST(Asserter, Fsm)
 {
     try 
     {
@@ -175,7 +175,7 @@ TEST(Asserter, ECUFsmAssert)
  * @brief Verify file name is correct when assert fires
  * in hsm.c
  */
-TEST(Asserter, ECUHsmAssert)
+TEST(Asserter, Hsm)
 {
     try 
     {
@@ -195,7 +195,7 @@ TEST(Asserter, ECUHsmAssert)
  * @brief Verify file name is correct when assert fires
  * in ntnode.c
  */
-TEST(Asserter, ECUNtnodeAssert)
+TEST(Asserter, NtNode)
 {
     try 
     {
@@ -215,7 +215,7 @@ TEST(Asserter, ECUNtnodeAssert)
  * @brief Verify file name is correct when assert fires
  * in timer.c
  */
-TEST(Asserter, ECUTimerAssert)
+TEST(Asserter, Timer)
 {
     try 
     {
@@ -223,7 +223,7 @@ TEST(Asserter, ECUTimerAssert)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_timer_ctor(reinterpret_cast<ecu_timer *>(0), nullptr, nullptr);
+        ecu_timer_ctor(nullptr, nullptr, nullptr);
     }
     catch (const AssertException& e)
     {

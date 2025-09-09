@@ -22,14 +22,5 @@
 /*---------------------- GLOBAL VARIABLES --------------------*/
 /*------------------------------------------------------------*/
 
-/* When using C/C++ standard that does not natively support static assert, we must implement
-a custom mechanism. We make ECU_STATIC_ASSERT() macro uses ecu_static_assert_fired_[] array
-to produce compilation errors via negative-array indexing. Macro expands to ecu_static_assert_fired_[1]
-if assert passes. Macro expands to ecu_static_assert_fired_[-1] if assert fails, thus producing
-a compilation error.
-
-Therefore this array must actually be defined somewhere since it will be referenced whenever
-ECU_STATIC_ASSERT() is called. Define and allocate memory for it here.*/
-#ifdef ECU_USING_CUSTOM_STATIC_ASSERT_DO_NOT_USE_
-const char ecu_static_assert_fired_[1] = {0};
-#endif
+/* Actually allocate memory for array used in custom static assert implementation. */
+const char ecu_static_assert_fired_[1] ECU_ATTRIBUTE_UNUSED = {0};

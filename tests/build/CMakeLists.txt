@@ -7,7 +7,8 @@
 # in the top-level CMake and only done here in our build tests.
 target_compile_features(ecu 
     PUBLIC 
-        c_std_23 
+        # c_std_23
+        c_std_99
 )
 
 target_compile_options(ecu 

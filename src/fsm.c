@@ -26,7 +26,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/fsm.c")
+ECU_ASSERT_DEFINE_FILE("ecu/fsm.c")
 
 /*------------------------------------------------------------*/
 /*---------------------- FILE SCOPE TYPES --------------------*/
@@ -95,33 +95,33 @@ static void clear_all_transitions(struct ecu_fsm *fsm);
 
 static bool state_is_valid(const struct ecu_fsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (state) );
+    ECU_ASSERT( (state) );
     return (state->handler);
 }
 
 static bool no_transitions_active(const struct ecu_fsm *fsm)
 {
-    ECU_RUNTIME_ASSERT( (fsm) );
+    ECU_ASSERT( (fsm) );
     return (fsm->transition == 0);
 }
 
 static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t)
 {
-    ECU_RUNTIME_ASSERT( (fsm) );
-    ECU_RUNTIME_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (fsm) );
+    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
     return (fsm->transition & (1U << t));
 }
 
 static void set_transition(struct ecu_fsm *fsm, enum transition_type t)
 {
-    ECU_RUNTIME_ASSERT( (fsm) );
-    ECU_RUNTIME_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (fsm) );
+    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
     fsm->transition |= (1U << t);
 }
 
 static void clear_all_transitions(struct ecu_fsm *fsm)
 {
-    ECU_RUNTIME_ASSERT( (fsm) );
+    ECU_ASSERT( (fsm) );
     fsm->transition = 0;
 }
 
@@ -131,18 +131,18 @@ static void clear_all_transitions(struct ecu_fsm *fsm)
 
 void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (me && state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
+    ECU_ASSERT( (me && state) );
+    ECU_ASSERT( (state_is_valid(state)) );
     me->state = state;
     clear_all_transitions(me);
 }
 
 void ecu_fsm_start(struct ecu_fsm *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
-    ECU_RUNTIME_ASSERT( (me->state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (no_transitions_active(me)) );
+    ECU_ASSERT( (me->state) );
+    ECU_ASSERT( (state_is_valid(me->state)) );
     const struct ecu_fsm_state *prev_state = me->state;
 
     /* Run entry handler of current state if one was supplied.
@@ -154,7 +154,7 @@ void ecu_fsm_start(struct ecu_fsm *me)
     if (me->state->entry)
     {
         (*me->state->entry)(me);
-        ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+        ECU_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
 
         while (transition_is_active(me, FSM_STATE_TRANSITION))
         {
@@ -163,14 +163,14 @@ void ecu_fsm_start(struct ecu_fsm *me)
             if (prev_state->exit)
             {
                 (*prev_state->exit)(me);
-                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+                ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
             }
 
             prev_state = me->state;
             if (me->state->entry)
             {
                 (*me->state->entry)(me);
-                ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+                ECU_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
             }
         }
     }
@@ -178,9 +178,9 @@ void ecu_fsm_start(struct ecu_fsm *me)
 
 void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (me && state) );
-    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* Cannot call ecu_fsm_change_state() multiple times in a row. Only one transition per dispatch. */
-    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
+    ECU_ASSERT( (me && state) );
+    ECU_ASSERT( (no_transitions_active(me)) ); /* Cannot call ecu_fsm_change_state() multiple times in a row. Only one transition per dispatch. */
+    ECU_ASSERT( (state_is_valid(state)) );
 
     if (me->state == state)
     {
@@ -195,10 +195,10 @@ void ecu_fsm_change_state(struct ecu_fsm *me, const struct ecu_fsm_state *state)
 
 void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event)
 {
-    ECU_RUNTIME_ASSERT( (me && event) );
-    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) );
-    ECU_RUNTIME_ASSERT( (me->state) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(me->state)) );
+    ECU_ASSERT( (me && event) );
+    ECU_ASSERT( (no_transitions_active(me)) );
+    ECU_ASSERT( (me->state) );
+    ECU_ASSERT( (state_is_valid(me->state)) );
     const struct ecu_fsm_state *prev_state = me->state;
 
     /* Relay event to state. Save previous state in case of transition.
@@ -216,14 +216,14 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event)
         if (prev_state->exit)
         {
             (*prev_state->exit)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+            ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
         }
 
         prev_state = me->state;
         if (me->state->entry)
         {
             (*me->state->entry)(me);
-            ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+            ECU_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
         }
     }
 
@@ -234,14 +234,14 @@ void ecu_fsm_dispatch(struct ecu_fsm *me, const void *event)
         if (prev_state->exit)
         {
             (*prev_state->exit)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+            ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
         }
 
         prev_state = me->state;
         if (me->state->entry)
         {
             (*me->state->entry)(me);
-            ECU_RUNTIME_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
+            ECU_ASSERT( (!transition_is_active(me, FSM_SELF_TRANSITION)) ); /* Self-transition not allowed in entry handler. */
         }
     }
 }

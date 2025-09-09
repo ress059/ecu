@@ -25,7 +25,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/hsm.c")
+ECU_ASSERT_DEFINE_FILE("ecu/hsm.c")
 
 /*------------------------------------------------------------*/
 /*---------------------- FILE SCOPE TYPES --------------------*/
@@ -145,7 +145,7 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
 
 static bool hsm_is_valid(const struct ecu_hsm *hsm)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
+    ECU_ASSERT( (hsm) );
     bool status = false;
 
     if (state_is_valid(hsm->state) && 
@@ -160,7 +160,7 @@ static bool hsm_is_valid(const struct ecu_hsm *hsm)
 
 static bool state_is_valid(const struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (state) );
+    ECU_ASSERT( (state) );
     bool status = false;
 
     if (state->handler && state->parent != state)
@@ -173,33 +173,33 @@ static bool state_is_valid(const struct ecu_hsm_state *state)
 
 static bool any_transitions_active(const struct ecu_hsm *hsm)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
+    ECU_ASSERT( (hsm) );
     return (hsm->transition);
 }
 
 static bool no_transitions_active(const struct ecu_hsm *hsm)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
+    ECU_ASSERT( (hsm) );
     return (hsm->transition == 0U);
 }
 
 static bool transition_is_active(const struct ecu_hsm *hsm, enum transition_type t)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
-    ECU_RUNTIME_ASSERT( (t >= 0 && t < HSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (hsm) );
+    ECU_ASSERT( (t >= 0 && t < HSM_TRANSITION_TYPE_COUNT) );
     return (hsm->transition & (1U << t));
 }
 
 static void set_transition(struct ecu_hsm *hsm, enum transition_type t)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
-    ECU_RUNTIME_ASSERT( (t >= 0 && t < HSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (hsm) );
+    ECU_ASSERT( (t >= 0 && t < HSM_TRANSITION_TYPE_COUNT) );
     hsm->transition |= (1U << t);
 }
 
 static void clear_all_transitions(struct ecu_hsm *hsm)
 {
-    ECU_RUNTIME_ASSERT( (hsm) );
+    ECU_ASSERT( (hsm) );
     hsm->transition = 0;
 }
 
@@ -207,14 +207,14 @@ static bool is_parent_of(const struct ecu_hsm *hsm,
                          const struct ecu_hsm_state *parent,
                          const struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (hsm && parent && state) );
+    ECU_ASSERT( (hsm && parent && state) );
     bool status = false;
     uint8_t height = 0;
 
     /* Notice how this also handles case where parent == state. */
     for (const struct ecu_hsm_state *s = state; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
     {
-        ECU_RUNTIME_ASSERT( (height <= hsm->height) );
+        ECU_ASSERT( (height <= hsm->height) );
         height++;
 
         if (s == parent)
@@ -229,7 +229,7 @@ static bool is_parent_of(const struct ecu_hsm *hsm,
 
 static const struct ecu_hsm_state *get_parent(const struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (state) );
+    ECU_ASSERT( (state) );
     return (state->parent);
 }
 
@@ -237,9 +237,9 @@ static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
                                              const struct ecu_hsm_state *leaf,
                                              const struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (hsm && state && leaf) );
-    ECU_RUNTIME_ASSERT( (state != leaf) );
-    ECU_RUNTIME_ASSERT( (is_parent_of(hsm, state, leaf)) );
+    ECU_ASSERT( (hsm && state && leaf) );
+    ECU_ASSERT( (state != leaf) );
+    ECU_ASSERT( (is_parent_of(hsm, state, leaf)) );
     const struct ecu_hsm_state *s = (const struct ecu_hsm_state *)0;
 
     for (s = leaf; s->parent != state; s = s->parent)
@@ -254,14 +254,14 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
                                            const struct ecu_hsm_state *s1, 
                                            const struct ecu_hsm_state *s2)
 {
-    ECU_RUNTIME_ASSERT( (hsm && s1 && s2) );
+    ECU_ASSERT( (hsm && s1 && s2) );
     uint8_t height = 0;
     const struct ecu_hsm_state *lca = (const struct ecu_hsm_state *)0;
 
     /* Notice how this also handles the case of s1 == s2. */
     for (const struct ecu_hsm_state *s = s1; s != ECU_HSM_STATE_NO_PARENT; s = s->parent)
     {
-        ECU_RUNTIME_ASSERT( (height <= hsm->height) );
+        ECU_ASSERT( (height <= hsm->height) );
         height++;
 
         if (s == s2 || is_parent_of(hsm, s, s2))
@@ -283,9 +283,9 @@ void ecu_hsm_ctor(struct ecu_hsm *me,
                   const struct ecu_hsm_state *top,
                   uint8_t height)
 {
-    ECU_RUNTIME_ASSERT( (me && state && top) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state) && state_is_valid(top)) );
-    ECU_RUNTIME_ASSERT( (top->parent == ECU_HSM_STATE_NO_PARENT) );
+    ECU_ASSERT( (me && state && top) );
+    ECU_ASSERT( (state_is_valid(state) && state_is_valid(top)) );
+    ECU_ASSERT( (top->parent == ECU_HSM_STATE_NO_PARENT) );
 
     me->state = state;
     me->top = top;
@@ -295,8 +295,8 @@ void ecu_hsm_ctor(struct ecu_hsm *me,
 
 void ecu_hsm_start(struct ecu_hsm *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (hsm_is_valid(me)) );
     const struct ecu_hsm_state *trace = me->top;
 
     /* Run entry handlers from top to current state. Entry handler of current state not ran. */
@@ -305,28 +305,28 @@ void ecu_hsm_start(struct ecu_hsm *me)
         if (trace->entry)
         {
             (*trace->entry)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
+            ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
         }
 
         trace = get_child(me, me->state, trace);
-        ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
+        ECU_ASSERT( (state_is_valid(trace)) );
     }
 
     /* Run entry handler of current state. */
     if (me->state->entry)
     {
         (*me->state->entry)(me);
-        ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
+        ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
     }
 }
 
 void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state *state)
 {
-    ECU_RUNTIME_ASSERT( (me && state) );
-    ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
-    ECU_RUNTIME_ASSERT( (state_is_valid(state)) );
+    ECU_ASSERT( (me && state) );
+    ECU_ASSERT( (hsm_is_valid(me)) );
+    ECU_ASSERT( (state_is_valid(state)) );
     /* Cannot call ecu_hsm_change_state() multiple times in a row. Only one transition per dispatch. */
-    ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); 
+    ECU_ASSERT( (no_transitions_active(me)) ); 
 
     if (me->state == state)
     {
@@ -341,9 +341,9 @@ void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state *state)
 
 void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
 {
-    ECU_RUNTIME_ASSERT( (me && event) );
-    ECU_RUNTIME_ASSERT( (hsm_is_valid(me)) );
-    ECU_RUNTIME_ASSERT( (!any_transitions_active(me)) );
+    ECU_ASSERT( (me && event) );
+    ECU_ASSERT( (hsm_is_valid(me)) );
+    ECU_ASSERT( (!any_transitions_active(me)) );
 
     const struct ecu_hsm_state *lca = me->state;
     const struct ecu_hsm_state *start = me->state;
@@ -357,10 +357,10 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
     while (!any_transitions_active(me) && !handled)
     {
         /* Dispatch event to parents until it is handled or a state transition occurred. */
-        ECU_RUNTIME_ASSERT( (height < me->height) ); /* Not a typo. Should be < instead of <=. */
+        ECU_ASSERT( (height < me->height) ); /* Not a typo. Should be < instead of <=. */
         height++;
         trace = get_parent(trace);
-        ECU_RUNTIME_ASSERT( (state_is_valid(trace)) ); /* Also rejects get_parent(top) being called. */
+        ECU_ASSERT( (state_is_valid(trace)) ); /* Also rejects get_parent(top) being called. */
         handled = (*trace->handler)(me, event);
     }
 
@@ -372,13 +372,13 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
         if (me->state->exit)
         {
             (*me->state->exit)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+            ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
         }
 
         if (me->state->entry)
         {
             (*me->state->entry)(me);
-            ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
+            ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
         }
     }
     else if (any_transitions_active(me)) /* Any other state transition type active? */
@@ -387,7 +387,7 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
         clear_all_transitions(me);
         trace = start;
         lca = get_lca(me, start, me->state);
-        ECU_RUNTIME_ASSERT( (lca) ); /* User cannot transition to state not in HSM hierarchy. */
+        ECU_ASSERT( (lca) ); /* User cannot transition to state not in HSM hierarchy. */
 
         /* Run exit handlers from starting state up until LCA. LCA exit not ran. */
         while (trace != lca)
@@ -395,23 +395,23 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
             if (trace->exit)
             {
                 (*trace->exit)(me);
-                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
+                ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in exit handler. */
             }
 
             trace = get_parent(trace);
-            ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
+            ECU_ASSERT( (state_is_valid(trace)) );
         }
 
         /* Run entry handlers starting from LCA to current state. Entry handlers of LCA not ran. */
         while (trace != me->state)
         {
             trace = get_child(me, me->state, trace);
-            ECU_RUNTIME_ASSERT( (state_is_valid(trace)) );
+            ECU_ASSERT( (state_is_valid(trace)) );
 
             if (trace->entry)
             {
                 (*trace->entry)(me);
-                ECU_RUNTIME_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
+                ECU_ASSERT( (no_transitions_active(me)) ); /* No state transitions allowed in entry handler. */
             }
         }
     }
