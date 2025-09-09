@@ -24,17 +24,16 @@ extensions = [
             "sphinx.ext.graphviz",
             "sphinx.ext.todo",
             "sphinx_tabs.tabs",
-            "sphinxcontrib.doxylink",
-            "hoverxref.extension"
+            "sphinxcontrib.doxylink"
 ]
 
-hoverxref_roles = [
-    "term"
-]
+# hoverxref_roles = [
+#     "term"
+# ]
 
-hoverxref_role_types = {
-    "term": "tooltip"
-}
+# hoverxref_role_types = {
+#     "term": "tooltip"
+# }
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']

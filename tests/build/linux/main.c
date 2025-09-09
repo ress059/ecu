@@ -36,7 +36,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/main.c")
+ECU_ASSERT_DEFINE_FILE("ecu/main.c")
 
 /*------------------------------------------------------------*/
 /*--------------------- FILE SCOPE DEFINES -------------------*/
@@ -156,7 +156,7 @@ static void restore_terminal(void)
 static bool timer_expired(struct ecu_timer *timer, void *obj)
 {
     (void)timer;
-    ECU_RUNTIME_ASSERT( (obj) );
+    ECU_ASSERT( (obj) );
     ecu_object_id id = *((ecu_object_id *)obj);
 
     switch (id)
@@ -181,7 +181,7 @@ static bool timer_expired(struct ecu_timer *timer, void *obj)
 
         default:
         {
-            ECU_RUNTIME_ASSERT( (false) );
+            ECU_ASSERT( (false) );
             break;
         }
     }
@@ -191,14 +191,14 @@ static bool timer_expired(struct ecu_timer *timer, void *obj)
 
 static void turn_led_on(void *obj)
 {
-    ECU_RUNTIME_ASSERT( (obj) );
+    ECU_ASSERT( (obj) );
     unsigned int id = *((unsigned int *)obj);
     printf("LED%u turned on!\n", id);
 }
 
 static void turn_led_off(void *obj)
 {
-    ECU_RUNTIME_ASSERT( (obj) );
+    ECU_ASSERT( (obj) );
     unsigned int id = *((unsigned int *)obj);
     printf("LED%u turned off!\n", id);
 }
@@ -261,7 +261,7 @@ int main(void)
 
     /* Get the starting timestamp. */
     t_prev = clock();
-    ECU_RUNTIME_ASSERT( (t_prev >= (clock_t)0) );
+    ECU_ASSERT( (t_prev >= (clock_t)0) );
 
     while (running)
     {
@@ -410,13 +410,13 @@ int main(void)
 
         /* Service the timers. */
         t_current = clock();
-        ECU_RUNTIME_ASSERT( (t_current >= 0) );
+        ECU_ASSERT( (t_current >= 0) );
         t_elapsed = t_current - t_prev;
 
         if (t_elapsed > (clock_t)0)
         {
             t_prev = clock();
-            ECU_RUNTIME_ASSERT( (t_prev >= 0) );
+            ECU_ASSERT( (t_prev >= 0) );
 
             if (t_elapsed > ECU_TICK_MAX)
             {

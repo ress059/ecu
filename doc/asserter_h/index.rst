@@ -14,183 +14,172 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
     
-Provides a portable way to use static assertions across any C and C++ standard. 
-Also provides a framework for using runtime asserts on embedded platforms. 
+Framework for using assertions on embedded platforms.
 
 
-ECU Static Asserts
+Theory 
 =================================================
-The :ecudoxygen:`ECU_STATIC_ASSERT() <ECU_STATIC_ASSERT>` macro provides the 
-application a portable way to use static assertions across any C and C++ standard. 
-Example usage:
+
+Static Assertions
+-------------------------------------------------
+.. _ecu_static_assertions:
+
+:ecudoxygen:`ECU_STATIC_ASSERT() <ECU_STATIC_ASSERT>` provides a portable way
+to use static assertions across any C or C++ standard. It triggers a compilation 
+error if the supplied condition evaulates to false:
 
 .. code-block:: c
 
-    #include "ecu/asserter.h"
+    /* Compilation error if false. */
+    ECU_STATIC_ASSERT( (sizeof(int) == (size_t)4), "int must be 4 bytes." );
+    ECU_STATIC_ASSERT( (sizeof(char) == (size_t)1), "char must be 1 byte." );
 
-    /* Assert condition at compile-time. */
-    ECU_STATIC_ASSERT( (sizeof(int) == (size_t)4), "int must be 4 bytes." ); 
+The implementation of static assertions varies across language standards:
 
-This is useful since the implementation of static assert across language standards is not consistent:
-For C++:
+- Any standard before 2011: Does not natively support static assertions. A custom implementation is required.
+- C++11 and greater: static_assert() natively supported.
+- C11 to C23: _Static_assert() natively supported.
+- C23 and greater: static_assert() natively supported.
 
-+ Pre-C++11: static assert is not natively supported so a custom mechanism must be created.
+:ecudoxygen:`ECU_STATIC_ASSERT() <ECU_STATIC_ASSERT>` detects the C or C++ standard being used 
+and automatically expands to the appropriate implementation.
 
-- C++11 and greater: static assert is natively supported by the standard via static_assert() call. assert.h not needed.
+Runtime Assertions
+-------------------------------------------------
+.. _ecu_runtime_assertions:
 
-For C:
-
-+ Pre-C11: static assert is not natively supported so a custom mechanism must be created.
-
-- C11 to C23: static assert is natively supported by the standard via _Static_assert(). assert.h header 
-  must be included to use static_assert(), which is a convenience macro defined by the standard that 
-  expands to _Static_assert().
-
-+ C23 and greater: static assert is natively supported by the standard via static_assert(). assert.h not needed.
-
-This module detects the C or C++ standard being used and adjusts to the different implementations accordingly.
-This allows the application to freely use :ecudoxygen:`ECU_STATIC_ASSERT() <ECU_STATIC_ASSERT>` across any 
-C and C++ standard without worrying about implementation details.
-
-
-ECU Runtime Asserts
-=================================================
-Stdlib asserts are never appropriate for embedded targets since it crashes the program.
-This framework provides an alternative by executing a user-defined handler when a run-time 
-assert fires. The file name and line number where the assert fired are also passed into this 
-handler in a more memory-efficient manner. Example use:
+Standard library assertions (the assert() macro) crash the program when an assertion fires, making
+them unusable for embedded targets. :ecudoxygen:`ECU_ASSERT() <ECU_ASSERT>`
+provides an alternative. When the supplied condition evaluates to false, the macro fires
+an assertion by calling :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>`:
 
 .. code-block:: c
 
-    /*----------------------- file.c -----------------------*/
-    #include "ecu/asserter.h"
-
-    /* File name passed into handler if any runtime assert fires in this file. */
-    ECU_ASSERT_DEFINE_NAME("file.c") 
+    ECU_ASSERT_DEFINE_FILE("file.c") 
 
     void foo(int *ptr)
     {
-        /* Assert ptr is not NULL. */
-        ECU_RUNTIME_ASSERT( (ptr) );
+        /* ecu_assert_handler() executes if ptr is NULL. */
+        ECU_ASSERT( (ptr) );
     }
 
-.. note:: 
-
-    Conditions evaluated by this macro should always be true unless there is a software bug 
-    or processor error. I.e. NULL pointer dereference, out of bounds array access, invalid 
-    function parameters.
-
-    Undesirable system behavior that is possible should never be an assert condition. I.e. 
-    do not assert out of range temperature readings, bus errors, etc.
-
-:ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>` function executes if a run-time assert 
-fires. The user **MUST** provide a definition for this function and explain how their system behaves
-under an assert condition. The file name in :ecudoxygen:`ECU_ASSERT_DEFINE_NAME() <ECU_ASSERT_DEFINE_NAME>`
-and the line number are passed into this handler.
+:ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>` is a user-defined function that
+defines system response under an assert condition:
 
 .. code-block:: c
 
-    /*----------------------- app_assert_handler.c -----------------------*/
-    #include "ecu/asserter.h"
-
     void ecu_assert_handler(const char *file, int line)
     {
-        /* Application MUST provide a definition for this handler. Define how
-        your system behaves if an assert fires. Pseudocode example. In this case, 
-        we record the error then reset the CPU. */
+        /* Called by ECU_ASSERT() when assert fires. Define how system behaves 
+        under these conditions. In this case, record the error then reset the CPU. */
         record(file, line);
         reset_cpu();
     }
 
-:ecudoxygen:`ECU_ASSERT_DEFINE_NAME() <ECU_ASSERT_DEFINE_NAME>` must be used at the beginning of
-any source file that uses ECU run-time asserts. This macro defines the file name passed into your 
-handler. For example:
+.. warning::
+
+    :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>` must be defined by the user
+    since system response is a property of the application. A linker error will occur
+    if ECU library is used but this function is not defined.
+
+The file name and line number where the assertion fired is passed 
+into :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>`. The file name must be defined
+at the start of the file using the :ecudoxygen:`ECU_ASSERT_DEFINE_FILE() <ECU_ASSERT_DEFINE_FILE>` 
+macro:
 
 .. code-block:: c
 
-    /*----------------------- file1.c -----------------------*/
-    #include "ecu/asserter.h"
+    ECU_ASSERT_DEFINE_FILE("file.c") 
 
-    ECU_ASSERT_DEFINE_NAME("file1.c")
-
-    static void file1(int *ptr)
+    void foo(int *ptr)
     {
-        /* "file1.c" will be passed into your assert handler if any assert fires within this file. */
-        ECU_RUNTIME_ASSERT( (ptr) );
+        /* Assert ptr is not NULL. */
+        ECU_ASSERT( (ptr) );
     }
 
-
-    /*----------------------- file2.c -----------------------*/
-    #include "ecu/asserter.h"
-
-    ECU_ASSERT_DEFINE_NAME("file2.c")
-
-    static void file2(int *ptr)
-    {
-        /* "file2.c" will be passed into your assert handler if any assert fires within this file. */
-        ECU_RUNTIME_ASSERT( (ptr) );
-    }
-
-This macro is a more memory-efficient alternative to the __FILE__ macro. Memory for only ONE 
-string will be allocated whereas memory is allocated for every __FILE__ declaration. 
-
-
-Asserts in ECU Source 
-""""""""""""""""""""""""""""""""""""""""""""""""
-Instead of propagating error codes up the call stack, :ecudoxygen:`ECU_RUNTIME_ASSERT() <ECU_RUNTIME_ASSERT>`
-is also used within ECU source code in case the API is misused. It makes bugs far 
-easier to find and respond to. This is enabled by default. 
-
-
-Enabling and Disabling Runtime Asserts 
-""""""""""""""""""""""""""""""""""""""""""""""""
-To disable runtime asserts, ``-D ECU_DISABLE_RUNTIME_ASSERTS`` can be passed to 
-the preprocessor. Disabling asserts reduces overhead at the cost of reliability. 
-This is backwards compatible and any code using ECU's runtime assert framework 
-can remain unchanged. 
+If the above assertion fired, "file.c" would be the file name supplied
+to :ecudoxygen:`ecu_assert_handler() <ecu_assert_handler>`. This method is a more 
+memory-efficient alternative to the __FILE__ macro. The __FILE__ macro allocates
+memory every single time it is used, whereas memory is only allocated for one string
+literal with :ecudoxygen:`ECU_ASSERT_DEFINE_FILE() <ECU_ASSERT_DEFINE_FILE>`:
 
 .. code-block:: c
 
-    /*---------------- ECU_DISABLE_RUNTIME_ASSERTS NOT defined so asserts are active. ----------*/
-    #include "ecu/asserter.h"
+    ECU_ASSERT_DEFINE_FILE("file.c") 
 
-    /* Macro is active. */
-    ECU_ASSERT_DEFINE_NAME("foo.c") 
+    /* Memory allocated for only one "file.c" string literal. */
+    ECU_ASSERT( (true) );
+    ECU_ASSERT( (true) );
+    ECU_ASSERT( (true) );
 
-    static void foo(int *ptr)
-    {
-        /* Asserts are active in this case. */
-        ECU_RUNTIME_ASSERT( (ptr) ); 
-    }
+    /* Memory allocated for three "file.c" string literals since __FILE__ macro used. */
+    assert( (true) );
+    assert( (true) );
+    assert( (true) );
 
+Runtime Assertions in ECU Source 
+-------------------------------------------------
+:ecudoxygen:`ECU_ASSERT() <ECU_ASSERT>` is also used within ECU source code 
+to protect against API misuse. This approach is superior to propagating error codes up the
+call stack. API misusage is far easier to detect via assertions and library-specific error
+codes do not have to be used in the application.
 
-    /*---------------- ECU_DISABLE_RUNTIME_ASSERTS defined so asserts are NOT active. ----------*/
-    #include "ecu/asserter.h"
+Disabling Runtime Assertions
+-------------------------------------------------
+Runtime assertions are enabled by default. They can be disabled via ``ECU_DISABLE_RUNTIME_ASSERTS``
+preprocessor define. If using CMake ``ECU_DISABLE_RUNTIME_ASSERTS`` can be set within
+the project's CMakeLists.txt file:
 
-    /* Macro expands to nothing. */
-    ECU_ASSERT_DEFINE_NAME("foo.c") 
+.. code-block:: text
 
-    static void foo(int *ptr)
-    {
-        /* Macro expands to ((void)0) so it does nothing. NULL pointer is possible. */
-        ECU_RUNTIME_ASSERT( (ptr) ); 
-    }
+    set(ECU_DISABLE_RUNTIME_ASSERTS ON)
+
+Or if invoking CMake from the command line:
+
+.. code-block:: text
+
+    cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON .....
+
+Otherwise ``ECU_DISABLE_RUNTIME_ASSERTS`` can be defined through preprocessor settings in
+an IDE, or defined directly when invoking the compiler from the command line:
+
+.. code-block:: text
+
+    gcc -DECU_DISABLE_RUNTIME_ASSERTS .....
+
+:ecudoxygen:`ECU_ASSERT() <ECU_ASSERT>` is backwards compatible and
+should remain in the application even when assertions are disabled. The macro simply expands to 
+((void)0) when assertions are disabled.
 
 .. warning:: 
 
-    All checks done within ECU source code will not occur if runtime asserts are disabled.
-    Also note that the runtime assert framework provided by ECU will no longer be active
-    if used in your application.
+    There will be no protection against ECU API misuse when assertions are disabled
+    since ECU source code also uses :ecudoxygen:`ECU_ASSERT() <ECU_ASSERT>`.
 
-.. note:: 
+.. note::
 
-    This does not effect ECU static asserts. These are always enabled since they are 
-    evaluated at compile-time.
+    ECU_DISABLE_RUNTIME_ASSERTS has no effect on static assertions. 
+    Static assertions are always enabled.
 
 
-API
+API 
 =================================================
-.. toctree:: 
+.. toctree::
     :maxdepth: 1
 
-    API </doxygen/html/asserter_8h>
+    asserter.h </doxygen/html/asserter_8h>
+
+Macros
+-------------------------------------------------
+
+ECU_ASSERT()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`Runtime Assertions Section <ecu_runtime_assertions>`.
+
+ECU_ASSERT_DEFINE_FILE()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`Runtime Assertions Section <ecu_runtime_assertions>`.
+
+ECU_STATIC_ASSERT()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`Static Assertions Section <ecu_static_assertions>`.

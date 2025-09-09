@@ -1,5 +1,5 @@
 Completed.
-1. asserter.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+1. asserter.h/.c DONE.
 2. attributes.h. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 3. dlist.h/.c. DONE.
 4. endian.h. DONE.
@@ -19,6 +19,8 @@ Completed.
 1. Public functions now in alphabetical order. Edit code and documentation.
 2. Expose valid() functions publically so they can be used by other modules.
 3. Remove @details directive for **everything**.
+4. Removed hoverxref so must enable link previews in readthedocs.
+Settings->Addons->Link previews in admin dashboard.
 
 4. **In DLIST_GET_ENTRY() and NTNODE_GET_ENTRY() update ptr_ to ecu_dnode_ptr_ and ecu_ntnode_ptr_**
 ***respectivly. Includes code changes and documentation changes!!!**
@@ -135,9 +137,6 @@ Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
 Otherwise message is always printed
 - Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?
 - Note the if() elseif() stuff is evaluated at configuration time.
-
-5. When using ecu in external project, setting ecu to c_std_23 does not use static_assert()??? 
-It uses the extern char array[]???? Maybe cause it's passing -std=gnu2x? Look into this...
 
 6. Use #pragma message() instead of #warning for TODO messages. I.e.
 ```C

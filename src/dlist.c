@@ -28,7 +28,7 @@
 /*--------------- DEFINE FILE NAME FOR ASSERTER --------------*/
 /*------------------------------------------------------------*/
 
-ECU_ASSERT_DEFINE_NAME("ecu/dlist.c")
+ECU_ASSERT_DEFINE_FILE("ecu/dlist.c")
 
 /*------------------------------------------------------------*/
 /*---------------------------- DEFINES -----------------------*/
@@ -74,7 +74,7 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id);
 static bool node_is_valid_head(const struct ecu_dnode *node)
 {
     /* Do NOT assert ecu_dnode_valid() since it returns false for HEAD. */
-    ECU_RUNTIME_ASSERT( (node) );
+    ECU_ASSERT( (node) );
     bool status = false;
 
     if ((node->next) &&
@@ -94,7 +94,7 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
 {
     (void)me;
     (void)id;
-    ECU_RUNTIME_ASSERT( (false) );
+    ECU_ASSERT( (false) );
 }
 
 /*------------------------------------------------------------*/
@@ -111,9 +111,9 @@ void ecu_dnode_ctor(struct ecu_dnode *me,
                     void (*destroy)(struct ecu_dnode *me, ecu_object_id id),
                     ecu_object_id id)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (destroy != &HEAD_DESTROY_CALLBACK) );
-    ECU_RUNTIME_ASSERT( (id >= ECU_VALID_OBJECT_ID_BEGIN) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (destroy != &HEAD_DESTROY_CALLBACK) );
+    ECU_ASSERT( (id >= ECU_VALID_OBJECT_ID_BEGIN) );
     /* Do not assert ecu_dnode_valid() or !ecu_dnode_in_list() since next and prev pointers
     can be initialized to garbage non-NULL values before a constructor call. It is
     the user's responsibility to not construct an active node, which is clearly outlined
@@ -127,8 +127,8 @@ void ecu_dnode_ctor(struct ecu_dnode *me,
 
 void ecu_dnode_destroy(struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
 
     /* Save entries since they are reset before destroy callback executes. */
     void (*destroy)(struct ecu_dnode *, ecu_object_id) = me->destroy;
@@ -156,15 +156,15 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
 
 ecu_object_id ecu_dnode_id(const struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     return (me->id);
 }
 
 bool ecu_dnode_in_list(const struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     bool status = false;
 
     if ((me->next != me) &&
@@ -180,10 +180,10 @@ bool ecu_dnode_in_list(const struct ecu_dnode *me)
 
 void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (pos && node) );
-    ECU_RUNTIME_ASSERT( (pos != node) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(pos) && ecu_dnode_valid(node)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_in_list(pos) && !ecu_dnode_in_list(node)) );
+    ECU_ASSERT( (pos && node) );
+    ECU_ASSERT( (pos != node) );
+    ECU_ASSERT( (ecu_dnode_valid(pos) && ecu_dnode_valid(node)) );
+    ECU_ASSERT( (ecu_dnode_in_list(pos) && !ecu_dnode_in_list(node)) );
 
     /* Do manually. Do not use ecu_dnode_insert_before(pos->next, node). If pos is 
     TAIL then pos->next == HEAD. Passing HEAD into function is forbidden. */
@@ -195,10 +195,10 @@ void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node)
 
 void ecu_dnode_insert_before(struct ecu_dnode *pos, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (pos && node) );
-    ECU_RUNTIME_ASSERT( (pos != node) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(pos) && ecu_dnode_valid(node)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_in_list(pos) && !ecu_dnode_in_list(node)) );
+    ECU_ASSERT( (pos && node) );
+    ECU_ASSERT( (pos != node) );
+    ECU_ASSERT( (ecu_dnode_valid(pos) && ecu_dnode_valid(node)) );
+    ECU_ASSERT( (ecu_dnode_in_list(pos) && !ecu_dnode_in_list(node)) );
 
     /* Do manually. Do not use ecu_dnode_insert_after(pos->prev, node). If pos
     is one after HEAD, pos->prev == HEAD. Passing HEAD into function is forbidden. */
@@ -210,8 +210,8 @@ void ecu_dnode_insert_before(struct ecu_dnode *pos, struct ecu_dnode *node)
 
 struct ecu_dnode *ecu_dnode_next(struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     struct ecu_dnode *next = (struct ecu_dnode *)0;
 
     if (ecu_dnode_in_list(me))
@@ -219,7 +219,7 @@ struct ecu_dnode *ecu_dnode_next(struct ecu_dnode *me)
         if (!node_is_valid_head(me->next))
         {
             next = me->next;
-            ECU_RUNTIME_ASSERT( (ecu_dnode_valid(next)) );
+            ECU_ASSERT( (ecu_dnode_valid(next)) );
         }
     }
 
@@ -228,8 +228,8 @@ struct ecu_dnode *ecu_dnode_next(struct ecu_dnode *me)
 
 const struct ecu_dnode *ecu_dnode_cnext(const struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     const struct ecu_dnode *next = (const struct ecu_dnode *)0;
 
     if (ecu_dnode_in_list(me))
@@ -237,7 +237,7 @@ const struct ecu_dnode *ecu_dnode_cnext(const struct ecu_dnode *me)
         if (!node_is_valid_head(me->next))
         {
             next = me->next;
-            ECU_RUNTIME_ASSERT( (ecu_dnode_valid(next)) );
+            ECU_ASSERT( (ecu_dnode_valid(next)) );
         }
     }
 
@@ -246,8 +246,8 @@ const struct ecu_dnode *ecu_dnode_cnext(const struct ecu_dnode *me)
 
 struct ecu_dnode *ecu_dnode_prev(struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     struct ecu_dnode *prev = (struct ecu_dnode *)0;
 
     if (ecu_dnode_in_list(me))
@@ -255,7 +255,7 @@ struct ecu_dnode *ecu_dnode_prev(struct ecu_dnode *me)
         if (!node_is_valid_head(me->prev))
         {
             prev = me->prev;
-            ECU_RUNTIME_ASSERT( (ecu_dnode_valid(prev)) );
+            ECU_ASSERT( (ecu_dnode_valid(prev)) );
         }
     }
 
@@ -264,8 +264,8 @@ struct ecu_dnode *ecu_dnode_prev(struct ecu_dnode *me)
 
 const struct ecu_dnode *ecu_dnode_cprev(const struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
     const struct ecu_dnode *prev = (const struct ecu_dnode *)0;
 
     if (ecu_dnode_in_list(me))
@@ -273,7 +273,7 @@ const struct ecu_dnode *ecu_dnode_cprev(const struct ecu_dnode *me)
         if (!node_is_valid_head(me->prev))
         {
             prev = me->prev;
-            ECU_RUNTIME_ASSERT( (ecu_dnode_valid(prev)) );
+            ECU_ASSERT( (ecu_dnode_valid(prev)) );
         }
     }
 
@@ -282,8 +282,8 @@ const struct ecu_dnode *ecu_dnode_cprev(const struct ecu_dnode *me)
 
 void ecu_dnode_remove(struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dnode_valid(me)) );
 
     if (ecu_dnode_in_list(me))
     {
@@ -298,7 +298,7 @@ void ecu_dnode_remove(struct ecu_dnode *me)
 
 bool ecu_dnode_valid(const struct ecu_dnode *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     bool status = false;
 
     if ((me->next) &&
@@ -320,7 +320,7 @@ bool ecu_dnode_valid(const struct ecu_dnode *me)
 
 void ecu_dlist_ctor(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     /* Do not assert ecu_dlist_valid() since HEAD's next and prev pointers can be
     initialized to garbage non-NULL values before a constructor call. It is
     the user's responsibility to not construct an active list, which is clearly
@@ -336,8 +336,8 @@ void ecu_dlist_ctor(struct ecu_dlist *me)
 
 void ecu_dlist_destroy(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dlist_iterator iterator;
 
     ECU_DLIST_FOR_EACH(node, &iterator, me)
@@ -355,14 +355,14 @@ void ecu_dlist_destroy(struct ecu_dlist *me)
 
 struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dnode *tail = (struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
     {
         tail = me->head.prev;
-        ECU_RUNTIME_ASSERT( (ecu_dnode_valid(tail)) );
+        ECU_ASSERT( (ecu_dnode_valid(tail)) );
     }
 
     return tail;
@@ -370,14 +370,14 @@ struct ecu_dnode *ecu_dlist_back(struct ecu_dlist *me)
 
 const struct ecu_dnode *ecu_dlist_cback(const struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     const struct ecu_dnode *tail = (const struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
     {
         tail = me->head.prev;
-        ECU_RUNTIME_ASSERT( (ecu_dnode_valid(tail)) );
+        ECU_ASSERT( (ecu_dnode_valid(tail)) );
     }
 
     return tail;
@@ -385,8 +385,8 @@ const struct ecu_dnode *ecu_dlist_cback(const struct ecu_dlist *me)
 
 void ecu_dlist_clear(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dlist_iterator iterator;
 
     ECU_DLIST_FOR_EACH(node, &iterator, me)
@@ -400,21 +400,21 @@ void ecu_dlist_clear(struct ecu_dlist *me)
 
 bool ecu_dlist_empty(const struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     return (me->head.next == &me->head);
 }
 
 struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dnode *front = (struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
     {
         front = me->head.next;
-        ECU_RUNTIME_ASSERT( (ecu_dnode_valid(front)) );
+        ECU_ASSERT( (ecu_dnode_valid(front)) );
     }
 
     return front;
@@ -422,14 +422,14 @@ struct ecu_dnode *ecu_dlist_front(struct ecu_dlist *me)
 
 const struct ecu_dnode *ecu_dlist_cfront(const struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     const struct ecu_dnode *front = (const struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
     {
         front = me->head.next;
-        ECU_RUNTIME_ASSERT( (ecu_dnode_valid(front)) );
+        ECU_ASSERT( (ecu_dnode_valid(front)) );
     }
 
     return front;
@@ -440,10 +440,10 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
                              bool (*condition)(const struct ecu_dnode *node, const struct ecu_dnode *position, void *data),
                              void *data)
 {
-    ECU_RUNTIME_ASSERT( (me && node && condition) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(node)) );
-    ECU_RUNTIME_ASSERT( (!ecu_dnode_in_list(node)) );
+    ECU_ASSERT( (me && node && condition) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (ecu_dnode_valid(node)) );
+    ECU_ASSERT( (!ecu_dnode_in_list(node)) );
     bool inserted = false;
     struct ecu_dlist_iterator iterator;
 
@@ -467,10 +467,10 @@ void ecu_dlist_insert_before(struct ecu_dlist *me,
 
 void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (me && node) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(node)) );
-    ECU_RUNTIME_ASSERT( (!ecu_dnode_in_list(node)) );
+    ECU_ASSERT( (me && node) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (ecu_dnode_valid(node)) );
+    ECU_ASSERT( (!ecu_dnode_in_list(node)) );
 
     /* Add manually. Do not call ecu_dnode_insert_before(&me->head, node) 
     since HEAD is not allowed to be passed into dnode functions. */
@@ -482,10 +482,10 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
 
 void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
 {
-    ECU_RUNTIME_ASSERT( (me && node) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(node)) );
-    ECU_RUNTIME_ASSERT( (!ecu_dnode_in_list(node)) );
+    ECU_ASSERT( (me && node) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (ecu_dnode_valid(node)) );
+    ECU_ASSERT( (!ecu_dnode_in_list(node)) );
 
     /* Add manually. Do not call ecu_dnode_insert_after(&me->head, node) 
     since HEAD is not allowed to be passed into dnode functions. */
@@ -497,8 +497,8 @@ void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
 
 struct ecu_dnode *ecu_dlist_pop_back(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dnode *tail = (struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
@@ -512,8 +512,8 @@ struct ecu_dnode *ecu_dlist_pop_back(struct ecu_dlist *me)
 
 struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     struct ecu_dnode *front = (struct ecu_dnode *)0;
 
     if (!ecu_dlist_empty(me))
@@ -527,8 +527,8 @@ struct ecu_dnode *ecu_dlist_pop_front(struct ecu_dlist *me)
 
 size_t ecu_dlist_size(const struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
     size_t i = 0;
     struct ecu_dlist_citerator citerator;
 
@@ -574,8 +574,8 @@ void ecu_dlist_sort(struct ecu_dlist *me,
      * See https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
      * for algorithm used.
      */
-    ECU_RUNTIME_ASSERT( (me && lhs_less_than_rhs) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me)) );
+    ECU_ASSERT( (me && lhs_less_than_rhs) );
+    ECU_ASSERT( (ecu_dlist_valid(me)) );
 
     bool swap_q = false;
     size_t K = 1;
@@ -591,7 +591,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
         while (p != HEAD)
         {
             nmerges++;
-            ECU_RUNTIME_ASSERT( (ecu_dnode_valid(p)) );
+            ECU_ASSERT( (ecu_dnode_valid(p)) );
             q = p;
             psize = 0;
 
@@ -600,7 +600,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
             {
                 psize++;
                 q = q->next;
-                ECU_RUNTIME_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
+                ECU_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
                 if (q == HEAD)
                 {
                     break;
@@ -618,7 +618,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                     List doesn't have to be edited if p list is empty. */
                     e = q;
                     q = q->next;
-                    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
+                    ECU_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
                     qsize--;
                 }
                 else if (qsize == 0 || q == HEAD) /* qsize is always set to K but qlist can be empty!! Must OR with q == HEAD. */
@@ -626,7 +626,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                     /* q is empty. e must come from p. */
                     e = p;
                     p = p->next;
-                    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(p) || node_is_valid_head(p)) );
+                    ECU_ASSERT( (ecu_dnode_valid(p) || node_is_valid_head(p)) );
                     psize--;
                 }
                 else if ((*lhs_less_than_rhs)(q, p, data))
@@ -635,7 +635,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                     swap_q = true;
                     e = q;
                     q = q->next;
-                    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
+                    ECU_ASSERT( (ecu_dnode_valid(q) || node_is_valid_head(q)) );
                     qsize--;
                 }
                 else
@@ -643,7 +643,7 @@ void ecu_dlist_sort(struct ecu_dlist *me,
                     /* First element of p is less than or equal to q. e must come from p. */
                     e = p;
                     p = p->next;
-                    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(p) || node_is_valid_head(p)) );
+                    ECU_ASSERT( (ecu_dnode_valid(p) || node_is_valid_head(p)) );
                     psize--;
                 }
 
@@ -674,9 +674,9 @@ void ecu_dlist_sort(struct ecu_dlist *me,
 
 void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other)
 {
-    ECU_RUNTIME_ASSERT( (me && other) );
-    ECU_RUNTIME_ASSERT( (me != other) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me) && ecu_dlist_valid(other)) );
+    ECU_ASSERT( (me && other) );
+    ECU_ASSERT( (me != other) );
+    ECU_ASSERT( (ecu_dlist_valid(me) && ecu_dlist_valid(other)) );
 
     if (!ecu_dlist_empty(me) || !ecu_dlist_empty(other))
     {
@@ -697,7 +697,7 @@ void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other)
 
 bool ecu_dlist_valid(const struct ecu_dlist *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
+    ECU_ASSERT( (me) );
     return node_is_valid_head(&me->head);
 }
 
@@ -709,10 +709,10 @@ struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me,
                                         struct ecu_dlist *list, 
                                         struct ecu_dnode *start)
 {
-    ECU_RUNTIME_ASSERT( (me && list && start) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(list)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(start)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_in_list(start)) );
+    ECU_ASSERT( (me && list && start) );
+    ECU_ASSERT( (ecu_dlist_valid(list)) );
+    ECU_ASSERT( (ecu_dnode_valid(start)) );
+    ECU_ASSERT( (ecu_dnode_in_list(start)) );
 
     me->list = list;
     me->current = start;
@@ -722,28 +722,28 @@ struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me,
 
 struct ecu_dnode *ecu_dlist_iterator_begin(struct ecu_dlist_iterator *me, struct ecu_dlist *list)
 {
-    ECU_RUNTIME_ASSERT( (me && list) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(list)) );
+    ECU_ASSERT( (me && list) );
+    ECU_ASSERT( (ecu_dlist_valid(list)) );
 
     me->list = list;
     me->current = list->head.next;
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me->current) || node_is_valid_head(me->current)) );
+    ECU_ASSERT( (ecu_dnode_valid(me->current) || node_is_valid_head(me->current)) );
     me->next = me->current->next; /* me->next does not have to be asserted since it will be done in iterator_next(). */
     return (me->current);
 }
 
 struct ecu_dnode *ecu_dlist_iterator_end(struct ecu_dlist_iterator *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me->list)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me->list)) );
     return (&me->list->head);
 }
 
 struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me->list)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me->next) || node_is_valid_head(me->next)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me->list)) );
+    ECU_ASSERT( (ecu_dnode_valid(me->next) || node_is_valid_head(me->next)) );
     /* me->next->next does not have to be asserted here. It will be checked in
     the me->next asserts when this function is called again. */
 
@@ -760,10 +760,10 @@ const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me,
                                                const struct ecu_dlist *list, 
                                                const struct ecu_dnode *start)
 {
-    ECU_RUNTIME_ASSERT( (me && list && start) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(list)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(start)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_in_list(start)) );
+    ECU_ASSERT( (me && list && start) );
+    ECU_ASSERT( (ecu_dlist_valid(list)) );
+    ECU_ASSERT( (ecu_dnode_valid(start)) );
+    ECU_ASSERT( (ecu_dnode_in_list(start)) );
 
     me->list = list;
     me->current = start;
@@ -774,28 +774,28 @@ const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me,
 const struct ecu_dnode *ecu_dlist_iterator_cbegin(struct ecu_dlist_citerator *me, 
                                                   const struct ecu_dlist *list)
 {
-    ECU_RUNTIME_ASSERT( (me && list) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(list)) );
+    ECU_ASSERT( (me && list) );
+    ECU_ASSERT( (ecu_dlist_valid(list)) );
 
     me->list = list;
     me->current = list->head.next;
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me->current) || node_is_valid_head(me->current)) );
+    ECU_ASSERT( (ecu_dnode_valid(me->current) || node_is_valid_head(me->current)) );
     me->next = me->current->next; /* me->next does not have to be asserted since it will be done in iterator_next(). */
     return (me->current);
 }
 
 const struct ecu_dnode *ecu_dlist_iterator_cend(struct ecu_dlist_citerator *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me->list)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me->list)) );
     return (&me->list->head);
 }
 
 const struct ecu_dnode *ecu_dlist_iterator_cnext(struct ecu_dlist_citerator *me)
 {
-    ECU_RUNTIME_ASSERT( (me) );
-    ECU_RUNTIME_ASSERT( (ecu_dlist_valid(me->list)) );
-    ECU_RUNTIME_ASSERT( (ecu_dnode_valid(me->next) || node_is_valid_head(me->next)) );
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (ecu_dlist_valid(me->list)) );
+    ECU_ASSERT( (ecu_dnode_valid(me->next) || node_is_valid_head(me->next)) );
     /* me->next->next does not have to be asserted here. It will be checked in
     the me->next asserts when this function is called again. */
 

@@ -266,7 +266,7 @@ constructed. Each type must have a unique ID. Example usage:
 
             default:
             {
-                ECU_RUNTIME_ASSERT( (false) );
+                ECU_ASSERT( (false) );
                 break;
             }
         }

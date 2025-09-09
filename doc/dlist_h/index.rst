@@ -212,7 +212,7 @@ constructed. Each type must have a unique ID. Example usage:
 
             default:
             {
-                ECU_RUNTIME_ASSERT( (false) );
+                ECU_ASSERT( (false) );
                 break;
             }
         }
@@ -858,7 +858,7 @@ the back of the list.
     static bool condition(const struct ecu_dnode *n, const struct ecu_dnode *position, void *obj)
     {
         bool status = false; /* Return true if condition passes. False otherwise. */
-        ECU_RUNTIME_ASSERT( (n && position) );
+        ECU_ASSERT( (n && position) );
         (void)obj; /* Optional callback object unused. */
 
         const struct user_node *me = ECU_DNODE_GET_CONST_ENTRY(n, struct user_node, node);
@@ -1082,7 +1082,7 @@ to the user's function. It must return true if lhs < rhs or false if lhs >= rhs.
     static bool lhs_less_than_rhs(const struct ecu_dnode *lhs, const struct ecu_dnode *rhs, void *data)
     {
         bool status = false; /* Return true if lhs node is less than rhs node. False otherwise. */
-        ECU_RUNTIME_ASSERT( (lhs && rhs) );
+        ECU_ASSERT( (lhs && rhs) );
         (void)obj; /* Optional callback object unused. */
 
         const struct user_node *lhs_node = ECU_DNODE_GET_CONST_ENTRY(lhs, struct user_node, node);
