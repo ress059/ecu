@@ -15,7 +15,7 @@
 /* Translation unit. */
 #include "led.h"
 
-/* ECU library under test. */
+/* ECU. */
 #include "ecu/asserter.h"
 
 /*------------------------------------------------------------*/
@@ -45,26 +45,26 @@ static void led_cleanup(struct ecu_dnode *led, ecu_object_id id);
 /**
  * @brief Entry handler for LED_ON_STATE.
  */
-static void led_on_entry(struct led *me);
+static void led_on_entry(struct ecu_fsm *led);
 
 /**
  * @brief Handler for LED_ON_STATE.
  * 
  * @param event The @ref led_event that was dispatched.
  */
-static void led_on_handler(struct led *me, const void *event);
+static void led_on_handler(struct ecu_fsm *led, const void *event);
 
 /**
  * @brief Exit handler for LED_OFF_STATE.
  */
-static void led_off_entry(struct led *me);
+static void led_off_entry(struct ecu_fsm *led);
 
 /**
  * @brief Handler for LED_OFF_STATE.
  * 
  * @param event The @ref led_event that was dispatched.
  */
-static void led_off_handler(struct led *me, const void *event);
+static void led_off_handler(struct ecu_fsm *led, const void *event);
 
 /*------------------------------------------------------------*/
 /*------------------- FILE SCOPE VARIABLES -------------------*/
@@ -77,12 +77,6 @@ static const struct ecu_fsm_state LED_ON_STATE = ECU_FSM_STATE_CTOR(
 static const struct ecu_fsm_state LED_OFF_STATE = ECU_FSM_STATE_CTOR(
     &led_off_entry, ECU_FSM_STATE_EXIT_UNUSED, &led_off_handler
 );
-
-/*------------------------------------------------------------*/
-/*------------------------ STATIC ASSERTS --------------------*/
-/*------------------------------------------------------------*/
-
-ECU_STATIC_ASSERT( (ECU_FSM_IS_BASEOF(fsm, struct led)), "LED must inherit ecu_fsm." ); 
 
 /*------------------------------------------------------------*/
 /*------------------ STATIC FUNCTION DEFINITIONS -------------*/
@@ -104,29 +98,31 @@ static void led_cleanup(struct ecu_dnode *led, ecu_object_id id)
     led_dispatch(me, &OFF_EVENT);
 }
 
-static void led_on_entry(struct led *me)
+static void led_on_entry(struct ecu_fsm *led)
 {
-    ECU_ASSERT( (me) );
+    ECU_ASSERT( (led) );
+    struct led *me = ECU_FSM_GET_CONTEXT(led, struct led, fsm);
+
     ECU_ASSERT( (me->api.turn_on) );
     (*me->api.turn_on)(me->api.obj);
 }
 
-static void led_on_handler(struct led *me, const void *event)
+static void led_on_handler(struct ecu_fsm *led, const void *event)
 {
-    ECU_ASSERT( (me && event) );
+    ECU_ASSERT( (led && event) );
     const struct led_event *e = (const struct led_event *)event;
 
     switch (e->id)
     {
         case LED_OFF_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+            ecu_fsm_change_state(led, &LED_OFF_STATE);
             break;
         }
 
         case LED_BUTTON_PRESS_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
+            ecu_fsm_change_state(led, &LED_OFF_STATE);
             break;
         }
 
@@ -138,29 +134,31 @@ static void led_on_handler(struct led *me, const void *event)
     }
 }
 
-static void led_off_entry(struct led *me)
+static void led_off_entry(struct ecu_fsm *led)
 {
-    ECU_ASSERT( (me) );
+    ECU_ASSERT( (led) );
+    struct led *me = ECU_FSM_GET_CONTEXT(led, struct led, fsm);
+
     ECU_ASSERT( (me->api.turn_off) );
     (*me->api.turn_off)(me->api.obj);
 }
 
-static void led_off_handler(struct led *me, const void *event)
+static void led_off_handler(struct ecu_fsm *led, const void *event)
 {
-    ECU_ASSERT( (me && event) );
+    ECU_ASSERT( (led && event) );
     const struct led_event *e = (const struct led_event *)event;
 
     switch (e->id)
     {
         case LED_ON_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+            ecu_fsm_change_state(led, &LED_ON_STATE);
             break;
         }
 
         case LED_BUTTON_PRESS_EVENT:
         {
-            ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &LED_ON_STATE);
+            ecu_fsm_change_state(led, &LED_ON_STATE);
             break;
         }
         
@@ -183,8 +181,8 @@ void led_ctor(struct led *me,
 {
     ECU_ASSERT( (me && turn_on && turn_off) );
 
-    ecu_fsm_ctor(ECU_FSM_BASE_CAST(me), &LED_OFF_STATE);
     ecu_dnode_ctor(&me->node, &led_cleanup, ECU_OBJECT_ID_UNUSED);
+    ecu_fsm_ctor(&me->fsm, &LED_OFF_STATE);
     me->api.turn_on = turn_on;
     me->api.turn_off = turn_off;
     me->api.obj = obj;
@@ -192,12 +190,14 @@ void led_ctor(struct led *me,
 
 void led_start(struct led *me)
 {
+    ECU_ASSERT( (me) );
     ECU_ASSERT( (led_is_constructed(me)) );
-    ecu_fsm_start(ECU_FSM_BASE_CAST(me));
+    ecu_fsm_start(&me->fsm);
 }
 
 void led_destroy(struct led *me)
 {
+    ECU_ASSERT( (me) );
     ECU_ASSERT( (led_is_constructed(me)) );
 
     ecu_dnode_destroy(&me->node);
@@ -206,15 +206,16 @@ void led_destroy(struct led *me)
     me->api.obj = (void *)0;
 }
 
-void led_remove(struct led *me)
-{
-    ECU_ASSERT( (led_is_constructed(me)) );
-    ecu_dnode_remove(&me->node);
-}
-
 void led_dispatch(struct led *me, const struct led_event *event)
 {
-    ECU_ASSERT( (event) );
+    ECU_ASSERT( (me && event) );
     ECU_ASSERT( (led_is_constructed(me)) );
-    ecu_fsm_dispatch(ECU_FSM_BASE_CAST(me), event);
+    ecu_fsm_dispatch(&me->fsm, event);
+}
+
+void led_remove(struct led *me)
+{
+    ECU_ASSERT( (me) );
+    ECU_ASSERT( (led_is_constructed(me)) );
+    ecu_dnode_remove(&me->node);
 }

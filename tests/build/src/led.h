@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Standalone LED that is controlled by a pushbutton.
+ * @brief Standalone LED.
  * They can also be added to an @ref led_strip. For testing 
  * compilation and linkage of ECU.
  * 
@@ -17,7 +17,7 @@
 /*------------------------- INCLUDES -------------------------*/
 /*------------------------------------------------------------*/
 
-/* ECU library under test. */
+/* ECU. */
 #include "ecu/dlist.h"
 #include "ecu/fsm.h"
 
@@ -26,19 +26,18 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief LED object controlled by a pushbutton. Can also
- * be added to an @ref led_strip.
+ * @brief LED object. Can also be added to 
+ * an @ref led_strip.
  */
 struct led
 {
-    /// @brief LED is represented by a finite state machine built
-    /// using ECU FSM framework. Therefore this MUST inherit ecu_fsm
-    /// by being the first member.
-    struct ecu_fsm fsm;
-
     /// @brief Linked list node in case the LED is added to 
     /// an @ref led_strip.
     struct ecu_dnode node;
+
+    /// @brief LED is represented by a finite state machine built
+    /// using ECU FSM framework.
+    struct ecu_fsm fsm;
 
     /// @brief Dependency injection. Contains user's hardware-specific code.
     struct 
@@ -117,15 +116,6 @@ extern void led_destroy(struct led *me);
 
 /**
  * @pre @p me constructed via @ref led_ctor().
- * @brief Removes the LED if it was in a strip. Otherwise
- * does nothing.
- * 
- * @param me LED to remove.
- */
-extern void led_remove(struct led *me);
-
-/**
- * @pre @p me constructed via @ref led_ctor().
  * @brief Dispatches event to LED FSM. Wrapper around
  * base class function @ref ecu_fsm_dispatch() so specific
  * event type can be enforced.
@@ -134,6 +124,15 @@ extern void led_remove(struct led *me);
  * @param event Event to dispatch.
  */
 extern void led_dispatch(struct led *me, const struct led_event *event);
+
+/**
+ * @pre @p me constructed via @ref led_ctor().
+ * @brief Removes the LED if it was in a strip. Otherwise
+ * does nothing.
+ * 
+ * @param me LED to remove.
+ */
+extern void led_remove(struct led *me);
 
 #ifdef __cplusplus
 }

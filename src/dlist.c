@@ -30,6 +30,10 @@
 
 ECU_ASSERT_DEFINE_FILE("ecu/dlist.c")
 
+/*------------------------------------------------------------*/
+/*---------------------------- DEFINES -----------------------*/
+/*------------------------------------------------------------*/
+
 /**
  * @brief Node ID given to HEAD to help identify it.
  * This is assigned when a list is constructed.

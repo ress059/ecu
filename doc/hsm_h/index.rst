@@ -365,13 +365,13 @@ repetition. Notice the repetition in the processing of the DISCONNECTED event:
         {
             case DISCONNECTED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
                 break;
             }
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -389,13 +389,13 @@ repetition. Notice the repetition in the processing of the DISCONNECTED event:
         {
             case DISCONNECTED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
                 break;
             }
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &DEFAULT_STATE);
                 break;
             }
 
@@ -519,7 +519,7 @@ of these two events is identical in the DEFAULT_STATE and CAPS_LOCK_STATE:
         {
             case DISCONNECTED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
                 break;
             }
 
@@ -537,7 +537,7 @@ of these two events is identical in the DEFAULT_STATE and CAPS_LOCK_STATE:
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -555,7 +555,7 @@ of these two events is identical in the DEFAULT_STATE and CAPS_LOCK_STATE:
         {
             case DISCONNECTED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &OFF_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
                 break;
             }
 
@@ -573,7 +573,7 @@ of these two events is identical in the DEFAULT_STATE and CAPS_LOCK_STATE:
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_fsm_change_state(ECU_FSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &DEFAULT_STATE);
                 break;
             }
 
@@ -1064,8 +1064,8 @@ Run to Completion Semantics
 -------------------------------------------------
 .. _hsm_run_to_completion_semantics:
 
-See :ref:`Run to Completion Semantics Section in the Finite State Machine Framework <fsm_run_to_completion_semantics>`.
-The same logic carries over to HSMs as well.
+.. See :ref:`Run to Completion Semantics Section in the Finite State Machine Framework <fsm_run_to_completion_semantics>`.
+.. The same logic carries over to HSMs as well.
 
 
 ecu_hsm_state

@@ -4,11 +4,11 @@ Completed.
 3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc). Keep. In sphinx docs show example of creating event base class for fsm/hsm modules.
-6. fsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+6. fsm.h/.c. DONE.
 7. hsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
-10. ntnode.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc), finish tests, finish sphinx docs.
+10. ntnode.h/.c. DONE.
 11. utils.h. DONE.
 
 ## Ring buffer
@@ -21,6 +21,9 @@ Completed.
 3. Remove @details directive for **everything**.
 4. Removed hoverxref so must enable link previews in readthedocs.
 Settings->Addons->Link previews in admin dashboard.
+
+4. **In DLIST_GET_ENTRY() and NTNODE_GET_ENTRY() update ptr_ to ecu_dnode_ptr_ and ecu_ntnode_ptr_**
+***respectivly. Includes code changes and documentation changes!!!**
 
 
 ## Tree

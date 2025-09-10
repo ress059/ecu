@@ -15,7 +15,7 @@
 /* Translation unit. */
 #include "led_strip.h"
 
-/* ECU library under test. */
+/* ECU. */
 #include "ecu/asserter.h"
 
 /*------------------------------------------------------------*/
