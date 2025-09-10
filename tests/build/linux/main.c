@@ -24,11 +24,11 @@
 #include <time.h>
 #include <unistd.h>
 
-/* Application that uses ECU library. */
+/* Application. */
 #include "led_strip.h"
 #include "led.h"
 
-/* ECU library under test. */
+/* ECU. */
 #include "ecu/asserter.h"
 #include "ecu/timer.h"
 

@@ -14,8 +14,8 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Framework that creates and runs finite state machines (FSMs). Applications define
-their own state machines by containing an intrusive :ecudoxygen:`ecu_fsm` member.
+Framework that creates and runs finite state machines (FSMs). Applications use
+this framework by containing an intrusive :ecudoxygen:`ecu_fsm` member.
 
 
 Theory
@@ -84,8 +84,8 @@ State Machine Representation
 .. _fsm_state_machine_representation:
 
 Finite state machines are represented by the :ecudoxygen:`ecu_fsm` struct. 
-Applications use this framework an define their own FSMs by containing
-:ecudoxygen:`ecu_fsm` as an intrusive member:
+Applications use this framework by containing :ecudoxygen:`ecu_fsm` as
+an intrusive member:
 
 .. code-block:: c
 
@@ -98,8 +98,8 @@ Applications use this framework an define their own FSMs by containing
 
 This framework has no knowledge of the application's state machine type so it 
 must only use :ecudoxygen:`ecu_fsm` to remain portable. The :ecudoxygen:`ecu_fsm` 
-member acts as a common interface between the two mediums. Thus each state's
-definition must take in an :ecudoxygen:`ecu_fsm` pointer:
+member acts as a common interface between the two mediums. Thus each state
+handler must take in an :ecudoxygen:`ecu_fsm` pointer:
 
 .. code-block:: c 
 
@@ -108,7 +108,7 @@ definition must take in an :ecudoxygen:`ecu_fsm` pointer:
     static void running_state_on_exit(struct ecu_fsm *fsm);
     static void running_state_handler(struct ecu_fsm *fsm, const void *event);
 
-The application's state machine type can be retrieved within these definitions
+The application's state machine type can be retrieved within each handler's definition
 via the :ecudoxygen:`ECU_FSM_GET_CONTEXT() <ECU_FSM_GET_CONTEXT>` macro:
 
 .. code-block:: c
@@ -151,7 +151,7 @@ three parameters:
   
     ECU_FSM_GET_CONTEXT()
 
-Under the hood, this macro performs pointer arithmetic to do the conversion.
+Under the hood, this macro does pointer arithmetic to perform the conversion.
 The details of this operation is fully explained in 
 :ref:`ECU_CONTAINER_OF() <utils_container_of>`.
 
@@ -191,12 +191,6 @@ Thus the full execution order is:
 
     No state transitions are allowed in the exit handler. This is pointless since
     when the exit handler runs, that state is already being exited:
-
-    .. figure:: /images/fsm/state_transitions_transition_on_exit.svg
-        :width: 300
-        :align: center
-    
-        Transition on Exit Not Allowed
 
     .. code-block:: c
 
@@ -246,12 +240,6 @@ making the full execution order:
 
     A self-state transition is not allowed in the entry handler as this
     would cause an infinite loop:
-
-    .. figure:: /images/fsm/state_transitions_self_transition_on_entry.svg
-        :width: 300
-        :align: center
-    
-        Self Transition on Entry Not Allowed
 
     .. code-block:: c
 
@@ -322,7 +310,8 @@ The application treats the state machine as a black-box and blindly dispatches e
     {
         if (requested to stop)
         {
-            ecu_fsm_dispatch(fsm, &stop_event);
+            struct event stop_event = {STOP_EVENT, 0, 0};
+            ecu_fsm_dispatch(fsm, &stop_event); /* Don't care what state machine is currently doing. */
         }
     } 
 
@@ -352,7 +341,8 @@ expand upon this and further explain why the event-driven approach is superior**
 #. An event-driven state machine's implementation is fully reusable and encapsulated. 
    Porting the state machine to a new application simply involves dispatching events 
    under different conditions. Applications also remain uneffected if the state machine's 
-   internal details were to ever change:
+   internal details were to ever change. At a maximum, the changepoint is limited to 
+   creating new event structs:
 
     .. code-block:: c
 
@@ -361,6 +351,7 @@ expand upon this and further explain why the event-driven approach is superior**
         {
             if (button pressed 5 times)
             {
+                struct event STOP_EVENT;
                 ecu_fsm_dispatch(&fsm, &STOP_EVENT);
             }
         }
@@ -372,6 +363,7 @@ expand upon this and further explain why the event-driven approach is superior**
         {
             if (button pressed once)
             {
+                struct event STOP_EVENT;
                 ecu_fsm_dispatch(&fsm, &STOP_EVENT);
             }
         }
@@ -397,8 +389,8 @@ expand upon this and further explain why the event-driven approach is superior**
    carefully edit these global flags in a predefined fashion. Also if the state machine's 
    details change, every application that uses it would have to be refactored.
 
-#. Multiple instances of the same event-driven state machine can be created, with each
-   instance operating **independently** from one another:
+#. Multiple instances of the same event-driven state machine can be created since events are
+   **not** shared objects. Each state machine instance operates **independently** from one another:
 
     .. code-block:: c
 
@@ -407,8 +399,11 @@ expand upon this and further explain why the event-driven approach is superior**
 
         int main()
         {
-            ecu_fsm_dispatch(&led1, &ON_EVENT);
-            ecu_fsm_dispatch(&led2, &OFF_EVENT);
+            struct event ON_EVENT1;
+            ecu_fsm_dispatch(&led1, &ON_EVENT1);
+
+            struct event ON_EVENT2;
+            ecu_fsm_dispatch(&led2, &ON_EVENT2);
         }
 
     .. figure:: /images/fsm/event_driven_paradigm_event_driven_state_machine_multiple_instances.svg
@@ -430,13 +425,14 @@ expand upon this and further explain why the event-driven approach is superior**
    allows test code to simply create an event, dispatch it to the state machine,
    and verify its output. This encapsulates all implementation details from the test
    code, making it fully portable. The test state machine can also easily be reset by 
-   creating a new instance:
+   simply creating a new instance:
 
     .. code-block:: c
 
         TEST()
         {
             struct fsm test_fsm;
+            struct event EVENT;
 
             create(&test_fsm);
             ecu_fsm_dispatch(&test_fsm, &EVENT);
@@ -446,9 +442,9 @@ expand upon this and further explain why the event-driven approach is superior**
    Polling state machines are extremely difficult to test since they are often
    implemented as free functions that are tightly coupled to the application.
    Test code must manually edit flags to reset and fully test the state machine. 
-   This is unportable since test code interacts with the state machine's implementation
-   details. All tests would have to be refactored if the state machine's implementation
-   changed:
+   This is unportable since test code directly interacts with the state machine's implementation
+   details. All tests would have to be refactored whenever the state machine's implementation
+   changes:
 
     .. code-block:: c
 
@@ -474,14 +470,14 @@ expand upon this and further explain why the event-driven approach is superior**
 
         TEST()
         {
-            set state == ON_STATE;
+            set state == ON_STATE; /* Somehow have to set local flag. */
             off_flag = true;
             polled_fsm_implementation();
             verify_output();
         }
 
 #. Thread-safety is trivial for event-driven state machines. Events are **not** shared resources
-   since they are represented as **objects**. Each thread can create their own events, giving them
+   since they are represented as **objects**. Therefore each thread can create their own events, giving them
    exclusive access:
    
     .. figure:: /images/fsm/event_driven_paradigm_exclusive_access_to_events.svg
@@ -546,13 +542,14 @@ This example aims to demonstrate the points outlined in the :ref:`Event-Driven P
 
     LED FSM Example
 
-The LED starts in the off state. LED_ON_EVENTs and LED_OFF_EVENTs can be blindly dispatched 
-by the application since the state machine's implementation ensures the LED is always in 
-the correct state. This logic is contained within a reusable LED object, whose implementation 
-is in ``led.h`` and ``led.c``.
+The LED starts in the OFF_STATE. LED_ON_EVENTs and LED_OFF_EVENTs can be blindly dispatched 
+by the application to turn the LED on and off respectively. The state machine's implementation ensures the 
+LED is always in the correct state. Its logic is contained within a reusable LED object, whose 
+implementation is in ``led.h`` and ``led.c``.
 
-The LED state machine is then used in a microcontroller application in ``main.c`` and
-then on a computer running test code in ``tests.c.``
+This LED module is then ported to two separate applications. The first on a microcontroller
+in ``main.c``, where multiple LED objects are created and used. The second on a computer
+in ``tests.c``, where the LED module is tested.
 
 led.h/.c 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -593,10 +590,10 @@ led.h/.c
     /*-------------------------- led.c --------------------------*/
     #include "led.h"
 
-    static void on_state_entry(struct ecu_fsm *fsm);
-    static void on_state_handler(struct ecu_fsm *fsm, const void *event);
-    static void off_state_entry(struct ecu_fsm *fsm);
-    static void off_state_handler(struct ecu_fsm *fsm, const void *event);
+    static void on_state_entry(struct ecu_fsm *led);
+    static void on_state_handler(struct ecu_fsm *led, const void *event);
+    static void off_state_entry(struct ecu_fsm *led);
+    static void off_state_handler(struct ecu_fsm *led, const void *event);
 
     /* States can be shared across any number of LED fsms. */
     static const struct ecu_fsm_state ON_STATE = ECU_FSM_STATE_CTOR(
@@ -607,22 +604,21 @@ led.h/.c
         &off_state_entry, ECU_FSM_STATE_EXIT_UNUSED, &off_state_handler
     );
 
-    static void on_state_entry(struct ecu_fsm *fsm)
+    static void on_state_entry(struct ecu_fsm *led)
     {
-        struct led *me = ECU_FSM_GET_CONTEXT(fsm, struct led, fsm);
+        struct led *me = ECU_FSM_GET_CONTEXT(led, struct led, fsm);
         (*me->turn_on)(me->obj);
     }
 
-    static void on_state_handler(struct ecu_fsm *fsm, const void *event)
+    static void on_state_handler(struct ecu_fsm *led, const void *event)
     {
-        struct led *me = ECU_FSM_GET_CONTEXT(fsm, struct led, fsm);
         const struct led_event *e = (const struct led_event *)event;
 
         switch (e->id)
         {
             case LED_OFF_EVENT:
             {
-                ecu_fsm_change_state(&me->fsm, &OFF_STATE);
+                ecu_fsm_change_state(led, &OFF_STATE);
                 break;
             }
 
@@ -634,22 +630,21 @@ led.h/.c
         }
     }
 
-    static void off_state_entry(struct led *me)
+    static void off_state_entry(struct ecu_fsm *led)
     {
-        struct led *me = ECU_FSM_GET_CONTEXT(fsm, struct led, fsm);
+        struct led *me = ECU_FSM_GET_CONTEXT(led, struct led, fsm);
         (*me->turn_off)(me->obj);
     }
 
-    static void off_state_handler(struct led *me, const void *event)
+    static void off_state_handler(struct ecu_fsm *led, const void *event)
     {
-        struct led *me = ECU_FSM_GET_CONTEXT(fsm, struct led, fsm);
         const struct led_event *e = (const struct led_event *)event;
 
         switch (e->id)
         {
             case LED_ON_EVENT:
             {
-                ecu_fsm_change_state(&me->fsm, &ON_STATE);
+                ecu_fsm_change_state(led, &ON_STATE);
                 break;
             }
             
@@ -688,7 +683,7 @@ main.c
 .. code-block:: c
 
     /*-------------------------- main.c --------------------------*/
-    #include "led.h" /* Reusable FSM we created. */
+    #include "led.h" /* Reusable LED we created. */
 
     struct led_gpio
     {
@@ -741,7 +736,7 @@ tests.c
 .. code-block:: c
 
     /*-------------------------- tests.c -------------------------*/
-    #include "led.h" /* Reusable FSM module under test. */
+    #include "led.h" /* Reusable LED module under test. */
 
     static void turn_led_on(void *obj)
     {
@@ -782,8 +777,8 @@ Macros
 
 ECU_FSM_GET_CONTEXT()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Converts intrusive :ecudoxygen:`ecu_fsm` member into the user's FSM type.
-This should be used inside each state's definition. See
+Converts intrusive :ecudoxygen:`ecu_fsm` member back into the user's state machine type.
+This should be used inside a state handler's definition. See
 :ref:`State Machine Representation Section <fsm_state_machine_representation>`
 for more details:
 
@@ -902,7 +897,7 @@ more details.
 ecu_fsm_start()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Runs the initial state's entry handler and manages all state transition 
-logic if any state changes were siganlled via 
+logic if any state changes were signalled via 
 :ref:`ecu_fsm_change_state() <fsm_ecu_fsm_change_state>`. This function 
 does nothing if the initial state's entry handler is unused. See
 :ref:`State Transitions Section <fsm_state_transitions>` for
