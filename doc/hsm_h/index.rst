@@ -1064,8 +1064,8 @@ Run to Completion Semantics
 -------------------------------------------------
 .. _hsm_run_to_completion_semantics:
 
-See :ref:`Run to Completion Semantics Section in the Finite State Machine Framework <fsm_run_to_completion_semantics>`.
-The same logic carries over to HSMs as well.
+.. See :ref:`Run to Completion Semantics Section in the Finite State Machine Framework <fsm_run_to_completion_semantics>`.
+.. The same logic carries over to HSMs as well.
 
 
 ecu_hsm_state
