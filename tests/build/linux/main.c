@@ -1,7 +1,7 @@
 /**
  * @file
- * @brief Dummy main.c to test compilation and linkage of ECU library. 
- * Calls and uses common API functions.
+ * @brief Dummy main.c to test compilation and linkage of ECU library
+ * on a computer. Calls and uses common API functions.
  * 
  * @author Ian Ress
  * @version 0.1

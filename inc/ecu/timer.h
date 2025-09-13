@@ -58,9 +58,11 @@ typedef unsigned int ecu_tick_t;
  */
 enum ecu_timer_type
 {
-    ECU_TIMER_TYPE_ONE_SHOT, /**< Once timer expires it is stopped. */
-    ECU_TIMER_TYPE_PERIODIC, /**< Once the timer expires it is automatically restarted. */
-    /********************/
+    ECU_TIMER_TYPES_START = -1, /**< Used to prevent type-limits warning when compiling on targets that auto adjust enum types. */
+    /***********************/
+    ECU_TIMER_TYPE_ONE_SHOT,    /**< Once timer expires it is stopped. */
+    ECU_TIMER_TYPE_PERIODIC,    /**< Once the timer expires it is automatically restarted. */
+    /***********************/
     ECU_TIMER_TYPES_COUNT
 };
 

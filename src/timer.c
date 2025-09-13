@@ -148,7 +148,7 @@ void ecu_timer_set(struct ecu_timer *me,
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (period > 0) );
-    ECU_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( ((type > ECU_TIMER_TYPES_START) && (type < ECU_TIMER_TYPES_COUNT)) );
 
     ecu_timer_disarm(me);
     me->period = period;
@@ -209,7 +209,7 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 {
     ECU_ASSERT( (me && timer) );
     ECU_ASSERT( (timer->period > 0) );
-    ECU_ASSERT( (timer->type >= 0 && timer->type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( ((timer->type > ECU_TIMER_TYPES_START) && (timer->type < ECU_TIMER_TYPES_COUNT)) );
     ECU_ASSERT( (timer->callback) );
 
     ecu_timer_disarm(timer);

@@ -62,18 +62,16 @@ set(CMAKE_CXX_FLAGS_MINSIZEREL "-DNDEBUG" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-DNDEBUG" CACHE STRING "")
 
-# Set hardware-specific compiler flags for ARM CM4F, stdlib implementation to use, and
-# linker garbage collection flags here since these should apply to the entire project.
-# Remaining flags will be added by CMake build system depending on what is needed 
-# by the application.
+# Set hardware-specific compiler flags for ARM CM4F and linker garbage collection 
+# flags here since these should apply to the entire project. Remaining flags will 
+# be added by CMake build system depending on what is needed by the application.
 set(CMAKE_C_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -ffunction-sections -fdata-sections" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_INIT "-fno-exceptions -fno-rtti -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -ffunction-sections -fdata-sections" CACHE STRING "")
 
-# Set hardware-specific linker flags for ARM CM4F, stdlib implementation to use, and
-# linker garbage collection flags here since these should apply to the entire project.
-# Remaining flags will be added by CMake build system depending on what is needed 
-# by the application.
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -specs=nano.specs -Wl,--gc-sections" CACHE STRING "")
+# Set hardware-specific linker flags for ARM CM4F and linker garbage collection flags 
+# here since these should apply to the entire project. Remaining flags will be added 
+# by CMake build system depending on what is needed by the application.
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,--gc-sections -nostdlib" CACHE STRING "")
 
 # These rule variables control how CMake actually calls the linker from the command line.
 # Edit these so it creates an .elf executable. All other flags remain the same as the default.

@@ -37,6 +37,8 @@ ECU_ASSERT_DEFINE_FILE("ecu/fsm.c")
  */
 enum transition_type
 {
+    FSM_TRANSITION_TYPE_START = -1, /**< Used to prevent type-limits warning when compiling on targets that auto adjust enum types. */
+    /************************/
     FSM_SELF_TRANSITION,
     FSM_STATE_TRANSITION,
     /************************/
@@ -107,14 +109,14 @@ static bool no_transitions_active(const struct ecu_fsm *fsm)
 static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( ((t > FSM_TRANSITION_TYPE_START) && (t < FSM_TRANSITION_TYPE_COUNT)) );
     return (fsm->transition & (1U << t));
 }
 
 static void set_transition(struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( ((t > FSM_TRANSITION_TYPE_START) && (t < FSM_TRANSITION_TYPE_COUNT)) );
     fsm->transition |= (1U << t);
 }
 

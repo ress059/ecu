@@ -40,12 +40,12 @@ target_compile_features(ecu
 )
 
 # Target Endianness.
-if(${CMAKE_C_BYTE_ORDER} STREQUAL "LITTLE_ENDIAN")
+if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_LITTLE_ENDIAN 
     )
-elseif(${CMAKE_C_BYTE_ORDER} STREQUAL "BIG_ENDIAN")
+elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_BIG_ENDIAN 

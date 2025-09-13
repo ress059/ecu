@@ -10,12 +10,14 @@ jobs:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
       matrix:
-        # TODO: Add stm32l432xc-build-test, and other cross-compilation stuff later.
-        preset: [linux-build-test]
+        preset: [linux-build-test, stm32l432xc-build-test]
         assert: [ECU_DISABLE_RUNTIME_ASSERTS=OFF, ECU_DISABLE_RUNTIME_ASSERTS=ON]
     steps:
-    - uses: actions/checkout@v4
     - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
+      uses: actions/checkout@v4
+      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      with:
+        release: '14.2.Rel1'
       run: |
         cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
         cmake --build --clean-first --preset ${{matrix.preset}}

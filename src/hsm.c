@@ -37,6 +37,8 @@ ECU_ASSERT_DEFINE_FILE("ecu/hsm.c")
  */
 enum transition_type
 {
+    HSM_TRANSITION_TYPE_START = -1, /**< Used to prevent type-limits warning when compiling on targets that auto adjust enum types. */
+    /************************/
     HSM_SELF_TRANSITION,    /**< State reset. Entry and exit of state runs. */
     HSM_STATE_TRANSITION,   /**< Normal state transition. Entry and exit of LCA not ran. */
     /************************/
@@ -142,6 +144,8 @@ static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
+
+#pragma message("TODO: Change from t >= 0 to t > HSM_TRANSITION_TYPE_START after hsm branch merged in. Not doing now to avoid conflicts.")
 
 static bool hsm_is_valid(const struct ecu_hsm *hsm)
 {
