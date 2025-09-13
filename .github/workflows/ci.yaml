@@ -13,11 +13,13 @@ jobs:
         preset: [linux-build-test, stm32l432xc-build-test]
         assert: [ECU_DISABLE_RUNTIME_ASSERTS=OFF, ECU_DISABLE_RUNTIME_ASSERTS=ON]
     steps:
-    - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
+    - name: Checkout
       uses: actions/checkout@v4
+    - name: Get arm-none-eabi-gcc
       uses: carlosperate/arm-none-eabi-gcc-action@v1
       with:
         release: '14.2.Rel1'
+    - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
       run: |
         cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
         cmake --build --clean-first --preset ${{matrix.preset}}
@@ -27,14 +29,15 @@ jobs:
     needs: [build]
     runs-on: [ubuntu-24.04]
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
     - name: Build tests
       run: |
         cmake --preset unit-test
         cmake --build --preset unit-test
     - name: Run tests
       run: ctest --preset unit-test
-    - name: Upload code coverage to Codecov
+    - name: Generate code coverage
       uses: codecov/codecov-action@v5
       with:
         fail_ci_if_error: true
