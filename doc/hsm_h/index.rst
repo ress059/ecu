@@ -83,13 +83,13 @@ a base class type (struct ecu_hsm \*). Derived types are passed into the API by 
     ecu_hsm_start((struct ecu_hsm *)&APP_HSM);
     // ....
 
-For better encapsulation, this cast should be wrapped within :ecudoxygen:`ECU_HSM_BASE_CAST() <ECU_HSM_BASE_CAST>`:
+For better encapsulation, this cast should be wrapped within :ecudoxygen:`!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!() <!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!>`:
 
 .. code-block:: c 
 
     struct app_hsm APP_HSM;
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&APP_HSM), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&APP_HSM));
+    ecu_hsm_ctor(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&APP_HSM), &INIT_STATE, &TOP_STATE, 3);
+    ecu_hsm_start(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&APP_HSM));
     // ....
 
 Inheritance in C is accomplished this way. The example above is **functionally** equivalent
@@ -128,7 +128,7 @@ the first member due to misaligned access:
 
   Inheritance
 
-:ecudoxygen:`ECU_HSM_IS_BASEOF() <ECU_HSM_IS_BASEOF>` macro returns true if :ecudoxygen:`ecu_hsm` is 
+:ecudoxygen:`TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!() <TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!>` macro returns true if :ecudoxygen:`ecu_hsm` is 
 correctly inherited. Otherwise it returns false. These values are evaluated at compile-time so the 
 condition can be statically asserted:
 
@@ -149,10 +149,10 @@ condition can be statically asserted:
     };
 
     /* Passes. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
+    ECU_STATIC_ASSERT( (TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
 
     /* Compilation error. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
+    ECU_STATIC_ASSERT( (TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
 
 
 State Representation
@@ -428,7 +428,7 @@ respective handler functions:
         {
             case DISCONNECTED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &OFF_STATE);
                 break;
             }
 
@@ -451,7 +451,7 @@ respective handler functions:
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -474,7 +474,7 @@ respective handler functions:
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &DEFAULT_STATE);
                 break;
             }
 
@@ -608,7 +608,7 @@ the SHIFT_PRESSED and SHIFT_RELEASED events to be processed in the parent state 
         {
             case DISCONNECTED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &OFF_STATE);
                 break;
             }
 
@@ -643,7 +643,7 @@ the SHIFT_PRESSED and SHIFT_RELEASED events to be processed in the parent state 
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -666,7 +666,7 @@ the SHIFT_PRESSED and SHIFT_RELEASED events to be processed in the parent state 
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &DEFAULT_STATE);
                 break;
             }
 
@@ -778,7 +778,7 @@ a DISCONNECTED event is processed:
         {
             case DISCONNECTED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &OFF_STATE);
                 break;
             }
 
@@ -801,7 +801,7 @@ a DISCONNECTED event is processed:
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -824,7 +824,7 @@ a DISCONNECTED event is processed:
         {
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &DEFAULT_STATE);
                 break;
             }
 
@@ -907,13 +907,13 @@ to TOP_STATE:
             case TO_TOP:
             {
                 /* Local state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &TOP_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &TOP_STATE);
                 break;
             }
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -985,20 +985,20 @@ cause a self-state transition:
             case RESET:
             {
                 /* Self-state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &DEFAULT_STATE);
                 break;
             }
 
             case TO_TOP:
             {
                 /* Local state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &TOP_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &TOP_STATE);
                 break;
             }
 
             case CAPS_LOCK_PRESSED:
             {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
+                ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &CAPS_LOCK_STATE);
                 break;
             }
 
@@ -1039,13 +1039,13 @@ in order to simplify the state traversal algorithm**.
     static void state_entry(struct app_hsm *me)
     {
         /* NOT allowed!! */
-        ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &NEW_STATE);
+        ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &NEW_STATE);
     }
 
     static void state_exit(struct app_hsm *me)
     {
         /* NOT allowed!! */
-        ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &NEW_STATE);
+        ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &NEW_STATE);
     }
 
 It is guaranteed that transitions in exit handlers will **never** be allowed.
@@ -1134,10 +1134,10 @@ Sets the starting state the HSM should be in. The height of the HSM must also be
 .. code-block:: c 
 
     struct app_hsm hsm;  /* Must inherit ecu_hsm. User must allocate memory before constructor. */
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm)); /* ILLEGAL. Must construct before using. */
+    ecu_hsm_start(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm)); /* ILLEGAL. Must construct before using. */
 
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm)); /* Ok. */
+    ecu_hsm_ctor(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm), &INIT_STATE, &TOP_STATE, 3);
+    ecu_hsm_start(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm)); /* Ok. */
 
 The HSM's height starts at 0 and increases with each additional level added to the state
 hierarchy. For example:
@@ -1156,7 +1156,7 @@ Member Functions
 -------------------------------------------------
 
 
-ECU_HSM_IS_BASEOF()
+TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Verifies, at compile-time, that a user's HSM correctly inherits 
 the :ecudoxygen:`ecu_hsm` base class:
@@ -1178,13 +1178,13 @@ the :ecudoxygen:`ecu_hsm` base class:
     };
 
     /* Passes. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
+    ECU_STATIC_ASSERT( (TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
 
     /* Compilation error. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
+    ECU_STATIC_ASSERT( (TODO!!WAS_ECU_HSM_IS_BASE_OF_BEFORE!!(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
 
 
-ECU_HSM_BASE_CAST()
+!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Upcasts a user's derived HSM type back into the :ecudoxygen:`ecu_hsm` 
 base class. This macro encapsulates the cast and allows derived HSMs 
@@ -1203,8 +1203,8 @@ to be passed into base class functions defined in this framework.
     };
 
     struct app_hsm hsm;
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm));
+    ecu_hsm_ctor(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm), &INIT_STATE, &TOP_STATE, 3);
+    ecu_hsm_start(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm));
     // ...
 
 
@@ -1277,8 +1277,8 @@ meaning top state's and initial state's entry handlers are also ran.
     );
 
     struct app_hsm hsm; /* Must inherit ecu_hsm. */
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &STATE2, &TOP_STATE, 2);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm));
+    ecu_hsm_ctor(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm), &STATE2, &TOP_STATE, 2);
+    ecu_hsm_start(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm));
 
 ecu_hsm_start() causes the following code execution order:
 
@@ -1348,7 +1348,7 @@ state transitions. It is also recommended to read the
         printf("S1 handled!");
         if (event == TO_S3_EVENT)
         {
-            ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &STATE3);
+            ecu_hsm_change_state(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(me), &STATE3);
         }
         return true;
     }
@@ -1402,8 +1402,8 @@ state transitions. It is also recommended to read the
     );
 
     struct app_hsm hsm; /* Must inherit ecu_hsm. */
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &STATE1, &TOP_STATE, 2);
-    ecu_hsm_dispatch(ECU_HSM_BASE_CAST(&hsm), &TO_S3_EVENT);
+    ecu_hsm_ctor(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm), &STATE1, &TOP_STATE, 2);
+    ecu_hsm_dispatch(!!TODO_WAS_ECU_HSM_BASE_CAST_BEFORE!!!(&hsm), &TO_S3_EVENT);
 
 ecu_hsm_dispatch() causes the following code execution order:
 

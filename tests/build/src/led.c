@@ -67,7 +67,7 @@ static void led_off_entry(struct ecu_fsm *led);
 static void led_off_handler(struct ecu_fsm *led, const void *event);
 
 /*------------------------------------------------------------*/
-/*------------------- FILE SCOPE VARIABLES -------------------*/
+/*--------------------- STATIC VARIABLES ---------------------*/
 /*------------------------------------------------------------*/
 
 static const struct ecu_fsm_state LED_ON_STATE = ECU_FSM_STATE_CTOR(

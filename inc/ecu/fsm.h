@@ -32,12 +32,12 @@
 
 /**
  * @brief Converts intrusive @ref ecu_fsm member into the
- * user's FSM type. This should be used inside each state's 
+ * user's fsm type. This should be used inside each state's 
  * definition.
  *
  * @param ecu_fsm_ptr_ Pointer to intrusive @ref ecu_fsm.
  * This must be pointer to non-const. I.e. (struct ecu_fsm *).
- * @param type_ User's FSM type containing the intrusive
+ * @param type_ User's fsm type containing the intrusive
  * @ref ecu_fsm member. Do not use const specifier. I.e. 
  * (struct my_type), never (const struct my_type).
  * @param member_ Name of @ref ecu_fsm member within user's
@@ -160,7 +160,7 @@ extern "C" {
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
  * @brief Fsm constructor.
  * 
- * @warning Supplied FSM cannot be active, otherwise behavior
+ * @warning Supplied fsm cannot be active, otherwise behavior
  * is undefined.
  * 
  * @param me Fsm to construct.
@@ -174,7 +174,6 @@ extern void ecu_fsm_ctor(struct ecu_fsm *me, const struct ecu_fsm_state *state);
  */
 /**@{*/
 /**
- * @pre @p me constructed via @ref ecu_fsm_ctor().
  * @pre @p state constructed via @ref ECU_FSM_STATE_CTOR().
  * @brief Transitions fsm into a new state.
  * 

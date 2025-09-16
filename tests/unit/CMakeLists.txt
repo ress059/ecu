@@ -95,6 +95,48 @@ target_link_libraries(ecu_unit_test
 )
 
 #------------------------------------------------------------#
+#---------------------- CUSTOM COMMANDS ---------------------#
+#------------------------------------------------------------#
+
+!!!! TODO Stopped here...trying to make custom command.....
+get_target_property(ECU_SOURCES ecu SOURCES)
+foreach(SOURCE ${ECU_SOURCES})
+    cmake_path(GET SRC FILENAME FILE)
+
+    add_custom_command(
+        OUTPUT ${PROJECT_BINARY_DIR}/coverage/${FILE}.gcov
+        DEPENDS ${PROJECT_BINARY_DIR}/
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating .gcda files..."
+        COMMAND ecu_unit_test # Run executable
+
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating gcov coverage..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory ./coverage
+        COMMAND ${GCOV} --human-readable --use-colors -o ${PROJECT_BINARY_DIR}/CMakeFiles/ecu.dir/src/ ${CMAKE_SOURCE_DIR}/src/*.c 
+    )
+
+    # Build a list of all the results
+    list(APPEND COVERAGE_RESULTS ${PROJECT_BINARY_DIR}/coverage/${FILE}.gcov)
+endforeach()
+
+add_custom_target(coverage
+    DEPENDS ${COVERAGE_RESULTS}
+)
+
+
+
+# gcov --human-readable --use-colors -o ${PROJECT_BINARY_DIR}/CMakeFiles/ecu.dir/src/... ${SRC}
+
+
+add_custom_target(debug_print_ecu ALL
+  COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:ecu>"
+)
+
+get_target_property(TEST ecu RUNTIME_OUTPUT_DIRECTORY)
+message("TEST = ${TEST}")
+
+#------------------------------------------------------------#
 #---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
 include(CppUTest)
