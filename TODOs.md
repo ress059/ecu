@@ -5,7 +5,7 @@ Completed.
 4. endian.h. DONE.
 5. event.h/.c TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc). Keep. In sphinx docs show example of creating event base class for fsm/hsm modules.
 6. fsm.h/.c. DONE.
-7. hsm.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+7. hsm.h/.c. DONE.
 8. object_id.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
 10. ntnode.h/.c. DONE.
@@ -132,11 +132,6 @@ error if diff is different before and after formatting.
 
 3. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
 Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
-
-4. Print "cannot use endian.h" warning only at build-time NOT configuration time.
-Otherwise message is always printed
-- Think I may need to dereference ${CMAKE_C_BYTE_ORDER} in if-else statement?
-- Note the if() elseif() stuff is evaluated at configuration time.
 
 6. Use #pragma message() instead of #warning for TODO messages. I.e.
 ```C

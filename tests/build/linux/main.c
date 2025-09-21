@@ -30,6 +30,7 @@
 
 /* ECU. */
 #include "ecu/asserter.h"
+#include "ecu/hsm.h"
 #include "ecu/timer.h"
 
 /*------------------------------------------------------------*/
@@ -97,7 +98,7 @@ static void turn_led_on(void *obj);
 static void turn_led_off(void *obj);
 
 /*------------------------------------------------------------*/
-/*------------------- FILE SCOPE VARIABLES -------------------*/
+/*--------------------- STATIC VARIABLES ---------------------*/
 /*------------------------------------------------------------*/
 
 static bool running = true;
@@ -122,6 +123,10 @@ static struct led led4;
 static unsigned int led4_id = 4;
 static struct led led5;
 static unsigned int led5_id = 5;
+
+static const struct ecu_hsm_state test ECU_ATTRIBUTE_UNUSED = ECU_HSM_STATE_CTOR(
+    ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, NULL, &ECU_HSM_TOP_STATE
+);
 
 /*------------------------------------------------------------*/
 /*------------------ STATIC FUNCTION DEFINITIONS -------------*/

@@ -14,154 +14,120 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Event-driven **hierarchical state machine (HSM)** framework that applications inherit from to 
-create their own state machines. The complexity of running the HSM and handling state
-transitions are fully encapsulated within this API.
+Framework that creates and runs hierarchical state machines (HSMs). Applications use
+this framework by containing an intrusive :ecudoxygen:`ecu_hsm` member. 
 
+This framework models HSMs as closely as possible to UML state machines 
+with the following known deviations:
+
+#. Actions associated with state transitions are performed before 
+   states are exited. UML mandates: exit->action->entry. This
+   framework instead executes: action->exit->entry
+
+#. `External state transitions <https://en.wikipedia.org/wiki/UML_state_machine#Local_versus_external_transitions>`_ are not supported.
 
 Theory
 =================================================
-This section showcases proper use of the framework and explains its design rationale.
-It is recommended to read this section before using the framework.
+.. _hsm_theory:
 
-
-Overview
+Terminology
 -------------------------------------------------
-.. _hsm_overview:
+The following terminology is used to describe the hierarchical state machine (HSM):
 
-A hierarchical state machine (HSM) can have nested states to avoid code repetition.
+.. figure:: /images/hsm/terminology.svg
+    :width: 600
+    :align: center
 
-.. figure:: /images/hsm/hsm_vs_fsm.svg
-  :width: 600
-  :align: center
+    Example
 
-  HSM vs FSM
+#. **Composite state**: state that contains other states. In the figure above, **ON_STATE** is
+   a composite state.
 
-In the example above ON_STATE is the **parent** of IDLE_STATE and RUNNING_STATE. 
-A specific event causes a transition from the ON_STATE to the OFF_STATE. 
+#. **Leaf state**: state that does not contain any other states. In the figure above, **IDLE_STATE**,
+   **RUNNING_STATE**, and **OFF_STATE** are leaf states.
 
-In a finite state machine (FSM), this event must be processed by each state
-resulting in code repeition. An HSM eliminates this repetition by allowing child
-states (IDLE_STATE and RUNNING_STATE) to offload processing of this event to 
-its parent (the ON_STATE).
+#. **Least common ancestor (LCA)**: The deepest state in the hierarchy that has both A and B as
+   descendants. For example:
 
-The flat vs hierarchical model encompasses the differences between this HSM module and 
-the :ref:`Finite State Machine Framework <fsm_h>`. State representations and 
-transitions must be handled differently to facilitate the hierarchical model, which is
-explained in later sections. Apart from these differences, both the HSM and FSM 
-frameworks are architected in a similar fashion.
+    - LCA(IDLE_STATE, RUNNING_STATE) == ON_STATE
+    - LCA(IDLE_STATE, ON_STATE) == ON_STATE
+    - LCA(RUNNING_STATE, OFF_STATE) == TOP_STATE
 
+#. **Initial transition**: mandatory state transition taken by a composite state(s) to 
+   eventually get into a leaf state. The red arrows in the figure above are
+   initial transitions.
 
-State Machine Representation
+#. **Source state**: original state the HSM is in before an event is dispatched to it.
+
+#. **Target state**: new state the HSM should be in after a transition. For example if the
+   HSM in the figure above is in the RUNNING_STATE and an OFF_EVENT is dispatched:
+
+    - Source state == RUNNING_STATE
+    - Target state == OFF_STATE
+
+FSM vs HSM
 -------------------------------------------------
-.. _hsm_state_machine_representation:
+.. _hsm_fsm_vs_hsm:
 
-An HSM is represented by an :ecudoxygen:`ecu_hsm` base class. Application-specific
-state machines are defined by **inheriting** this base class via C-style inheritance.
-This is accomplished by declaring an :ecudoxygen:`ecu_hsm` object as the **first struct member**.
+A hierarchical state machine (HSM) can have composite states to avoid code repetition.
 
-.. code-block:: c 
+.. figure:: /images/hsm/fsm_vs_hsm.svg
+    :width: 600
+    :align: center
 
-    struct app_hsm
-    {
-        /* Inherit by declaring ecu_hsm object as first member. */
-        struct ecu_hsm hsm;
+    FSM vs HSM
 
-        /* Additional members unique to application-specific hsm. */
-        uint8_t counter1;
-        uint8_t counter2;
-    };
+The finite state machine (FSM) in the example above repeats code by handling
+the OFF_EVENT in both the IDLE_STATE and RUNNING_STATE. The HSM avoids this
+repetition by only handling the OFF_EVENT in the ON_STATE.
 
-Inheritance provides a common interface between this module and the application's type.
-This API has no knowledge of the application, so it is a base class that takes in
-a base class type (struct ecu_hsm \*). Derived types are passed into the API by upcasting:
+When an event is dispatched to an HSM, it is propagated up the state hierarchy
+until it is handled. For example the execution order for an OFF_EVENT while in 
+the IDLE_STATE is:
 
-.. code-block:: c 
+#. IDLE_STATE::handler(OFF_EVENT)
+#. ON_STATE::handler(OFF_EVENT)
 
-    struct app_hsm APP_HSM;
-    ecu_hsm_ctor((struct ecu_hsm *)&APP_HSM, &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start((struct ecu_hsm *)&APP_HSM);
-    // ....
+And similarly for an OFF_EVENT while in the RUNNING_STATE:
 
-For better encapsulation, this cast should be wrapped within :ecudoxygen:`ECU_HSM_BASE_CAST() <ECU_HSM_BASE_CAST>`:
+#. RUNNING_STATE::handler(OFF_EVENT)
+#. ON_STATE::handler(OFF_EVENT)
 
-.. code-block:: c 
+Obviously no such propagaton exists for the FSM.
 
-    struct app_hsm APP_HSM;
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&APP_HSM), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&APP_HSM));
-    // ....
+The nested model of the HSM also requires state transitions to be handled differently
+from FSMs. Transitions in an FSM simply involves exiting the source state and entering
+the target state. For example, the OFF_EVENT in the RUNNING_STATE causes the following
+execution order in the FSM:
 
-Inheritance in C is accomplished this way. The example above is **functionally** equivalent
-to the following C++ code:
+#. RUNNING_STATE::handler(OFF_EVENT)
+#. RUNNING_STATE::exit()
+#. OFF_STATE::entry()
 
-.. code-block:: cpp
+However an HSM must exit and enter all necessary states in the hierarchy. The same
+OFF_EVENT in the HSM's RUNNING_STATE causes:
 
-    class ecu_hsm
-    {
-        void ecu_hsm_start()
-        {
-            // ...
-        }
+#. RUNNING_STATE::handler(OFF_EVENT)
+#. ON_STATE::handler(OFF_EVENT)
+#. RUNNING_STATE::exit()
+#. ON_STATE::exit()
+#. OFF_STATE::enter()
 
-        // ...rest of API functions.
-    };
+HSM state transitions are explained in detail in the :ref:`State Transitions Section <hsm_state_transitions>`.
+The basic algorithm involves:
 
-    class app_hsm : public ecu_hsm
-    {
-    public:
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    app_hsm APP_HSM;
-    APP_HSM.ecu_hsm_start();
-
-**Upcasting in this manner is always legal and safe as long as** :ecudoxygen:`ecu_hsm` **is the first member**.
-The C standard mandates there is no struct padding before the first member so a derived pointer can
-always be represented as a base pointer. Inheritance is only unsafe if :ecudoxygen:`ecu_hsm` is not 
-the first member due to misaligned access:
-
-.. figure:: /images/hsm/inheritance.svg
-  :width: 800
-  :align: center
-
-  Inheritance
-
-:ecudoxygen:`ECU_HSM_IS_BASEOF() <ECU_HSM_IS_BASEOF>` macro returns true if :ecudoxygen:`ecu_hsm` is 
-correctly inherited. Otherwise it returns false. These values are evaluated at compile-time so the 
-condition can be statically asserted:
-
-.. code-block:: c 
-
-    struct correct_hsm
-    {
-        struct ecu_hsm hsm;
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    struct incorrect_hsm
-    {
-        uint8_t counter1;
-        struct ecu_hsm hsm;
-        uint8_t counter2;
-    };
-
-    /* Passes. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
-
-    /* Compilation error. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
-
+#. Find LCA(Source state, Target state). I.e. LCA(RUNNING_STATE, OFF_STATE) == TOP_STATE.
+#. Exit up from the source state until the LCA. I.e. exit up from RUNNING_STATE until TOP_STATE.
+#. Enter from the LCA to the target state. I.e. enter from TOP_STATE to OFF_STATE.
 
 State Representation
 -------------------------------------------------
 .. _hsm_state_representation:
 
-States are represented as an :ecudoxygen:`ecu_hsm_state` object. **The 
-contents of the struct are const-qualified, meaning every state must be 
-initialized at compile-time.**
+States are represented by the :ecudoxygen:`ecu_hsm_state` struct. It contains
+a set of handler functions that the user defines to describe the state's behavior.
+This framework automatically executes the correct sequence of handler functions while the
+state machine is running:
 
 .. code-block:: c 
 
@@ -169,1254 +135,987 @@ initialized at compile-time.**
     {
         void (*const entry)(struct ecu_hsm *me);
         void (*const exit)(struct ecu_hsm *me);
+        void (*const initial)(struct ecu_hsm *me);
         bool (*const handler)(struct ecu_hsm *me, const void *event);
         const struct ecu_hsm_state *const parent;
     };
 
-- **entry()** is an optional function that executes when the state is first entered.
-- **exit()** is an optional function that executes when the state is exited.
+- **entry()** is an optional function that executes when this state is first entered.
+  Set to :ecudoxygen:`ECU_HSM_STATE_ENTRY_UNUSED` if unused.
+- **exit()** is an optional function that executes when this state is exited.
+  Set to :ecudoxygen:`ECU_HSM_STATE_EXIT_UNUSED` if unused.
+- **initial()** is a mandatory function for composite states. Otherwise this must be set 
+  to :ecudoxygen:`ECU_HSM_STATE_INITIAL_UNUSED` for leaf states. Executes if this
+  state is a composite and the HSM transitions into it. An initial transition to a state
+  lower in the hierarchy is taken.
 - **handler()** is a mandatory function that executes when the HSM is running in this state.
-- **parent** is this state's parent. This can only be :ecudoxygen:`ECU_HSM_STATE_NO_PARENT`
-  if this is the top state. Otherwise this must always be another state.
+  Processes dispatched events and returns true if the event was handled. Returns false if the 
+  event should be propagated up the state hierarchy.
+- **parent** is this state's parent. All states must have its parent be another user-defined 
+  state or :ecudoxygen:`ECU_HSM_TOP_STATE`.
 
-To create a state, the handler functions are defined and assigned to an :ecudoxygen:`ecu_hsm_state`
-object through use of the :ecudoxygen:`ECU_HSM_STATE_CTOR() <ECU_HSM_STATE_CTOR>` macro.
-A parent also needs to be assigned. Therefore states must be defined in top-down order so they 
-are visible to the compiler when assigning parents:
+The contents are const-qualified, forcing every state to be created at compile-time
+via the :ecudoxygen:`ECU_HSM_STATE_CTOR() <ECU_HSM_STATE_CTOR>` macro:
 
-.. code-block:: c 
+.. code-block:: c
 
-    struct app_hsm
-    {
-        /* Inherit by declaring ecu_hsm object as first member. */
-        struct ecu_hsm hsm;
-
-        /* Additional members unique to application-specific hsm. */
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    static void top_state_on_entry(struct app_hsm *me)
-    {
-        printf("top state entered!\n");
-    }
-
-    static void top_state_on_exit(struct app_hsm *me)
-    {
-        printf("top state exited!\n");
-    }
-
-    static bool top_state_handler(struct app_hsm *me, const void *event)
-    {
-        printf("top state handled!\n");
-        return true;
-    }
-
-    static void state1_on_entry(struct app_hsm *me)
-    {
-        me->counter1++;
-        me->counter2++;
-        printf("state1 entered!\n");
-    }
-
-    static void state1_on_exit(struct app_hsm *me)
-    {
-        me->counter1--;
-        me->counter2--;
-        printf("state1 exited!\n");
-    }
-
-    static bool state1_handler(struct app_hsm *me, const void *event)
-    {
-        printf("state1 handled!\n");
-        return true;
-    }
-
-    /* Notice how states are created in top-down order. */
-    static const struct ecu_hsm_state TOP_STATE = ECU_HSM_STATE_CTOR(
-        &top_state_on_entry, &top_state_on_exit, &top_state_handler, ECU_HSM_STATE_NO_PARENT
-    );
-
-    static const struct ecu_hsm_state STATE1 = ECU_HSM_STATE_CTOR(
-        &state1_on_entry, &state1_on_exit, &state1_handler, &TOP_STATE
-    );
-
-**Notice how state functions take in the user's HSM type (struct app hsm *) but** 
-:ecudoxygen:`ecu_hsm_state` **stores functions that take in (struct ecu_hsm \*)**.
-
-States must be able to work with the user's HSM in order to be useful, however this 
-framework has no knowledge of the application and its types. As explained in the
-:ref:`State Machine Representation Section <hsm_state_machine_representation>`,
-this dilemna is solved by inheritance. User HSMs must inherit :ecudoxygen:`ecu_hsm`.
-Therefore :ecudoxygen:`ecu_hsm` is a base class that acts as a common interface 
-between the application and this framework, allowing these functions to be assigned 
-to a state by upcasting.
-
-:ecudoxygen:`ECU_HSM_STATE_CTOR() <ECU_HSM_STATE_CTOR>` performs these upcasts
-and expands to the full struct initialization of :ecudoxygen:`ecu_hsm_state`.
-The following is equivalent to the code snippet above:
-
-.. code-block:: c 
-
-    static const struct ecu_hsm_state TOP_STATE = 
-    {
-        .entry = (void (*)(struct ecu_hsm *))(&top_state_on_entry),
-        .exit = (void (*)(struct ecu_hsm *))(&top_state_on_exit),
-        .handler = (bool (*)(struct ecu_hsm *, const void *))(&top_state_handler),
-        .parent = ECU_HSM_STATE_NO_PARENT
-    };
-
-    static const struct ecu_hsm_state STATE1 = 
-    {
-        .entry = (void (*)(struct ecu_hsm *))(&state1_on_entry),
-        .exit = (void (*)(struct ecu_hsm *))(&state1_on_exit),
-        .handler = (bool (*)(struct ecu_hsm *, const void *))(&state1_handler),
-        .parent = &TOP_STATE
-    };
-
-The :ref:`State Machine Representation Section <hsm_state_machine_representation>`
-explains why these casts are always safe.
-It is recommended to use this macro for better encapsulation as it contains 
-all upcasts and protects the application from any changes to the 
-:ecudoxygen:`ecu_hsm_state` struct.
-
-:ecudoxygen:`ECU_HSM_STATE_ENTRY_UNUSED` and :ecudoxygen:`ECU_HSM_STATE_EXIT_UNUSED` can be supplied 
-if entry() and exit() functions are unused. In this case, only the mandatory handler() function 
-will run for this state:
-
-.. code-block:: c 
-
-    static const struct ecu_hsm_state STATE1 = ECU_HSM_STATE_CTOR(
-        ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, &state1_handler, &TOP_STATE
-    );
-
-
-State Hierarchy
--------------------------------------------------
-.. _hsm_state_hierarchy:
-
-An HSM's structure is solely defined by the parent members in :ecudoxygen:`ecu_hsm_state`.
-Take this example HSM of a simple wireless keyboard:
-
-.. figure:: /images/hsm/keyboard_hsm.svg
-  :width: 600
-  :align: center
-
-  Keyboard HSM
-
-It would be defined through the following parent member assignments:
-
-.. code-block:: c 
-
-    /* Notice how states are defined in top-down order to allow child
-    states to assign their parents. The compiler must see the object's
-    full definition before it can be assinged to another struct. I.e. 
-    TOP_STATE must be defined before ON_STATE can assign it as its parent. */
-    static const struct ecu_hsm_state TOP_STATE = ECU_HSM_STATE_CTOR(
-        ..., ECU_HSM_STATE_NO_PARENT
-    );
+    /* Defined by user. */
+    static void on_state_on_entry(struct ecu_hsm *hsm);
+    static void on_state_on_exit(struct ecu_hsm *hsm);
+    static void on_state_initial(struct ecu_hsm *hsm);
+    static bool on_state_handler(struct ecu_hsm *hsm, const void *event);
 
     static const struct ecu_hsm_state ON_STATE = ECU_HSM_STATE_CTOR(
-        ..., &TOP_STATE
+        &on_state_on_entry, &on_state_on_exit, &on_state_initial, &on_state_handler, &ECU_HSM_TOP_STATE
     );
 
-    static const struct ecu_hsm_state OFF_STATE = ECU_HSM_STATE_CTOR(
-        ..., &TOP_STATE
-    );
+Representing states as objects allows them to be shared between 
+multiple instances of the same HSM. No additional memory or overhead is required:
 
-    static const struct ecu_hsm_state DEFAULT_STATE = ECU_HSM_STATE_CTOR(
-        ..., &ON_STATE
-    );
+.. figure:: /images/hsm/state_representation_state_reuse.svg
+    :width: 400
+    :align: center
 
-    static const struct ecu_hsm_state CAPS_LOCK_STATE = ECU_HSM_STATE_CTOR(
-        ..., &ON_STATE
-    );
+    State Reuse
 
-An HSM has **only one top state**, which encompasses the entire state hierarchy for 
-better organization. It has no parent, so it is assigned :ecudoxygen:`ECU_HSM_STATE_NO_PARENT`.
-**This is only allowed for the top state. Every other state must have a non-NULL parent.**
+State Machine Representation
+-------------------------------------------------
+.. _hsm_state_machine_representation:
 
-As stated in the :ref:`Overview Section <hsm_overview>`, code repetition is avoided
-by allowing events to be propagated up to parent states. **Each state's handler function 
-can return false to propagate the event up to its parent. Otherwise a handler should return 
-true when it processes an event, which stops the event propagation.**
+HSMs are represented by the :ecudoxygen:`ecu_hsm` struct. 
+Applications use this framework by containing :ecudoxygen:`ecu_hsm` as
+an intrusive member:
 
-The example HSM shows both the DEFAULT_STATE and CAPS_LOCK_STATE transition to the OFF_STATE on the 
-DISCONNECTED event. An FSM would require this event to be processed in both states, resulting in code
-repetition. Notice the repetition in the processing of the DISCONNECTED event:
-
-.. figure:: /images/hsm/keyboard_fsm.svg
-  :width: 600
-  :align: center
-
-  Keyboard FSM Code Repetition
-
-.. code-block:: c 
-
-    struct app_fsm
-    {
-        /* Inherit base ecu_fsm class. */
-        struct ecu_fsm fsm;
-    };
-
-    static void default_state_handler(struct app_fsm *me, const void *event)
-    {
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
-                break;
-            }
-
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Ignore all other events. */
-                break;
-            }
-        }
-    }
-
-    static void caps_lock_state_handler(struct app_fsm *me, const void *event)
-    {
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
-                break;
-            }
-
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &DEFAULT_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Ignore all other events. */
-                break;
-            }
-        }
-    }
-
-An HSM allows these two states to be children of the ON_STATE. Instead of 
-processing the DISCONNECTED event directly, DEFAULT_STATE and CAPS_LOCK_STATE
-can propagate it up to its parent (the ON_STATE) by returning false in their 
-respective handler functions:
-
-.. code-block:: c 
+.. code-block:: c
 
     struct app_hsm
     {
-        /* Inherit base ecu_hsm class. */
-        struct ecu_hsm hsm;
+        int app_data1;
+        struct ecu_hsm hsm_member;
+        int app_data2;
     };
 
-    static bool on_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (TOP_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool default_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool caps_lock_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-Notice only the ON_STATE processes the DISCONNECTED event, eliminating any code repetition.
-Also notice how if a new state that is a child of ON_STATE is added, it does not need to 
-process the DISCONNECTED event. Like the DEFAULT_STATE and CAPS_LOCK_STATE, it can simply
-propagate it up to its parent.
-
-The advantages an HSM provides becomes more apparent as state machines increase in complexity.
-For example, shift key support can be added to the keyboard that was previously modeled.
-The status of the shift key is dispatched to the state machine with the SHIFT_KEY_PRESSED 
-and SHIFT_KEY_RELEASED events.
-
-Modeling this behavior with an FSM makes code repetition even more pronounced, as processing 
-of these two events is identical in the DEFAULT_STATE and CAPS_LOCK_STATE:
+This framework has no knowledge of the application's state machine type so it 
+must only use :ecudoxygen:`ecu_hsm` to remain portable. The :ecudoxygen:`ecu_hsm` 
+member acts as a common interface between the two mediums. Thus each state
+handler must take in an :ecudoxygen:`ecu_hsm` pointer:
 
 .. code-block:: c 
 
-    struct app_fsm
-    {
-        /* Inherit base ecu_fsm class. */
-        struct ecu_fsm fsm;
+    /* Defined by user. */
+    static void on_state_on_entry(struct ecu_hsm *hsm);
+    static void on_state_on_exit(struct ecu_hsm *hsm);
+    static void on_state_initial(struct ecu_hsm *hsm);
+    static bool on_state_handler(struct ecu_hsm *hsm, const void *event);
 
-        /* Members specific to application fsm. */
-        bool shifted;
-    };
+The application's state machine type can be retrieved within each handler's definition
+via the :ecudoxygen:`ECU_HSM_GET_CONTEXT() <ECU_HSM_GET_CONTEXT>` macro:
 
-    static void default_state_handler(struct app_fsm *me, const void *event)
+.. code-block:: c
+
+    static void on_state_on_entry(struct ecu_hsm *hsm)
     {
-        switch (event id)
+        struct app_hsm *me = ECU_HSM_GET_CONTEXT(hsm, struct app_hsm, hsm_member);
+        me->app_data1 = 10;
+        me->app_data2 = 10;
+    }
+
+    static void on_state_on_exit(struct ecu_hsm *hsm)
+    {
+        struct app_hsm *me = ECU_HSM_GET_CONTEXT(hsm, struct app_hsm, hsm_member);
+        me->app_data1 = 0;
+        me->app_data2 = 0;
+    }
+
+    // etc...
+
+This allows the framework to interact with the application through a common interface
+(the :ecudoxygen:`ecu_hsm` struct), without inheritance. The macro takes in
+three parameters:
+
+    #. ``ecu_hsm_ptr_`` = Pointer to intrusive ecu_hsm member. In this case, ``hsm``.
+    #. ``type_`` = User's HSM type. In this case, ``struct app_hsm``.
+    #. ``member_`` = Name of ecu_hsm member within the user's type. In this case, ``hsm_member``.
+
+.. figure:: /images/hsm/ecu_hsm_get_context.svg
+    :width: 450
+    :align: center
+  
+    ECU_HSM_GET_CONTEXT()
+
+Under the hood, this macro does pointer arithmetic to perform the conversion.
+The details of this operation are fully explained in 
+:ref:`ECU_CONTAINER_OF() <utils_container_of>`.
+
+Event-Driven Paradigm
+-------------------------------------------------
+The application can only interact with HSMs created with this framework
+by dispatching **events** via :ecudoxygen:`ecu_hsm_dispatch() <ecu_hsm_dispatch>`.
+
+Events are objects that describe what happened and contain any relevant data. This 
+pattern naturally decouples the state machine from the application and is fully 
+explained in the :ref:`Event-Driven Paradigm Section of the FSM Framework <fsm_event_driven_paradigm>`.
+The exact same principles apply to HSMs.
+
+Event Propagation
+-------------------------------------------------
+When an event is dispatched to an HSM, it is processed in the current state.
+If the event is unhanded, it is propagated up the state hierarchy. Take this
+example HSM (initial transitions, etc not shown for conciseness):
+
+.. figure:: /images/hsm/event_propagation.svg
+    :width: 600
+    :align: center
+  
+    Event Propagation
+
+If the HSM is in S11 and EVENT_A is dispatched, it is propgated up the state hierarchy
+and eventually handled in state S. The full handling order is:
+
+#. S11:handler(EVENT_A)
+#. S1::handler(EVENT_A)
+#. S::handler(EVENT_A)
+
+**A state handles the event (stops propagating it) by returning true
+in its handler definition. A state propgates the event up the hierarchy by
+returning false in its handler definition.** In the example HSM shown above
+S11, S1, and S handler definitions would look like:
+
+.. code-block:: c
+
+    static bool S11_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        return false; /* Propagate all events up state hierarchy. */
+    }
+
+    static bool S1_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        return false; /* Propagate all events up state hierarchy. */
+    }
+
+    static bool S_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        /* Handle EVENT_A. All other events propagated up the state hierarchy. */
+        if (event == EVENT_A)
         {
-            case DISCONNECTED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
-                break;
-            }
-
-            case SHIFT_PRESSED:
-            {
-                me->shifted = true;
-                break;
-            }
-
-            case SHIFT_RELEASED:
-            {
-                me->shifted = false;
-                break;
-            }
-
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Ignore all other events. */
-                break;
-            }
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
-    static void caps_lock_state_handler(struct app_fsm *me, const void *event)
-    {
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &OFF_STATE);
-                break;
-            }
+**Event propagation completes when the top state (root) is reached. This framework
+requires the top state to be :ecudoxygen:`ECU_HSM_TOP_STATE`. It is a dummy default state
+that handles all events by always returning true in its handler definition.**
 
-            case SHIFT_PRESSED:
-            {
-                me->shifted = true;
-                break;
-            }
+.. warning::
 
-            case SHIFT_RELEASED:
-            {
-                me->shifted = false;
-                break;
-            }
+    All HSMs are **required** to have their top states be :ecudoxygen:`ECU_HSM_TOP_STATE`.
 
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_fsm_change_state(TODO_WAS_FSM_BASE_CAST_BEFORE!!(me), &DEFAULT_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Ignore all other events. */
-                break;
-            }
-        }
-    }
-
-Notice the repetition in the processing of the DISCONNECTED, SHIFT_PRESSED, and 
-SHIFT_RELEASED events. Like before, an HSM eliminates this repetition by allowing
-the SHIFT_PRESSED and SHIFT_RELEASED events to be processed in the parent state (ON_STATE).
-
-.. code-block:: c 
-
-    struct app_hsm
-    {
-        /* Inherit base ecu_hsm class. */
-        struct ecu_hsm hsm;
-
-        /* Members specific to application hsm. */
-        bool shifted;
-    };
-
-    static bool on_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
-                break;
-            }
-
-            case SHIFT_PRESSED:
-            {
-                me->shifted = true;
-                break;
-            }
-
-            case SHIFT_RELEASED:
-            {
-                me->shifted = false;
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (TOP_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool default_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool caps_lock_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-As a final note, **it is mandatory for the state machine's handler function to eventually
-return true.** Building off of the same keyboard HSM example, the following implementation 
-of the top state would be illegal:
-
-.. code-block:: c 
-
-    static bool top_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            /*... all event IDs that should be processed in the TOP_STATE. */
-
-            default:
-            {
-                /* Ignore all other events. ILLEGAL IMPLEMENTATION. */
-                handled = false;
-                break;
-            }
-        }
-    }
-
-If a garbage event is dispatched, it would eventually reach the TOP_STATE where
-the handler would still return false. **If the event should be ignored the TOP_STATE
-should simply not process the event and return true. Otherwise the framework 
-assumes the event was never processed due to the HSM being implemented incorrectly.**
-Therefore the correct TOP_STATE implementation would be:
-
-.. code-block:: c 
-
-    static bool top_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            /*... all event IDs that should be processed in the TOP_STATE. */
-
-            default:
-            {
-                /* Ignore all other events but return true. Tells the 
-                framework the event has been processed. */
-                break;
-            }
-        }
-    }
-
+Note how this top state is also required to guarantee a cohesive state hierarchy.
+I.e. A tree must always have a root.
 
 State Transitions
 -------------------------------------------------
 .. _hsm_state_transitions:
 
-A transition is signalled by the user by calling :ecudoxygen:`ecu_hsm_change_state() <ecu_hsm_change_state>`.
-
-State machine behavior is abstracted away through the use of this function
-and the rest of the API. Internally, this framework will execute the proper 
-entry(), exit(), and handler() functions for each state defined in the user's 
-state machine. An HSM state transition is performed by following these steps:
-
-#. Record three states: the **starting state**, the **new state**, and the 
-   **least common ancestor state (LCA)** of the starting and new state.
-
-#. Traverse from the starting state up to the LCA, running each state's
-   exit handler along the way. LCA exit is **not** ran.
-
-#. Traverse from the LCA to the new state, running each state's entry
-   handler along the way. LCA entry is **not** ran.
-
-The previous keyboard HSM example can be used to showcase a state transition:
-
-.. figure:: /images/hsm/keyboard_hsm.svg
-  :width: 600
-  :align: center
-
-  Keyboard HSM
-
-The pseudocode implementation of this state machine is recycled from the previous
-section as well. Notice how a state transition is signalled in the ON_STATE when 
-a DISCONNECTED event is processed:
-
-.. code-block:: c 
-
-    struct app_hsm
-    {
-        /* Inherit base ecu_hsm class. */
-        struct ecu_hsm hsm;
-    };
-
-    static bool on_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case DISCONNECTED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &OFF_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (TOP_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool default_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-    static bool caps_lock_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-This state hierarchy and any other HSM can be represented as a generic tree, with the top state 
-being the root:
-
-.. figure:: /images/hsm/keyboard_hsm_tree.svg
-  :width: 800
-  :align: center
-
-  Keyboard HSM Tree Representation
-
-For this example, the state machine is currently in the **DEFAULT_STATE**. A DISCONNECTED
-event is dispatched, causing a state transition from **DEFAULT_STATE** to **OFF_STATE**.
-This is known as an **inner state transition**.
-
-.. figure:: /images/hsm/inner_state_transition_path.svg
-  :width: 600
-  :align: center
-
-  Inner State Transition Path
-
-Following the state transition algorithm steps outlined at the start of this section:
-
-#. Record three states: the **starting state**, the **new state**, and the 
-   **least common ancestor state (LCA)** of the starting and new state.
-
-   - **Starting State** = DEFAULT_STATE
-   - **New State** = OFF_STATE
-   - **LCA(DEFAULT_STATE, OFF_STATE)** = TOP_STATE
-
-#. Traverse from the starting state up to the LCA, running each state's
-   exit handler along the way. LCA exit is **not** ran.
-
-   .. code-block:: text
-
-        DEFAULT_STATE::exit() -> ON_STATE::exit()
-
-#. Traverse from the LCA to the new state, running each state's entry
-   handler along the way. LCA entry is **not** ran.
-
-    .. code-block:: text
-
-        OFF_STATE::entry()
-
-To summarize, the full code execution order is:
-
-.. code-block:: text
-
-    ecu_hsm_dispatch(&APP_HSM, &DISCONNECTED_EVENT) -> DEFAULT_STATE::handler() -> 
-    DEFAULT_STATE::exit() -> ON_STATE::exit() -> OFF_STATE::entry()
-
-:ecudoxygen:`ecu_hsm_dispatch() <ecu_hsm_dispatch>` would be called by the
-application code. The remaining handlers are automatically run by this framework.
-
-A **local state transition** occurs when the new state is a child or parent of the
-starting state. The state traversal algorithm remains exactly the same. Expanding 
-on the DEFAULT_STATE, we can add an event that causes a transition from DEFAULT_STATE
-to TOP_STATE:
-
-.. code-block:: c 
-
-    static bool default_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case TO_TOP:
-            {
-                /* Local state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &TOP_STATE);
-                break;
-            }
-
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-Assuming the HSM is in the DEFAULT_STATE, dispatchin the TO_TOP event causes 
-a local state transition because TOP_STATE is a parent of DEFAULT_STATE:
-
-.. figure:: /images/hsm/local_state_transition_path.svg
-  :width: 600
-  :align: center
-
-  Local State Transition Path
-
-Following the state transition algorithm steps outlined at the start of this section:
-
-#. Record three states: the **starting state**, the **new state**, and the 
-   **least common ancestor state (LCA)** of the starting and new state.
-
-   - **Starting State** = DEFAULT_STATE
-   - **New State** = TOP_STATE
-   - **LCA(DEFAULT_STATE, TOP_STATE)** = TOP_STATE
-
-#. Traverse from the starting state up to the LCA, running each state's
-   exit handler along the way. LCA exit is **not** ran.
-
-   .. code-block:: text
-
-        DEFAULT_STATE::exit() -> ON_STATE::exit()
-
-#. Traverse from the LCA to the new state, running each state's entry
-   handler along the way. LCA entry is **not** ran.
-
-    .. code-block:: text
-
-        Nothing!
-
-To summarize, the full code execution order is:
-
-.. code-block:: text
-
-    ecu_hsm_dispatch(&APP_HSM, &TO_TOP_EVENT) -> DEFAULT_STATE::handler() -> 
-    DEFAULT_STATE::exit() -> ON_STATE::exit()
-
-:ecudoxygen:`ecu_hsm_dispatch() <ecu_hsm_dispatch>` would be called by the
-application code. The remaining handlers are automatically run by this framework.
-
-Finally, **self-state transitions** are also allowed. This is often done to 
-reset a state. Expanding on the DEFAULT_STATE, we can add a RESET event that 
-cause a self-state transition:
-
-.. code-block:: c 
-
-    static bool default_state_handler(struct app_hsm *me, const void *event)
-    {
-        bool handled = true;
-
-        switch (event id)
-        {
-            case RESET:
-            {
-                /* Self-state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &DEFAULT_STATE);
-                break;
-            }
-
-            case TO_TOP:
-            {
-                /* Local state transition. */
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &TOP_STATE);
-                break;
-            }
-
-            case CAPS_LOCK_PRESSED:
-            {
-                ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &CAPS_LOCK_STATE);
-                break;
-            }
-
-            default:
-            {
-                /* Propagate all other events to parent (ON_STATE). */
-                handled = false;
-                break;
-            }
-        }
-
-        return handled;
-    }
-
-.. figure:: /images/hsm/self_state_transition_path.svg
-  :width: 600
-  :align: center
-
-  Self State Transition Path
-
-**Self-state transitions are the only transition types that deviate from the 
-3-step traversal algorithm explained above.** The state's exit and entry handlers 
-are simply ran instead, making the full code execution order:
-
-.. code-block:: text
-
-    ecu_hsm_dispatch(&APP_HSM, &RESET_EVENT) -> DEFAULT_STATE::handler() -> 
-    DEFAULT_STATE::exit() -> DEFAULT_STATE::entry()
-
-:ecudoxygen:`ecu_hsm_dispatch() <ecu_hsm_dispatch>` would be called by the
-application code. The remaining handlers are automatically run by this framework.
-
-As a final note, **transitions in entry and exit handlers are currently NOT allowed
-in order to simplify the state traversal algorithm**.
+Within each state's initial or handler function, the application can perform a 
+state transition by calling :ecudoxygen:`ecu_hsm_change_state() <ecu_hsm_change_state>`.
+For example:
 
 .. code-block:: c
 
-    static void state_entry(struct app_hsm *me)
+    static bool state_handler(struct ecu_hsm *hsm, const void *event)
     {
-        /* NOT allowed!! */
-        ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &NEW_STATE);
+        if (event == causes transition)
+        {
+            ecu_hsm_change_state(hsm, &NEW_STATE);
+        }
+
+        return true;
     }
 
-    static void state_exit(struct app_hsm *me)
-    {
-        /* NOT allowed!! */
-        ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &NEW_STATE);
-    }
+This framework automatically executes the proper exit and entry paths. The complexity
+of this operation is fully encapsulated in :ecudoxygen:`ecu_hsm_change_state() <ecu_hsm_change_state>`.
 
-It is guaranteed that transitions in exit handlers will **never** be allowed.
-Support **may** be added in the future to allow transitions in entry handlers.
+.. warning::
 
+    The following rules **MUST** be satisfied when performing a state transition:
 
-Event-Driven Paradigm
--------------------------------------------------
-.. _hsm_event_driven_paradigm:
+    #. A state transition can **never** occur in a state's entry and exit handlers.
+    #. All composite states **must** define an initial transition down the state hierarchy.
+       This is because the HSM must be in a leaf state once all transitions are complete.
+    #. A transition **cannot** be taken to :ecudoxygen:`ECU_HSM_TOP_STATE`.
 
-See :ref:`Event-Driven Paradigm Section in the Finite State Machine Framework <fsm_event_driven_paradigm>`.
-The same logic carries over to HSMs as well.
+The following example HSM shows the state transitions executed by this framework when
+different events are dispatched:
 
-
-Run to Completion Semantics
--------------------------------------------------
-.. _hsm_run_to_completion_semantics:
-
-.. See :ref:`Run to Completion Semantics Section in the Finite State Machine Framework <fsm_run_to_completion_semantics>`.
-.. The same logic carries over to HSMs as well.
-
-
-ecu_hsm_state
-=================================================
-This is an object that represents a single state within the user's state machine.
-It is recommended to read the :ref:`State Representation Section <hsm_state_representation>` 
-before using this API, as it explains the :ecudoxygen:`ecu_hsm_state` object in detail.
-
-
-Constructors
--------------------------------------------------
-
-
-ECU_HSM_STATE_CTOR()
+Source State == S1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Creates an :ecudoxygen:`ecu_hsm_state` at compile-time. If a state's entry 
-or exit handler are unused, :ecudoxygen:`ECU_HSM_STATE_ENTRY_UNUSED` and 
-:ecudoxygen:`ECU_HSM_STATE_EXIT_UNUSED` can be supplied. The state's parent
-**must** be another state unless this is the top state. :ecudoxygen:`ECU_HSM_STATE_NO_PARENT`
-must be supplied as the parent member if this is the top state. These details are
-fully explained in the :ref:`State Representation Section <hsm_state_representation>`:
+.. figure:: /images/hsm/state_transitions.svg
+    :width: 800
+    :align: center
+  
+    State Transitions
 
-.. code-block:: c 
+#. EVENT_A:
+    - ecu_hsm_dispatch(hsm, EVENT_A)
+    - S1::handler(EVENT_A)
+    - S1::exit()
+    - S12::entry()
 
-    static void top_state_entry(struct app_hsm *me);
-    static void top_state_exit(struct app_hsm *me);
-    static bool top_state_handler(struct app_hsm *me, const void *event);
-    static void child_state_entry(struct app_hsm *me);
-    static void child_state_exit(struct app_hsm *me);
-    static bool child_state_handler(struct app_hsm *me, const void *event);
+#. EVENT_B:
+    - ecu_hsm_dispatch(hsm, EVENT_B)
+    - S1::handler(EVENT_B)
+    - S::handler(EVENT_B)
+    - ECU_HSM_TOP_STATE::handler(EVENT_B)
 
-    /* Notice how states are created in top-down order. */
-    static const struct ecu_hsm_state TOP_STATE = ECU_HSM_STATE_CTOR(
-        &top_state_entry, &top_state_exit, &top_state_handler, ECU_HSM_STATE_NO_PARENT
-    );
+#. EVENT_C:
+    - ecu_hsm_dispatch(hsm, EVENT_C)
+    - S1::handler(EVENT_C)
+    - S::handler(EVENT_C)
+    - S1::exit()
+    - S1::entry()
 
-    static const struct ecu_hsm_state CHILD_STATE = ECU_HSM_STATE_CTOR(
-        &child_state_entry, &child_state_exit, &child_state_handler, &TOP_STATE
-    );
+#. EVENT_D:
+    - ecu_hsm_dispatch(hsm, EVENT_D)
+    - S1::handler(EVENT_D)
+    - S1::exit()
+    - S::initial()
+    - S1::entry()
 
+#. EVENT_E:
+    - ecu_hsm_dispatch(hsm, EVENT_E)
+    - S1::handler(EVENT_E)
+    - S::handler(EVENT_E)
+    - S1::exit()
+    - S::exit()
+    - S::entry()
+    - S::initial()
+    - S1::entry()
 
-ecu_hsm
-=================================================
-This is an object that represents the base hierarchical state machine (HSM) class. 
-Users create their own HSMs by inheriting this base class and passing it to 
-this API by upcasting. It is recommended to read the
-:ref:`State Machine Representation Section <hsm_state_machine_representation>` 
-before using this API, as it explains this inheritance scheme in detail.
+#. EVENT_F:
+    - ecu_hsm_dispatch(hsm, EVENT_F)
+    - S1::handler(EVENT_F)
+    - S::handler(EVENT_F)
+    - ECU_HSM_TOP_STATE::handler(EVENT_F)
 
+#. EVENT_G:
+    - ecu_hsm_dispatch(hsm, EVENT_G)
+    - S1::handler(EVENT_G)
+    - S::handler(EVENT_G)
+    - S1::exit()
+    - S::exit()
+    - S2::entry()
 
-Constructors
--------------------------------------------------
-
-
-ecu_hsm_ctor()
+Source State == S12
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. _hsm_ecu_hsm_ctor:
+.. figure:: /images/hsm/state_transitions.svg
+    :width: 800
+    :align: center
+  
+    State Transitions
 
-Sets the starting state the HSM should be in. The height of the HSM must also be specified.
+#. EVENT_A:
+    - ecu_hsm_dispatch(hsm, EVENT_A)
+    - S12::handler(EVENT_A)
+    - S::handler(EVENT_A)
+    - ECU_HSM_TOP_STATE::handler(EVENT_A)
 
-.. warning:: 
+#. EVENT_B:
+    - ecu_hsm_dispatch(hsm, EVENT_B)
+    - S12::handler(EVENT_B)
+    - S12::exit()
+    - S1::entry()
 
-    Must be called once on startup before the HSM is used. User is also responsible 
-    for allocating memory since ECU does not use dynamic memory allocation.
+#. EVENT_C:
+    - ecu_hsm_dispatch(hsm, EVENT_C)
+    - S12::handler(EVENT_C)
+    - S::handler(EVENT_C)
+    - S12::exit()
+    - S1::entry()
 
-.. code-block:: c 
+#. EVENT_D:
+    - ecu_hsm_dispatch(hsm, EVENT_D)
+    - S12::handler(EVENT_D)
+    - S::handler(EVENT_D)
+    - ECU_HSM_TOP_STATE::handler(EVENT_D)
 
-    struct app_hsm hsm;  /* Must inherit ecu_hsm. User must allocate memory before constructor. */
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm)); /* ILLEGAL. Must construct before using. */
+#. EVENT_E:
+    - ecu_hsm_dispatch(hsm, EVENT_E)
+    - S12::handler(EVENT_E)
+    - S::handler(EVENT_E)
+    - S12::exit()
+    - S::exit()
+    - S::entry()
+    - S::initial()
+    - S1::entry()
 
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm)); /* Ok. */
+#. EVENT_F:
+    - ecu_hsm_dispatch(hsm, EVENT_F)
+    - S12::handler(EVENT_F)
+    - S::handler(EVENT_F)
+    - ECU_HSM_TOP_STATE::handler(EVENT_F)
 
-The HSM's height starts at 0 and increases with each additional level added to the state
-hierarchy. For example:
-
-.. figure:: /images/hsm/ecu_hsm_ctor.svg
-  :width: 600
-  :align: center
-
-  ecu_hsm_ctor() Height
-
-This value is used as a fail-safe to prevent infinite loops when traversing up the 
-state hierarchy.
-
-
-Member Functions
--------------------------------------------------
+#. EVENT_G:
+    - ecu_hsm_dispatch(hsm, EVENT_G)
+    - S12::handler(EVENT_G)
+    - S::handler(EVENT_G)
+    - S12::exit()
+    - S::exit()
+    - S2::entry()
 
 
-ECU_HSM_IS_BASEOF()
+Source State == S2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Verifies, at compile-time, that a user's HSM correctly inherits 
-the :ecudoxygen:`ecu_hsm` base class:
+.. figure:: /images/hsm/state_transitions.svg
+    :width: 800
+    :align: center
+  
+    State Transitions
 
-.. code-block:: c 
+#. EVENT_F:
+    - ecu_hsm_dispatch(hsm, EVENT_F)
+    - S2::handler(EVENT_F)
+    - S2::exit()
+    - S::entry()
+    - S::initial()
+    - S1::entry()
 
-    struct correct_hsm
+#. All other events (EVENT_A, EVENT_B, EVENT_C, EVENT_D, EVENT_E, EVENT_G):
+    - ecu_hsm_dispatch(hsm, EVENT_x)
+    - S2::handler(EVENT_x)
+    - ECU_HSM_TOP_STATE::handler(EVENT_x)
+
+Example
+-------------------------------------------------
+This example aims to demonstrate the points outlined in the :ref:`Event-Driven Paradigm Section 
+of the FSM Framework that also applies to HSMs <fsm_event_driven_paradigm>` by creating 
+the following keyboard state machine:
+
+.. figure:: /images/hsm/example.svg
+    :width: 800
+    :align: center
+  
+    Example
+
+The keyboard stores which keys have been pressed in a standard USB HID report.
+It is sent to the computer when the application requests to send it, or when the 
+report becomes full. Caps lock logic is also handled.
+
+The complexity of these operations are simplified by modeling the keyboard's
+behavior as an HSM, whose implementation is fully encapsulated within a reusable
+keyboard object defined in ``keyboard.h`` and ``keyboard.c``. Therefore the application 
+does not have to worry about any of the complexities explained above. It simply
+interacts with the keyboard by blindly dispatching events to it.
+
+This module (keyboard object) is then ported to two separate applications. The first on a microcontroller
+in ``main.c``, where a keyboard object is created and used. The second on a computer
+in ``tests.c``, where the keyboard module is tested.
+
+keyboard.h
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    /*-------------------------- keyboard.h --------------------------*/
+    struct keyboard
     {
-        struct ecu_hsm hsm; /* Inherit by declaring ecu_hsm object as first member. */
-        uint8_t counter1;
-        uint8_t counter2;
-    };
-
-    struct incorrect_hsm
-    {
-        uint8_t counter1;
         struct ecu_hsm hsm;
-        uint8_t counter2;
+        uint8_t modifier; /* HID report byte 0. Bitmask of modifier (shift, etc) keys pressed. Unused for this example. */
+        uint8_t data[6]; /* HID report bytes 2 to 7. Stores keys that have been pressed. */
+        size_t index; /* Current index in data[]. */
+        void (*send)(const uint8_t *report, size_t count, void *obj); /* Dependency injection. Send HID report to computer. */
+        void *obj; /* Optional object passed to user-defined callbacks. */
     };
 
-    /* Passes. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct correct_hsm)), "ecu_hsm must be first member.");
+    enum keyboard_event_id
+    {
+        KEYBOARD_CONNECTED_EVENT, /* Keyboard disconnected from computer. */
+        KEYBOARD_DISCONNECTED_EVENT, /* Keyboard reconnected to computer. */
+        KEYBOARD_KEYPRESS_EVENT, /* Key pressed. */
+        KEYBOARD_SEND_EVENT /* Application requests to send HID report. */
+    };
 
-    /* Compilation error. */
-    ECU_STATIC_ASSERT( (ECU_HSM_IS_BASEOF(hsm, struct incorrect_hsm)), "ecu_hsm must be first member.");
+    struct keyboard_event
+    {
+        enum keyboard_event_id id;
+        uint8_t keycode;
+    };
 
+    extern void keyboard_ctor(struct keyboard *me,
+                              void (*send)(const uint8_t *, size_t, void *),
+                              void *obj);
 
-ECU_HSM_BASE_CAST()
+    extern void keyboard_start(struct keyboard *me);
+
+    extern void keyboard_dispatch(struct keyboard *me, const void *event);
+
+keyboard.c
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Upcasts a user's derived HSM type back into the :ecudoxygen:`ecu_hsm` 
-base class. This macro encapsulates the cast and allows derived HSMs 
-to be passed into base class functions defined in this framework.
 
-.. code-block:: c 
+.. code-block:: c
+
+    /*-------------------------- keyboard.c --------------------------*/
+    #include "keyboard.h"
+
+    #define KEYCODE_CAPS_LOCK 0x39U
+
+    static void keycode_report_clear(struct keyboard *me); /* Resets HID report buffer but does not send it. */
+    static void keycode_report_send(struct keyboard *me); /* Sends current HID report to computer then resets it. */
+
+    static void connected_state_on_entry(struct ecu_hsm *hsm);
+    static void connected_state_initial(struct ecu_hsm *hsm);
+    static bool connected_state_handler(struct ecu_hsm *hsm, const void *event);
+    static bool default_state_handler(struct ecu_hsm *hsm, const void *event);
+    static bool caps_lock_state_handler(struct ecu_hsm *hsm, const void *event);
+    static bool disconnected_state_handler(struct ecu_hsm *hsm, const void *event);
+
+    static const struct ecu_hsm_state CONNECTED_STATE = ECU_HSM_STATE_CTOR(
+        &connected_state_on_entry, ECU_HSM_STATE_EXIT_UNUSED, &connected_state_initial, &connected_state_handler, &ECU_HSM_TOP_STATE
+    );
+
+    static const struct ecu_hsm_state DEFAULT_STATE = ECU_HSM_STATE_CTOR(
+        ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &default_state_handler, &CONNECTED_STATE
+    );
+
+    static const struct ecu_hsm_state CAPS_LOCK_STATE = ECU_HSM_STATE_CTOR(
+        ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &caps_lock_state_handler, &CONNECTED_STATE
+    );
+
+    static const struct ecu_hsm_state DISCONNECTED_STATE = ECU_HSM_STATE_CTOR(
+        ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &disconnected_state_handler, &ECU_HSM_TOP_STATE
+    );
+
+    static void keycode_report_clear(struct keyboard *me)
+    {
+        me->modifier = 0;
+        memset(&me->data[0], 0, sizeof(me->data));
+        me->index = 0;
+    }
+
+    static void keycode_report_send(struct keyboard *me)
+    {
+        uint8_t report[8];
+
+        report[0] = me->modifier;
+        report[1] = 0; /* Reserved. */
+        memcpy(&report[2], &me->data[0], sizeof(me->data));
+        (*me->send)(&report[0], sizeof(report), me->obj);
+
+        keycode_report_clear(me);
+    }
+
+    static void connected_state_on_entry(struct ecu_hsm *hsm)
+    {
+        struct keyboard *me = ECU_HSM_GET_CONTEXT(hsm, struct keyboard, hsm);
+        keycode_report_clear(me);
+    }
+
+    static void connected_state_initial(struct ecu_hsm *hsm)
+    {
+        ecu_hsm_change_state(hsm, &DEFAULT_STATE);
+    }
+
+    static bool connected_state_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        bool status = true;
+        struct keyboard *me = ECU_HSM_GET_CONTEXT(hsm, struct keyboard, hsm);
+        const struct keyboard_event *e = (const struct keyboard_event *)event;
+
+        switch (e->id)
+        {
+            case KEYBOARD_DISCONNECTED_EVENT:
+            {
+                ecu_hsm_change_state(hsm, &DISCONNECTED_STATE);
+                break;
+            }
+
+            default:
+            {
+                /* Propagate event up hierarchy. */
+                status = false;
+                break;
+            }
+        }
+
+        return status;
+    }
+
+    static bool default_state_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        bool status = true;
+        struct keyboard *me = ECU_HSM_GET_CONTEXT(hsm, struct keyboard, hsm);
+        const struct keyboard_event *e = (const struct keyboard_event *)event;
+
+        switch (e->id)
+        {
+            case KEYBOARD_KEYPRESS_EVENT:
+            {
+                ECU_ASSERT( (me->index < sizeof(me->data)) );
+                uint8_t keycode = e->keycode;
+
+                if (keycode == KEYCODE_CAPS_LOCK)
+                {
+                    keycode_report_send(me); /* Send report that had keys without caps lock modifier. */
+                    me->data[0] = KEYCODE_CAPS_LOCK; /* Set caps lock modifier. */
+                    me->index = 1;
+                    keycode_report_send(me); /* Send report that says caps lock now pressed. */
+                    ecu_hsm_change_state(hsm, &CAPS_LOCK_STATE);
+                }
+                else if (me->index == sizeof(me->data) - 1) 
+                {
+                    /* If added keycode causes report to be full, send report. */
+                    me->data[me->index] = keycode;
+                    keycode_report_send(me);
+                }
+                else
+                {
+                    /* Otherwise just store the keycode. */
+                    me->data[me->index] = keycode;
+                    me->index++;
+                }
+                break;
+            }
+
+            case KEYBOARD_SEND_EVENT:
+            {
+                keycode_report_send(me);
+                break;
+            }
+
+            default:
+            {
+                /* Propagate event up hierarchy. */
+                status = false;
+                break;
+            }
+        }
+
+        return status;
+    }
+
+    static bool caps_lock_state_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        bool status = true;
+        struct keyboard *me = ECU_HSM_GET_CONTEXT(hsm, struct keyboard, hsm);
+        const struct keyboard_event *e = (const struct keyboard_event *)event;
+
+        switch (e->id)
+        {
+            case KEYBOARD_KEYPRESS_EVENT:
+            {
+                ECU_ASSERT( (me->index < sizeof(me->data)) );
+                uint8_t keycode = e->keycode;
+
+                if (keycode == KEYCODE_CAPS_LOCK)
+                {
+                    keycode_report_send(me); /* Send report that had keys with caps lock modifier. */
+                    keycode_report_send(me); /* Send report that says caps lock no longer pressed. */
+                    ecu_hsm_change_state(hsm, &DEFAULT_STATE);
+                }
+                else if (me->index == sizeof(me->data) - 1) 
+                {
+                    /* If added keycode causes report to be full, send report. Afterwards reinitialize the caps lock modifier. */
+                    me->data[me->index] = keycode;
+                    keycode_report_send(me);
+                    me->data[0] = KEYCODE_CAPS_LOCK;
+                    me->index = 1;
+                }
+                else
+                {
+                    /* Otherwise just store the keycode. */
+                    me->data[me->index] = keycode;
+                    me->index++;
+                }
+                break;
+            }
+
+            case KEYBOARD_SEND_EVENT:
+            {
+                /* Send report then reinitialize caps lock modifier. */
+                keycode_report_send(me);
+                me->data[0] = KEYCODE_CAPS_LOCK;
+                me->index = 1;
+                break;
+            }
+
+            default:
+            {
+                /* Propagate event up hierarchy. */
+                status = false;
+                break;
+            }
+        }
+
+        return status;
+    }
+
+    static bool disconnected_state_handler(struct ecu_hsm *hsm, const void *event)
+    {
+        bool status = true;
+        const struct keyboard_event *e = (const struct keyboard_event *)event;
+
+        switch (e->id)
+        {
+            case KEYBOARD_CONNECTED_EVENT:
+            {
+                ecu_hsm_change_state(hsm, &CONNECTED_STATE);
+                break;
+            }
+
+            default:
+            {
+                /* Propagate event up hierarchy. */
+                status = false;
+                break;
+            }
+        }
+
+        return status;
+    }
+
+    void keyboard_ctor(struct keyboard *me,
+                       void (*send)(const uint8_t *, size_t, void *),
+                       void *obj)
+    {
+        ecu_hsm_ctor(&me->hsm, &CONNECTED_STATE, 2);
+        
+        me->send = send;
+        me->obj = obj;
+        keycode_report_clear(me);
+    }
+
+    void keyboard_start(struct keyboard *me)
+    {
+        ecu_hsm_start(&me->hsm);
+    }
+
+    void keyboard_dispatch(struct keyboard *me, const void *event)
+    {
+        ecu_hsm_dispatch(&me->hsm, event);
+    }
+
+main.c 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    /*-------------------------- main.c --------------------------*/
+    #include "keyboard.h" /* Reusable keyboard object we created. */
+
+    static void usb_send(const uint8_t *report, size_t count, void *obj)
+    {
+        (void)obj;
+        USBHardwareSend(report, count);
+    }
+
+    static struct keyboard kb;
+    static struct keyboard_event event;
+
+    int main(void)
+    {
+        keyboard_ctor(&kb, &usb_send, NULL);
+
+        while (1)
+        {
+            /* Blindly dispatch events. */
+            uint8_t keycode = get_key_pressed();
+            event.id = KEYBOARD_KEYPRESS_EVENT;
+            event.keycode = keycode;
+            keyboard_dispatch(&kb, &event);
+
+            if (connected)
+            {
+                event.id = KEYBOARD_CONNECTED_EVENT;
+                keyboard_dispatch(&kb, &event);
+            }
+            else if (disconnected)
+            {
+                event.id = KEYBOARD_DISCONNECTED_EVENT;
+                keyboard_dispatch(&kb, &event);
+            }
+
+            if (greater than 10ms elapsed)
+            {
+                event.id = KEYBOARD_SEND_EVENT;
+                keyboard_dispatch(&kb, &event);
+            }
+        }
+
+        return 0;
+    }
+
+tests.c 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    /*-------------------------- tests.c -------------------------*/
+    #include "keyboard.h" /* Reusable keyboard module under test. */
+
+    static void send(const uint8_t *report, size_t count, void *obj)
+    {
+        (void)obj;
+
+        for (size_t i = 0; i < count; i++)
+        {
+            printf("%02x ", report[i]);
+        }
+        printf("\n");
+    }
+
+    TEST()
+    {
+        struct keyboard kb;
+        struct keyboard_event event;
+        keyboard_ctor(&kb, &send, NULL);
+
+        event.id = KEYBOARD_KEYPRESS_EVENT;
+        event.keycode = A;
+        keyboard_dispatch(&kb, &event);
+        keyboard_dispatch(&kb, &event);
+        event.keybode = B;
+        keyboard_dispatch(&kb, &event);
+
+        event.id = KEYBOARD_SEND_EVENT;
+        keyboard_dispatch(&kb, &event); /* "aab" */
+    }
+
+    TEST()
+    {
+        struct keyboard kb;
+        struct keyboard_event event;
+        keyboard_ctor(&kb, &send, NULL);
+
+        event.id = KEYBOARD_KEYPRESS_EVENT;
+        event.keycode = CAPS_LOCK;
+        keyboard_dispatch(&kb, &event);
+
+        event.keycode = A;
+        keyboard_dispatch(&kb, &event);
+        keyboard_dispatch(&kb, &event);
+        event.keybode = B;
+        keyboard_dispatch(&kb, &event);
+
+        event.id = KEYBOARD_SEND_EVENT;
+        keyboard_dispatch(&kb, &event); /* "AAB" */
+    }
+
+    TEST()
+    {
+        struct keyboard kb;
+        struct keyboard_event event;
+        keyboard_ctor(&kb, &send, NULL);
+
+        event.id = KEYBOARD_DISCONNECTED_EVENT;
+        keyboard_dispatch(&kb, &event);
+
+        /* Nothing printed. */
+        event.id = KEYBOARD_KEYPRESS_EVENT;
+        event.keycode = A;
+        keyboard_dispatch(&kb, &event);
+        keyboard_dispatch(&kb, &event);
+        keyboard_dispatch(&kb, &event);
+        event.id = KEYBOARD_SEND_EVENT;
+        keyboard_dispatch(&kb, &event);
+        keyboard_dispatch(&kb, &event);
+    }
+
+API 
+=================================================
+.. toctree::
+    :maxdepth: 1
+
+    hsm.h </doxygen/html/hsm_8h>
+
+Macros
+-------------------------------------------------
+
+ECU_HSM_GET_CONTEXT()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Converts intrusive :ecudoxygen:`ecu_hsm` member back into the user's state machine type.
+This should be used inside a state handler's definition. See
+:ref:`State Machine Representation Section <hsm_state_machine_representation>`
+for more details:
+
+.. code-block:: c
 
     struct app_hsm
     {
-        /* Inherit by declaring ecu_hsm object as first member. */
-        struct ecu_hsm hsm;
-
-        /* Additional members unique to application-specific hsm. */
-        uint8_t counter1;
-        uint8_t counter2;
+        int app_data1;
+        struct ecu_hsm hsm_member;
+        int app_data2;
     };
 
-    struct app_hsm hsm;
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &INIT_STATE, &TOP_STATE, 3);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm));
-    // ...
+    static void running_state_on_entry(struct ecu_hsm *hsm)
+    {
+        struct app_hsm *me = ECU_HSM_GET_CONTEXT(hsm, struct app_hsm, hsm_member);
+        me->app_data1 = 0;
+        me->app_data2 = 0;
+    }
 
-
-ecu_hsm_start()
+ECU_HSM_STATE_CTOR()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Runs each state's entry handler, starting from the top state and ending at 
-the initial state assigned in :ref:`ecu_hsm_ctor() <hsm_ecu_hsm_ctor>`. Inclusive,
-meaning top state's and initial state's entry handlers are also ran.
+Creates an :ecudoxygen:`ecu_hsm_state` at compile-time.
+See :ref:`State Representation Section <hsm_state_representation>`
+for more details:
+
+.. code-block:: c
+
+    /* Defined by user. */
+    static void running_state_on_entry(struct ecu_hsm *hsm);
+    static void running_state_on_exit(struct ecu_hsm *hsm);
+    static void running_state_initial(struct ecu_hsm *hsm);
+    static bool running_state_handler(struct ecu_hsm *hsm, const void *event);
+
+    static const struct ecu_hsm_state RUNNING_STATE = ECU_HSM_STATE_CTOR(
+        &running_state_on_entry, &running_state_on_exit, &running_state_initial, &running_state_handler, &ECU_HSM_TOP_STATE
+    );
+
+ecu_hsm
+-------------------------------------------------
+
+Constructor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ecu_hsm_ctor()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+.. _hsm_ecu_hsm_ctor:
+
+Constructor. Initializes the :ecudoxygen:`ecu_hsm` data structure for use.
+The state machine's level starts at 1 since all HSMs are **required** to use
+:ecudoxygen:`ECU_HSM_TOP_STATE` as the default top state. For example:
+
+.. figure:: /images/hsm/ecu_hsm_ctor.svg
+    :width: 350
+    :align: center
+
+    ecu_hsm_ctor() Height
+
+.. warning:: 
+
+    Must be called once on startup before the state machine is used. User is 
+    also responsible for allocating memory since ECU does not use dynamic memory allocation.
 
 .. code-block:: c 
 
-    static void top_state_entry(struct app_hsm *me)
-    {
-        printf("top entered!");
-    }
+    struct ecu_hsm hsm;  /* User must allocate memory before constructor. */
+    ecu_hsm_start(&hsm); /* ILLEGAL. Must construct before using. */
+    ecu_hsm_ctor(&hsm, &INIT_STATE, 2);
+    ecu_hsm_start(&hsm); /* Ok. */
 
-    static void top_state_exit(struct app_hsm *me)
-    {
-        printf("top exited!");
-    }
-
-    static bool top_state_handler(struct app_hsm *me, const void *event)
-    {
-        printf("top handled!");
-        return true;
-    }
-
-    static void state1_entry(struct app_hsm *me)
-    {
-        printf("S1 entered!");
-    }
-
-    static void state1_exit(struct app_hsm *me)
-    {
-        printf("S1 exited!");
-    }
-
-    static bool state1_handler(struct app_hsm *me, const void *event)
-    {
-        printf("S1 handled!");
-        return true;
-    }
-
-    static void state2_entry(struct app_hsm *me)
-    {
-        printf("S2 entered!");
-    }
-
-    static void state2_exit(struct app_hsm *me)
-    {
-        printf("S2 exited!");
-    }
-
-    static bool state2_handler(struct app_hsm *me, const void *event)
-    {
-        printf("S2 handled!");
-        return true;
-    }
-
-    static const struct ecu_hsm_state TOP_STATE = ECU_HSM_STATE_CTOR(
-        &top_state_entry, &top_state_exit, &top_state_handler, ECU_HSM_STATE_NO_PARENT
-    );
-
-    static const struct ecu_hsm_state STATE1 = ECU_HSM_STATE_CTOR(
-        &state1_entry, &state1_exit, &state1_handler, &TOP_STATE
-    );
-
-    static const struct ecu_hsm_state STATE2 = ECU_HSM_STATE_CTOR(
-        &state2_entry, &state2_exit, &state2_handler, &STATE1
-    );
-
-    struct app_hsm hsm; /* Must inherit ecu_hsm. */
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &STATE2, &TOP_STATE, 2);
-    ecu_hsm_start(ECU_HSM_BASE_CAST(&hsm));
-
-ecu_hsm_start() causes the following code execution order:
-
-.. code-block:: text 
-
-    "top entered!" -> "S1 entered!" -> "S2 entered!"
-
-Once complete, the HSM will now be in STATE2.
-
+Member Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ecu_hsm_change_state()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. _hsm_ecu_hsm_change_state:
 
-Signals that the HSM must transition to a new state or perform a self-transition.
-The :ref:`State Transitions Section <hsm_state_transitions>` explains this in detail.
+Transitions the HSM into a new state. See
+:ref:`State Transitions Section <hsm_state_transitions>` for
+more details.
 
 .. warning:: 
-
-    Can only be called within a state's handler function. Using this in a state's 
-    entry or exit handler results in an error. Using this in the external application 
-    is undefined behavior.
-
-
-ecu_hsm_dispatch()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Relays an event to the HSM where it is processed by the current state's handler function. 
-The event is propagated up the state hierarchy until it is handled. All state transitions
-signalled via :ref:`ecu_hsm_change_state() <hsm_ecu_hsm_change_state>` are also processed
-in this function.
-
-The :ref:`State Hierarchy <hsm_state_hierarchy>` and :ref:`State Transitions <hsm_state_transitions>`
-sections fully explain how this framework propagates events up the hierarchy and handles 
-state transitions. It is also recommended to read the 
-:ref:`Event Driven Paradigm Section in the Finite State Machine Framework<fsm_event_driven_paradigm>`.
+    
+    This function can only be called within a state's main handler 
+    or initial handler. If a transition is signalled in a state's main 
+    handler, it must handle the event by returning true. The HSM must 
+    be in a leaf state after all transitions are completed.
 
 .. code-block:: c
 
-    static void top_state_entry(struct app_hsm *me)
+    static bool running_state_handler(struct ecu_hsm *hsm, const void *event)
     {
-        printf("top entered!");
-    }
-
-    static void top_state_exit(struct app_hsm *me)
-    {
-        printf("top exited!");
-    }
-
-    static bool top_state_handler(struct app_hsm *me, const void *event)
-    {
-        printf("top handled!");
-        return true;
-    }
-
-    static void state1_entry(struct app_hsm *me)
-    {
-        printf("S1 entered!");
-    }
-
-    static void state1_exit(struct app_hsm *me)
-    {
-        printf("S1 exited!");
-    }
-
-    static bool state1_handler(struct app_hsm *me, const void *event)
-    {
-        printf("S1 handled!");
-        if (event == TO_S3_EVENT)
+        if (event == STOP_EVENT)
         {
-            ecu_hsm_change_state(ECU_HSM_BASE_CAST(me), &STATE3);
+            ecu_hsm_change_state(hsm, &STOPPED_STATE);
+            return true; /* Handle event! */
         }
-        return true;
     }
 
-    static void state2_entry(struct app_hsm *me)
+ecu_hsm_dispatch()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Relays event to the HSM where it is processed by
+the current state's handler function. The event is propagated 
+up the state hierarchy until it is handled. All state transitions
+signalled via :ref:`ecu_hsm_change_state() <hsm_ecu_hsm_change_state>` 
+are also managed in this function. The :ref:`Theory Section <hsm_theory>`
+fully explains how the HSM runs.
+
+.. warning:: 
+
+    This function must run to completion. The HSM 
+    must be in a leaf state after this function completes.
+
+.. code-block:: c 
+
+    enum event_id
     {
-        printf("S2 entered!");
-    }
+        STOP_EVENT_ID,
+        START_EVENT_ID,
+        RESET_EVENT_ID
+    };
 
-    static void state2_exit(struct app_hsm *me)
+    struct event
     {
-        printf("S2 exited!");
-    }
+        enum event_id id;
+        int data;
+        int more_data;
+    };
 
-    static bool state2_handler(struct app_hsm *me, const void *event)
-    {
-        printf("S2 handled!");
-        return true;
-    }
+    struct event stop_event = {STOP_EVENT_ID, 0, 0};
+    ecu_hsm_dispatch(&hsm, &stop_event);
 
-    static void state3_entry(struct app_hsm *me)
-    {
-        printf("S3 entered!");
-    }
+ecu_hsm_start()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Starts the HSM by entering from :ecudoxygen:`ECU_HSM_TOP_STATE`
+to the target state supplied to :ref:`ecu_hsm_ctor() <hsm_ecu_hsm_ctor>`. 
+If the target is a composite state, initial handlers are ran to
+fully transition down the state hierarchy. The resulting execution 
+order for the following example is:
 
-    static void state3_exit(struct app_hsm *me)
-    {
-        printf("S3 exited!");
-    }
+- ecu_hsm_start(&hsm)
+- S::entry()
+- S::initial()
+- S1::entry()
+- S1::initial()
+- S2::entry()
+     
+.. figure:: /images/hsm/ecu_hsm_start.svg
+    :width: 350
+    :align: center
 
-    static bool state3_handler(struct app_hsm *me, const void *event)
-    {
-        printf("S3 handled!");
-        return true;
-    }
+    ecu_hsm_start()
 
-    static const struct ecu_hsm_state TOP_STATE = ECU_HSM_STATE_CTOR(
-        &top_state_entry, &top_state_exit, &top_state_handler, ECU_HSM_STATE_NO_PARENT
-    );
+.. code-block:: c
 
-    static const struct ecu_hsm_state STATE1 = ECU_HSM_STATE_CTOR(
-        &state1_entry, &state1_exit, &state1_handler, &TOP_STATE
-    );
+    ecu_hsm_ctor(&hsm, &S);
+    ecu_hsm_start(&hsm);
 
-    static const struct ecu_hsm_state STATE2 = ECU_HSM_STATE_CTOR(
-        &state2_entry, &state2_exit, &state2_handler, &TOP_STATE
-    );
+The resulting execution order for this example is:
 
-    static const struct ecu_hsm_state STATE3 = ECU_HSM_STATE_CTOR(
-        &state3_entry, &state3_exit, &state3_handler, &STATE2
-    );
+- ecu_hsm_start(&hsm)
+- S::entry()
+- S1::entry()
+- S1::initial()
+- S2::entry()
+     
+.. figure:: /images/hsm/ecu_hsm_start2.svg
+    :width: 350
+    :align: center
 
-    struct app_hsm hsm; /* Must inherit ecu_hsm. */
-    ecu_hsm_ctor(ECU_HSM_BASE_CAST(&hsm), &STATE1, &TOP_STATE, 2);
-    ecu_hsm_dispatch(ECU_HSM_BASE_CAST(&hsm), &TO_S3_EVENT);
+    ecu_hsm_start()
 
-ecu_hsm_dispatch() causes the following code execution order:
+.. code-block:: c
 
-.. code-block:: text 
+    ecu_hsm_ctor(&hsm, &S1);
+    ecu_hsm_start(&hsm);
 
-    "S1 handled!" -> "S1 exit!" -> "S2 entered!" -> "S3 entered!"
+.. warning:: 
 
-Once complete, the HSM will now be in STATE3.
-
-
-API
-=================================================
-.. toctree:: 
-    :maxdepth: 1
-
-    API </doxygen/html/hsm_8h>
+    This function should only be called once on startup and 
+    must run to completion. The HSM must be in a leaf state after 
+    this function completes.

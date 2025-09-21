@@ -6,19 +6,7 @@
  * @ref ECU_FSM_GET_CONTEXT()
  *      - TEST(Fsm, GetContext)
  * 
- * @ref @ref ecu_fsm_start(), @ref ecu_fsm_change_state()
- *      - TEST(Fsm, StartStateHasNoHandler)
- *      - TEST(Fsm, StartNoTransition)
- *      - TEST(Fsm, StartSingleStateTransition)
- *      - TEST(Fsm, StartConsecutiveStateTransition)
- *      - TEST(Fsm, StartTransitionOnFirstExit)
- *      - TEST(Fsm, StartTransitionOnSecondExit)
- *      - TEST(Fsm, StartTransitionOnThirdExit)
- *      - TEST(Fsm, StartSelfTransitionOnFirstEntry)
- *      - TEST(Fsm, StartSelfTransitionOnSecondEntry)
- *      - TEST(Fsm, StartSelfTransitionOnThirdEntry)
- * 
- * @ref @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
+ * @ref ecu_fsm_change_state(), @ref ecu_fsm_dispatch()
  *      - TEST(Fsm, DispatchStateHasNoHandler)
  *      - TEST(Fsm, DispatchSelfTransition)
  *      - TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
@@ -29,6 +17,18 @@
  *      - TEST(Fsm, DispatchSelfTransitionThenSelfTransitionOnFirstEntry)
  *      - TEST(Fsm, DispatchSingleStateTransitionThenSelfTransitionOnFirstEntry)
  *      - TEST(Fsm, DispatchConsecutiveStateTransitionThenSelfTransitionOnSecondEntry)
+ * 
+ * @ref ecu_fsm_change_state(), @ref ecu_fsm_start()
+ *      - TEST(Fsm, StartStateHasNoHandler)
+ *      - TEST(Fsm, StartNoTransition)
+ *      - TEST(Fsm, StartSingleStateTransition)
+ *      - TEST(Fsm, StartConsecutiveStateTransition)
+ *      - TEST(Fsm, StartTransitionOnFirstExit)
+ *      - TEST(Fsm, StartTransitionOnSecondExit)
+ *      - TEST(Fsm, StartTransitionOnThirdExit)
+ *      - TEST(Fsm, StartSelfTransitionOnFirstEntry)
+ *      - TEST(Fsm, StartSelfTransitionOnSecondEntry)
+ *      - TEST(Fsm, StartSelfTransitionOnThirdEntry)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -522,359 +522,6 @@ TEST(Fsm, GetContext)
 }
 
 /*------------------------------------------------------------*/
-/*-------------------- TESTS - ECU_FSM_START -----------------*/
-/*------------------------------------------------------------*/
-
-/**
- * @brief Not allowed. All states must have a handler.
- */
-TEST(Fsm, StartStateHasNoHandler)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_unused()
-                                .with_entry()
-                                .with_exit();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Test fails if assertion does not fire. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief FSM started with no transition.
- * 
- * Expect: entry(S0).
- */
-TEST(Fsm, StartNoTransition)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler(); 
-
-        EXPECT_STATE_PATH(state0.entered());
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Transition done in entry function.
- * 
- * Expect: entry(S0) -> exit(S0) -> entry(S1).
- */
-TEST(Fsm, StartSingleStateTransition)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_to<S1>()
-                                .with_exit()
-                                .with_handler();
-
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
-
-        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered());
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Transition in both entry functions.
- * 
- * Expect: entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2).
- */
-TEST(Fsm, StartConsecutiveStateTransition)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_to<S1>()
-                                .with_exit()
-                                .with_handler();
-
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry_to<S2>()
-                                .with_exit()
-                                .with_handler();
-
-        auto& state2 = state<S2>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
-
-        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered(), state1.exited(), state2.entered());
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Transition in exit handler not allowed.
- * 
- * exit(S0) transitions to new state. Not allowed..
- * entry(S0) -> exit(S0) ->...assert
- */
-TEST(Fsm, StartTransitionOnFirstExit)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_no_mock_to<S2>()
-                                .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Transition in exit handler not allowed.
- * 
- * exit(S1) transitions to new state. Not allowed..
- * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) ->...assert
- */
-TEST(Fsm, StartTransitionOnSecondExit)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
-
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_no_mock_to<S2>()
-                        .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Transition in exit handler not allowed.
- * 
- * exit(S2) transitions to new state. Not allowed..
- * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2) -> exit(S2)...assert
- */
-TEST(Fsm, StartTransitionOnThirdExit)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
-
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_unused()
-                        .with_handler();
-
-        (void)state<S2>::get_instance()
-                        .with_entry_no_mock_to<S3>()
-                        .with_exit_no_mock_to<S3>()
-                        .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Self transition in entry handler not allowed.
- * 
- * entry(S0) transitions to self. Not allowed...
- * entry(S0) ->...assert
- */
-TEST(Fsm, StartSelfTransitionOnFirstEntry)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S0>()
-                                .with_exit()
-                                .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Self transition in entry handler not allowed.
- * 
- * entry(S1) transitions to self. Not allowed...
- * entry(S0) -> exit(S0) -> entry(S1) ->...assert
- */
-TEST(Fsm, StartSelfTransitionOnSecondEntry)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
-
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S1>()
-                        .with_exit()
-                        .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Self transition in entry handler not allowed.
- * 
- * entry(S2) transitions to self. Not allowed...
- * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2) ->...assert
- */
-TEST(Fsm, StartSelfTransitionOnThirdEntry)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
-
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_unused()
-                        .with_handler();
-
-        (void)state<S2>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit()
-                        .with_handler();
-
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
-
-        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
-}
-
-/*------------------------------------------------------------*/
 /*------------------- TESTS - ECU_FSM_DISPATCH ---------------*/
 /*------------------------------------------------------------*/
 
@@ -1222,6 +869,359 @@ TEST(Fsm, DispatchConsecutiveStateTransitionThenSelfTransitionOnSecondEntry)
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
         ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*-------------------- TESTS - ECU_FSM_START -----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed. All states must have a handler.
+ */
+TEST(Fsm, StartStateHasNoHandler)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_handler_unused()
+                                .with_entry()
+                                .with_exit();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief FSM started with no transition.
+ * 
+ * Expect: entry(S0).
+ */
+TEST(Fsm, StartNoTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry()
+                                .with_exit()
+                                .with_handler(); 
+
+        EXPECT_STATE_PATH(state0.entered());
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition done in entry function.
+ * 
+ * Expect: entry(S0) -> exit(S0) -> entry(S1).
+ */
+TEST(Fsm, StartSingleStateTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_to<S1>()
+                                .with_exit()
+                                .with_handler();
+
+        auto& state1 = state<S1>::get_instance()
+                                .with_entry()
+                                .with_exit()
+                                .with_handler();
+
+        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered());
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in both entry functions.
+ * 
+ * Expect: entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2).
+ */
+TEST(Fsm, StartConsecutiveStateTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_to<S1>()
+                                .with_exit()
+                                .with_handler();
+
+        auto& state1 = state<S1>::get_instance()
+                                .with_entry_to<S2>()
+                                .with_exit()
+                                .with_handler();
+
+        auto& state2 = state<S2>::get_instance()
+                                .with_entry()
+                                .with_exit()
+                                .with_handler();
+
+        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered(), state1.exited(), state2.entered());
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if State Path was incorrect. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ * 
+ * exit(S0) transitions to new state. Not allowed..
+ * entry(S0) -> exit(S0) ->...assert
+ */
+TEST(Fsm, StartTransitionOnFirstExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S1>()
+                                .with_exit_no_mock_to<S2>()
+                                .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ * 
+ * exit(S1) transitions to new state. Not allowed..
+ * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) ->...assert
+ */
+TEST(Fsm, StartTransitionOnSecondExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S1>()
+                                .with_exit_unused()
+                                .with_handler();
+
+        (void)state<S1>::get_instance()
+                        .with_entry_no_mock_to<S2>()
+                        .with_exit_no_mock_to<S2>()
+                        .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Transition in exit handler not allowed.
+ * 
+ * exit(S2) transitions to new state. Not allowed..
+ * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2) -> exit(S2)...assert
+ */
+TEST(Fsm, StartTransitionOnThirdExit)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S1>()
+                                .with_exit_unused()
+                                .with_handler();
+
+        (void)state<S1>::get_instance()
+                        .with_entry_no_mock_to<S2>()
+                        .with_exit_unused()
+                        .with_handler();
+
+        (void)state<S2>::get_instance()
+                        .with_entry_no_mock_to<S3>()
+                        .with_exit_no_mock_to<S3>()
+                        .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ * 
+ * entry(S0) transitions to self. Not allowed...
+ * entry(S0) ->...assert
+ */
+TEST(Fsm, StartSelfTransitionOnFirstEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S0>()
+                                .with_exit()
+                                .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ * 
+ * entry(S1) transitions to self. Not allowed...
+ * entry(S0) -> exit(S0) -> entry(S1) ->...assert
+ */
+TEST(Fsm, StartSelfTransitionOnSecondEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S1>()
+                                .with_exit_unused()
+                                .with_handler();
+
+        (void)state<S1>::get_instance()
+                        .with_entry_no_mock_to<S1>()
+                        .with_exit()
+                        .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
+
+        /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self transition in entry handler not allowed.
+ * 
+ * entry(S2) transitions to self. Not allowed...
+ * entry(S0) -> exit(S0) -> entry(S1) -> exit(S1) -> entry(S2) ->...assert
+ */
+TEST(Fsm, StartSelfTransitionOnThirdEntry)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        auto& state0 = state<S0>::get_instance()
+                                .with_entry_no_mock_to<S1>()
+                                .with_exit_unused()
+                                .with_handler();
+
+        (void)state<S1>::get_instance()
+                        .with_entry_no_mock_to<S2>()
+                        .with_exit_unused()
+                        .with_handler();
+
+        (void)state<S2>::get_instance()
+                        .with_entry_no_mock_to<S2>()
+                        .with_exit()
+                        .with_handler();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_fsm_ctor(&me, &state0);
+        ecu_fsm_start(&me);
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
