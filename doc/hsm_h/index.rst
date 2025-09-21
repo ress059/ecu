@@ -116,7 +116,7 @@ OFF_EVENT in the HSM's RUNNING_STATE causes:
 HSM state transitions are explained in detail in the :ref:`State Transitions Section <hsm_state_transitions>`.
 The basic algorithm involves:
 
-#. Find LCA(Source state, Target State). I.e. LCA(RUNNING_STATE, OFF_STATE) == TOP_STATE.
+#. Find LCA(Source state, Target state). I.e. LCA(RUNNING_STATE, OFF_STATE) == TOP_STATE.
 #. Exit up from the source state until the LCA. I.e. exit up from RUNNING_STATE until TOP_STATE.
 #. Enter from the LCA to the target state. I.e. enter from TOP_STATE to OFF_STATE.
 
@@ -140,17 +140,18 @@ state machine is running:
         const struct ecu_hsm_state *const parent;
     };
 
-- **entry()** is an optional function that executes when the state is first entered.
+- **entry()** is an optional function that executes when this state is first entered.
   Set to :ecudoxygen:`ECU_HSM_STATE_ENTRY_UNUSED` if unused.
-- **exit()** is an optional function that executes when the state is exited.
+- **exit()** is an optional function that executes when this state is exited.
   Set to :ecudoxygen:`ECU_HSM_STATE_EXIT_UNUSED` if unused.
-- **initial()** applies only for composite states. This is called when the HSM transitions
-  into this composite state. The user must transition to a state lower in the hierarchy.
-  This should only be set to :ecudoxygen:`ECU_HSM_STATE_INITIAL_UNUSED` for leaf states.
+- **initial()** is a mandatory function for composite states. Otherwise this must be set 
+  to :ecudoxygen:`ECU_HSM_STATE_INITIAL_UNUSED` for leaf states. Executes if this
+  state is a composite and the HSM transitions into it. An initial transition to a state
+  lower in the hierarchy is taken.
 - **handler()** is a mandatory function that executes when the HSM is running in this state.
-  Returns true if the dispatched event was handled. Returns false if the event should be 
-  propagated up the state hierarchy.
-- **parent** is this state's parent. All states must have a parent be another user-defined 
+  Processes dispatched events and returns true if the event was handled. Returns false if the 
+  event should be propagated up the state hierarchy.
+- **parent** is this state's parent. All states must have its parent be another user-defined 
   state or :ecudoxygen:`ECU_HSM_TOP_STATE`.
 
 The contents are const-qualified, forcing every state to be created at compile-time
