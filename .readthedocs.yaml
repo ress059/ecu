@@ -5,6 +5,7 @@ build:
   apt_packages:
     - doxygen
     - graphviz
+    - cmake
   tools:
     python: "3.10"
   jobs:
