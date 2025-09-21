@@ -843,7 +843,7 @@ Member Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ecu_fsm_change_state()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 .. _fsm_ecu_fsm_change_state:
 
 Transitions the FSM into a new state. See
@@ -866,7 +866,7 @@ more details.
     }
 
 ecu_fsm_dispatch()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Relays event to the FSM where it is processed by the current state's 
 handler function. Manages all state transition logic if any state 
 changes were signalled via :ref:`ecu_fsm_change_state() <fsm_ecu_fsm_change_state>`.
@@ -897,7 +897,7 @@ more details.
     ecu_fsm_dispatch(&fsm, &stop_event);
 
 ecu_fsm_start()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Runs the initial state's entry handler and manages all state transition 
 logic if any state changes were signalled via 
 :ref:`ecu_fsm_change_state() <fsm_ecu_fsm_change_state>`. This function 
