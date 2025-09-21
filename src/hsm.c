@@ -385,8 +385,7 @@ void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event)
         {
             height = 0;
             (*current->initial)(me);
-            ECU_ASSERT( ((1U << HSM_STATE_TRANSITION) == me->transition) );
-            ECU_ASSERT( (is_parent_of(me, current, me->state)) ); /* Initial transition must go down the state hierarchy. */
+            ECU_ASSERT( (((1U << HSM_STATE_TRANSITION) == me->transition) && (is_parent_of(me, current, me->state))) ); /* Initial transition must go down the state hierarchy. */
             me->transition = 0;
 
             /* Enter until initial state reached. Also enter initial state. */
@@ -457,8 +456,7 @@ void ecu_hsm_start(struct ecu_hsm *me)
     {
         height = 0;
         (*current->initial)(me);
-        ECU_ASSERT( ((1U << HSM_STATE_TRANSITION) == me->transition) );
-        ECU_ASSERT( (is_parent_of(me, current, me->state)) ); /* Initial transition must go down the state hierarchy. */
+        ECU_ASSERT( (((1U << HSM_STATE_TRANSITION) == me->transition) && (is_parent_of(me, current, me->state))) ); /* Initial transition must go down the state hierarchy. */
         me->transition = 0;
 
         /* Enter until initial state reached. Also enter initial state. */

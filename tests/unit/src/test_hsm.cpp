@@ -8,6 +8,32 @@
  * 
  * Test Summary:
  * 
+ * @ref ECU_HSM_GET_CONTEXT()
+ *      - TEST(Hsm, GetContext)
+ * 
+ * @ref ecu_hsm_ctor()
+ *      - TEST(Hsm, CtorInitialStateIsTop)
+ *      - TEST(Hsm, CtorInitialStateHasNoParent)
+ * 
+ * @ref ecu_hsm_change_state()
+ *      - TEST(Hsm, ChangeStateNewStateIsTop)
+ *      - TEST(Hsm, ChangeStateNewStateHasNoParent)
+ * 
+ * @ref ecu_hsm_dispatch()
+ *      - TEST(Hsm, DispatchEventUnhandledInEntireStateHierarchy)
+ *      - TEST(Hsm, DispatchSelfStateTransitionEntryAndExitUnused)
+ *      - TEST(Hsm, DispatchSelfStateTransitionEntrySignalsTransition)
+ *      - TEST(Hsm, DispatchSelfStateTransitionExitSignalsTransition)
+ *      - TEST(Hsm, DispatchStateTransitionDoesNotHandleEvent)
+ *      - TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithHeightGreaterThanMax)
+ *      - TEST(Hsm, DispatchStateTransitionToStateBranchWithHeightGreaterThanMax)
+ *      - TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithNoTop)
+ *      - TEST(Hsm, DispatchStateTransitionToStateBranchWithNoTop)
+ *      - TEST(Hsm, DispatchStateTransitionToCompositeStateWithNoInitialTransition)
+ *      - TEST(Hsm, DispatchStateTransitionToCompositeStateWithNoInitialTransition)
+ *      - TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToParent)
+ *      - TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToSelf)
+ * 
  * HsmVariant1 - Start:
  *      - TEST(Hsm, HsmVariant1Start)
  * 
@@ -38,11 +64,6 @@
  * 
  * HsmVariant1 - Misc
  *      - TEST(Hsm, HsmVariant1DispatchMultipleEvents)
- * 
- * HsmInvalidVariant
- *      - TEST(Hsm, HsmInvalidVariantStateTransitionWithoutHandlingEvent)
- *      - TEST(Hsm, HsmInvalidVariantIncorrectLevelEventUnhandled)
- *      - TEST(Hsm, HsmInvalidVariantNoTopStateEventUnhandled)
  * 
  * @author Ian Ress
  * @version 0.1
@@ -330,10 +351,19 @@ struct hsm_state : public ecu_hsm_state
     }
 
     /// @brief Builder that sets this state's initial handler function.
-    /// The handler calls the mock expectation set by @ref init().
+    /// The handler calls the mock expectation set by @ref init() but
+    /// does not transition to a leaf state.
     hsm_state<CURRENT_STATE>& with_initial()
     {
         initial = &with_initial_cb;
+        return *this;
+    }
+
+    /// @brief Builder that sets this state's initial handler function.
+    /// The handler is a dummy (non-null) function that does nothing.
+    hsm_state<CURRENT_STATE>& with_initial_no_mock()
+    {
+        initial = &with_initial_no_mock_cb;
         return *this;
     }
 
@@ -539,6 +569,12 @@ struct hsm_state : public ecu_hsm_state
         assert( (hsm) );
         mock().actualCall("init")
               .withParameter("state", CURRENT_STATE);
+    }
+
+    /// @brief Initial handler that runs if state was built with @ref with_initial_no_mock().
+    static void with_initial_no_mock_cb(ecu_hsm *hsm)
+    {
+        assert( (hsm) );
     }
 
     /// @brief Initial handler that runs if state was built with @ref with_initial_no_mock_to().
@@ -1072,8 +1108,756 @@ TEST_GROUP(Hsm)
     /**@}*/
 };
 
+/*------------------------------------------------------------*/
+/*----------------- TESTS - ECU_HSM_GET_CONTEXT --------------*/
+/*------------------------------------------------------------*/
 
-#warning "TODO: Add ECU_HSM_GET_CONTEXT() tests here!!!"
+/**
+ * @brief Convert intrusive hsm into application hsm type.
+ * Verifies returned pointer points to start of user's type.
+ */
+TEST(Hsm, GetContext)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        struct app_hsm_t
+        {
+            std::uint8_t a;
+            ecu_hsm hsm;
+            int b;
+            std::uint8_t c;
+        } app_hsm;
+
+        /* Step 2: Action. */
+        app_hsm_t *app_hsm_ptr = ECU_HSM_GET_CONTEXT(&app_hsm.hsm, app_hsm_t, hsm);
+
+        /* Step 3: Assert. */
+        POINTERS_EQUAL(&app_hsm, app_hsm_ptr);
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*------------------- TESTS - ecu_hsm_ctor() -----------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed. Starting state must be user-defined
+ * and cannot be default top state.
+ */
+TEST(Hsm, CtorInitialStateIsTop)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_hsm me;
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_ctor(&me, &ECU_HSM_TOP_STATE, 1);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. All states must have parents since
+ * default top state is supplied.
+ */
+TEST(Hsm, CtorInitialStateHasNoParent)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_no_mock()
+                                .with_initial_unused()
+                                .with_parent_unused();
+
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_ctor(&me, state_S, 1);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*-------------- TESTS - ecu_hsm_change_state() --------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed. New state must be user-defined
+ * and cannot be default top state.
+ */
+TEST(Hsm, ChangeStateNewStateIsTop)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_no_mock()
+                                .with_initial_unused()
+                                .with_parent_top();
+
+        ecu_hsm_ctor(&me, state_S, 1);
+        ecu_hsm_start(&me);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_change_state(&me, &ECU_HSM_TOP_STATE);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. All states must have parents since
+ * default top state is supplied.
+ */
+TEST(Hsm, ChangeStateNewStateHasNoParent)
+{
+    try
+    {
+        /* Step 1: Arrange. */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_no_mock()
+                                .with_initial_unused()
+                                .with_parent_top();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_no_mock()
+                                .with_initial_unused()
+                                .with_parent_unused();
+
+        ecu_hsm_ctor(&me, state_S, 1);
+        ecu_hsm_start(&me);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_change_state(&me, state_S1);
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/*------------------------------------------------------------*/
+/*----------------- TESTS - ecu_hsm_dispatch() ---------------*/
+/*------------------------------------------------------------*/
+
+/**
+ * @brief Not allowed since default top state always handles 
+ * the event. Suggests user is not using default top state.
+ */
+TEST(Hsm, DispatchEventUnhandledInEntireStateHierarchy)
+{
+    try
+    {
+        /* Step 1: Arrange. 
+        S
+        |
+        S1
+        |
+        S11 
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_unhandled_no_mock()
+                                .with_initial_no_mock_to<S11>()
+                                .with_parent_unused();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_unhandled_no_mock()
+                                .with_initial_no_mock_to<S11>()
+                                .with_parent<S>();
+
+        state_S11 = &hsm_state<S11>::get_instance()
+                                    .with_entry_unused()
+                                    .with_exit_unused()
+                                    .with_handler_unhandled_no_mock()
+                                    .with_initial_unused()
+                                    .with_parent<S1>();
+
+        ecu_hsm_ctor(&me, state_S11, 10); /* Set level very high to verify error caught. */
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Self-state transition is signalled and state has no
+ * entry and exit handler. OK. Primarily for code coverage
+ * that HSMVariant1 has not satisfied.
+ */
+TEST(Hsm, DispatchSelfStateTransitionEntryAndExitUnused)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S.
+        TOP
+        |
+        S 
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_to<S>()
+                                .with_parent_top();
+
+        EXPECT_STATE_PATH(handled<S>());
+        ecu_hsm_ctor(&me, state_S, 1);
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Test fails if expected state paths not taken. */
+    }
+    catch (const AssertException& e)
+    {
+        /* FAIL. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. No transitions allowed in entry handler.
+ */
+TEST(Hsm, DispatchSelfStateTransitionEntrySignalsTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S.
+        TOP
+        |
+        S 
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_no_mock_to<S>()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S>()
+                                .with_parent_top();
+
+        EXPECT_ASSERTION();
+        ecu_hsm_ctor(&me, state_S, 1);
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. No transitions allowed in exit handler.
+ */
+TEST(Hsm, DispatchSelfStateTransitionExitSignalsTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S.
+        TOP
+        |
+        S 
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_no_mock_to<S>()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S>()
+                                .with_parent_top();
+
+        EXPECT_ASSERTION();
+        ecu_hsm_ctor(&me, state_S, 1);
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. User must handle event when doing a state
+ * transition.
+ */
+TEST(Hsm, DispatchStateTransitionDoesNotHandleEvent)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S1.
+        TOP
+        |
+        S---S1
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_unhandled_no_mock_to<S1>()
+                                .with_initial_unused()
+                                .with_parent_top();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_handler_no_mock()
+                                .with_initial_unused()
+                                .with_parent_top();
+
+        ecu_hsm_ctor(&me, state_S, 1);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Can happen if HSM not set up correctly.
+ */
+TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithHeightGreaterThanMax)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S1 to S2.
+        TOP
+        |
+        S---S2
+        |
+        S1
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S1>()
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S2>()
+                                .with_parent<S>();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        ecu_hsm_ctor(&me, state_S1, 1); /* Incorrectly set height to 1 instead of 2. */
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Can happen if HSM not set up correctly.
+ */
+TEST(Hsm, DispatchStateTransitionToStateBranchWithHeightGreaterThanMax)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S21.
+        TOP
+        |
+        S---S2
+            |
+            S21
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S21>()
+                                .with_parent_top();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S21>()
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        state_S21 = &hsm_state<S21>::get_instance()
+                                    .with_entry_unused()
+                                    .with_exit_unused()
+                                    .with_initial_unused()
+                                    .with_handler_no_mock()
+                                    .with_parent<S2>();
+
+        ecu_hsm_ctor(&me, state_S, 1); /* Incorrectly set height to 1 instead of 2. */
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. Starting state branch being transitioned 
+ * out of does not use the default top state, which is not allowed.
+ */
+TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithNoTop)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S1 to S2.
+        TOP     S
+        |       |
+        S2      S1
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S1>()
+                                .with_handler_no_mock()
+                                .with_parent_unused();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S2>()
+                                .with_parent<S>();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        ecu_hsm_ctor(&me, state_S1, 10); /* Set level very high to verify error is caught. */
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. State branch being transition into 
+ * does not use default top state, which is not allowed.
+ */
+TEST(Hsm, DispatchStateTransitionToStateBranchWithNoTop)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S2 to S1. 
+        TOP     S
+        |       |
+        S2      S1
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S1>()
+                                .with_handler_no_mock()
+                                .with_parent_unused();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock()
+                                .with_parent<S>();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S1>()
+                                .with_parent_top();
+
+        ecu_hsm_ctor(&me, state_S2, 10); /* Set level very high to verify error is caught. */
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. All initial handlers defined must transition
+ * to a state.
+ */
+TEST(Hsm, DispatchStateTransitionToCompositeStateWithNoInitialTransition)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S2.
+        TOP
+        |
+        S---S2
+            |
+            S21
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S2>()
+                                .with_parent_top();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock() /* Not allowed. */
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        state_S21 = &hsm_state<S21>::get_instance()
+                                    .with_entry_unused()
+                                    .with_exit_unused()
+                                    .with_initial_unused()
+                                    .with_handler_no_mock()
+                                    .with_parent<S2>();
+
+        ecu_hsm_ctor(&me, state_S, 2);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. All initial transitions must be to children
+ * to drill into state hierarchy.
+ */
+TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToParent)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S to S21.
+        TOP
+        |
+        S---S2
+            |
+            S21
+            |
+            S211
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S21>()
+                                .with_parent_top();
+
+        state_S2 = &hsm_state<S2>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S211>()
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        state_S21 = &hsm_state<S21>::get_instance()
+                                    .with_entry_unused()
+                                    .with_exit_unused()
+                                    .with_initial_no_mock_to<S2>() /* Not allowed. */
+                                    .with_handler_no_mock()
+                                    .with_parent<S2>();
+
+        state_S211 = &hsm_state<S211>::get_instance()
+                                    .with_entry_unused()
+                                    .with_exit_unused()
+                                    .with_initial_unused()
+                                    .with_handler_no_mock()
+                                    .with_parent<S21>();
+
+        ecu_hsm_ctor(&me, state_S, 3);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
+
+/**
+ * @brief Not allowed. All initial transitions must be to children
+ * to drill into state hierarchy.
+ */
+TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToSelf)
+{
+    try
+    {
+        /* Step 1: Arrange. Transition from S1 to S. 
+        TOP
+        |
+        S
+        |
+        S1
+        */
+        ecu_hsm me;
+
+        state_S = &hsm_state<S>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_no_mock_to<S>() /* Not allowed. */
+                                .with_handler_no_mock()
+                                .with_parent_top();
+
+        state_S1 = &hsm_state<S1>::get_instance()
+                                .with_entry_unused()
+                                .with_exit_unused()
+                                .with_initial_unused()
+                                .with_handler_no_mock_to<S>()
+                                .with_parent<S>();
+
+        ecu_hsm_ctor(&me, state_S1, 2);
+        EXPECT_ASSERTION();
+
+        /* Step 2: Action. */
+        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+
+        /* Step 3: Assert. Test fails if assertion does not fire. */
+    }
+    catch (const AssertException& e)
+    {
+        /* OK. */
+        (void)e;
+    }
+}
 
 /*------------------------------------------------------------*/
 /*---------------- TESTS - HSM_VARIANT1 START ----------------*/
@@ -1635,138 +2419,3 @@ TEST(Hsm, HsmVariant1DispatchMultipleEvents)
         (void)e;
     }
 }
-
-/*------------------------------------------------------------*/
-/*---------------- TESTS - HSM_INVALID_VARIANT ---------------*/
-/*------------------------------------------------------------*/
-
-/**
- * @brief Not allowed. User must handle event when doing a state
- * transition.
- */
-TEST(Hsm, HsmInvalidVariantStateTransitionWithoutHandlingEvent)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_hsm me;
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock_to<S1>()
-                                .with_initial_unused()
-                                .with_parent_top();
-
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_top();
-
-        ecu_hsm_ctor(&me, state_S, 1);
-        ecu_hsm_start(&me);
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
-
-        /* Step 3: Assert. Test fails if assertion does not fire. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Not allowed. State machine has valid states but 
- * initial level assigned to it is 1 less than it should be.
- * Event unhandled so should assert when state hierarchy
- * traversed all the way up.
- */
-TEST(Hsm, HsmInvalidVariantLevelOneLessThanExpectedEventUnhandled)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_hsm me;
-
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_unused()
-                                .with_parent_top();
-
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_unused()
-                                .with_parent<S>();
-
-        state_S11 = &hsm_state<S11>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_handler_unhandled_no_mock()
-                                    .with_initial_unused()
-                                    .with_parent<S1>();
-
-        ecu_hsm_ctor(&me, state_S11, 2); /* Level should be 3. Set to 2 for test. */
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_hsm_start(&me);
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
-
-        /* Step 3: Assert. Test fails if assertion does not fire. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-
-/**
- * @brief Not allowed. Top state must be used.
- */
-TEST(Hsm, HsmInvalidVariantNoTopStateEventUnhandled)
-{
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_hsm me;
-
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_unused()
-                                .with_parent_unused();
-
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_unused()
-                                .with_parent<S>();
-
-        ecu_hsm_ctor(&me, state_S1, 5); /* Set level to some garbage value. */
-        EXPECT_ASSERTION();
-
-        /* Step 2: Action. */
-        ecu_hsm_start(&me);
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
-
-        /* Step 3: Assert. Test fails if assertion does not fire. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
-}
-

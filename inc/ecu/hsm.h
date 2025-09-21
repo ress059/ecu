@@ -136,8 +136,8 @@ since test code framework requires state creation at run-time. */
     void (*initial)(struct ecu_hsm *me);
 
     /// @brief Processes events dispatched to this state. Mandatory.
-    /// Return true if the dispatched event is processed within this state. 
-    /// Return false if the event should be propogated up the state hierarchy.
+    /// Return true if the dispatched event is handled within this state. 
+    /// Return false if the event should be propagated up the state hierarchy.
     bool (*handler)(struct ecu_hsm *me, const void *event);
 
     /// @brief This state's parent.
@@ -156,7 +156,7 @@ since test code framework requires state creation at run-time. */
 
     /// @brief Processes events dispatched to this state. Mandatory.
     /// Return true if the dispatched event is processed within this state. 
-    /// Return false if the event should be propogated up the state hierarchy.
+    /// Return false if the event should be propagated up the state hierarchy.
     bool (*const handler)(struct ecu_hsm *me, const void *event);
 
     /// @brief This state's parent.
@@ -216,7 +216,7 @@ extern const struct ecu_hsm_state ECU_HSM_TOP_STATE;
  * @param state Hsm's initial state. This cannot be @ref ECU_HSM_TOP_STATE.
  * @param height Number of levels in the hsm, starting at 1. For
  * example if the hsm only consists of a single state, this would 
- * be 1 (user's state and default top state).
+ * be 1 (user's state and @ref ECU_HSM_TOP_STATE).
  */
 extern void ecu_hsm_ctor(struct ecu_hsm *me, 
                          const struct ecu_hsm_state *state,
@@ -232,7 +232,10 @@ extern void ecu_hsm_ctor(struct ecu_hsm *me,
  * @brief Transitions hsm into a new state.
  * 
  * @warning This can only be called within @ref ecu_hsm_state.handler
- * and @ref ecu_hsm_state.initial.
+ * and @ref ecu_hsm_state.initial. If a transition is signalled 
+ * in @ref ecu_hsm_state.handler, it must handle the event by 
+ * returning true. The HSM must be in a leaf state after all 
+ * transitions are completed.
  * 
  * @param me Hsm to transition.
  * @param state State to transition into. This cannot
@@ -244,12 +247,13 @@ extern void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state 
  * @pre @p me constructed via @ref ecu_hsm_ctor() and started
  * via @ref ecu_hsm_start().
  * @brief Relays event to hsm where it is processed by
- * the current state's handler function. The event is propogated 
+ * the current state's handler function. The event is propagated 
  * up the state hierarchy until it is handled. All state transitions
  * signalled via @ref ecu_hsm_change_state() are also managed
  * in this function.
  * 
- * @warning This function must run to completion.
+ * @warning This function must run to completion. The HSM 
+ * must be in a leaf state after this function completes.
  * 
  * @param me Hsm to run.
  * @param event Event to dispatch. This cannot be NULL.
@@ -260,12 +264,12 @@ extern void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event);
  * @pre @p me constructed via @ref ecu_hsm_ctor().
  * @brief Starts the hsm by entering from @ref ECU_HSM_TOP_STATE
  * to the target state supplied in @ref ecu_hsm_ctor(). If the
- * target is a composite state, its initial handler is ran to
- * transition down the state hierarchy. This process repeats
- * until a leaf state is reached.
+ * target is a composite state, initial handlers are ran to
+ * fully transition down the state hierarchy.
  * 
  * @warning This function should only be called once on
- * startup and must run to completion.
+ * startup and must run to completion. The HSM must 
+ * be in a leaf state after this function completes.
  * 
  * @param me Hsm to start. This should not be an already 
  * running hsm.

@@ -152,7 +152,7 @@ three parameters:
     ECU_FSM_GET_CONTEXT()
 
 Under the hood, this macro does pointer arithmetic to perform the conversion.
-The details of this operation is fully explained in 
+The details of this operation are fully explained in 
 :ref:`ECU_CONTAINER_OF() <utils_container_of>`.
 
 State Transitions
@@ -710,7 +710,7 @@ main.c
     static const struct led_event ON_EVENT = {LED_ON_EVENT};
     static const struct led_event OFF_EVENT = {LED_OFF_EVENT};
 
-    int main()
+    int main(void)
     {
         led_ctor(&led1, &turn_led_on, &turn_led_off, &led1_gpio);
         led_ctor(&led2, &turn_led_on, &turn_led_off, &led2_gpio);
@@ -728,6 +728,8 @@ main.c
             led_dispatch(&led2, ON_EVENT);
             led_dispatch(&led2, OFF_EVENT);
         }
+
+        return 0;
     }
 
 tests.c 
