@@ -71,7 +71,7 @@ set(CMAKE_CXX_FLAGS_INIT "-fno-exceptions -fno-rtti -mcpu=cortex-m4 -mfpu=fpv4-s
 # Set hardware-specific linker flags for ARM CM4F and linker garbage collection flags 
 # here since these should apply to the entire project. Remaining flags will be added 
 # by CMake build system depending on what is needed by the application.
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,--gc-sections -nostdlib" CACHE STRING "")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,--gc-sections -nolibc" CACHE STRING "")
 
 # These rule variables control how CMake actually calls the linker from the command line.
 # Edit these so it creates an .elf executable. All other flags remain the same as the default.

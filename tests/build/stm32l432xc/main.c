@@ -30,17 +30,3 @@ int main(void)
 {
     return 0;
 }
-
-/*------------------------------------------------------------*/
-/*---------------- ASSERT HANDLER DEFINITION -----------------*/
-/*------------------------------------------------------------*/
-
-void ecu_assert_handler(const char *file, int line)
-{
-    (void)file;
-    (void)line;
-    while(1)
-    {
-
-    }
-}
