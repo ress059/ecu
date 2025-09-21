@@ -127,6 +127,13 @@ static void clear_all_transitions(struct ecu_fsm *fsm)
 }
 
 /*------------------------------------------------------------*/
+/*---------------------- STATIC ASSERTS ----------------------*/
+/*------------------------------------------------------------*/
+
+ECU_STATIC_ASSERT( (((size_t)FSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(struct ecu_fsm, transition) * 8)),
+                    "Max value in transition_type enum exceeds most significant bit of ecu_hsm::transition bitfield." );
+
+/*------------------------------------------------------------*/
 /*-------------------- FSM MEMBER FUNCTIONS ------------------*/
 /*------------------------------------------------------------*/
 

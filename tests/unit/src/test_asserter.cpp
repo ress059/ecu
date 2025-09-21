@@ -183,7 +183,7 @@ TEST(Asserter, Hsm)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/hsm.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_hsm_ctor(nullptr, nullptr, nullptr, 0);
+        ecu_hsm_ctor(nullptr, nullptr, 0);
     }
     catch (const AssertException& e)
     {

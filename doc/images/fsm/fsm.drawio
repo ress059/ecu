@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2025-09-09T16:48:21.724Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.2 Chrome/114.0.5735.289 Electron/25.9.4 Safari/537.36" etag="J9C6QGj_Jhv5hMgixciA" version="22.1.2" type="device" pages="13">
+<mxfile host="Electron" modified="2025-09-18T16:24:59.499Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.2 Chrome/114.0.5735.289 Electron/25.9.4 Safari/537.36" etag="WWu9qQQ3cZMHqrg0gjo7" version="22.1.2" type="device" pages="13">
   <diagram id="cz8aX_4aQq5yqWqZPQht" name="state_representation_state_reuse">
-    <mxGraphModel dx="1182" dy="690" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1418" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -25,19 +25,19 @@
         <mxCell id="172NRiz4VUylmhOpqTl8-5" value="struct ecu_fsm_state" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="240" y="360" width="160" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="KQIpblJVJEuzkiOkIQN2-1" value="struct ecu_fsm" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="KQIpblJVJEuzkiOkIQN2-1" value="struct ecu_fsm" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="360" y="240" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="KQIpblJVJEuzkiOkIQN2-2" value="" style="endArrow=none;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=1;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endFill=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KQIpblJVJEuzkiOkIQN2-3" target="KQIpblJVJEuzkiOkIQN2-1">
+        <mxCell id="KQIpblJVJEuzkiOkIQN2-2" value="" style="endArrow=none;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=1;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endFill=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="KQIpblJVJEuzkiOkIQN2-3" target="KQIpblJVJEuzkiOkIQN2-1" edge="1">
           <mxGeometry x="-1" y="3" relative="1" as="geometry">
             <mxPoint x="490" y="340" as="sourcePoint" />
             <mxPoint x="680" y="200" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="KQIpblJVJEuzkiOkIQN2-3" value="struct app_fsm" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="KQIpblJVJEuzkiOkIQN2-3" value="struct app_fsm" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="360" y="80" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="KQIpblJVJEuzkiOkIQN2-4" value="" style="endArrow=none;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=0;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endFill=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KQIpblJVJEuzkiOkIQN2-1" target="172NRiz4VUylmhOpqTl8-5">
+        <mxCell id="KQIpblJVJEuzkiOkIQN2-4" value="" style="endArrow=none;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=0;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endFill=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="KQIpblJVJEuzkiOkIQN2-1" target="172NRiz4VUylmhOpqTl8-5" edge="1">
           <mxGeometry x="-1" y="3" relative="1" as="geometry">
             <mxPoint x="530" y="330" as="sourcePoint" />
             <mxPoint x="550" y="450" as="targetPoint" />

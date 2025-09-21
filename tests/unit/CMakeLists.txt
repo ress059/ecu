@@ -95,6 +95,41 @@ target_link_libraries(ecu_unit_test
 )
 
 #------------------------------------------------------------#
+#---------------- CREATE --target gcovr RULE ----------------#
+#------------------------------------------------------------#
+# Rule requires gcovr v5.1+. 
+# - pip install gcovr.
+get_target_property(ECU_SOURCES ecu SOURCES)
+set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
+set(COVERAGE_FILE ${COVERAGE_DIR}/coverage.html)
+file(GLOB_RECURSE ECU_TEST_FILES 
+    CONFIGURE_DEPENDS # Also run if file added or removed.
+        ${CMAKE_CURRENT_LIST_DIR}/*.h
+        ${CMAKE_CURRENT_LIST_DIR}/*.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/*.c
+        ${CMAKE_CURRENT_LIST_DIR}/*.cpp
+)
+
+# Only generate coverage when:
+# - Source file(s) under test changes.
+# - Unit test file(s) change.
+add_custom_command(
+    OUTPUT ${COVERAGE_FILE}
+    DEPENDS ${ECU_SOURCES} ${ECU_TEST_FILES}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Running unit test executable to generate .gcda files..."
+    COMMAND $<TARGET_FILE:ecu_unit_test>
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR} # Make directory in case it does not exist.
+    COMMAND ${CMAKE_COMMAND} -E echo "Running gcovr to generate coverage..."
+    COMMAND gcovr --root ${PROJECT_SOURCE_DIR}/src --html-details ${COVERAGE_FILE} ${CMAKE_BINARY_DIR}
+    VERBATIM
+)
+
+add_custom_target(gcovr
+    DEPENDS ${COVERAGE_FILE}
+)
+
+#------------------------------------------------------------#
 #---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
 include(CppUTest)

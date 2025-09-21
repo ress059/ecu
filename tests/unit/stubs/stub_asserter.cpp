@@ -38,7 +38,7 @@ static void assert_ok(const char *file, int line);
 static void assert_fail(const char *file, int line);
 
 /*------------------------------------------------------------*/
-/*------------------- FILE SCOPE VARIABLES -------------------*/
+/*--------------------- STATIC VARIABLES ---------------------*/
 /*------------------------------------------------------------*/
 
 static void (*current_handler)(const char *file, int line) = &assert_fail;

@@ -94,13 +94,82 @@ if(ECU_DISABLE_RUNTIME_ASSERTS)
     )
 endif()
 
-# Note how ECU-specific warning flags are private so it is not propogated
+# Note how ECU-specific warning flags are private so it is not propagated
 # to the user's application. However our internal tests can still use 
 # ecu_warning_flags target to get all of the warning flags.
 target_link_libraries(ecu 
     PRIVATE
         ecu_warning_flags
 )
+
+#------------------------------------------------------------#
+#--------- CREATE --target doxygen and sphinx RULES ---------#
+#------------------------------------------------------------#
+# Rule requires doxygen, doxysphinx, and sphinx. 
+# - sudo apt-get install doxygen
+# - pip install doxysphinx
+# - pip install sphinx_rtd_theme
+# - pip install sphinxcontrib-doxylink
+# - pip install sphinx-tabs
+if(ECU_ENABLE_BUILD_TESTING OR ECU_ENABLE_UNIT_TESTING)
+    # Adapted from this source: https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
+    set(DOXYGEN_INPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/inc/ecu)
+    set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen)
+    set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
+    set(DOXYGEN_TOP_LEVEL_DIR ${CMAKE_CURRENT_LIST_DIR}) # STRIP_FROM_PATH in Doxyfile.
+    set(DOXYGEN_WARNING_LOG_OUT ${CMAKE_CURRENT_LIST_DIR}/doc/build/doxygen_warning_log.txt)
+    set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in)
+    set(DOXYFILE_OUT ${CMAKE_CURRENT_LIST_DIR}/Doxyfile) # Put in top-level directory for readthedocs CI steps.
+    file(GLOB_RECURSE ECU_PUBLIC_HEADERS 
+        CONFIGURE_DEPENDS # Also run if file added or removed.
+            ${DOXYGEN_INPUT_DIR}/*.h
+    )
+    configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
+    # Only regenerate Doxygen when the Doxyfile or public headers change
+    add_custom_command(
+        OUTPUT ${DOXYGEN_INDEX_FILE}
+        DEPENDS ${ECU_PUBLIC_HEADERS}
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating doxygen documentation ${DOXYGEN_INDEX_FILE}..."
+        COMMAND doxygen ${DOXYFILE_OUT}
+        MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
+        VERBATIM
+    )
+
+    # Create phony target that always generates doxygen documentation.
+    add_custom_target(doxygen 
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating doxygen documentation ${DOXYGEN_INDEX_FILE}..."
+        COMMAND doxygen ${DOXYFILE_OUT}
+    )
+
+    set(SPHINX_INPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc)
+    set(SPHINX_OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc/build)
+    set(SPHINX_INDEX_FILE ${SPHINX_OUTPUT_DIR}/index.html)
+    file(GLOB_RECURSE ECU_SPHINX_FILES 
+        # Do not use CONFIGURE_DEPENDS since it makes the target rule slow (many files have to be searched).
+        ${SPHINX_INPUT_DIR}/*.rst
+        ${SPHINX_INPUT_DIR}/images/*.svg
+    )
+    
+    # Only regenerate Sphinx when:
+    # - Doxygen has rerun
+    # - Our doc files have been updated
+    # - The Sphinx config has been updated
+    add_custom_command(
+        OUTPUT ${SPHINX_INDEX_FILE}
+        DEPENDS ${DOXYGEN_INDEX_FILE} ${ECU_SPHINX_FILES}
+        MAIN_DEPENDENCY ${SPHINX_INPUT_DIR}/conf.py
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating sphinx documentation ${SPHINX_INDEX_FILE}..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_OUTPUT_DIR} # In case it does not already exist
+        COMMAND doxysphinx build ${SPHINX_INPUT_DIR} ${SPHINX_OUTPUT_DIR} ${DOXYGEN_OUTPUT_DIR}/html
+        COMMAND sphinx-build -b html ${SPHINX_INPUT_DIR} ${SPHINX_OUTPUT_DIR}
+        VERBATIM
+    )
+
+    add_custom_target(sphinx 
+        DEPENDS ${SPHINX_INDEX_FILE}
+    )
+endif()
 
 #------------------------------------------------------------#
 #---------------------- INTERNAL TESTS ----------------------#

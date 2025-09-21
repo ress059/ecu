@@ -5,11 +5,13 @@ build:
   apt_packages:
     - doxygen
     - graphviz
+    - cmake
   tools:
     python: "3.10"
   jobs:
     pre_build:
-      - doxygen
+      - cmake --preset linux-build-test
+      - cmake --build --preset linux-build-test --target doxygen
       - doxysphinx build doc/ $READTHEDOCS_OUTPUT/html Doxyfile
 
 sphinx:
