@@ -1011,7 +1011,7 @@ Member Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ecu_hsm_change_state()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 .. _hsm_ecu_hsm_change_state:
 
 Transitions the HSM into a new state. See
@@ -1037,7 +1037,7 @@ more details.
     }
 
 ecu_hsm_dispatch()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Relays event to the HSM where it is processed by
 the current state's handler function. The event is propagated 
 up the state hierarchy until it is handled. All state transitions
@@ -1070,7 +1070,7 @@ fully explains how the HSM runs.
     ecu_hsm_dispatch(&hsm, &stop_event);
 
 ecu_hsm_start()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""
 Starts the HSM by entering from :ecudoxygen:`ECU_HSM_TOP_STATE`
 to the target state supplied to :ref:`ecu_hsm_ctor() <hsm_ecu_hsm_ctor>`. 
 If the target is a composite state, initial handlers are ran to
