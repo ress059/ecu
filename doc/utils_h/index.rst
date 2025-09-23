@@ -118,7 +118,7 @@ with each step being fully explained below:
         struct user_node *me = (uint8_t *)next - X;
 
     The offset 'X' can be determined at compile-time using `offsetof() <https://en.cppreference.com/w/c/types/offsetof>`_.
-    offsetof() is mandated by the C standard since C99, so this is guaranteed to be 
+    offsetof() is mandated by the C standard since C89, so this is guaranteed to be 
     a portable solution. Substituting this value in for 'X' completes the first portion
     of the expression:
 

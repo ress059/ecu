@@ -16,56 +16,55 @@
 
 #if defined(ECU_DOXYGEN)
     /**
-     * @brief This attribute is assigned to a variable to tell the compiler that it
-     * may be unused.
-     * @details Variable(s) with this attribute will not produce unused warnings
-     * even if the unused warning flag is passed to the compiler.
-     *
-     * 1. Expands to this if compiling with GCC.
-     * @code{.c}
-     * #define ECU_ATTRIBUTE_UNUSED             __attribute__((unused))
-     * @endcode
-     *
-     * 2. If none of the previous options apply to your toolchain then you
-     * are using an unsupported compiler. Non-critical attribute so macro
-     * will expand to nothing in this case. Therefore any code using this macro
-     * will still compile.
-     * @code{.c}
-     * #define ECU_ATTRIBUTE_UNUSED
-     * @endcode
+     * @name Critical Attributes
+     * These attributes effect the functionality of the program. Critical attributes 
+     * not supported by the target compiler are NOT defined in order to create a 
+     * a compilation error (critical attributes used in the program create 
+     * unresolved symbols).
      */
-    #define ECU_ATTRIBUTE_UNUSED
-
+    /**@{*/
     /**
-     * @brief This attribute is assigned to enum, struct, or union types and
-     * tells the compiler to not produce any padding between members.
-     * @details
-     * 1. Expands to this if compiling with GCC.
-     * @code{.c}
-     * #define ECU_ATTRIBUTE_PACKED             __attribute__((packed))
-     * @endcode
-     *
-     * 2. If none of the previous options apply to your toolchain then you are
-     * using an unsupported compiler. Critical attribute so this macro will NOT be
-     * defined. Any code using this macro will produce a compilation error.
+     * @brief Critical attribute. If attached to a variable, informs compiler it should
+     * have the smallest possible alignment. If attached to a type definition, informs
+     * compiler the minimum required memory should be used to represent the type.
      */
     #define ECU_ATTRIBUTE_PACKED
-#else
-    #ifdef __GNUC__
-        /**
-         * @brief Compiling with GCC so expands to GCC unused attribute.
-         */
-        #define ECU_ATTRIBUTE_UNUSED __attribute__((unused))
 
-        /**
-         * @brief Compiling with GCC so expands to GCC packed attribute.
-         */
-        #define ECU_ATTRIBUTE_PACKED __attribute__((packed))
-    #else /* Unsupported compilers. Empty-define only non-critical attributes. */
-        /**
-         * @brief Using unsupported compiler so this macro expands to nothing
-         * since it is not critical to the code's functionality.
-         */
+    /**
+     * @brief Critical attribute. Places symbol in user-specified program section.
+     * 
+     * @param x_ Name of section. Must be string literal.
+     */
+    #define ECU_ATTRIBUTE_SECTION(x_)
+    /**@}*/
+
+    /**
+     * @name Non-critical Attributes
+     * These attributes do not effect the functionality of the program. Empty definitions
+     * are created for non-critical attributes that are not supported by the target
+     * compiler, which allows the program to still compile.
+     */
+    /**@{*/
+    /**
+     * @brief Non-critical attribute. Informs compiler that type, variable,
+     * or function may be unused so it does not emit an unused warning.
+     */
+    #define ECU_ATTRIBUTE_UNUSED
+    /**@}*/
+#else
+    #if defined(__GNUC__) && !defined(__STRICT_ANSI__) /* Compiling with GCC with extensions enabled (attributes are compiler extensions not supported in ISO C). */
+        #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95 || (__GNUC_MINOR__ == 95 && __GNUC_PATCHLEVEL__ > 2))) /* GCC >= v2.95.3. Oldest version in GCC docs. */
+            /// @brief Critical attribute. GCC __attribute__((packed)).
+            #define ECU_ATTRIBUTE_PACKED __attribute__((packed))
+
+            /// @brief Critical attribute. GCC __attribute__((section)).
+            #define ECU_ATTRIBUTE_SECTION(x_) __attribute__((section(x_)))
+
+            /// @brief Non-critical attribute. GCC __attribute__((unused)).    
+            #define ECU_ATTRIBUTE_UNUSED __attribute__((unused))
+        #endif
+    #else /* Unsupported compilers. Empty-define only for non-critical attributes. */
+        /// @brief Non-critical attribute. Empty definition since using unsupported compiler.   
         #define ECU_ATTRIBUTE_UNUSED
     #endif
 #endif /* ECU_DOXYGEN */
