@@ -14,59 +14,40 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Allows users to identify different types within the same data structure. 
-For example, linked list nodes can be assigned unique object IDs that 
-indicate the type of data they store.
+Allows users to identify different types stored in the same data structure
+without conflicting ID values.
 
 
-Defining Object IDs
+Theory
 =================================================
-IDs greater than or equal to :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` enumeration
-can be assigned to an object.
 
-Users can define their own IDs starting at :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` 
-enumeration. The recommended implementation is as follows:
+Object ID Overview
+-------------------------------------------------
+An object ID is a unique integer value that can be assigned to different
+data types. The scheme presented in this module prevents an object ID used 
+internally by ECU and a user's object ID from sharing the same value.
+This is accomplished by starting user-defined object ID's at :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN`:
 
 .. code-block:: c
 
-    #include "ecu/object_id.h"
-
-    /* User-defined object IDs. */
     enum user_object_ids
     {
-        TYPE1 = ECU_USER_OBJECT_ID_BEGIN,
-        TYPE2,
-        TYPE3
+        USER_OBJECT_ID_1 = ECU_USER_OBJECT_ID_BEGIN,
+        USER_OBJECT_ID_2,
+        USER_OBJECT_ID_3
     };
 
-This scheme ensures object ID values reserved by ECU never overlap
-with user-defined ID values. Some additional notes:
+:ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` is guaranteed to always be 0. IDs less 
+than :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` are reserved for internal use 
+by ECU library. Therefore reserved IDs are always negative. User-defined IDs
+are always >= 0.
 
-    - Object IDs reserved by ECU will always be negative.
-
-    + Reserved object IDs greater than or equal to :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` 
-      enumeration can be assigned to an object. **Currently** :ecudoxygen:`ECU_OBJECT_ID_UNUSED` 
-      **is the only reserved ID available for use.**
-      
-      .. note:: 
-
-        :ecudoxygen:`ECU_VALID_OBJECT_ID_BEGIN` enumeration should not be used 
-        in the application. ECU uses this value internally to know when a supplied 
-        object has a valid ID value.
-
-    - :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN` enumeration will **always be 0**, and marks the start 
-      of user-defined object IDs. Therefore user-defined object IDs will always be 
-      greater than or equal to :ecudoxygen:`ECU_USER_OBJECT_ID_BEGIN`.
-
-Object ID Example 
-=================================================
-The following pseudocode example shows a use case for the object ID module. 
-Nodes of different data types are added to a linked list. The object ID is 
-used to identify the type of each node.
+Example
+-------------------------------------------------
+The following example stores different node types in the same linked list
+(:ref:`dlist.h <dlist_h>`) and uses the object ID scheme to identify them:
 
 .. code-block:: c
-
-    #include "ecu/dlist.h"
 
     /* User-defined object IDs. */
     enum user_object_ids
@@ -102,8 +83,7 @@ used to identify the type of each node.
     struct type2 node2;
     struct type3 node3;
 
-    /* Construct list and nodes. Assign object IDs to each node to identify
-    their data types. */
+    /* Construct list and nodes. Assign object IDs to each node to identify their data types. */
     ecu_dlist_ctor(&list);
     ecu_dnode_ctor(&node1.node, ECU_DNODE_DESTROY_UNUSED, TYPE1);
     ecu_dnode_ctor(&node2.node, ECU_DNODE_DESTROY_UNUSED, TYPE2);
@@ -140,13 +120,18 @@ used to identify the type of each node.
                 me->d = 20;
                 break;
             }
+
+            default:
+            {
+                break;
+            }
         }
     }
-    
 
-API
+
+API 
 =================================================
-.. toctree:: 
+.. toctree::
     :maxdepth: 1
 
-    API </doxygen/html/object__id_8h>
+    object_id.h </doxygen/html/object__id_8h>

@@ -65,7 +65,7 @@ static bool node_is_valid_head(const struct ecu_dnode *node);
  * Therefore this callback just asserts. This callback is also used
  * to help identify the HEAD node in a list.
  */
-static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id);
+static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id_t id);
 
 /*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
@@ -90,7 +90,7 @@ static bool node_is_valid_head(const struct ecu_dnode *node)
     return status;
 }
 
-static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id id)
+static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id_t id)
 {
     (void)me;
     (void)id;
@@ -108,8 +108,8 @@ ECU_STATIC_ASSERT( (HEAD_ID != DESTROYED_HEAD_ID), "IDs must be different." );
 /*------------------------------------------------------------*/
 
 void ecu_dnode_ctor(struct ecu_dnode *me,
-                    void (*destroy)(struct ecu_dnode *me, ecu_object_id id),
-                    ecu_object_id id)
+                    void (*destroy)(struct ecu_dnode *me, ecu_object_id_t id),
+                    ecu_object_id_t id)
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (destroy != &HEAD_DESTROY_CALLBACK) );
@@ -131,8 +131,8 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     ECU_ASSERT( (ecu_dnode_valid(me)) );
 
     /* Save entries since they are reset before destroy callback executes. */
-    void (*destroy)(struct ecu_dnode *, ecu_object_id) = me->destroy;
-    ecu_object_id id = me->id;
+    void (*destroy)(struct ecu_dnode *, ecu_object_id_t) = me->destroy;
+    ecu_object_id_t id = me->id;
 
     /* Remove node from list. OK if node is not in list. */
     me->next->prev = me->prev;
@@ -154,7 +154,7 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     }
 }
 
-ecu_object_id ecu_dnode_id(const struct ecu_dnode *me)
+ecu_object_id_t ecu_dnode_id(const struct ecu_dnode *me)
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (ecu_dnode_valid(me)) );

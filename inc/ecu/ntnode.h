@@ -44,7 +44,7 @@
  * if a user-defined node destructor is not needed.
  */
 #define ECU_NTNODE_DESTROY_UNUSED \
-    ((void (*)(struct ecu_ntnode *, ecu_object_id))0)
+    ((void (*)(struct ecu_ntnode *, ecu_object_id_t))0)
 
 /**
  * @brief Retrieves user data from an intrusive @ref ecu_ntnode 
@@ -485,7 +485,7 @@ struct ecu_ntnode
     /// @brief Optional user-defined node destructor. Executes
     /// when @ref ecu_ntnode_destroy() is called or if this
     /// node was in a tree that was destroyed by @ref ecu_ntnode_destroy().
-    void (*destroy)(struct ecu_ntnode *me, ecu_object_id id);
+    void (*destroy)(struct ecu_ntnode *me, ecu_object_id_t id);
 };
 
 /*------------------------------------------------------------*/
@@ -805,8 +805,8 @@ extern "C" {
  * Otherwise this value must be greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
  */
 extern void ecu_ntnode_ctor(struct ecu_ntnode *me,
-                            void (*destroy)(struct ecu_ntnode *me, ecu_object_id id),
-                            ecu_object_id id);
+                            void (*destroy)(struct ecu_ntnode *me, ecu_object_id_t id),
+                            ecu_object_id_t id);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().
@@ -877,7 +877,7 @@ extern const struct ecu_ntnode *ecu_ntnode_first_cchild(const struct ecu_ntnode 
  * 
  * @param me Node to check.
  */
-extern ecu_object_id ecu_ntnode_id(const struct ecu_ntnode *me);
+extern ecu_object_id_t ecu_ntnode_id(const struct ecu_ntnode *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_ntnode_ctor().

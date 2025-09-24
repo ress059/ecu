@@ -238,7 +238,7 @@ the LED off so when the node is destroyed, the LED automatically turns off:
         uint32_t pin;
     };
 
-    static void turn_led_off(struct ecu_dnode *n, ecu_object_id id)
+    static void turn_led_off(struct ecu_dnode *n, ecu_object_id_t id)
     {
         /* Turn off LED when node is destroyed. */
         struct led *me = ECU_DNODE_GET_ENTRY(n, struct led, node);

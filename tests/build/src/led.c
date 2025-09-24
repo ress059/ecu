@@ -40,7 +40,7 @@ static bool led_is_constructed(const struct led *led);
  * @param led LED being destroyed.
  * @param id Unused.
  */
-static void led_cleanup(struct ecu_dnode *led, ecu_object_id id);
+static void led_cleanup(struct ecu_dnode *led, ecu_object_id_t id);
 
 /**
  * @brief Entry handler for LED_ON_STATE.
@@ -88,7 +88,7 @@ static bool led_is_constructed(const struct led *led)
     return (led->api.turn_on && led->api.turn_off);
 }
 
-static void led_cleanup(struct ecu_dnode *led, ecu_object_id id)
+static void led_cleanup(struct ecu_dnode *led, ecu_object_id_t id)
 {
     (void)id;
     ECU_ASSERT( (led) );

@@ -263,7 +263,7 @@ protected:
 
     /// @brief Constructor assigns supplied ID to node. Node's 
     /// destroy callback unused.
-    dnode(ecu_object_id id_)
+    dnode(ecu_object_id_t id_)
     {
         ecu_dnode_ctor(this, ECU_DNODE_DESTROY_UNUSED, id_);
     }
@@ -274,7 +274,7 @@ protected:
     /// to avoid having to explicitly upcast. Do not convert into 
     /// this C++ wrapper class (dnode *), as ecu_dnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    dnode(void (*destroy_)(ecu_dnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    dnode(void (*destroy_)(ecu_dnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
     {
         ecu_dnode_ctor(this, destroy_, id_);
     }
@@ -343,7 +343,7 @@ struct rw_dnode : public dnode
 
     /// @brief Constructor assigns supplied ID to node. Node's 
     /// destroy callback unused.
-    rw_dnode(ecu_object_id id_)
+    rw_dnode(ecu_object_id_t id_)
         : dnode(std::move(id_))
     {
 
@@ -355,7 +355,7 @@ struct rw_dnode : public dnode
     /// to avoid having to explicitly upcast. Do not convert into 
     /// the C++ base wrapper class (dnode *), as ecu_dnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    rw_dnode(void (*destroy_)(ecu_dnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    rw_dnode(void (*destroy_)(ecu_dnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
         : dnode(std::move(destroy_), std::move(id_))
     {
 
@@ -408,7 +408,7 @@ struct ro_dnode : public dnode
 
     /// @brief Constructor assigns supplied ID to node. Node's 
     /// destroy callback unused.
-    ro_dnode(ecu_object_id id_)
+    ro_dnode(ecu_object_id_t id_)
         : dnode(std::move(id_))
     {
 
@@ -420,7 +420,7 @@ struct ro_dnode : public dnode
     /// to avoid having to explicitly upcast. Do not convert into 
     /// the C++ base wrapper class (dnode *), as ecu_dnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    ro_dnode(void (*destroy_)(ecu_dnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    ro_dnode(void (*destroy_)(ecu_dnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
         : dnode(std::move(destroy_), std::move(id_))
     {
         
@@ -792,8 +792,8 @@ TEST_GROUP(DList)
     /// the object. Non-type template parmaeter is NOT used to allow
     /// EXPECT_NODES_IN_LIST(...) syntax....
     template<typename... IDs>
-    requires (std::convertible_to<IDs, ecu_object_id> && ...)
-    static void EXPECT_NODES_IN_LIST(ecu_object_id id0, IDs... idn)
+    requires (std::convertible_to<IDs, ecu_object_id_t> && ...)
+    static void EXPECT_NODES_IN_LIST(ecu_object_id_t id0, IDs... idn)
     {
         mock().strictOrder();
         mock().expectOneCall("node_in_list")
@@ -830,7 +830,7 @@ TEST_GROUP(DList)
 
     /// @brief Destroy callback assigned to some nodes under test.
     /// Executes when node is destroyed by C destroy functions under test.
-    static void node_destroy_actual_call(ecu_dnode *node, ecu_object_id id)
+    static void node_destroy_actual_call(ecu_dnode *node, ecu_object_id_t id)
     {
         (void)id;
         mock().actualCall("node_destroy")

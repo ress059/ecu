@@ -27,7 +27,7 @@
 
 /**
  * @brief Object IDs reserved for ECU library.
- * @details Scheme that allows the library and users to uniquely define
+ * This scheme allows the library and users to uniquely define
  * their own object IDs without conflicts. Object IDs reserved for ECU
  * library will always be negative. Object IDs the user defines will
  * start at 0 which is always @ref ECU_USER_OBJECT_ID_BEGIN.
@@ -52,9 +52,8 @@ enum ecu_reserved_object_ids
 };
 
 /**
- * @brief PRIVATE. Generic type that represents an object ID. 
- * @details Used so the library can implicitly typecast between this 
- * value, @ref ecu_reserved_object_ids enumerations, and user-defined 
+ * @brief Object ID type. Used so the library can implicitly typecast 
+ * between this value, @ref ecu_reserved_object_ids, and user-defined 
  * object ID enumerations.
  *
  * @warning This must be a signed integer type in order to
@@ -62,6 +61,6 @@ enum ecu_reserved_object_ids
  * compilation error will occur if this is declared as an unsigned
  * type.
  */
-typedef int32_t ecu_object_id;
+typedef int32_t ecu_object_id_t;
 
 #endif /* ECU_OBJECT_ID_H_ */
