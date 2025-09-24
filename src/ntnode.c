@@ -157,8 +157,8 @@ static const struct ecu_ntnode *get_cleaf(const struct ecu_ntnode *ntnode)
 /*------------------------------------------------------------*/
 
 void ecu_ntnode_ctor(struct ecu_ntnode *me, 
-                     void (*destroy)(struct ecu_ntnode *me, ecu_object_id id), 
-                     ecu_object_id id)
+                     void (*destroy)(struct ecu_ntnode *me, ecu_object_id_t id), 
+                     ecu_object_id_t id)
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (id >= ECU_VALID_OBJECT_ID_BEGIN) );
@@ -174,7 +174,7 @@ void ecu_ntnode_destroy(struct ecu_ntnode *me)
     ECU_ASSERT( (me) );
     ECU_ASSERT( (ecu_ntnode_valid(me)) );
     struct ecu_ntnode_postorder_iterator iter;
-    ecu_object_id id = ECU_OBJECT_ID_UNUSED;
+    ecu_object_id_t id = ECU_OBJECT_ID_UNUSED;
 
     /* Must be postorder so nodes can be safely destroyed in the middle of 
     an iteration. Force node to be reconstructed in order to be used again
@@ -257,7 +257,7 @@ const struct ecu_ntnode *ecu_ntnode_first_cchild(const struct ecu_ntnode *me)
     return ntfront;
 }
 
-ecu_object_id ecu_ntnode_id(const struct ecu_ntnode *me)
+ecu_object_id_t ecu_ntnode_id(const struct ecu_ntnode *me)
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (ecu_ntnode_valid(me)) );

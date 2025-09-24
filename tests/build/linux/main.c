@@ -106,11 +106,11 @@ static struct termios original_settings;
 static const struct led_event BUTTON_PRESS_EVENT = {LED_BUTTON_PRESS_EVENT};
 static struct ecu_tlist timers;
 static struct ecu_timer timer_1s;
-static ecu_object_id timer_1s_id = ONE_SECOND_TIMER;
+static ecu_object_id_t timer_1s_id = ONE_SECOND_TIMER;
 static struct ecu_timer timer_5s;
-static ecu_object_id timer_5s_id = FIVE_SECOND_TIMER;
+static ecu_object_id_t timer_5s_id = FIVE_SECOND_TIMER;
 static struct ecu_timer timer_10s;
-static ecu_object_id timer_10s_id = TEN_SECOND_TIMER;
+static ecu_object_id_t timer_10s_id = TEN_SECOND_TIMER;
 static struct led_strip led_strip1;
 static struct led_strip led_strip2;
 static struct led led1;
@@ -162,7 +162,7 @@ static bool timer_expired(struct ecu_timer *timer, void *obj)
 {
     (void)timer;
     ECU_ASSERT( (obj) );
-    ecu_object_id id = *((ecu_object_id *)obj);
+    ecu_object_id_t id = *((ecu_object_id_t *)obj);
 
     switch (id)
     {
