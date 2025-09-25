@@ -14,228 +14,123 @@ Overview
     The term :term:`ECU` in this document refers to Embedded C Utilities, 
     the shorthand name for this project.
 
-Lets users define their own events with custom data. These events 
-can then be dispatched to ECU library functions.
+Framework that can optionally be used to create and dispatch user-defined events to
+ECU library functions (i.e. state machines in :ref:`fsm.h <fsm_h>` and :ref:`hsm.h <hsm_h>`).
 
 
-Creating An Event 
+Theory
 =================================================
-Follow these general steps to create an event:
 
-    #. Define your event IDs. See :ref:`Defining Event IDs <defining_event_ids>` section. 
+Event Representation
+-------------------------------------------------
+.. _event_event_representation:
 
-    #. Create a custom event struct by inheriting :ecudoxygen:`ecu_event` base class
-       and declaring additional data members. See :ref:`Adding Custom Event Data <adding_custom_event_data>`
-       and :ref:`Event Inheritance Explained <event_inheritance_explained>` sections.
+Events created with this framework are represented by a common :ecudoxygen:`ecu_event`
+base class:
 
-    #. Use :ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>` macro to pass your 
-       custom event to ECU library functions. See :ref:`Adding Custom Event Data <adding_custom_event_data>`
-       and :ref:`Event Inheritance Explained <event_inheritance_explained>` sections.
+.. figure:: /images/event/event_representation_class_diagram.svg
+    :width: 300
+    :align: center
 
+    Event Class Diagram
 
-.. _defining_event_ids:
-
-Defining Event IDs 
-"""""""""""""""""""""""""""""""""""""""""""""""""
-Every event must be assigned a unique integer ID that is greater than 
-or equal to :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` enumeration. 
-
-Users can define their own IDs starting at :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` enumeration. 
-The recommended implementation is as follows:
+Users create their own events by inheriting :ecudoxygen:`ecu_event` via C-style inheritance.
+This is accomplished by declaring :ecudoxygen:`ecu_event` as the first member:
 
 .. code-block:: c
 
-    #include "ecu/event.h"
-
-    /* User-defined event IDs. */
     enum user_event_ids
     {
-        BUTTON_PRESS_EVENT = ECU_USER_EVENT_ID_BEGIN,
-        TIMEOUT_EVENT,
-        ERROR_EVENT
-    };
+        USER_EVENT_ID_0 = ECU_USER_EVENT_ID_BEGIN,
+        USER_EVENT_ID_1,
+    }
 
-This scheme ensures event ID values reserved by ECU never overlap
-with user-defined ID values. Some additional notes:
-
-    - Event IDs reserved by ECU will always be negative.
-
-    + Reserved event IDs greater than or equal to :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` 
-      enumeration can be assigned to an event. **Currently there are no reserved 
-      IDs that can be used by the application, so this is a placeholder for now.**
-      
-      .. note:: 
-
-        :ecudoxygen:`ECU_VALID_EVENT_ID_BEGIN` enumeration should not be used 
-        in the application. ECU uses this value internally to know when a supplied 
-        event has a valid ID value.
-      
-    - :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` enumeration will **always be 0**, and marks the start 
-      of user-defined event IDs. Therefore user-defined event IDs will always be 
-      greater than or equal to :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN`.
-
-
-.. _adding_custom_event_data:
-
-Adding Custom Event Data 
-"""""""""""""""""""""""""""""""""""""""""""""""""
-All ECU functions take in a pointer to :ecudoxygen:`ecu_event` base class, 
-allowing you to dispatch any event that inherits :ecudoxygen:`ecu_event`.
-For example, this is a function prototype in the ECU finite state machine 
-module:
-
-.. code-block:: c 
-
-    /* Takes in a base event class pointer. */
-    extern void ecu_fsm_dispatch(struct ecu_fsm *me, const struct ecu_event *event);
-
-Custom data is added to an event by using C-style inheritance. **The user's 
-event must inherit** :ecudoxygen:`ecu_event` **base class by declaring it as 
-its first member.** :ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>`
-macro must then be used to pass the custom event to ECU library functions:
-
-.. code-block:: c 
-
-    #include "ecu/event.h"
-    #include "ecu/fsm.h"
-
-    /* User-defined event IDs. */
-    enum user_event_ids
+    struct user_event0
     {
-        BUTTON_PRESS_EVENT = ECU_USER_EVENT_ID_BEGIN,
-        TIMEOUT_EVENT,
-        ERROR_EVENT
+        struct ecu_event base; /* Inherit by declaring ecu_event as first member. */
+        int data;
     };
 
-    /* User-defined event with custom data. */
-    struct button_press_event
+    struct user_event1
     {
-        /* Inherit ecu_event base class by declaring it as
-        first member. MANDATORY. */
-        struct ecu_event base;
-
-        /* Custom data in your event. Derived class members. */
-        uint8_t gpio_port;
-        uint8_t gpio_pin;
+        struct ecu_event base; /* Inherit by declaring ecu_event as first member. */
+        char data;
+        int data2;
     };
 
-    /* User-defined event with custom data. */
-    struct timeout_event 
-    {
-        /* Inherit ecu_event base class by declaring it as
-        first member. MANDATORY. */
-        struct ecu_event base;
-
-        /* Custom data in your event. Derived class members. */
-        uint16_t timeout_ms;
-    };
-
-    /* Create a const button press event. */
-    const struct button_press_event be = 
-    {
-        .base.id = BUTTON_PRESS_EVENT,
-        .gpio_port = 1,
-        .gpio_pin = 24
-    };
-
-    /* Create a non-const timeout event. */
-    struct timeout_event te =
-    {
-        .base.id = TIMEOUT_EVENT,
-        .timeout_ms = 100
-    };
-
-    /* Dispatch custom events to ECU library functions. */
-    ecu_fsm_dispatch(&fsm, ECU_EVENT_BASE_CAST(&be));
-    ecu_fsm_dispatch(&fsm, ECU_EVENT_BASE_CAST(&te));
-
-If your event has no additional data, the :ecudoxygen:`ecu_event` base class 
-can just be used directly:
+**To create an instance of a derived event, the ecu_event base class constructor must also be called.**
+This can be done at compile-time via :ecudoxygen:`ECU_EVENT_CTOR() <ECU_EVENT_CTOR>`:
 
 .. code-block:: c
 
-    #include "ecu/event.h"
-
-    const struct ecu_event error_event =
+    static const struct user_event0 event = 
     {
-        .id = ERROR_EVENT
+        .base = ECU_EVENT_CTOR(USER_EVENT_ID_0, ECU_EVENT_SIZE_UNUSED),
+        .data = 10
     };
 
-    /* ECU_EVENT_BASE_CAST() macro is optional in this case since we 
-    are using ecu_event base class directly. */
-    ecu_fsm_dispatch(&fsm, ECU_EVENT_BASE_CAST(&error_event));
-
-
-.. _event_inheritance_explained:
-
-Event Inheritance Explained
-"""""""""""""""""""""""""""""""""""""""""""""""""
-:ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>` upcasts your derived
-event class pointer back to an :ecudoxygen:`ecu_event` base class pointer. 
-**This operation is always safe as long as** :ecudoxygen:`ecu_event` **base class 
-is the first member, which is how C-style inheritance works.** 
-
-The C standard specifies that the first member of a struct and the struct 
-itself always start at the same memory address. Padding of the first member 
-never occurs, allowing the casts to always be safe.
-
-.. code-block:: c 
-
-    /* The figure below refers to this pseudocode sample, 
-    which shows how to properly inherit ecu_event base class. */
-    struct button_press_event 
-    {
-        /* Inherit ecu_event base class by declaring it as
-        first member. MANDATORY. */
-        struct ecu_event base;
-
-        /* Custom data in your event. Derived class members. */
-        uint8_t gpio_port;
-        uint8_t gpio_pin;
-    };
-
-    struct button_event be;
-    ECU_EVENT_BASE_CAST(&be); /* Valid cast. */
-
-.. figure:: /images/event/event_valid_cast.svg
-  :width: 500
-  :align: center
-  
-  Safe Cast
-
-.. code-block:: c 
-
-    /* The figure below refers to this pseudocode sample, 
-    which shows an incorrect implementation. */
-    struct button_press_event 
-    {
-        uint8_t gpio_port;
-
-        /* Incorrect. This must be the first member to 
-        correctly inherit ecu_event base class. */
-        struct ecu_event base;
-        uint8_t gpio_pin;
-    };
-
-    struct button_event be;
-    ECU_EVENT_BASE_CAST(&be); /* Invalid cast. */
-
-.. figure:: /images/event/event_invalid_cast.svg
-  :width: 500
-  :align: center
-  
-  Unsafe Cast
-
-Event inheritance can be verified at compile-time by using the 
-:ecudoxygen:`ECU_EVENT_IS_BASE_OF() <ECU_EVENT_IS_BASE_OF>` macro.
-This returns true if a custom event properly inherits :ecudoxygen:`ecu_event`
-base class. Otherwise it returns false:
+Or at run-time via :ecudoxygen:`ecu_event_ctor() <ecu_event_ctor>`:
 
 .. code-block:: c
 
-    #include "ecu/event.h"
+    void user_event0_ctor(struct user_event0 *event)
+    {
+        ecu_event_ctor(ECU_EVENT_BASE_CAST(event), USER_EVENT_ID_0, ECU_EVENT_SIZE_UNUSED);
+        me->data = 10;
+    }
 
-    struct valid_event 
+Notice in the snippet above that :ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>`
+is used to pass the derived event into the :ecudoxygen:`ecu_event` base class constructor.
+:ecudoxygen:`ECU_EVENT_BASE_CAST() <ECU_EVENT_BASE_CAST>` and :ecudoxygen:`ECU_EVENT_CONST_BASE_CAST() <ECU_EVENT_CONST_BASE_CAST>`
+should be used to supply derived events into the :ecudoxygen:`ecu_event` base class API.
+These macros simply upcast back into the :ecudoxygen:`ecu_event` base class to create
+a scheme that is **functionally** equivalent to C++ inheritance:
+
+.. code-block:: c
+
+    ECU_EVENT_BASE_CAST(event) /* ((struct ecu_event *)(event)) */
+    ECU_EVENT_CONST_BASE_CAST(event) /* ((const struct ecu_event *)(event)) */
+
+These casts are always safe **in C** as long as :ecudoxygen:`ecu_event` is the first member 
+because the C standard mandates there is no padding before the first struct member:
+
+.. figure:: /images/event/event_representation_valid_upcast.svg
+    :width: 700
+    :align: center
+
+    Valid Upcast
+
+.. warning::
+
+    This behavior is **not** mandated in C++. Class memory layout is implementation-defined
+    and there is no guarantee (struct ecu_event \*)&event == &event.base like in the example 
+    above. Compilers often put virtual tables as the first class member, making these expressions
+    **not** equal.
+
+The figure above shows why :ecudoxygen:`ecu_event` must be the first member. Incorrect
+inheritance causes misinterpretation of the event type, making the above casts unsafe. 
+In this example, int data would be interpreted as a struct ecu_event type:
+
+.. code-block:: c
+
+    struct invalid_event
+    {
+        int data;
+        struct ecu_event base;
+    };
+
+.. figure:: /images/event/event_representation_invalid_upcast.svg
+    :width: 700
+    :align: center
+
+    Invalid Upcast
+
+Valid inheritance can be asserted at compile-time via the 
+:ecudoxygen:`ECU_EVENT_IS_BASE_OF() <ECU_EVENT_IS_BASE_OF>` macro:
+
+.. code-block:: c
+
+    struct valid_event
     {
         struct ecu_event base;
         int data;
@@ -247,45 +142,200 @@ base class. Otherwise it returns false:
         struct ecu_event base;
     };
 
-    /* Passes since (struct valid_event) properly inherits (struct ecu_event) 
-    by declaring it as its first member. */
-    ECU_STATIC_ASSERT( (ECU_EVENT_IS_BASE_OF(base, struct valid_event) ), 
-                        "Event must inherit ecu_event base class.");
+    /* Passes. */
+    ECU_STATIC_ASSERT( (ECU_EVENT_IS_BASE_OF(base, struct valid_event)), "Event must inherit ecu_event." );
 
-    /* Compilation error since (struct invalid_event) does not properly 
-    inherit (struct ecu_event). ecu_event is not declared as the first member. */
-    ECU_STATIC_ASSERT( (ECU_EVENT_IS_BASE_OF(base, struct valid_event) ), 
-                        "Event must inherit ecu_event base class.");
+    /* Fails. Compilation error. */
+    ECU_STATIC_ASSERT( (ECU_EVENT_IS_BASE_OF(base, struct invalid_event)), "Event must inherit ecu_event." );
 
-Verification would look like this if you have a multi-level inheritance tree:
+Event ID
+-------------------------------------------------
+.. _event_event_id:
+
+The derived event type can be determined from the :ecudoxygen:`ecu_event` base class
+using an event ID. It is simply a unique integer value assigned to each event type.
+
+The scheme presented in this module prevents an event ID used 
+internally by ECU and a user's event ID from sharing the same value.
+This is accomplished by starting user-defined event ID's at :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN`:
 
 .. code-block:: c
 
-    #include "ecu/event.h"
-
-    struct derived 
+    enum user_event_ids
     {
-        struct ecu_event base1;
-        int data1;
+        USER_EVENT_ID_0 = ECU_USER_EVENT_ID_BEGIN,
+        USER_EVENT_ID_1,
+    }
+
+:ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` is guaranteed to always be 0. IDs less 
+than :ecudoxygen:`ECU_USER_EVENT_ID_BEGIN` are reserved for internal use 
+by ECU library. Therefore reserved IDs are always negative. User-defined IDs
+are always >= 0.
+
+Event Size
+-------------------------------------------------
+.. _event_event_size:
+
+The event's size can optionally be specified in the constructor and returned
+via :ecudoxygen:`ecu_event_size() <ecu_event_size>`:
+
+.. code-block:: c
+
+    struct user_event0
+    {
+        struct ecu_event base;
+        int data;
     };
 
-    struct derived_derived
+    struct user_event1
     {
-        struct derived base2;
+        struct ecu_event base;
+        char data;
         int data2;
     };
 
-    /* ECU_EVENT_IS_BASE_OF(base2.base1, struct derived_derived) must be used
-    instead of ECU_EVENT_IS_BASE_OF(base2, struct derived_derived). Otherwise
-    this macro would not be able to detect if base1 is the first member of 
-    (struct derived). */
-    ECU_STATIC_ASSERT( (ECU_EVENT_IS_BASE_OF(base2.base1, struct derived_derived) ), 
-                        "Event must inherit ecu_event base class.");
+    struct user_event0 event0;
+    ecu_event_ctor(&event0, ID, sizeof(event0));
+    ecu_event_size(&event); /* Returns sizeof(event0). */
+
+    static const struct user_event1 event1 = 
+    {
+        .base = ECU_EVENT_CTOR(ID, sizeof(struct user_event1)),
+        // ... other data
+    };
+    ecu_event_size(&event1); /* Returns sizeof(struct user_event1). */
+
+This value should be the number of bytes of the **derived event**
+and is meant to facilitate easier event handling (i.e. reading and 
+writing different event types to the same queue). :ecudoxygen:`ECU_EVENT_SIZE_UNUSED`
+can be supplied to the constructor if this parameter is unused.
+
+Example
+-------------------------------------------------
+.. _event_example:
+
+The following example uses this framework to process multiple event types
+dispatched to a pseudocode state machine created using :ref:`ECU's finite state machine framework <fsm_h>`:
+
+.. code-block:: c
+
+    enum user_event_ids
+    {
+        USER_EVENT_ID_0 = ECU_USER_EVENT_ID_BEGIN,
+        USER_EVENT_ID_1,
+    }
+
+    struct user_event0
+    {
+        struct ecu_event base;
+        int data;
+    };
+
+    struct user_event1
+    {
+        struct ecu_event base;
+        char data;
+        int data2;
+    };
+
+    void state_handler(struct ecu_fsm *fsm, const void *event)
+    {
+        const struct ecu_event *base_event = event;
+
+        switch (ecu_event_id(base_event))
+        {
+            case USER_EVENT_ID_0:
+            {
+                const struct user_event0 *derived_event = (const struct user_event0 *)base_event;
+                process_integer_data(derived_event->data); 
+                break;
+            }
+
+            case USER_EVENT_ID_1:
+            {
+                const struct user_event1 *derived_event = (const struct user_event1 *)base_event;
+                process_char_data(derived_event->data);
+                process_integer_data(derived_event->data2); 
+                break;
+            }
+
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    int main()
+    {
+        struct user_event0 event0 = 
+        {
+            .base = ECU_EVENT_CTOR(USER_EVENT_ID_0, ECU_EVENT_SIZE_UNUSED),
+            .data = 0
+        };
+
+        struct user_event1 event1 =
+        {
+            .base = ECU_EVENT_CTOR(USER_EVENT_ID_1, ECU_EVENT_SIZE_UNUSED),
+            .data = 0,
+            .data2 = 0
+        };
+
+        ecu_fsm_dispatch(fsm, &event0); /* state_handler(fsm, &event0); */
+        ecu_fsm_dispatch(fsm, &event1); /* state_handler(fsm, &event1); */
+
+        return 0;
+    }
 
 
-API
+API 
 =================================================
-.. toctree:: 
+.. toctree::
     :maxdepth: 1
 
-    API </doxygen/html/event_8h>
+    event.h </doxygen/html/event_8h>
+
+Macros
+-------------------------------------------------
+
+ECU_EVENT_BASE_CAST()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _event_ecu_event_base_cast:
+
+Upcasts derived event back into the :ecudoxygen:`ecu_event` base class. 
+Fully explained in :ref:`Event Representation Section <event_event_representation>`.
+
+ECU_EVENT_CONST_BASE_CAST()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Same as :ref:`ECU_EVENT_BASE_CAST() <event_ecu_event_base_cast>` but performs
+a const-qualified upcast. Fully explained in :ref:`Event Representation Section <event_event_representation>`.
+
+ECU_EVENT_CTOR()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Constructs an :ecudoxygen:`ecu_event` at compile-time.
+Fully explained in :ref:`Event Representation Section <event_event_representation>`.
+
+ecu_event
+-------------------------------------------------
+
+Constructor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ecu_event_ctor()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+Constructs an :ecudoxygen:`ecu_event` at run-time.
+Fully explained in :ref:`Event Representation Section <event_event_representation>`.
+
+Member Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ecu_event_id()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+Returns the event's ID that was assigned in its constructor. See
+:ref:`Event ID<event_event_id>` and :ref:`Example <event_example>` sections
+for more details.
+
+ecu_event_size()
+"""""""""""""""""""""""""""""""""""""""""""""""""
+Returns the size (number of bytes) of the derived event.
+Fully explained in :ref:`Event Size Section <event_event_size>`.

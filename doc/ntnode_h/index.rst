@@ -173,7 +173,7 @@ uninitializing the :ecudoxygen:`ecu_ntnode` member. For example:
         struct ecu_ntnode node;
     };
 
-    static void custom_destroy(struct ecu_ntnode *me, ecu_object_id id)
+    static void custom_destroy(struct ecu_ntnode *me, ecu_object_id_t id)
     {
         printf("Additional cleanup");
         struct user_node *data = ECU_NTNODE_GET_ENTRY(me, struct user_node, node);

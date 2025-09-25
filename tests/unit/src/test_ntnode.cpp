@@ -515,7 +515,7 @@ protected:
 
     /// @brief Constructor assigns supplied ID to node. Node's 
     /// destroy callback unused.
-    ntnode(ecu_object_id id_)
+    ntnode(ecu_object_id_t id_)
     {
         ecu_ntnode_ctor(this, ECU_NTNODE_DESTROY_UNUSED, id_);
     }
@@ -526,7 +526,7 @@ protected:
     /// to avoid having to explicitly upcast. Do not convert into 
     /// this C++ wrapper class (ntnode *), as ecu_ntnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
     {
         ecu_ntnode_ctor(this, destroy_, id_);
     }
@@ -555,7 +555,7 @@ public:
 
     /// @brief Default destroy callback used. Calls mock when
     /// node is destroyed.
-    static void destroy(struct ecu_ntnode *me, ecu_object_id id)
+    static void destroy(struct ecu_ntnode *me, ecu_object_id_t id)
     {
         assert( (me) );
         (void)id;
@@ -579,7 +579,7 @@ struct rw_ntnode : public ntnode
 
     /// @brief Constructor assigns supplied ID to node. Default 
     /// destroy callback that calls mock is used.
-    rw_ntnode(ecu_object_id id_)
+    rw_ntnode(ecu_object_id_t id_)
         : ntnode(&destroy, std::move(id_))
     {
 
@@ -591,7 +591,7 @@ struct rw_ntnode : public ntnode
     /// to avoid having to explicitly upcast. Do not convert into 
     /// the C++ base wrapper class (ntnode *), as ecu_ntnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    rw_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    rw_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
         : ntnode(std::move(destroy_), std::move(id_))
     {
 
@@ -625,7 +625,7 @@ struct ro_ntnode : public ntnode
 
     /// @brief Constructor assigns supplied ID to node. Default 
     /// destroy callback that calls mock is used.
-    ro_ntnode(ecu_object_id id_)
+    ro_ntnode(ecu_object_id_t id_)
         : ntnode(&destroy, std::move(id_))
     {
 
@@ -637,7 +637,7 @@ struct ro_ntnode : public ntnode
     /// to avoid having to explicitly upcast. Do not convert into 
     /// the C++ base wrapper class (ntnode *), as ecu_ntnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    ro_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    ro_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
         : ntnode(std::move(destroy_), std::move(id_))
     {
         
@@ -672,7 +672,7 @@ struct destroy_ntnode : public ntnode
 
     /// @brief Constructor assigns supplied ID to node. Default 
     /// destroy callback that calls mock is used.
-    destroy_ntnode(ecu_object_id id_)
+    destroy_ntnode(ecu_object_id_t id_)
         : ntnode(&destroy, std::move(id_))
     {
 
@@ -684,7 +684,7 @@ struct destroy_ntnode : public ntnode
     /// to avoid having to explicitly upcast. Do not convert into 
     /// the C++ base wrapper class (ntnode *), as ecu_ntnode_destroy() will
     /// have already been called on the node, thus invalidating it.
-    destroy_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id), ecu_object_id id_ = ECU_OBJECT_ID_UNUSED)
+    destroy_ntnode(void (*destroy_)(ecu_ntnode *, ecu_object_id_t), ecu_object_id_t id_ = ECU_OBJECT_ID_UNUSED)
         : ntnode(std::move(destroy_), std::move(id_))
     {
         
@@ -1055,7 +1055,7 @@ TEST_GROUP(NtNode)
 
     /// @brief Used to verify using ntnode API within destroy
     /// callback is prohibited.
-    static void use_api_in_destroy_callback(ecu_ntnode *me, ecu_object_id id)
+    static void use_api_in_destroy_callback(ecu_ntnode *me, ecu_object_id_t id)
     {
         assert( (me) );
         (void)id;

@@ -143,7 +143,7 @@ TEST(Asserter, Event)
         mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
 
         /* Steps 2 and 3: Action and assert. */
-        ecu_event_ctor(nullptr, 0);
+        ecu_event_ctor(nullptr, 0, 0);
     }
     catch (const AssertException& e)
     {

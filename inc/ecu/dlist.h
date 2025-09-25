@@ -45,7 +45,7 @@
  * a user-defined node destructor is not needed.
  */
 #define ECU_DNODE_DESTROY_UNUSED \
-    ((void (*)(struct ecu_dnode *, ecu_object_id))0)
+    ((void (*)(struct ecu_dnode *, ecu_object_id_t))0)
 
 /**
  * @brief Retrieves user data from an intrusive @ref ecu_dnode 
@@ -169,11 +169,11 @@ struct ecu_dnode
     /// @brief Optional user-defined node destructor. Executes
     /// when @ref ecu_dlist_destroy() or @ref ecu_dnode_destroy()
     /// are called.
-    void (*destroy)(struct ecu_dnode *me, ecu_object_id id);
+    void (*destroy)(struct ecu_dnode *me, ecu_object_id_t id);
 
     /// @brief Optional node ID. Helps user identify
     /// different types stored in the same list.
-    ecu_object_id id;
+    ecu_object_id_t id;
 };
 
 /**
@@ -267,8 +267,8 @@ extern "C" {
  * value must be greater than or equal to @ref ECU_VALID_OBJECT_ID_BEGIN
  */
 extern void ecu_dnode_ctor(struct ecu_dnode *me,
-                           void (*destroy)(struct ecu_dnode *me, ecu_object_id id),
-                           ecu_object_id id);
+                           void (*destroy)(struct ecu_dnode *me, ecu_object_id_t id),
+                           ecu_object_id_t id);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
@@ -298,7 +298,7 @@ extern void ecu_dnode_destroy(struct ecu_dnode *me);
  *
  * @param me Node to check. This cannot be HEAD (@ref ecu_dlist.head).
  */
-extern ecu_object_id ecu_dnode_id(const struct ecu_dnode *me);
+extern ecu_object_id_t ecu_dnode_id(const struct ecu_dnode *me);
 
 /**
  * @pre @p me previously constructed via call to @ref ecu_dnode_ctor().
