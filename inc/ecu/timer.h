@@ -76,6 +76,9 @@ enum ecu_timer_type
  */
 struct ecu_timer
 {
+    /// @brief Linked list node in @ref ecu_tlist.
+    struct ecu_dnode dnode;
+
     /// @brief Absolute time, in ticks, when this timer expires.
     ecu_tick_t expiration;
 
@@ -95,9 +98,6 @@ struct ecu_timer
 
     /// @brief Optional object to pass to @ref ecu_timer.callback.
     void *obj;
-
-    /// @brief Linked list node in @ref ecu_tlist.
-    struct ecu_dnode dnode;
 };
 
 /**
@@ -117,7 +117,7 @@ struct ecu_tlist
 
     /// @brief True if @ref ecu_tlist.current overflowed. Flag set back
     /// to false once overflow handled. Otherwise always false.
-    volatile bool overflowed;
+    bool overflowed;
 
     /// @brief Ordered linked list of timers that are running. Ordered 
     /// by @ref ecu_timer.expiration.
@@ -170,6 +170,22 @@ extern void ecu_timer_ctor(struct ecu_timer *me,
 /**@{*/
 /**
  * @pre @p me previously constructed via @ref ecu_timer_ctor().
+ * @brief Returns true if timer is currently running. False otherwise.
+ *
+ * @param me Timer to check.
+ */
+extern bool ecu_timer_active(const struct ecu_timer *me);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_timer_ctor().
+ * @brief Stops the timer.
+ *
+ * @param me Timer to stop.
+ */
+extern void ecu_timer_disarm(struct ecu_timer *me);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_timer_ctor().
  * @brief Stops the timer if it was running and reconfigures 
  * it with the newly supplied values. Timer is not restarted.
  * 
@@ -185,22 +201,6 @@ extern void ecu_timer_ctor(struct ecu_timer *me,
 extern void ecu_timer_set(struct ecu_timer *me,
                           ecu_tick_t period,
                           enum ecu_timer_type type);
-
-/**
- * @pre @p me previously constructed via @ref ecu_timer_ctor().
- * @brief Stops the timer.
- *
- * @param me Timer to stop.
- */
-extern void ecu_timer_disarm(struct ecu_timer *me);
-
-/**
- * @pre @p me previously constructed via @ref ecu_timer_ctor().
- * @brief Returns true if timer is currently running. False otherwise.
- *
- * @param me Timer to check.
- */
-extern bool ecu_timer_is_active(const struct ecu_timer *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -231,6 +231,28 @@ extern void ecu_tlist_ctor(struct ecu_tlist *me);
  * @name Tlist Member Functions
  */
 /**@{*/
+/**
+ * @pre @p me previously constructed via @ref ecu_tlist_ctor().
+ * @brief Services all timers added to the "engine", @p me.
+ * If any timers expire, its corresponding @ref ecu_timer.callback
+ * is called. This operation is O(N) where N = the number of expired 
+ * timers, NOT the total number of timers in @p me.
+ * 
+ * @warning It is the application's responsibility to ensure exclusive
+ * access to all @ref ecu_tlist and @ref ecu_timer objects if this
+ * function is called within an ISR.
+ * @warning This must be called periodically, at least once every
+ * ECU_TICK_MAX ticks. The accuracy of the timers is proportional to
+ * how often this function is called.
+ * @warning @p elapsed is measured in hardware timer ticks, not time.
+ * 
+ * @param me "Engine" to service.
+ * @param elapsed Number of ticks that elapsed since the last time
+ * this function was called. This module keeps track of time solely
+ * based off of this parameter.
+ */
+extern void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed);
+
 /**
  * @pre @p me previously constructed via @ref ecu_tlist_ctor().
  * @pre @p timer previously constructed via @ref ecu_timer_ctor().
@@ -265,28 +287,6 @@ extern void ecu_tlist_timer_arm(struct ecu_tlist *me,
  * to @ref ecu_tlist_service(@p me)
  */
 extern void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer);
-
-/**
- * @pre @p me previously constructed via @ref ecu_tlist_ctor().
- * @brief Services all timers added to the "engine", @p me.
- * If any timers expire, its corresponding @ref ecu_timer.callback
- * is called. This operation is O(N) where N = the number of expired 
- * timers, NOT the total number of timers in @p me.
- * 
- * @warning It is the application's responsibility to ensure exclusive
- * access to all @ref ecu_tlist and @ref ecu_timer objects if this
- * function is called within an ISR.
- * @warning This must be called periodically, at least once every
- * ECU_TICK_MAX ticks. The accuracy of the timers is proportional to
- * how often this function is called.
- * @warning @p elapsed is measured in hardware timer ticks, not time.
- * 
- * @param me "Engine" to service.
- * @param elapsed Number of ticks that elapsed since the last time
- * this function was called. This module keeps track of time solely
- * based off of this parameter.
- */
-extern void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed);
 /**@}*/
 
 #ifdef __cplusplus

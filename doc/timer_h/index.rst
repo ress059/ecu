@@ -670,7 +670,7 @@ Stops the timer. This can be called on a timer that has already been stopped:
   ecu_timer_disarm()
 
 
-ecu_timer_is_active()
+ecu_timer_active()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Returns true if the timer is running. False otherwise.
 
@@ -684,8 +684,8 @@ Returns true if the timer is running. False otherwise.
     ecu_timer_ctor(&t2, &t2_callback, ECU_TIMER_OBJ_UNUSED);
 
     ecu_tlist_timer_arm(&tlist, &t1, 10, ECU_TIMER_TYPE_ONE_SHOT);
-    ecu_timer_is_active(&t1); /* Returns true. */
-    ecu_timer_is_active(&t2); /* Returns false. */
+    ecu_timer_active(&t1); /* Returns true. */
+    ecu_timer_active(&t2); /* Returns false. */
 
 
 ecu_tlist 
