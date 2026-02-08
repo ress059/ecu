@@ -18,7 +18,9 @@ jobs:
         cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
         cmake --build --clean-first --preset ${{matrix.preset}} --target ecu
     - name: Documentation
-      run: cmake --build --preset linux --target sphinx
+      run: |
+        sudo apt install -y doxygen graphviz
+        cmake --build --preset linux --target sphinx
     - name: Unit test
       run: |
         cmake --build --preset linux --target unit_test_exe
