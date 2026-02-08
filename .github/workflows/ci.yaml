@@ -30,6 +30,7 @@ jobs:
     - name: Generate documentation
       run: |
         sudo apt install -y doxygen graphviz
+        cmake --preset linux
         cmake --build --preset linux --target sphinx
 
   unit_test:
@@ -42,6 +43,7 @@ jobs:
       run: pip install -r requirements.txt --break-system-packages
     - name: Run tests
       run: |
+        cmake --preset linux
         cmake --build --preset linux --target unit_test_exe
         ctest --preset unit_test
     - name: Generate code coverage report
