@@ -72,7 +72,7 @@ static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
  * is used. The comparison is done against this variable instead of an integer
  * constant to suppress the warning.
  */
-static const int ZERO = 0;
+static const int32_t ZERO = 0;
 #endif
 
 /*------------------------------------------------------------*/
@@ -184,7 +184,7 @@ void ecu_timer_set(struct ecu_timer *me,
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (period > 0) );
-    ECU_ASSERT( (type >= ZERO && type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( ((int32_t)type >= ZERO && type < ECU_TIMER_TYPES_COUNT) );
 
     ecu_timer_disarm(me);
     me->period = period;
@@ -321,7 +321,7 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 {
     ECU_ASSERT( (me && timer) );
     ECU_ASSERT( (timer->period > 0) );
-    ECU_ASSERT( (timer->type >= ZERO && timer->type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( ((int32_t)timer->type >= ZERO && timer->type < ECU_TIMER_TYPES_COUNT) );
     ECU_ASSERT( (timer->callback) );
 
     ecu_timer_disarm(timer);

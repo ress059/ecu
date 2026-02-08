@@ -95,7 +95,6 @@ target_link_options(unit_test_exe
 #------------------------------------------------------------#
 #---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
-include(CTest)
 include(CppUTest)
 cpputest_discover_tests(unit_test_exe)
 

@@ -95,7 +95,7 @@ static void clear_all_transitions(struct ecu_fsm *fsm);
  * is used. The comparison is done against this variable instead of an integer
  * constant to suppress the warning.
  */
-static const int ZERO = 0;
+static const int32_t ZERO = 0;
 #endif
 
 /*------------------------------------------------------------*/
@@ -124,14 +124,14 @@ static bool no_transitions_active(const struct ecu_fsm *fsm)
 static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( ((int32_t)t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
     return (fsm->transition & (1U << t));
 }
 
 static void set_transition(struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( ((int32_t)t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
     fsm->transition |= (1U << t);
 }
 

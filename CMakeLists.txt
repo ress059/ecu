@@ -219,6 +219,7 @@ if(ECU_INTERNAL)
     #--------------------- UNIT TEST TARGETS --------------------#
     #------------------------------------------------------------#
     if(PLATFORM STREQUAL "linux") # Unit tests are only for running on native host (Linux computer).
+        include(CTest) # Must be in top-level directory for CTest to discover tests.....
         add_subdirectory(tests/unit)
     endif()
 
