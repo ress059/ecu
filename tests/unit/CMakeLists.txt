@@ -127,7 +127,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR} # Make directory in case it does not exist.
     COMMAND ${CMAKE_COMMAND} -E echo "Running gcovr to generate coverage..."
     COMMAND gcovr --root ${PROJECT_SOURCE_DIR}/src --html-details ${COVERAGE_FILE} ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E echo "Generated coverage report in: ${COVERAGE_DIR}/coverage.html"
+    COMMAND ${CMAKE_COMMAND} -E echo "Generated coverage report in: ${COVERAGE_FILE}"
     VERBATIM
 )
 
