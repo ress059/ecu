@@ -1,0 +1,8 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ../ecu:/workspaces/ecu

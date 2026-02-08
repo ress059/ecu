@@ -10,8 +10,7 @@ build:
     python: "3.10"
   jobs:
     pre_build:
-      - cmake --preset linux-build-test
-      - cmake --build --preset linux-build-test --target doxygen
+      - cmake --build --preset linux --target doxygen
       - doxysphinx build doc/ $READTHEDOCS_OUTPUT/html Doxyfile
 
 sphinx:
@@ -21,4 +20,4 @@ sphinx:
 
 python:
   install:
-    - requirements: doc/requirements.txt
+    - requirements: requirements.txt

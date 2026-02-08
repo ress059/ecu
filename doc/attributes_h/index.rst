@@ -11,8 +11,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
     
 Provides wrappers for compiler-specific attributes, allowing them to be 
 modularly used within application code.

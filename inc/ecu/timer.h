@@ -4,6 +4,10 @@
  * @rst
  * See :ref:`timer.h section <timer_h>` in Sphinx documentation.
  * @endrst
+ * 
+ * @warning Once started each timer is a shared resource belonging to both the @ref ecu_tlist
+ * it was added to, and the application code that created the timer. It is the user's responsibility
+ * to ensure exclusive access.
  *
  * @author Ian Ress
  * @version 0.1
@@ -48,20 +52,24 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief Represents timer ticks. Must be unsigned. Typedeffed 
- * in case this needs to change in the future.
+ * @brief To remain portable, units of time are measured arbitrarily
+ * in ticks. It is the application's responsibility to convert this
+ * into concrete units of time. Typedeffed in case this type needs to 
+ * change in the future.
+ * 
+ * @warning Must be unsigned.
  */
 typedef unsigned int ecu_tick_t;
 
 /**
  * @brief Type of @ref ecu_timer used.
  */
-enum ecu_timer_type
+enum ecu_timer_type_e
 {
     ECU_TIMER_TYPE_ONE_SHOT, /**< Once timer expires it is stopped. */
     ECU_TIMER_TYPE_PERIODIC, /**< Once the timer expires it is automatically restarted. */
     /********************/
-    ECU_TIMER_TYPES_COUNT
+    ECU_TIMER_TYPES_COUNT /**< Total number of timer types. */
 };
 
 /*------------------------------------------------------------*/
@@ -86,7 +94,7 @@ struct ecu_timer
     ecu_tick_t period;
 
     /// @brief Single shot, periodic, etc.
-    enum ecu_timer_type type;
+    enum ecu_timer_type_e type;
 
     /// @brief Mandatory callback that executes when
     /// timer expires. First parameter passed is this timer object.
@@ -101,10 +109,9 @@ struct ecu_timer
 };
 
 /**
- * @brief "Engine" that runs all timers (@ref ecu_timer) added 
- * to this object. This is a software object that represents a 
- * single hardware timer on the target. Each hardware timer in 
- * use should map to a unique @ref ecu_tlist object. 
+ * @brief Timer linked list that runs all software timers (@ref ecu_timer)
+ * added to it. Each list usually holds multiple software timers but maps
+ * to a single hardware timer on the user's target device.
  *
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
@@ -156,6 +163,8 @@ extern "C" {
  * if it needs to be retried in the next call to @ref ecu_tlist_service().
  * An example return false scenario could be a write to a queue
  * failed due to it being full, so the write needs to be reattempted.
+ * Timer operations such as rearming and disarming can be done in this
+ * callback as well.
  * @param obj Optional object to pass to @p callback. Pass
  * @ref ECU_TIMER_OBJ_UNUSED if unused.
  */
@@ -170,7 +179,7 @@ extern void ecu_timer_ctor(struct ecu_timer *me,
 /**@{*/
 /**
  * @pre @p me previously constructed via @ref ecu_timer_ctor().
- * @brief Returns true if timer is currently running. False otherwise.
+ * @brief Returns true if the timer is currently running. False otherwise.
  *
  * @param me Timer to check.
  */
@@ -178,7 +187,8 @@ extern bool ecu_timer_active(const struct ecu_timer *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_timer_ctor().
- * @brief Stops the timer.
+ * @brief Stops the timer. Timer can be rearmed without reconstruction.
+ * This function can be used on a timer that is already disarmed.
  *
  * @param me Timer to stop.
  */
@@ -186,21 +196,36 @@ extern void ecu_timer_disarm(struct ecu_timer *me);
 
 /**
  * @pre @p me previously constructed via @ref ecu_timer_ctor().
+ * @brief Returns the timer's period that was set when it was started.
+ * 
+ * @param me Timer to check.
+ */
+extern ecu_tick_t ecu_timer_period(const struct ecu_timer *me);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_timer_ctor().
  * @brief Stops the timer if it was running and reconfigures 
- * it with the newly supplied values. Timer is not restarted.
+ * it with the newly supplied settings. Timer is not restarted.
  * 
  * @warning @p period is measured in hardware timer ticks, not time.
  *
  * @param me Timer to set.
- * @param period New period, in timer ticks, to set. Timer
- * expires once elapsed ticks exceeds this value. Must be
+ * @param period The timer's period, in ticks, to set. Timer
+ * expires after this number of ticks has elapsed. Must be
  * between 1 and @ref ECU_TICK_MAX.
- * @param type See @ref ecu_timer_type enum. Specifies if
- * timer is one-shot, periodic, etc.
+ * @param type The timer's type to set. I.e one-shot, periodic, etc.
  */
 extern void ecu_timer_set(struct ecu_timer *me,
                           ecu_tick_t period,
-                          enum ecu_timer_type type);
+                          enum ecu_timer_type_e type);
+
+/**
+ * @pre @p me previously constructed via @ref ecu_timer_ctor().
+ * @brief Returns the timer's type that was specified when it was started.
+ * 
+ * @param me Timer to check.
+ */
+extern enum ecu_timer_type_e ecu_timer_type(const struct ecu_timer *me);
 /**@}*/
 
 /*------------------------------------------------------------*/
@@ -215,14 +240,10 @@ extern void ecu_timer_set(struct ecu_timer *me,
  * @pre Memory already allocated for @p me.
  * @brief Timer list constructor.
  * 
- * @warning @p me must not be an active engine with timers added
+ * @warning @p me must not be an active list with timers added
  * to it, otherwise behavior is undefined.
  *
- * @param me Timer "engine" to construct. This is the "engine"
- * that runs all timers (@ref ecu_timer) added to it. This is 
- * a software object that represents a single hardware timer 
- * on the target. Each hardware timer in use should map to a 
- * unique @ref ecu_tlist object. 
+ * @param me Timer list to construct.
  */
 extern void ecu_tlist_ctor(struct ecu_tlist *me);
 /**@}*/
@@ -233,22 +254,15 @@ extern void ecu_tlist_ctor(struct ecu_tlist *me);
 /**@{*/
 /**
  * @pre @p me previously constructed via @ref ecu_tlist_ctor().
- * @brief Services all timers added to the "engine", @p me.
- * If any timers expire, its corresponding @ref ecu_timer.callback
- * is called. This operation is O(N) where N = the number of expired 
- * timers, NOT the total number of timers in @p me.
+ * @brief Services all software timers (@ref ecu_timer) currently in the
+ * list. Servicing involves expiring appropriate timers, handling timer
+ * rearming, etc. This must be periodically called by the application at 
+ * least once every @ref ECU_TICK_MAX ticks. However the accuracy of the 
+ * timers is proportional to how often this function is called.
  * 
- * @warning It is the application's responsibility to ensure exclusive
- * access to all @ref ecu_tlist and @ref ecu_timer objects if this
- * function is called within an ISR.
- * @warning This must be called periodically, at least once every
- * ECU_TICK_MAX ticks. The accuracy of the timers is proportional to
- * how often this function is called.
- * @warning @p elapsed is measured in hardware timer ticks, not time.
- * 
- * @param me "Engine" to service.
- * @param elapsed Number of ticks that elapsed since the last time
- * this function was called. This module keeps track of time solely
+ * @param me List to service.
+ * @param elapsed Number of ticks that has elapsed since the last time
+ * this function was called. The list keeps track of time solely
  * based off of this parameter.
  */
 extern void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed);
@@ -256,35 +270,31 @@ extern void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed);
 /**
  * @pre @p me previously constructed via @ref ecu_tlist_ctor().
  * @pre @p timer previously constructed via @ref ecu_timer_ctor().
- * @brief Starts a timer. If the timer is already running it is restarted
- * with the specified values. This operation is O(N), where N = the total
- * number of timers currently in @p me.
- * 
- * @warning @p period is measured in hardware timer ticks, not time.
+ * @brief Starts a timer with the specified settings. If the timer 
+ * is already running it is restarted and reconfigured with the 
+ * newly specified settings.
  *
- * @param me "Engine" to add @p timer to. 
+ * @param me List to add timer to. 
  * @param timer Timer to start. It will be serviced in calls
- * to @ref ecu_tlist_service(@p me)
- * @param period New period, in timer ticks, to set. Timer
- * expires once elapsed ticks exceeds this value. Must be
+ * to @ref ecu_tlist_service()
+ * @param period The timer's period, in ticks, to set. Timer
+ * expires after this number of ticks has elapsed. Must be
  * between 1 and @ref ECU_TICK_MAX.
- * @param type See @ref ecu_timer_type enum. Specifies if
- * timer is one-shot, periodic, etc.
+ * @param type The timer's type to set. I.e one-shot, periodic, etc.
  */
 extern void ecu_tlist_timer_arm(struct ecu_tlist *me, 
                                 struct ecu_timer *timer, 
                                 ecu_tick_t period, 
-                                enum ecu_timer_type type);
+                                enum ecu_timer_type_e type);
 
 /**
  * @pre @p me previously constructed via @ref ecu_tlist_ctor().
  * @pre @p timer previously set via @ref ecu_timer_set() or @ref ecu_tlist_timer_arm().
- * @brief Restarts the timer. This operation is O(N), 
- * where N = the total number of timers currently in @p me.
+ * @brief Restarts the timer with its same settings.
  * 
- * @param me "Engine" to add @p timer to.
+ * @param me List to add timer to. 
  * @param timer Timer to restart. It will be serviced in calls
- * to @ref ecu_tlist_service(@p me)
+ * to @ref ecu_tlist_service()
  */
 extern void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer);
 /**@}*/

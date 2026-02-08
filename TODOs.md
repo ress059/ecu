@@ -177,10 +177,10 @@ struct ecu_dnode
 If any step fails do not move on.
 1. format check. clang-format.
 2. Compile. cmake and cmake --build
-- cmake -DECU_DISABLE_RUNTIME_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
+- cmake -DECU_DISABLE_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
 - cmake --build --preset linux-gnu-build
 
-- cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
+- cmake -DECU_DISABLE_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
 - cmake --build --preset linux-gnu-build
 3. run unit tests.
 4. generate documentation. doxygen

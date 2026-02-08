@@ -66,14 +66,14 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-DNDEBUG" CACHE STRING "")
 # linker garbage collection flags here since these should apply to the entire project.
 # Remaining flags will be added by CMake build system depending on what is needed 
 # by the application.
-set(CMAKE_C_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -ffunction-sections -fdata-sections" CACHE STRING "")
+set(CMAKE_C_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -ffunction-sections -fdata-sections -specs=nano.specs -specs=nosys.specs" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_INIT "-fno-exceptions -fno-rtti -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -ffunction-sections -fdata-sections" CACHE STRING "")
 
 # Set hardware-specific linker flags for ARM CM4F, stdlib implementation to use, and
 # linker garbage collection flags here since these should apply to the entire project.
 # Remaining flags will be added by CMake build system depending on what is needed 
 # by the application.
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -specs=nano.specs -Wl,--gc-sections" CACHE STRING "")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--gc-sections" CACHE STRING "")
 
 # These rule variables control how CMake actually calls the linker from the command line.
 # Edit these so it creates an .elf executable. All other flags remain the same as the default.

@@ -58,6 +58,24 @@ static bool insert_here(const struct ecu_dnode *node,
 static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
 
 /*------------------------------------------------------------*/
+/*--------------------- STATIC VARIABLES ---------------------*/
+/*------------------------------------------------------------*/
+
+#ifndef ECU_DISABLE_ASSERTS
+/**
+ * @brief Used to suppress -Werror=type-limits warnings when 
+ * (enum ecu_timer_type_e val >= 0) comparisons are done. Depending on the
+ * platform the enum can be treated as unsigned or signed. The warning
+ * occurs on platforms that treat the enum type as unsigned since its
+ * comparison with 0 would always be true. However we always want to check
+ * this condition in case a target platform that treats the enum as signed
+ * is used. The comparison is done against this variable instead of an integer
+ * constant to suppress the warning.
+ */
+static const int ZERO = 0;
+#endif
+
+/*------------------------------------------------------------*/
 /*---------------------- STATIC ASSERTS ----------------------*/
 /*------------------------------------------------------------*/
 
@@ -154,17 +172,29 @@ void ecu_timer_disarm(struct ecu_timer *me)
     ecu_dnode_remove(&me->dnode);
 }
 
+ecu_tick_t ecu_timer_period(const struct ecu_timer *me)
+{
+    ECU_ASSERT( (me) );
+    return (me->period);
+}
+
 void ecu_timer_set(struct ecu_timer *me,
                    ecu_tick_t period,
-                   enum ecu_timer_type type)
+                   enum ecu_timer_type_e type)
 {
     ECU_ASSERT( (me) );
     ECU_ASSERT( (period > 0) );
-    ECU_ASSERT( (type >= 0 && type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( (type >= ZERO && type < ECU_TIMER_TYPES_COUNT) );
 
     ecu_timer_disarm(me);
     me->period = period;
     me->type = type;
+}
+
+enum ecu_timer_type_e ecu_timer_type(const struct ecu_timer *me)
+{
+    ECU_ASSERT( (me) );
+    return (me->type);
 }
 
 /*------------------------------------------------------------*/
@@ -256,7 +286,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
                 }
                 else
                 {
-                    break;
+                    break; /* Iteration can immediatley exit. Remaining timers will have later expiration dates since list is ordered. */
                 }
             }
         }
@@ -266,7 +296,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 void ecu_tlist_timer_arm(struct ecu_tlist *me, 
                          struct ecu_timer *timer, 
                          ecu_tick_t period, 
-                         enum ecu_timer_type type)
+                         enum ecu_timer_type_e type)
 {
     ECU_ASSERT( (me && timer) );
     ECU_ASSERT( (timer->callback) );
@@ -291,7 +321,7 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
 {
     ECU_ASSERT( (me && timer) );
     ECU_ASSERT( (timer->period > 0) );
-    ECU_ASSERT( (timer->type >= 0 && timer->type < ECU_TIMER_TYPES_COUNT) );
+    ECU_ASSERT( (timer->type >= ZERO && timer->type < ECU_TIMER_TYPES_COUNT) );
     ECU_ASSERT( (timer->callback) );
 
     ecu_timer_disarm(timer);

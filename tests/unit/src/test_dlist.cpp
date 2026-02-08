@@ -520,7 +520,7 @@ struct dlist : public ecu_dlist
     virtual ~dlist()
     {
         /* Free memory for any rvalue nodes that were passed to the constructor. */
-        for (auto *n : m_nodes)
+        for (auto n : m_nodes)
         {
             delete n;
         }

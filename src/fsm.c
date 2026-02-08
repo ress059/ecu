@@ -44,14 +44,6 @@ enum transition_type
 };
 
 /*------------------------------------------------------------*/
-/*------------------------ STATIC ASSERTS --------------------*/
-/*------------------------------------------------------------*/
-
-ECU_STATIC_ASSERT( ((size_t)FSM_TRANSITION_TYPE_COUNT <= (ECU_FIELD_SIZEOF(struct ecu_fsm, transition) * 8)),
-                    "transition bitmap in ecu_fsm is too small. Largest value of "
-                    "transition_type exceeds MSB of ecu_fsm transition bitmap." );
-
-/*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DECLARATIONS --------------*/
 /*------------------------------------------------------------*/
 
@@ -89,6 +81,31 @@ static void set_transition(struct ecu_fsm *fsm, enum transition_type t);
 static void clear_all_transitions(struct ecu_fsm *fsm);
 
 /*------------------------------------------------------------*/
+/*--------------------- STATIC VARIABLES ---------------------*/
+/*------------------------------------------------------------*/
+
+#ifndef ECU_DISABLE_ASSERTS
+/**
+ * @brief Used to suppress -Werror=type-limits warnings when 
+ * (enum transition_type val >= 0) comparisons are done. Depending on the
+ * platform the enum can be treated as unsigned or signed. The warning
+ * occurs on platforms that treat the enum type as unsigned since its
+ * comparison with 0 would always be true. However we always want to check
+ * this condition in case a target platform that treats the enum as signed
+ * is used. The comparison is done against this variable instead of an integer
+ * constant to suppress the warning.
+ */
+static const int ZERO = 0;
+#endif
+
+/*------------------------------------------------------------*/
+/*---------------------- STATIC ASSERTS ----------------------*/
+/*------------------------------------------------------------*/
+
+ECU_STATIC_ASSERT( (((size_t)FSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(struct ecu_fsm, transition) * 8)),
+                    "Max value in transition_type enum exceeds most significant bit of ecu_hsm::transition bitfield." );
+
+/*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
@@ -107,14 +124,14 @@ static bool no_transitions_active(const struct ecu_fsm *fsm)
 static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
     return (fsm->transition & (1U << t));
 }
 
 static void set_transition(struct ecu_fsm *fsm, enum transition_type t)
 {
     ECU_ASSERT( (fsm) );
-    ECU_ASSERT( (t >= 0 && t < FSM_TRANSITION_TYPE_COUNT) );
+    ECU_ASSERT( (t >= ZERO && t < FSM_TRANSITION_TYPE_COUNT) );
     fsm->transition |= (1U << t);
 }
 
@@ -123,13 +140,6 @@ static void clear_all_transitions(struct ecu_fsm *fsm)
     ECU_ASSERT( (fsm) );
     fsm->transition = 0;
 }
-
-/*------------------------------------------------------------*/
-/*---------------------- STATIC ASSERTS ----------------------*/
-/*------------------------------------------------------------*/
-
-ECU_STATIC_ASSERT( (((size_t)FSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(struct ecu_fsm, transition) * 8)),
-                    "Max value in transition_type enum exceeds most significant bit of ecu_hsm::transition bitfield." );
 
 /*------------------------------------------------------------*/
 /*-------------------- FSM MEMBER FUNCTIONS ------------------*/

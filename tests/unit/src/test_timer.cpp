@@ -92,7 +92,7 @@ struct test_timer : public ecu_timer
 
     /// @brief Constructs timer with specified period and type.
     /// Wrapper that calls C constructor under test.
-    test_timer(ecu_tick_t timer_period, ecu_timer_type timer_type = ECU_TIMER_TYPE_ONE_SHOT)
+    test_timer(ecu_tick_t timer_period, ecu_timer_type_e timer_type = ECU_TIMER_TYPE_ONE_SHOT)
     {
         ecu_timer_ctor(this, &callback, nullptr);
         ecu_timer_set(this, timer_period, timer_type);
@@ -154,7 +154,7 @@ struct test_timer : public ecu_timer
     static constexpr ecu_tick_t M_DEFAULT_PERIOD = 20;
 
     /// @brief Default type assigned to timer if default constructed.
-    static constexpr ecu_timer_type M_DEFAULT_TYPE = ECU_TIMER_TYPE_ONE_SHOT;
+    static constexpr ecu_timer_type_e M_DEFAULT_TYPE = ECU_TIMER_TYPE_ONE_SHOT;
 };
 
 /**
@@ -236,7 +236,7 @@ TEST_GROUP(Timer)
     /// @brief Method injected into @ref test_timer.inject for testing purposes.
     /// Runs in timer's callback. Only rearms timer if supplied values are 
     /// different.
-    static void rearm_if_different(ecu_tlist *tlist, ecu_timer *t, ecu_tick_t period, ecu_timer_type type)
+    static void rearm_if_different(ecu_tlist *tlist, ecu_timer *t, ecu_tick_t period, ecu_timer_type_e type)
     {
         assert( (tlist && t) );
         if (t->period != period || t->type != type)

@@ -4,17 +4,36 @@
 cmake_minimum_required(VERSION 3.21)
 project(ECU_LIBRARY VERSION 0.1)
 set(ECU_SUPPORTED_COMPILERS "GNU")
-option(ECU_DISABLE_RUNTIME_ASSERTS OFF)
+option(ECU_DISABLE_ASSERTS OFF)
 
 if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
     message(WARNING "Using untested compiler. Currently supported compilers = ${ECU_SUPPORTED_COMPILERS}")
 endif()
 
 #------------------------------------------------------------#
-#----------------------- ECU SETTINGS -----------------------#
+#----------------------- COMMON SETTINGS --------------------#
 #------------------------------------------------------------#
-# Note this library is meant to be compiled with the target 
-# application's toolchain.
+if(ECU_INTERNAL)
+    add_library(common_compiler_flags INTERFACE)
+    target_compile_options(common_compiler_flags
+        INTERFACE
+            # C and C++ flags
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-fdiagnostics-color=always -ffunction-sections -fdata-sections>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wall -Werror -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-align=strict -Wstrict-overflow=2 -Wwrite-strings>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
+
+            # C-only flags
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-fno-common -Wstrict-prototypes -Waggregate-return>
+
+            # Debug settings
+            $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
+    )
+endif()
+
+#------------------------------------------------------------#
+#------------------------ ecu target ------------------------#
+#------------------------------------------------------------#
 add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
     ${CMAKE_CURRENT_LIST_DIR}/src/dlist.c
@@ -26,26 +45,22 @@ add_library(ecu STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/timer.c
 )
 
-# Example include in the Application would be #include "ecu/fsm.h" 
-# in order to give larger apps some scope when including files.
 target_include_directories(ecu
-    PUBLIC 
-        ${CMAKE_CURRENT_LIST_DIR}/inc 
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/inc # Gives include directives scope. I.e. #include "ecu/fsm.h" instead of #include "fsm.h"
 )
 
-# ECU library requires at least C99.
 target_compile_features(ecu 
     PUBLIC 
-        c_std_99    
+        c_std_99 # ECU requires at least C99.
 )
 
-# Target Endianness.
-if(${CMAKE_C_BYTE_ORDER} STREQUAL "LITTLE_ENDIAN")
+if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_LITTLE_ENDIAN 
     )
-elseif(${CMAKE_C_BYTE_ORDER} STREQUAL "BIG_ENDIAN")
+elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
     target_compile_definitions(ecu 
         PUBLIC 
             ECU_BIG_ENDIAN 
@@ -54,143 +69,161 @@ else()
     message(WARNING "Unable to detect target endianness. endian.h cannot be used.")
 endif() 
 
-# Store ECU-specific warning flags in an interface target in case it is
-# also needed by test builds. Enable all warnings and relevant debug info.
-# An optimization flag is not specified on purpose so it can be defined by 
-# the application. I.e. after importing ecu the application can do: 
-# target_compile_options(ecu PRIVATE -O2). It is OK if the application does 
-# not specify an optimization level - GCC will default it to -O0.
-# Note that -Werror will only be passed for build tests.
-add_library(ecu_warning_flags INTERFACE)
-target_compile_options(ecu_warning_flags 
-    INTERFACE 
-        # C compiler flags. We know ECU is a C library so we can use this generator expression.
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fstack-usage -fno-common>
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow -Wstack-usage=200>
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-align=strict -Wstrict-prototypes -Wstrict-overflow=2 -Wwrite-strings -Waggregate-return>
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
-
-        # Compiler flags specific to Debug builds
-        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
-)
-
 # Warn the user that run-time asserts are being disabled. It is
 # not recommended to disable run-time asserts but we have this
 # as an option to decrease overhead of the library.
-if(ECU_DISABLE_RUNTIME_ASSERTS)
-    message(WARNING "Option ECU_DISABLE_RUNTIME_ASSERTS set to ON. Runtime asserts "
-                    "will not fire in this library. Are you sure you wish to disable asserts??")
+if(ECU_DISABLE_ASSERTS)
+    message(WARNING "Option ECU_DISABLE_ASSERTS set to ON. ECU runtime asserts disabled.")
 
     target_compile_definitions(ecu 
         PUBLIC 
-            ECU_DISABLE_RUNTIME_ASSERTS 
+            ECU_DISABLE_ASSERTS 
     )
 
     # Some functions and parameters will now be unused because they are 
     # only called within assert macros. Suppress these warnings.
-    target_compile_options(ecu_warning_flags
-        INTERFACE
+    target_compile_options(ecu
+        PRIVATE
             $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unused-function -Wno-unused-parameter>
     )
 endif()
 
-# Note how ECU-specific warning flags are private so it is not propagated
-# to the user's application. However our internal tests can still use 
-# ecu_warning_flags target to get all of the warning flags.
-target_link_libraries(ecu 
-    PRIVATE
-        ecu_warning_flags
-)
-
-#------------------------------------------------------------#
-#--------- CREATE --target doxygen and sphinx RULES ---------#
-#------------------------------------------------------------#
-# Rule requires doxygen, doxysphinx, and sphinx. 
-# - sudo apt-get install doxygen
-# - pip install doxysphinx
-# - pip install sphinx_rtd_theme
-# - pip install sphinxcontrib-doxylink
-# - pip install sphinx-tabs
-if(ECU_ENABLE_BUILD_TESTING OR ECU_ENABLE_UNIT_TESTING)
-    # Adapted from this source: https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
-    set(DOXYGEN_INPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/inc/ecu)
-    set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen)
-    set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
-    set(DOXYGEN_TOP_LEVEL_DIR ${CMAKE_CURRENT_LIST_DIR}) # STRIP_FROM_PATH in Doxyfile.
-    set(DOXYGEN_WARNING_LOG_OUT ${CMAKE_CURRENT_LIST_DIR}/doc/build/doxygen_warning_log.txt)
-    set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in)
-    set(DOXYFILE_OUT ${CMAKE_CURRENT_LIST_DIR}/Doxyfile) # Put in top-level directory for readthedocs CI steps.
-    file(GLOB_RECURSE ECU_PUBLIC_HEADERS 
-        CONFIGURE_DEPENDS # Also run if file added or removed.
-            ${DOXYGEN_INPUT_DIR}/*.h
+if(ECU_INTERNAL)
+    target_compile_options(ecu
+        PRIVATE
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-fstack-usage -Wstack-usage=200>
     )
-    configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
-    # Only regenerate Doxygen when the Doxyfile or public headers change
+    target_link_libraries(ecu 
+        PRIVATE
+            common_compiler_flags
+    )
+
+    # NOTE: If ECU target properties change this has to be revisited. This function copies ECU target
+    # into another target in case the source code needs to be compiled differently (i.e tests with unique
+    # preprocessor defines).
+    function(copy_ecu_target dest)
+        if(TARGET ${dest})
+            message(FATAL_ERROR "dest target already exists! dest = ${dest}")
+        elseif(${dest} STREQUAL "ecu")
+            message(FATAL_ERROR "dest target cannot have name ecu. ecu target already exists and is what is being copied over to dest.")
+        endif()
+
+        get_target_property(ecu_sources ecu SOURCES)
+        get_target_property(ecu_compile_definitions ecu COMPILE_DEFINITIONS)
+        get_target_property(ecu_compile_features ecu COMPILE_FEATURES)
+        get_target_property(ecu_compile_options ecu COMPILE_OPTIONS)
+        get_target_property(ecu_include_directories ecu INCLUDE_DIRECTORIES)
+
+        add_library(${dest} STATIC EXCLUDE_FROM_ALL
+            ${ecu_sources}
+        )
+
+        target_compile_definitions(${dest}
+            PUBLIC # All ECU compile definitions are PUBLIC. Have to change if this ever changes.
+                ${ecu_compile_definitions}
+        )
+
+        target_compile_features(${dest}
+            PUBLIC # All ECU compile features are PUBLIC. Have to change if this ever changes.
+                ${ecu_compile_features}
+        )
+
+        target_compile_options(${dest}
+            PRIVATE # All ECU compile options are PRIVATE. Have to change if this ever changes.
+                ${ecu_compile_options}
+        )
+
+        target_include_directories(${dest}
+            PUBLIC # All ECU include directories are PUBLIC. Have to change if this ever changes.
+                ${ecu_include_directories}
+        )
+
+        unset(ecu_sources)
+        unset(ecu_compile_definitions)
+        unset(ecu_compile_features)
+        unset(ecu_compile_options)
+        unset(ecu_include_directories)
+    endfunction()
+endif()
+
+#------------------------------------------------------------#
+#--------------------- INTERNAL TARGETS ---------------------#
+#------------------------------------------------------------#
+if(ECU_INTERNAL)
+
+    #------------------------------------------------------------#
+    #---------------------- doxygen target ----------------------#
+    #------------------------------------------------------------#
+    # Target that generates doxygen documentation locally if:
+    #   - Any ECU public headers change.
+    #   - Doxyfile.in changes.
+    file(GLOB_RECURSE DOXYGEN_FILES 
+        CONFIGURE_DEPENDS # Also run if file added or removed.
+            ${CMAKE_CURRENT_LIST_DIR}/inc/*.h
+    )
+    set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen/html/index.html)
+    list(APPEND DOXYGEN_FILES ${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in ${CMAKE_CURRENT_LIST_DIR}/Doxyfile @ONLY)
+
     add_custom_command(
         OUTPUT ${DOXYGEN_INDEX_FILE}
-        DEPENDS ${ECU_PUBLIC_HEADERS}
-        COMMAND ${CMAKE_COMMAND} -E echo "Generating doxygen documentation ${DOXYGEN_INDEX_FILE}..."
-        COMMAND doxygen ${DOXYFILE_OUT}
-        MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
+        DEPENDS ${DOXYGEN_FILES}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen
+        COMMAND doxygen ${CMAKE_CURRENT_LIST_DIR}/Doxyfile
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated doxygen documentation in: ${DOXYGEN_INDEX_FILE}"
         VERBATIM
     )
 
-    # Create phony target that always generates doxygen documentation.
     add_custom_target(doxygen 
-        COMMAND ${CMAKE_COMMAND} -E echo "Generating doxygen documentation ${DOXYGEN_INDEX_FILE}..."
-        COMMAND doxygen ${DOXYFILE_OUT}
+        DEPENDS ${DOXYGEN_INDEX_FILE}
     )
 
-    set(SPHINX_INPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc)
-    set(SPHINX_OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/doc/build)
-    set(SPHINX_INDEX_FILE ${SPHINX_OUTPUT_DIR}/index.html)
-    file(GLOB_RECURSE ECU_SPHINX_FILES 
+    #------------------------------------------------------------#
+    #----------------------- sphinx target ----------------------#
+    #------------------------------------------------------------#
+    # Target that generates sphinx documentation locally. Only runs if:
+    #   - Doxygen needs to be rerun (ECU public headers changed or Doxyfile.in changed).
+    #   - Sphinx files changed (.rst or images input to Sphinx)
+    #   - Sphinx conf.py has changed.
+    file(GLOB_RECURSE SPHINX_FILES 
         # Do not use CONFIGURE_DEPENDS since it makes the target rule slow (many files have to be searched).
-        ${SPHINX_INPUT_DIR}/*.rst
-        ${SPHINX_INPUT_DIR}/images/*.svg
+        ${CMAKE_CURRENT_LIST_DIR}/doc/*.rst
+        ${CMAKE_CURRENT_LIST_DIR}/doc/_doxygen/*
+        ${CMAKE_CURRENT_LIST_DIR}/doc/images/*.png
+        ${CMAKE_CURRENT_LIST_DIR}/doc/images/*.svg
+        ${CMAKE_CURRENT_LIST_DIR}/doc/_static/*
     )
-    
-    # Only regenerate Sphinx when:
-    # - Doxygen has rerun
-    # - Our doc files have been updated
-    # - The Sphinx config has been updated
+    file(GLOB_RECURSE SPHINX_EXCLUDE_FILES
+        ${CMAKE_CURRENT_LIST_DIR}/doc/build/*
+        ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen/*
+    )
+    list(REMOVE_ITEM SPHINX_FILES ${SPHINX_EXCLUDE_FILES})
+    list(APPEND SPHINX_FILES ${CMAKE_CURRENT_LIST_DIR}/doc/conf.py)
+    set(SPHINX_INDEX_FILE ${CMAKE_CURRENT_LIST_DIR}/doc/build/index.html)
+
     add_custom_command(
         OUTPUT ${SPHINX_INDEX_FILE}
-        DEPENDS ${DOXYGEN_INDEX_FILE} ${ECU_SPHINX_FILES}
-        MAIN_DEPENDENCY ${SPHINX_INPUT_DIR}/conf.py
-        COMMAND ${CMAKE_COMMAND} -E echo "Generating sphinx documentation ${SPHINX_INDEX_FILE}..."
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_OUTPUT_DIR} # In case it does not already exist
-        COMMAND doxysphinx build ${SPHINX_INPUT_DIR} ${SPHINX_OUTPUT_DIR} ${DOXYGEN_OUTPUT_DIR}/html
-        COMMAND sphinx-build -b html ${SPHINX_INPUT_DIR} ${SPHINX_OUTPUT_DIR}
+        DEPENDS ${DOXYGEN_INDEX_FILE} ${SPHINX_FILES}
+        COMMAND doxysphinx build ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_LIST_DIR}/doc/build ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen/html
+        COMMAND sphinx-build -b html ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_LIST_DIR}/doc/build
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated sphinx documentation in: ${SPHINX_INDEX_FILE}"
         VERBATIM
     )
 
     add_custom_target(sphinx 
         DEPENDS ${SPHINX_INDEX_FILE}
     )
-endif()
 
-#------------------------------------------------------------#
-#---------------------- INTERNAL TESTS ----------------------#
-#------------------------------------------------------------#
-if(ECU_ENABLE_UNIT_TESTING)
-    target_compile_options(ecu
-        PRIVATE
-            # Compile for code coverage for ECU source code.
-            $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path>
-    )
+    #------------------------------------------------------------#
+    #--------------------- UNIT TEST TARGETS --------------------#
+    #------------------------------------------------------------#
+    if(PLATFORM STREQUAL "linux") # Unit tests are only for running on native host (Linux computer).
+        add_subdirectory(tests/unit)
+    endif()
 
-    target_compile_definitions(ecu
-        PUBLIC 
-            ECU_UNIT_TEST 
-    )
-
-    # CTest and enable_testing has to be in the root CMakeLists.txt. 
-    # Tests will not be discovered if this is in tests/CMakeLists.txt....
-    include(CTest)
-    enable_testing()
-    add_subdirectory(tests/unit)
-elseif(ECU_ENABLE_BUILD_TESTING)
-    add_subdirectory(tests/build)
-endif()
+    #------------------------------------------------------------#
+    #----------------- INTEGRATION TEST TARGETS -----------------#
+    #------------------------------------------------------------#
+    # add_subdirectory(tests/integration)
+endif() # ECU_INTERNAL

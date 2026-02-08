@@ -1,40 +1,35 @@
-name: Builds and Unit Tests
-
+name: CI
 on: push
-
 jobs:
-  build:
-    name: Build
+  ci:
+    name: CI
     runs-on: [ubuntu-24.04]
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
       matrix:
         # TODO: Add stm32l432xc-build-test, and other cross-compilation stuff later.
-        preset: [linux-build-test]
-        assert: [ECU_DISABLE_RUNTIME_ASSERTS=OFF, ECU_DISABLE_RUNTIME_ASSERTS=ON]
+        preset: [linux]
+        assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
     - uses: actions/checkout@v4
-    - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
+    - name: Build
       run: |
-        cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
+        cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
         cmake --build --clean-first --preset ${{matrix.preset}}
-
-  test:
-    name: Unit Test
-    needs: [build]
-    runs-on: [ubuntu-24.04]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build tests
+    - name: Documentation
+    - run: cmake --build --preset linux --target sphinx
+    - name: Unit test
       run: |
-        cmake --preset unit-test
-        cmake --build --preset unit-test
-    - name: Run tests
-      run: ctest --preset unit-test
-    - name: Upload code coverage to Codecov
+        cmake --build --preset linux --target unit_test_exe
+        ctest --preset unit_test
+    - name: Generate unit test coverage report
+      run: cmake --build --preset linux --target gcovr
+    - name: Upload unit test coverage report
       uses: codecov/codecov-action@v5
       with:
+        directory: ./bin/coverage/
+        disable_telem: true
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
       

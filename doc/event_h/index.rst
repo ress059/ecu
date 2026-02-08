@@ -11,8 +11,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
 
 Framework that can optionally be used to create and dispatch user-defined events to
 ECU library functions (i.e. state machines in :ref:`fsm.h <fsm_h>` and :ref:`hsm.h <hsm_h>`).

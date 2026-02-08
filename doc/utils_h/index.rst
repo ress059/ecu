@@ -10,8 +10,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
 
 Miscellaneous helpers.
 

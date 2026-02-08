@@ -1,85 +1,71 @@
 {
     "version": 3,
-    "cmakeMinimumRequired": {
+    "cmakeMinimumRequired": 
+	{
 		"major": 3,
 		"minor": 21,
 		"patch": 0
 	},
-    "configurePresets": [
+    "configurePresets": 
+	[
 		{
-			"name": "build-test",
+			"name": "base",
 			"hidden": true,
 			"cacheVariables": 
 			{
-				"ECU_ENABLE_BUILD_TESTING": true,
+				"ECU_INTERNAL": true,
 				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
 				"CMAKE_BUILD_TYPE": "Debug"
 			}
 		},
 		{
-			"name": "linux-build-test",
-			"inherits": "build-test",
-			"displayName": "linux-build-test",
-			"description": "Build ECU executable. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
-			"binaryDir": "bin/tests/build/linux",
-			"toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
-            "cacheVariables":
-            {
-                "MCU": "linux"
-            }
-		},
-		{
-			"name": "stm32l432xc-build-test",
-			"inherits": "build-test",
-			"displayName": "stm32l432xc-build-test",
-			"description": "Build ECU executable. Toolchain = arm-none-eabi. Host = Linux x86_64. Target = stm32l432xc.",
-			"binaryDir": "bin/tests/build/stm32l432xc",
-			"toolchainFile": "toolchains/gnu/arm_cm4/generic-gnu-cortex-m4f.cmake",
-            "cacheVariables":
-            {
-                "MCU": "stm32l432xc"
-            }
-		},
-		{
-			"name": "unit-test",
-            "displayName": "unit-test",
-            "description": "Build unit tests with code coverage. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
-            "binaryDir": "bin/tests/unit",
-            "toolchainFile": "toolchains/gnu/linux/linux-gnu-x86_64.cmake",
+			"name": "arm_cm4f",
+			"inherits": "base",
+			"displayName": "arm_cm4f",
+            "binaryDir": "bin/arm_cm4f",
+			"description": "ARM Cortex-M4F build configuration. Toolchain = arm-none-eabi. Host = Linux x86_64. Target = Cortex-M4F CPU.",
+			"toolchainFile": "toolchains/gnu/arm_cm4/generic_gnu_cortex_m4f.cmake",
 			"cacheVariables": 
 			{
-				"ECU_ENABLE_UNIT_TESTING": true,
-				"CMAKE_EXPORT_COMPILE_COMMANDS": true,
-				"CMAKE_BUILD_TYPE": "Debug"
+				"PLATFORM": "arm_cm4f"
+
+			}
+		},
+		{
+			"name": "linux",
+			"inherits": "base",
+			"displayName": "linux",
+            "binaryDir": "bin/linux",
+			"description": "Linux build configuration. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
+			"toolchainFile": "toolchains/gnu/linux/linux_gnu_x86_64.cmake",
+			"cacheVariables": 
+			{
+				"PLATFORM": "linux"
 			}
 		}
     ],
-	"buildPresets": [
-        {
-			"name": "linux-build-test",
-			"displayName": "linux-build-test",
-			"configurePreset": "linux-build-test",
-			"verbose": true
+	"buildPresets": 
+	[
+		{
+			"name": "arm_cm4f",
+			"displayName": "arm_cm4f",
+			"description": "ARM Cortex-M4 build configuration. Toolchain = arm-none-eabi. Host = Linux x86_64. Target = Cortex-M4 CPU.",
+			"configurePreset": "arm_cm4f"
 		},
-        {
-			"name": "stm32l432xc-build-test",
-			"displayName": "stm32l432xc-build-test",
-			"configurePreset": "stm32l432xc-build-test",
-			"verbose": true
-		},
-        {
-			"name": "unit-test",
-			"displayName": "unit-test",
-			"configurePreset": "unit-test"
+		{
+			"name": "linux",
+			"displayName": "linux",
+			"description": "Linux build configuration. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
+			"configurePreset": "linux"
 		}
 	],
-    "testPresets": [
+    "testPresets": 
+	[
         {
-            "name": "unit-test",
-            "displayName": "unit-test",
-            "description": "Run unit tests. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
-            "configurePreset": "unit-test",
-            "configuration": "Debug",
+            "name": "unit_test",
+            "displayName": "unit_test",
+            "description": "Run unit tests with CTest.",
+            "configurePreset": "linux",
             "output": 
             {
                 "outputOnFailure": true

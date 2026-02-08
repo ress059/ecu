@@ -11,8 +11,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
     
 Framework for using assertions on embedded platforms.
 
@@ -126,26 +125,26 @@ codes do not have to be used in the application.
 
 Disabling Runtime Assertions
 -------------------------------------------------
-Runtime assertions are enabled by default. They can be disabled via ``ECU_DISABLE_RUNTIME_ASSERTS``
-preprocessor define. If using CMake ``ECU_DISABLE_RUNTIME_ASSERTS`` can be set within
+Runtime assertions are enabled by default. They can be disabled via ``ECU_DISABLE_ASSERTS``
+preprocessor define. If using CMake ``ECU_DISABLE_ASSERTS`` can be set within
 the project's CMakeLists.txt file:
 
 .. code-block:: text
 
-    set(ECU_DISABLE_RUNTIME_ASSERTS ON)
+    set(ECU_DISABLE_ASSERTS ON)
 
 Or if invoking CMake from the command line:
 
 .. code-block:: text
 
-    cmake -DECU_DISABLE_RUNTIME_ASSERTS=ON .....
+    cmake -DECU_DISABLE_ASSERTS=ON .....
 
-Otherwise ``ECU_DISABLE_RUNTIME_ASSERTS`` can be defined through preprocessor settings in
+Otherwise ``ECU_DISABLE_ASSERTS`` can be defined through preprocessor settings in
 an IDE, or defined directly when invoking the compiler from the command line:
 
 .. code-block:: text
 
-    gcc -DECU_DISABLE_RUNTIME_ASSERTS .....
+    gcc -DECU_DISABLE_ASSERTS .....
 
 :ecudoxygen:`ECU_ASSERT() <ECU_ASSERT>` is backwards compatible and
 should remain in the application even when assertions are disabled. The macro simply expands to 
@@ -158,7 +157,7 @@ should remain in the application even when assertions are disabled. The macro si
 
 .. note::
 
-    ECU_DISABLE_RUNTIME_ASSERTS has no effect on static assertions. 
+    ECU_DISABLE_ASSERTS has no effect on static assertions. 
     Static assertions are always enabled.
 
 
