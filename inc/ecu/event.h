@@ -57,7 +57,7 @@
  * @warning Validity of ID is not checked.
  * 
  * @param id_ ID to assign event.
- * @param size Number of bytes of derived event. Allows for easier 
+ * @param size_ Number of bytes of derived event. Allows for easier 
  * handling. I.e. reading and writing events to queues. Supply
  * @ref ECU_EVENT_SIZE_UNUSED if unused.
  */

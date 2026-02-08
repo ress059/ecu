@@ -1,13 +1,5 @@
 #------------------------------------------------------------#
-#----------------------- ECU SETTINGS -----------------------#
-#------------------------------------------------------------#
-target_compile_features(ecu 
-    PRIVATE 
-        c_std_23 
-)
-
-#------------------------------------------------------------#
-#---------------------- CPPUTEST SETTINGS -------------------#
+#-------------------------- CPPUTEST ------------------------#
 #------------------------------------------------------------#
 include(FetchContent)
 FetchContent_Declare(
@@ -22,19 +14,36 @@ FetchContent_MakeAvailable(CppUTest)
 target_compile_options(CppUTest
     PRIVATE 
         # Save debug symbols for CppUTest.
-        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
+        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-O0 -g3>
 )
 
 target_compile_options(CppUTestExt
     PRIVATE 
-        # Save debug symbols for CppUTest.
-        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-g3>
+        # Save debug symbols for CppUTestExt.
+        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-O0 -g3>
 )
 
 #------------------------------------------------------------#
-#---------------------- UNIT TEST SETTINGS ------------------#
+#-------------------- ECU UNIT TEST TARGET ------------------#
 #------------------------------------------------------------#
-add_executable(ecu_unit_test
+# Target that compiles ECU for unit tests. Applies unit test-specific compiler options and settings.
+copy_ecu_target(ecu_unit_test_lib)
+
+target_compile_definitions(ecu_unit_test_lib
+    PUBLIC
+        ECU_UNIT_TEST # PUBLIC since this may be used in ECU header files.
+)
+
+target_compile_options(ecu_unit_test_lib
+    PRIVATE
+        $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path> # Additional flags for unit tests.
+)
+
+#------------------------------------------------------------#
+#--------------- UNIT TEST EXECUTABLE TARGET ----------------#
+#------------------------------------------------------------#
+# Target that builds unit test executable.
+add_executable(unit_test_exe EXCLUDE_FROM_ALL
     # Main
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp 
 
@@ -53,84 +62,75 @@ add_executable(ecu_unit_test
     ${CMAKE_CURRENT_LIST_DIR}/stubs/stub_asserter.cpp
 )
 
-target_compile_features(ecu_unit_test
+target_compile_features(unit_test_exe
     PRIVATE 
-        # Need C++20 concepts for our unit tests.
-        cxx_std_20
+        cxx_std_20 # Need C++20 concepts for our unit tests.
 )
 
-target_include_directories(ecu_unit_test
+target_compile_options(unit_test_exe
+    PRIVATE
+        $<$<CXX_COMPILER_ID:GNU>:-O0>
+        # See https://cpputest.github.io/manual.html "Resolving conflicts with STL" section.
+        $<$<CXX_COMPILER_ID:GNU>:-include${CMAKE_CURRENT_LIST_DIR}/inc/cpputest_stdlib.hpp>
+)
+
+target_include_directories(unit_test_exe
     PRIVATE 
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-target_compile_options(ecu_unit_test
-    PRIVATE
-        # C++ compiler flags. We know unit tests will be C++ so we can use this generator expression.
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-color=always -ffunction-sections -fdata-sections -fno-common>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wcast-align -Wstrict-overflow=2 -Wwrite-strings>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
-
-        # Save debug symbols in our unit tests.
-        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
-
-        # See https://cpputest.github.io/manual.html "Resolving conflicts with STL" section.
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-include${CMAKE_CURRENT_LIST_DIR}/inc/cpputest_stdlib.hpp>
+target_link_libraries(unit_test_exe
+    PRIVATE 
+        CppUTest
+        CppUTestExt
+        common_compiler_flags
+        ecu_unit_test_lib
 )
 
-#------------------------------------------------------------#
-#------------------------- LINKING --------------------------#
-#------------------------------------------------------------#
-target_link_options(ecu_unit_test
+target_link_options(unit_test_exe
     PRIVATE
         $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
-)
-
-target_link_libraries(ecu_unit_test
-    PRIVATE 
-        ecu             # Strict warnings. All of them enabled for actual library. See top CMake file.
-        CppUTest        # Using namespace doesn't work. I.e. CppUTest::CppUTest
-        CppUTestExt     # Using namespace doesn't work. I.e. CppUTestExt::CppUTestExt
-)
-
-#------------------------------------------------------------#
-#---------------- CREATE --target gcovr RULE ----------------#
-#------------------------------------------------------------#
-# Rule requires gcovr v5.1+. 
-# - pip install gcovr.
-get_target_property(ECU_SOURCES ecu SOURCES)
-set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
-set(COVERAGE_FILE ${COVERAGE_DIR}/coverage.html)
-file(GLOB_RECURSE ECU_TEST_FILES 
-    CONFIGURE_DEPENDS # Also run if file added or removed.
-        ${CMAKE_CURRENT_LIST_DIR}/*.h
-        ${CMAKE_CURRENT_LIST_DIR}/*.hpp
-        ${CMAKE_CURRENT_LIST_DIR}/*.c
-        ${CMAKE_CURRENT_LIST_DIR}/*.cpp
-)
-
-# Only generate coverage when:
-# - Source file(s) under test changes.
-# - Unit test file(s) change.
-add_custom_command(
-    OUTPUT ${COVERAGE_FILE}
-    DEPENDS ${ECU_SOURCES} ${ECU_TEST_FILES}
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E echo "Running unit test executable to generate .gcda files..."
-    COMMAND $<TARGET_FILE:ecu_unit_test>
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR} # Make directory in case it does not exist.
-    COMMAND ${CMAKE_COMMAND} -E echo "Running gcovr to generate coverage..."
-    COMMAND gcovr --root ${PROJECT_SOURCE_DIR}/src --html-details ${COVERAGE_FILE} ${CMAKE_BINARY_DIR}
-    VERBATIM
-)
-
-add_custom_target(gcovr
-    DEPENDS ${COVERAGE_FILE}
 )
 
 #------------------------------------------------------------#
 #---------------------------- CTEST -------------------------#
 #------------------------------------------------------------#
 include(CppUTest)
-cpputest_discover_tests(ecu_unit_test)
+cpputest_discover_tests(unit_test_exe)
+
+#------------------------------------------------------------#
+#----------------------- unit_test target -------------------#
+#------------------------------------------------------------#
+# Target that builds and runs the unit test executable for easier invokation.
+add_custom_target(unit_test
+    COMMAND unit_test_exe
+    DEPENDS unit_test_exe
+    USES_TERMINAL
+)
+
+#------------------------------------------------------------#
+#----------------------- gcovr target -----------------------#
+#------------------------------------------------------------#
+# Target that generates local html code coverage report by building
+# unit test executable, running it, then running gcovr to generate report.
+# Only regenerate coverage if:
+#   - unit_test_exe target becomes out of date. I.e. source file(s) under test changes.
+set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
+set(COVERAGE_FILE ${COVERAGE_DIR}/coverage.html)
+
+add_custom_command(
+    OUTPUT ${COVERAGE_FILE}
+    DEPENDS unit_test_exe
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Running unit test executable to generate .gcda files..."
+    COMMAND unit_test_exe
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR} # Make directory in case it does not exist.
+    COMMAND ${CMAKE_COMMAND} -E echo "Running gcovr to generate coverage..."
+    COMMAND gcovr --root ${PROJECT_SOURCE_DIR}/src --html-details ${COVERAGE_FILE} ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Generated coverage report in: ${COVERAGE_FILE}"
+    VERBATIM
+)
+
+add_custom_target(gcovr
+    DEPENDS ${COVERAGE_FILE}
+)

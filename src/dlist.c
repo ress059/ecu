@@ -68,6 +68,12 @@ static bool node_is_valid_head(const struct ecu_dnode *node);
 static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id_t id);
 
 /*------------------------------------------------------------*/
+/*---------------------- STATIC ASSERTS ----------------------*/
+/*------------------------------------------------------------*/
+
+ECU_STATIC_ASSERT( (HEAD_ID != DESTROYED_HEAD_ID), "IDs must be different." );
+
+/*------------------------------------------------------------*/
 /*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
 /*------------------------------------------------------------*/
 
@@ -96,12 +102,6 @@ static void HEAD_DESTROY_CALLBACK(struct ecu_dnode *me, ecu_object_id_t id)
     (void)id;
     ECU_ASSERT( (false) );
 }
-
-/*------------------------------------------------------------*/
-/*---------------------- STATIC ASSERTS ----------------------*/
-/*------------------------------------------------------------*/
-
-ECU_STATIC_ASSERT( (HEAD_ID != DESTROYED_HEAD_ID), "IDs must be different." );
 
 /*------------------------------------------------------------*/
 /*------------------ DNODE MEMBER FUNCTIONS ------------------*/

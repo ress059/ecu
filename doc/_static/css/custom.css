@@ -1,9 +1,15 @@
-.homepage {
+.homepage-icons {
+    display: block;
+    text-align: center;
+}
+
+
+.icon {
     width:40%;
     transition: transform .3s ease-out;
 }
   
 
-.homepage:hover {
+.icon:hover {
     transform: translate(0, -10px);
 }

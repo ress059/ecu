@@ -124,7 +124,7 @@ extern "C" {
      *      ((check_) ? ((void)0) : ecu_assert_handler(&ecu_file_name_[0], __LINE__))
      * @endcode
      *
-     * 2. If asserts are disabled (ECU_DISABLE_RUNTIME_ASSERTS is defined)
+     * 2. If asserts are disabled (ECU_DISABLE_ASSERTS is defined)
      * then this macro does nothing:
      * @code{.c}
      * define ECU_ASSERT(check_) \
@@ -148,7 +148,7 @@ extern "C" {
      *      static const char ecu_file_name_[] = name_;
      * @endcode
      * 
-     * 2. If asserts are disabled (ECU_DISABLE_RUNTIME_ASSERTS is defined)
+     * 2. If asserts are disabled (ECU_DISABLE_ASSERTS is defined)
      * then this expands to nothing:
      * @code{.c}
      * #define ECU_ASSERT_DEFINE_FILE(name_)
@@ -161,7 +161,7 @@ extern "C" {
     #define ECU_ASSERT_DEFINE_FILE(name_)
     /**@}*/
 #else
-    #if !defined(ECU_DISABLE_RUNTIME_ASSERTS)
+    #if !defined(ECU_DISABLE_ASSERTS)
         /// @brief Runtime asserts enabled so this macro calls
         /// custom-defined handler if an assertion fires.
         #define ECU_ASSERT(check_) \

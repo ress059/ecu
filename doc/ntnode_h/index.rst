@@ -11,8 +11,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
 
 N-ary tree **without** dynamic memory allocation or recursion. Nodes can 
 store any user data by value by being intrusive.

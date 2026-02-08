@@ -1,4 +1,5 @@
 /doc/doxygen/html/
+/doc/doxygen/doxygen_warning_log.txt
 /doc/build/
 /bin/
 **/*.dtmp

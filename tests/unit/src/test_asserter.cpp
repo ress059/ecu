@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Unit tests for public API functions in @ref asserter.h. ECU_DISABLE_RUNTIME_ASSERTS
+ * @brief Unit tests for public API functions in @ref asserter.h. ECU_DISABLE_ASSERTS
  * must NOT be defined.
  * Test Summary:
  * 

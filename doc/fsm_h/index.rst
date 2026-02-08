@@ -11,8 +11,7 @@ Overview
 =================================================
 .. note:: 
 
-    The term :term:`ECU` in this document refers to Embedded C Utilities, 
-    the shorthand name for this project.
+    The term ``ECU`` in this document refers to Embedded C Utilities, the shorthand name for this project.
 
 Framework that creates and runs finite state machines (FSMs). Applications use
 this framework by containing an intrusive :ecudoxygen:`ecu_fsm` member.

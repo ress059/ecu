@@ -1,7 +1,5 @@
-name: Builds and Unit Tests
-
+name: CI
 on: push
-
 jobs:
   build:
     name: Build
@@ -11,30 +9,49 @@ jobs:
       fail-fast: false
       matrix:
         # TODO: Add stm32l432xc-build-test, and other cross-compilation stuff later.
-        preset: [linux-build-test]
-        assert: [ECU_DISABLE_RUNTIME_ASSERTS=OFF, ECU_DISABLE_RUNTIME_ASSERTS=ON]
+        preset: [linux]
+        assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
     - uses: actions/checkout@v4
-    - name: Build CMake preset ${{matrix.preset}} with assert setting ${{matrix.assert}}
+    - name: Build
       run: |
-        cmake -D${{matrix.assert}} --preset ${{matrix.preset}}
-        cmake --build --clean-first --preset ${{matrix.preset}}
+        cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
+        cmake --build --clean-first --preset ${{matrix.preset}} --target ecu
 
-  test:
-    name: Unit Test
-    needs: [build]
+  documentation:
+    name: Documentation
     runs-on: [ubuntu-24.04]
     steps:
     - uses: actions/checkout@v4
-    - name: Build tests
+    - name: Install dependencies
       run: |
-        cmake --preset unit-test
-        cmake --build --preset unit-test
+        sudo apt install -y doxygen graphviz
+        pip install -r requirements.txt --break-system-packages
+    - name: Generate documentation
+      run: |
+        sudo apt install -y doxygen graphviz
+        cmake --preset linux
+        cmake --build --preset linux --target sphinx
+
+  unit_test:
+    name: Unit Test
+    needs: build
+    runs-on: [ubuntu-24.04]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: pip install -r requirements.txt --break-system-packages
     - name: Run tests
-      run: ctest --preset unit-test
-    - name: Upload code coverage to Codecov
+      run: |
+        cmake --preset linux
+        cmake --build --preset linux --target unit_test_exe
+        ctest --preset unit_test
+    - name: Generate code coverage report
+      run: cmake --build --preset linux --target gcovr
+    - name: Upload code coverage report
       uses: codecov/codecov-action@v5
       with:
+        disable_telem: true
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
       

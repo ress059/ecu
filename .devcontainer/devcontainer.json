@@ -1,49 +1,41 @@
 {
 	"name": "ecu",
-	"build": 
-	{
-		/* Use Dockerfile in root of this repo */
-		"dockerfile": "${localWorkspaceFolder}/Dockerfile"
-	},
-
+	"dockerComposeFile": "${localWorkspaceFolder}/compose.yaml",
+	"service": "devcontainer",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"customizations": 
 	{
 		"vscode": 
 		{
-			/* VSCode extensions to install when container is first created. */
+			// VSCode extensions to install when container is first created.
 			"extensions": 
 			[
-                /* C and C++. */
-                "ms-vscode.cpptools",
-				"ms-vscode.cpptools-extension-pack",
-                "ms-vscode.cmake-tools",
-
-                /* Doxygen comment generator. */
 				"cschlosser.doxdocgen",
-
-                /* Python intellisense. */
-				"ms-python.python",
-
-                /* Restructured text intellisense. */
-                "lextudio.restructuredtext",
-                "trond-snekvik.simple-rst",
-                "swyddfa.esbonio",
-
-                /* yaml intellisense. */
-                "redhat.vscode-yaml"
-			],
-			/* Make bash default terminal. Set up intellisense. */
+				"ms-vscode.cpptools-extension-pack",
+				"marus25.cortex-debug",
+                "mcu-debug.debug-tracker-vscode"
+			], 
 			"settings": 
 			{
 				"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+				"C_Cpp.autoAddFileAssociations": false,
+                "cmake.buildBeforeRun": true,
+                "cortex-debug.enableTelemetry": false,
+                "cortex-debug.variableUseNaturalFormat": false,
+				"debug.hideSlowPreLaunchWarning": true,
 				"editor.detectIndentation": false,
 				"editor.insertSpaces": true,
 				"editor.tabSize": 4,
                 "telemetry.enableTelemetry": false,
                 "telemetry.telemetryLevel": "off",
 				"terminal.integrated.defaultProfile.linux": "bash",
-				"workbench.editor.enablePreview": false
+				"workbench.editor.enablePreview": false,
+                "[restructuredtext]": {
+                    "editor.wordWrap": "on"
+                }
 			}
 		}
-	}
+	},
+    // Avoids CRLF vs LF from showing up in git diff. Also set up certificate for git.
+    "postCreateCommand": "git config core.autocrlf input; git config --unset http.sslCAInfo || true; git config --unset http.sslCAPath || true; git config --unset http.sslCert || true; git config http.sslVerify true; git config http.sslCAInfo /etc/ssl/certs/ca-certificates.crt"
 }

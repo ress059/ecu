@@ -113,6 +113,21 @@ static bool hsm_is_valid(const struct ecu_hsm *hsm);
 static bool state_is_valid(const struct ecu_hsm_state *state);
 
 /*------------------------------------------------------------*/
+/*---------------------- STATIC ASSERTS ----------------------*/
+/*------------------------------------------------------------*/
+
+ECU_STATIC_ASSERT( (((size_t)HSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(struct ecu_hsm, transition) * 8)),
+                    "Max value in transition_type enum exceeds most significant bit of ecu_hsm::transition bitfield." );
+
+/*------------------------------------------------------------*/
+/*---------------------- GLOBAL VARIABLES --------------------*/
+/*------------------------------------------------------------*/
+
+const struct ecu_hsm_state ECU_HSM_TOP_STATE = ECU_HSM_STATE_CTOR(
+    ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &top_state_handler, (const struct ecu_hsm_state *)0
+);
+
+/*------------------------------------------------------------*/
 /*---------- STATIC FUNCTION DEFINITIONS - TOP STATE ---------*/
 /*------------------------------------------------------------*/
 
@@ -234,21 +249,6 @@ static bool state_is_valid(const struct ecu_hsm_state *state)
 
     return status;
 }
-
-/*------------------------------------------------------------*/
-/*---------------------- STATIC ASSERTS ----------------------*/
-/*------------------------------------------------------------*/
-
-ECU_STATIC_ASSERT( (((size_t)HSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(struct ecu_hsm, transition) * 8)),
-                    "Max value in transition_type enum exceeds most significant bit of ecu_hsm::transition bitfield." );
-
-/*------------------------------------------------------------*/
-/*---------------------- GLOBAL VARIABLES --------------------*/
-/*------------------------------------------------------------*/
-
-const struct ecu_hsm_state ECU_HSM_TOP_STATE = ECU_HSM_STATE_CTOR(
-    ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &top_state_handler, (const struct ecu_hsm_state *)0
-);
 
 /*------------------------------------------------------------*/
 /*-------------------- HSM MEMBER FUNCTIONS ------------------*/
