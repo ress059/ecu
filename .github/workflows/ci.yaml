@@ -21,6 +21,8 @@ jobs:
   documentation:
     name: Documentation
     runs-on: [ubuntu-24.04]
+    steps:
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt install -y doxygen graphviz
@@ -34,6 +36,8 @@ jobs:
     name: Unit Test
     needs: build
     runs-on: [ubuntu-24.04]
+    steps:
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: pip install -r requirements.txt --break-system-packages
     - name: Run tests
