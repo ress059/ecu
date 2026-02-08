@@ -51,7 +51,6 @@ jobs:
     - name: Upload code coverage report
       uses: codecov/codecov-action@v5
       with:
-        directory: ./bin/linux/
         disable_telem: true
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
