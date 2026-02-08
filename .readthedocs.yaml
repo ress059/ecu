@@ -10,6 +10,7 @@ build:
     python: "3.10"
   jobs:
     pre_build:
+      - cmake --preset linux
       - cmake --build --preset linux --target doxygen
       - doxysphinx build doc/ $READTHEDOCS_OUTPUT/html Doxyfile
 
