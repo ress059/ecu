@@ -1,13 +1,13 @@
 Completed.
 1. asserter.h/.c DONE.
 2. attributes.h. DONE.
-3. dlist.h/.c. TODO. !!!Change ptr_ to ecu_dnode_ptr_ in GET_ENTRY(). See below. Also look over docs again. Try to shorten docs.
+3. dlist.h/.c. DONE.
 4. endian.h. DONE.
 5. event.h/.c DONE.
 6. fsm.h/.c. DONE.
 7. hsm.h/.c. DONE.
 8. object_id.h/.c. DONE.
-9. timer.h/.c. TODO. Alphabetical order (functions, tests, and sphinx docs), doxygen comments in tests, refactor sphinx (same headers - Theory, Member Functions, etc).
+9. timer.h/.c. DONE.
 10. ntnode.h/.c. DONE.
 11. utils.h. DONE.
 
@@ -16,13 +16,12 @@ Completed.
 
 
 # ALL
-1. Public functions now in alphabetical order. Edit code and documentation.
 2. Expose valid() functions publically so they can be used by other modules.
 4. Removed hoverxref so must enable link previews in readthedocs.
 Settings->Addons->Link previews in admin dashboard.
 
-4. **In DLIST_GET_ENTRY() and NTNODE_GET_ENTRY() update ptr_ to ecu_dnode_ptr_ and ecu_ntnode_ptr_**
-***respectivly. Includes code changes and documentation changes!!!**
+# FSM and HSM
+1. Do simple examples. Make them short.
 
 
 ## Tree
@@ -89,42 +88,12 @@ And obviously can't declare variables of different types in same for-loop like s
          var_ != ecu_ntnode_child_iterator_end(&iter_);                              \
          var_ = ecu_ntnode_child_iterator_next(&iter_))
 ```
-
-5. Stuff decided on:
-    a. me->parent == me if no parent.
-    b. parent function returns null if no parent.
-    c. next functions return null if no siblings or is last sibling.
-    d. prev functions return null if no siblings or is first sibling.
-    e. Root is iterated over for preorder, postorder iterations.
-    g. Start node is not iterated over in sibling iterator. Otherwise code can not figure out when to terminate.
-    h. No separate structure for tree/root. Just nodes.
     
-6. Maybe make a ECU_DLIST_SIBLING_AT_FOR_EACH() iterator. Iterates over siblings until end (rightmost) reached.
-
-## Unit Tests
-1. Prefix all **helper** class members with m_. TEST_GROUP classes do not have to follow this. 
-Example: 
-```C
-TEST_GROUP(TestClass)
-{
-    int a;
-};
-
-class helper_class
-{
-    int m_a;
-};
-```
-2. In all unit tests do catch a const exception instead of nonconst exception.
-I.e. catch (const AssertException&) instead of catch (AssertException&)
+6. Maybe make a ECU_NTNODE_SIBLING_AT_FOR_EACH() iterator. Iterates over siblings until end (rightmost) reached.
 
 
 ## Build system and syntax, CI, etc
 0. Still need to clang-format fsm, hsm, timer, and tree.
-
-1. Add doxygen, doxysphinx, and sphinx documentation build steps to CMake. Fail build
-if any error codes returned. !!!in readthedocs.yaml return error code 183 if any doxygen
-or doxysphinx warnings/errors occur!!!.
 
 2. Add clang-format to CMake build tests. Do not auto-format the code. Instead return
 error if diff is different before and after formatting.
@@ -132,12 +101,6 @@ error if diff is different before and after formatting.
 3. Add build tests (executables) for different hardware targets. stm32l0, stm32l3, etc.
 Need linker scripts for each target. Toolchain files will be for cm0, cm4, etc.
 
-6. Use #pragma message() instead of #warning for TODO messages. I.e.
-```C
-#pragma message("TODO: Want a timer reset capability without coupling it to tlist. \
-    Reset = stop timer but do not restart its timer. When its readded it counts down \
-    from its old saved value.")
-```
 
 # Clang-format
 1. One line max now.
@@ -171,16 +134,3 @@ struct ecu_dnode
     ecu_object_id id;
 };
 ```
-
-
-## CI Pipeline Steps:
-If any step fails do not move on.
-1. format check. clang-format.
-2. Compile. cmake and cmake --build
-- cmake -DECU_DISABLE_ASSERTS=OFF --preset linux-gnu-build // for runtime asserts enabled
-- cmake --build --preset linux-gnu-build
-
-- cmake -DECU_DISABLE_ASSERTS=ON --preset linux-gnu-build // for runtime asserts disabled
-- cmake --build --preset linux-gnu-build
-3. run unit tests.
-4. generate documentation. doxygen

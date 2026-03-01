@@ -165,8 +165,8 @@ Navigate through the sidebar or click any of the icons below to view more extens
     asserter.h <asserter_h/index>
     attributes.h <attributes_h/index>
     dlist.h <dlist_h/index>
-    event.h <event_h/index>
     endian.h <endian_h/index>
+    event.h <event_h/index>
     fsm.h <fsm_h/index>
     hsm.h <hsm_h/index>
     ntnode.h <ntnode_h/index>
