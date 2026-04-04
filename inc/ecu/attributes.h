@@ -24,7 +24,7 @@
      */
     /**@{*/
     /**
-     * @brief Critical attribute. Attached to a function declaration to inform 
+     * @brief Critical attribute. Attached to a function declaration to inform
      * the compiler the routine never returns.
      *
      * @warning This attribute should be at the start of the function declaration to

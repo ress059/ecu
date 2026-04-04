@@ -260,6 +260,15 @@ if(ECU_INTERNAL)
                 -fanalyzer
         )
 
+        if(ECU_DISABLE_ASSERTS)
+            target_compile_options(static_analysis
+                PRIVATE
+                    # Do not check for possible NULL dereference since assertions are disabled. Assertions are 
+                    # the primary mechanism used to trigger errors when NULL dereferences occur.
+                    -Wno-analyzer-null-dereference -Wno-analyzer-possible-null-dereference
+            )
+        endif()
+
         target_link_libraries(static_analysis
             PRIVATE
                 common_compiler_flags
