@@ -61,7 +61,7 @@ static bool top_state_handler(struct ecu_hsm *hsm, const void *event);
  * @brief Returns true if @p parent is a parent, grandparent,
  * great-grandparent, etc of @p state. False otherwise. If
  * @p parent == @p state, then true is also returned.
- * 
+ *
  * @param hsm Hsm tree that contains @p parent and @p state.
  * @param parent Parent to check.
  * @param state State to check.
@@ -71,11 +71,11 @@ static bool is_parent_of(const struct ecu_hsm *hsm,
                          const struct ecu_hsm_state *state);
 
 /**
- * @brief Returns child of supplied state. Returned child state 
+ * @brief Returns child of supplied state. Returned child state
  * is not checked for validity.
- * 
+ *
  * @param hsm Hsm tree that contains @p leaf and @p state.
- * @param leaf Required since only parent points used in state 
+ * @param leaf Required since only parent points used in state
  * tree. This leaf is traversed up until current->parent == state.
  * Therefore @p leaf and @p state must be related and not equal.
  * @param state Get child of this state.
@@ -87,20 +87,20 @@ static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
 /**
  * @brief Gets the least common ancestor between the two
  * supplied states. Returned LCA state is not checked for
- * validity. NULL is returned if the two states are 
+ * validity. NULL is returned if the two states are
  * not in the same tree.
- * 
+ *
  * @param hsm Hsm tree to check.
  * @param s1 First state to check.
  * @param s2 Second state to check.
  */
 static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
-                                           const struct ecu_hsm_state *s1, 
+                                           const struct ecu_hsm_state *s1,
                                            const struct ecu_hsm_state *s2);
 
 /**
  * @brief Returns true if supplied hsm has been constructed
- * via @ref ecu_hsm_ctor() and is in a valid state. False 
+ * via @ref ecu_hsm_ctor() and is in a valid state. False
  * otherwise.
  */
 static bool hsm_is_valid(const struct ecu_hsm *hsm);
@@ -123,9 +123,11 @@ ECU_STATIC_ASSERT( (((size_t)HSM_TRANSITION_TYPE_COUNT) <= (ECU_FIELD_SIZEOF(str
 /*---------------------- GLOBAL VARIABLES --------------------*/
 /*------------------------------------------------------------*/
 
+/* clang-format off */
 const struct ecu_hsm_state ECU_HSM_TOP_STATE = ECU_HSM_STATE_CTOR(
     ECU_HSM_STATE_ENTRY_UNUSED, ECU_HSM_STATE_EXIT_UNUSED, ECU_HSM_STATE_INITIAL_UNUSED, &top_state_handler, (const struct ecu_hsm_state *)0
 );
+/* clang-format on */
 
 /*------------------------------------------------------------*/
 /*---------- STATIC FUNCTION DEFINITIONS - TOP STATE ---------*/
@@ -146,7 +148,7 @@ static bool top_state_handler(struct ecu_hsm *hsm, const void *event)
 when used in other definitions below. */
 static bool is_parent_of(const struct ecu_hsm *hsm,
                          const struct ecu_hsm_state *parent,
-                         const struct ecu_hsm_state *state) 
+                         const struct ecu_hsm_state *state)
 {
     ECU_ASSERT( (hsm && parent && state) );
     bool status = false;
@@ -195,7 +197,7 @@ static const struct ecu_hsm_state *get_child(const struct ecu_hsm *hsm,
 }
 
 static const struct ecu_hsm_state *get_lca(const struct ecu_hsm *hsm,
-                                           const struct ecu_hsm_state *s1, 
+                                           const struct ecu_hsm_state *s1,
                                            const struct ecu_hsm_state *s2)
 {
     ECU_ASSERT( (hsm && s1 && s2) );
@@ -227,7 +229,7 @@ static bool hsm_is_valid(const struct ecu_hsm *hsm)
     ECU_ASSERT( (hsm) );
     bool status = false;
 
-    if ((state_is_valid(hsm->state)) && 
+    if ((state_is_valid(hsm->state)) &&
         (hsm->height > 0))
     {
         status = true;
@@ -241,7 +243,7 @@ static bool state_is_valid(const struct ecu_hsm_state *state)
     ECU_ASSERT( (state) );
     bool status = false;
 
-    if ((state->handler) && 
+    if ((state->handler) &&
         (state->parent || state == &ECU_HSM_TOP_STATE))
     {
         status = true;
@@ -254,7 +256,7 @@ static bool state_is_valid(const struct ecu_hsm_state *state)
 /*-------------------- HSM MEMBER FUNCTIONS ------------------*/
 /*------------------------------------------------------------*/
 
-void ecu_hsm_ctor(struct ecu_hsm *me, 
+void ecu_hsm_ctor(struct ecu_hsm *me,
                   const struct ecu_hsm_state *state,
                   uint8_t height)
 {
@@ -276,7 +278,7 @@ void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state *state)
     ECU_ASSERT( (0 == me->transition) ); /* Cannot call ecu_hsm_change_state() multiple times in a row. */
     ECU_ASSERT( (state != &ECU_HSM_TOP_STATE) );
     ECU_ASSERT( (state_is_valid(state)) );
-    
+
     if (me->state == state)
     {
         me->transition = (1U << HSM_SELF_TRANSITION);

@@ -52,8 +52,8 @@ enum ecu_reserved_object_ids
 };
 
 /**
- * @brief Object ID type. Used so the library can implicitly typecast 
- * between this value, @ref ecu_reserved_object_ids, and user-defined 
+ * @brief Object ID type. Used so the library can implicitly typecast
+ * between this value, @ref ecu_reserved_object_ids, and user-defined
  * object ID enumerations.
  *
  * @warning This must be a signed integer type in order to

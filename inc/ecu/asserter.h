@@ -55,7 +55,7 @@ extern "C" {
      *      _Static_assert((check_), msg_)
      * @endcode
      *
-     * 3. Expands to this when compiling with C23 and greater. 
+     * 3. Expands to this when compiling with C23 and greater.
      * Uses static_assert() which is natively supported by this standard.
      * @code{.c}
      * #define ECU_STATIC_ASSERT(check_, msg_) \
@@ -95,7 +95,7 @@ extern "C" {
         #define ECU_STATIC_ASSERT(check_, msg_) \
             static_assert((check_), msg_)
     #else
-        /// @brief Custom static assert implementation since compiling with standard 
+        /// @brief Custom static assert implementation since compiling with standard
         /// that does not natively support static assert.
         #define ECU_STATIC_ASSERT(check_, msg_) \
             extern const char ecu_static_assert_fired_[(check_) ? 1 : -1]
@@ -115,10 +115,10 @@ extern "C" {
      * @pre @ref ECU_ASSERT_DEFINE_FILE() called at start of file.
      * @brief Assert condition is true at run-time. Expands differently
      * depending on whether asserts are enabled:
-     * 
-     * 1. If asserts are enabled (ECU_DISBALE_RUNTIME_ASSERTS is NOT defined) 
-     * then this macro calls a custom-defined handler when an assertion fires and 
-     * expands to: 
+     *
+     * 1. If asserts are enabled (ECU_DISBALE_RUNTIME_ASSERTS is NOT defined)
+     * then this macro calls a custom-defined handler when an assertion fires and
+     * expands to:
      * @code{.c}
      * define ECU_ASSERT(check_) \
      *      ((check_) ? ((void)0) : ecu_assert_handler(&ecu_file_name_[0], __LINE__))
@@ -138,22 +138,22 @@ extern "C" {
 
     /**
      * @brief Defines file name @ref ECU_ASSERT() uses if assertion
-     * fires. This is a more memory-efficient alternative to the \_\_FILE\_\_ 
+     * fires. This is a more memory-efficient alternative to the \_\_FILE\_\_
      * macro. Expands differently depending on whether asserts are enabled.
-     * 
-     * 1. If asserts are enabled (ECU_DISBALE_RUNTIME_ASSERTS is NOT defined) 
+     *
+     * 1. If asserts are enabled (ECU_DISBALE_RUNTIME_ASSERTS is NOT defined)
      * then this expands to:
      * @code{.c}
      * #define ECU_ASSERT_DEFINE_FILE(name_) \
      *      static const char ecu_file_name_[] = name_;
      * @endcode
-     * 
+     *
      * 2. If asserts are disabled (ECU_DISABLE_ASSERTS is defined)
      * then this expands to nothing:
      * @code{.c}
      * #define ECU_ASSERT_DEFINE_FILE(name_)
      * @endcode
-     * 
+     *
      * @warning Do NOT terminate this macro with a semicolon.
      *
      * @param name_ string literal representing source file name.
@@ -185,19 +185,30 @@ extern "C" {
 /*--------------------- PUBLIC FUNCTIONS ---------------------*/
 /*------------------------------------------------------------*/
 
+#ifdef ECU_UNIT_TEST
+/* Assert handler defined as normal function without noreturn attribute for unit tests.
+When an assertion fires during a test control must return to the caller (the test). */
+extern void ecu_assert_handler(const char *file, int line);
+#else
 /**
  * @brief User-defined system response under an assert condition.
  * Called by @ref ECU_ASSERT() when an assertion fires.
- * 
- * @warning This function MUST be defined by the user since system 
- * response is a property of the application. A linker error will 
+ *
+ * @warning This function MUST be defined by the user since system
+ * response is a property of the application. A linker error will
  * occur if this is not defined.
+ *
+ * @note Declared with the noreturn attribute to inform the compiler
+ * this function never returns. This may cause the compiler to generate
+ * different code for this function and informs static analyzers to not
+ * return from false branches of @ref ECU_ASSERT().
  *
  * @param file File name the assert fired in. This is the string
  * literal passed into @ref ECU_ASSERT_DEFINE_FILE().
  * @param line Line number where the assert fired.
  */
-extern void ecu_assert_handler(const char *file, int line);
+ECU_ATTRIBUTE_NORETURN extern void ecu_assert_handler(const char *file, int line);
+#endif
 
 #ifdef __cplusplus
 }

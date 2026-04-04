@@ -31,20 +31,20 @@
 /**@{*/
 /**
  * @brief Returns byte-swapped value (switches endiannes)
- * of 16-bit input at compile-time. Compatible with any 
- * C or C++ standard that supports fixed-width types since 
- * these standards mandate size of int is at least 2 bytes 
+ * of 16-bit input at compile-time. Compatible with any
+ * C or C++ standard that supports fixed-width types since
+ * these standards mandate size of int is at least 2 bytes
  * and uint16_t is defined.
  */
-#define ECU_SWAP16_COMPILETIME(x_)          \
-    ((uint16_t)((((x_) & 0xFF00) >> 8) |    \
+#define ECU_SWAP16_COMPILETIME(x_)       \
+    ((uint16_t)((((x_) & 0xFF00) >> 8) | \
                 (((x_) & 0x00FF) << 8)))
 
 /**
  * @brief Returns byte-swapped value (switches endianness)
- * of 32-bit input at compile-time. Compatible with any C 
- * or C++ standard that supports fixed-width types since 
- * these standards mandate size of unsigned long (UL) is 
+ * of 32-bit input at compile-time. Compatible with any C
+ * or C++ standard that supports fixed-width types since
+ * these standards mandate size of unsigned long (UL) is
  * at least 4 bytes and uint32_t is defined.
  */
 #define ECU_SWAP32_COMPILETIME(x_)              \
@@ -55,19 +55,19 @@
 
 /**
  * @brief Returns byte-swapped value (switches endianness)
- * of 64-bit input at compile-time. Compatible with any C 
- * or C++ standard that supports fixed-width types since 
- * these standards mandate size of unsigned long long (ULL) 
+ * of 64-bit input at compile-time. Compatible with any C
+ * or C++ standard that supports fixed-width types since
+ * these standards mandate size of unsigned long long (ULL)
  * is at least 8 bytes and uint64_t is defined.
  */
-#define ECU_SWAP64_COMPILETIME(x_)                          \
-    ((uint64_t)((((x_) & 0xFF00000000000000ULL) >> 56) |    \
-                (((x_) & 0x00FF000000000000ULL) >> 40) |    \
-                (((x_) & 0x0000FF0000000000ULL) >> 24) |    \
-                (((x_) & 0x000000FF00000000ULL) >> 8) |     \
-                (((x_) & 0x00000000FF000000ULL) << 8) |     \
-                (((x_) & 0x0000000000FF0000ULL) << 24) |    \
-                (((x_) & 0x000000000000FF00ULL) << 40) |    \
+#define ECU_SWAP64_COMPILETIME(x_)                       \
+    ((uint64_t)((((x_) & 0xFF00000000000000ULL) >> 56) | \
+                (((x_) & 0x00FF000000000000ULL) >> 40) | \
+                (((x_) & 0x0000FF0000000000ULL) >> 24) | \
+                (((x_) & 0x000000FF00000000ULL) >> 8) |  \
+                (((x_) & 0x00000000FF000000ULL) << 8) |  \
+                (((x_) & 0x0000000000FF0000ULL) << 24) | \
+                (((x_) & 0x000000000000FF00ULL) << 40) | \
                 (((x_) & 0x00000000000000FFULL) << 56)))
 /**@}*/
 
@@ -151,18 +151,18 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
      */
     /**@{*/
     /// @brief Portable method for reading big endian
-    /// encoded data at compile-time. Returns byte-swapped 
-    /// input if compiling on little endian target. Does 
-    /// nothing and returns same input if compiling on big 
+    /// encoded data at compile-time. Returns byte-swapped
+    /// input if compiling on little endian target. Does
+    /// nothing and returns same input if compiling on big
     /// endian target.
     #define ECU_BE16_TO_CPU_COMPILETIME(x_)
     #define ECU_BE32_TO_CPU_COMPILETIME(x_)
     #define ECU_BE64_TO_CPU_COMPILETIME(x_)
 
     /// @brief Portable method for reading big endian
-    /// encoded data at runtime. Returns byte-swapped 
-    /// input if compiling on little endian target. Does 
-    /// nothing and returns same input if compiling on big 
+    /// encoded data at runtime. Returns byte-swapped
+    /// input if compiling on little endian target. Does
+    /// nothing and returns same input if compiling on big
     /// endian target.
     #define ECU_BE32_TO_CPU_RUNTIME(x_)
     #define ECU_BE64_TO_CPU_RUNTIME(x_)
@@ -174,18 +174,18 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
      */
     /**@{*/
     /// @brief Portable method for reading little endian
-    /// encoded data at compile-time. Does nothing and 
-    /// returns same input if compiling on little endian 
-    /// target. Returns byte-swapped input if compiling 
+    /// encoded data at compile-time. Does nothing and
+    /// returns same input if compiling on little endian
+    /// target. Returns byte-swapped input if compiling
     /// on big endian target.
     #define ECU_LE16_TO_CPU_COMPILETIME(x_)
     #define ECU_LE32_TO_CPU_COMPILETIME(x_)
     #define ECU_LE64_TO_CPU_COMPILETIME(x_)
 
     /// @brief Portable method for reading little endian
-    /// encoded data at runtime. Does nothing and 
-    /// returns same input if compiling on little endian 
-    /// target. Returns byte-swapped input if compiling 
+    /// encoded data at runtime. Does nothing and
+    /// returns same input if compiling on little endian
+    /// target. Returns byte-swapped input if compiling
     /// on big endian target.
     #define ECU_LE16_TO_CPU_RUNTIME(x_)
     #define ECU_LE32_TO_CPU_RUNTIME(x_)
@@ -197,19 +197,19 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
      */
     /**@{*/
     /// @brief Portable method for sending data in big
-    /// endian format at compile-time. Returns byte-swapped 
-    /// input if compiling on little endian target. Does 
-    /// nothing and returns same input if compiling on big 
-    /// endian target. 
+    /// endian format at compile-time. Returns byte-swapped
+    /// input if compiling on little endian target. Does
+    /// nothing and returns same input if compiling on big
+    /// endian target.
     #define ECU_CPU_TO_BE16_COMPILETIME(x_)
     #define ECU_CPU_TO_BE32_COMPILETIME(x_)
     #define ECU_CPU_TO_BE64_COMPILETIME(x_)
 
     /// @brief Portable method for sending data in big
-    /// endian format at runtime. Returns byte-swapped 
-    /// input if compiling on little endian target. Does 
-    /// nothing and returns same input if compiling on big 
-    /// endian target. 
+    /// endian format at runtime. Returns byte-swapped
+    /// input if compiling on little endian target. Does
+    /// nothing and returns same input if compiling on big
+    /// endian target.
     #define ECU_CPU_TO_BE16_RUNTIME(x_)
     #define ECU_CPU_TO_BE32_RUNTIME(x_)
     #define ECU_CPU_TO_BE64_RUNTIME(x_)
@@ -220,18 +220,18 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
      */
     /**@{*/
     /// @brief Portable method for sending data in little
-    /// endian format at compile-time. Does nothing and 
-    /// returns same input if compiling on little endian 
-    /// target. Returns byte-swapped input if compiling 
+    /// endian format at compile-time. Does nothing and
+    /// returns same input if compiling on little endian
+    /// target. Returns byte-swapped input if compiling
     /// on big endian target.
     #define ECU_CPU_TO_LE16_COMPILETIME(x_)
     #define ECU_CPU_TO_LE32_COMPILETIME(x_)
     #define ECU_CPU_TO_LE64_COMPILETIME(x_)
 
     /// @brief Portable method for sending data in little
-    /// endian format at runtime. Does nothing and 
-    /// returns same input if compiling on little endian 
-    /// target. Returns byte-swapped input if compiling 
+    /// endian format at runtime. Does nothing and
+    /// returns same input if compiling on little endian
+    /// target. Returns byte-swapped input if compiling
     /// on big endian target.
     #define ECU_CPU_TO_LE16_RUNTIME(x_)
     #define ECU_CPU_TO_LE32_RUNTIME(x_)
@@ -242,58 +242,58 @@ static inline uint64_t ecu_swap64_runtime(uint_fast64_t val)
         #define ECU_BE16_TO_CPU_COMPILETIME(x_) ECU_SWAP16_COMPILETIME(x_)
         #define ECU_BE32_TO_CPU_COMPILETIME(x_) ECU_SWAP32_COMPILETIME(x_)
         #define ECU_BE64_TO_CPU_COMPILETIME(x_) ECU_SWAP64_COMPILETIME(x_)
-        #define ECU_BE16_TO_CPU_RUNTIME(x_)     ecu_swap16_runtime(x_)
-        #define ECU_BE32_TO_CPU_RUNTIME(x_)     ecu_swap32_runtime(x_)
-        #define ECU_BE64_TO_CPU_RUNTIME(x_)     ecu_swap64_runtime(x_)
+        #define ECU_BE16_TO_CPU_RUNTIME(x_) ecu_swap16_runtime(x_)
+        #define ECU_BE32_TO_CPU_RUNTIME(x_) ecu_swap32_runtime(x_)
+        #define ECU_BE64_TO_CPU_RUNTIME(x_) ecu_swap64_runtime(x_)
 
         #define ECU_LE16_TO_CPU_COMPILETIME(x_) (x_)
         #define ECU_LE32_TO_CPU_COMPILETIME(x_) (x_)
         #define ECU_LE64_TO_CPU_COMPILETIME(x_) (x_)
-        #define ECU_LE16_TO_CPU_RUNTIME(x_)     (x_)
-        #define ECU_LE32_TO_CPU_RUNTIME(x_)     (x_)
-        #define ECU_LE64_TO_CPU_RUNTIME(x_)     (x_)
+        #define ECU_LE16_TO_CPU_RUNTIME(x_) (x_)
+        #define ECU_LE32_TO_CPU_RUNTIME(x_) (x_)
+        #define ECU_LE64_TO_CPU_RUNTIME(x_) (x_)
 
         #define ECU_CPU_TO_BE16_COMPILETIME(x_) ECU_SWAP16_COMPILETIME(x_)
         #define ECU_CPU_TO_BE32_COMPILETIME(x_) ECU_SWAP32_COMPILETIME(x_)
         #define ECU_CPU_TO_BE64_COMPILETIME(x_) ECU_SWAP64_COMPILETIME(x_)
-        #define ECU_CPU_TO_BE16_RUNTIME(x_)     ecu_swap16_runtime(x_)
-        #define ECU_CPU_TO_BE32_RUNTIME(x_)     ecu_swap32_runtime(x_)
-        #define ECU_CPU_TO_BE64_RUNTIME(x_)     ecu_swap64_runtime(x_)
+        #define ECU_CPU_TO_BE16_RUNTIME(x_) ecu_swap16_runtime(x_)
+        #define ECU_CPU_TO_BE32_RUNTIME(x_) ecu_swap32_runtime(x_)
+        #define ECU_CPU_TO_BE64_RUNTIME(x_) ecu_swap64_runtime(x_)
 
         #define ECU_CPU_TO_LE16_COMPILETIME(x_) (x_)
         #define ECU_CPU_TO_LE32_COMPILETIME(x_) (x_)
         #define ECU_CPU_TO_LE64_COMPILETIME(x_) (x_)
-        #define ECU_CPU_TO_LE16_RUNTIME(x_)     (x_)
-        #define ECU_CPU_TO_LE32_RUNTIME(x_)     (x_)
-        #define ECU_CPU_TO_LE64_RUNTIME(x_)     (x_)
+        #define ECU_CPU_TO_LE16_RUNTIME(x_) (x_)
+        #define ECU_CPU_TO_LE32_RUNTIME(x_) (x_)
+        #define ECU_CPU_TO_LE64_RUNTIME(x_) (x_)
     #elif defined(ECU_BIG_ENDIAN) /* Defined by CMake build system. */
         #define ECU_BE16_TO_CPU_COMPILETIME(x_) (x_)
         #define ECU_BE32_TO_CPU_COMPILETIME(x_) (x_)
         #define ECU_BE64_TO_CPU_COMPILETIME(x_) (x_)
-        #define ECU_BE16_TO_CPU_RUNTIME(x_)     (x_)
-        #define ECU_BE32_TO_CPU_RUNTIME(x_)     (x_)
-        #define ECU_BE64_TO_CPU_RUNTIME(x_)     (x_)
+        #define ECU_BE16_TO_CPU_RUNTIME(x_) (x_)
+        #define ECU_BE32_TO_CPU_RUNTIME(x_) (x_)
+        #define ECU_BE64_TO_CPU_RUNTIME(x_) (x_)
 
         #define ECU_LE16_TO_CPU_COMPILETIME(x_) ECU_SWAP16_COMPILETIME(x_)
         #define ECU_LE32_TO_CPU_COMPILETIME(x_) ECU_SWAP32_COMPILETIME(x_)
         #define ECU_LE64_TO_CPU_COMPILETIME(x_) ECU_SWAP64_COMPILETIME(x_)
-        #define ECU_LE16_TO_CPU_RUNTIME(x_)     ecu_swap16_runtime(x_)
-        #define ECU_LE32_TO_CPU_RUNTIME(x_)     ecu_swap32_runtime(x_)
-        #define ECU_LE64_TO_CPU_RUNTIME(x_)     ecu_swap64_runtime(x_)
-    
+        #define ECU_LE16_TO_CPU_RUNTIME(x_) ecu_swap16_runtime(x_)
+        #define ECU_LE32_TO_CPU_RUNTIME(x_) ecu_swap32_runtime(x_)
+        #define ECU_LE64_TO_CPU_RUNTIME(x_) ecu_swap64_runtime(x_)
+
         #define ECU_CPU_TO_BE16_COMPILETIME(x_) (x_)
         #define ECU_CPU_TO_BE32_COMPILETIME(x_) (x_)
         #define ECU_CPU_TO_BE64_COMPILETIME(x_) (x_)
-        #define ECU_CPU_TO_BE16_RUNTIME(x_)     (x_)
-        #define ECU_CPU_TO_BE32_RUNTIME(x_)     (x_)
-        #define ECU_CPU_TO_BE64_RUNTIME(x_)     (x_)
+        #define ECU_CPU_TO_BE16_RUNTIME(x_) (x_)
+        #define ECU_CPU_TO_BE32_RUNTIME(x_) (x_)
+        #define ECU_CPU_TO_BE64_RUNTIME(x_) (x_)
 
         #define ECU_CPU_TO_LE16_COMPILETIME(x_) ECU_SWAP16_COMPILETIME(x_)
         #define ECU_CPU_TO_LE32_COMPILETIME(x_) ECU_SWAP32_COMPILETIME(x_)
         #define ECU_CPU_TO_LE64_COMPILETIME(x_) ECU_SWAP64_COMPILETIME(x_)
-        #define ECU_CPU_TO_LE16_RUNTIME(x_)     ecu_swap16_runtime(x_)
-        #define ECU_CPU_TO_LE32_RUNTIME(x_)     ecu_swap32_runtime(x_)
-        #define ECU_CPU_TO_LE64_RUNTIME(x_)     ecu_swap64_runtime(x_)
+        #define ECU_CPU_TO_LE16_RUNTIME(x_) ecu_swap16_runtime(x_)
+        #define ECU_CPU_TO_LE32_RUNTIME(x_) ecu_swap32_runtime(x_)
+        #define ECU_CPU_TO_LE64_RUNTIME(x_) ecu_swap64_runtime(x_)
     #else
         /* clang-format off */
         #error "CMake build system unable to detect target endianness from CMAKE_C_BYTE_ORDER variable. "

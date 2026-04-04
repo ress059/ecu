@@ -30,9 +30,9 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief Upcasts derived event back into the @ref ecu_event 
+ * @brief Upcasts derived event back into the @ref ecu_event
  * base class.
- * 
+ *
  * @param event_ptr_ Pointer to derived event. This type
  * must inherit @ref ecu_event base class and must be
  * pointer to non-const.
@@ -43,7 +43,7 @@
 /**
  * @brief Same as @ref ECU_EVENT_BASE_CAST() but performs
  * a const-qualified upcast.
- * 
+ *
  * @param event_ptr_ Pointer to derived event. This type
  * must inherit @ref ecu_event base class. Can be either
  * pointer to const or non-const.
@@ -53,26 +53,26 @@
 
 /**
  * @brief Constructs an @ref ecu_event at compile-time.
- * 
+ *
  * @warning Validity of ID is not checked.
- * 
+ *
  * @param id_ ID to assign event.
- * @param size_ Number of bytes of derived event. Allows for easier 
+ * @param size_ Number of bytes of derived event. Allows for easier
  * handling. I.e. reading and writing events to queues. Supply
  * @ref ECU_EVENT_SIZE_UNUSED if unused.
  */
-#define ECU_EVENT_CTOR(id_, size_)  \
-    {                               \
-        .id = id_,                  \
-        .size = size_               \
+#define ECU_EVENT_CTOR(id_, size_) \
+    {                              \
+        .id = id_,                 \
+        .size = size_              \
     }
 
 /**
- * @brief Verifies, at compile-time, that derived event 
- * correctly inherits base event class via C-style inheritance. 
+ * @brief Verifies, at compile-time, that derived event
+ * correctly inherits base event class via C-style inheritance.
  * Returns true if this condition is satisfied. False otherwise.
- * 
- * @param base_ Name of base class member within 
+ *
+ * @param base_ Name of base class member within
  * user's @p derived_ event type.
  * @param derived_ Derived event type to check.
  */
@@ -116,8 +116,8 @@ enum ecu_reserved_event_ids
 };
 
 /**
- * @brief Event ID type. Used so the library can implicitly typecast 
- * between this value, @ref ecu_reserved_event_ids, and user-defined 
+ * @brief Event ID type. Used so the library can implicitly typecast
+ * between this value, @ref ecu_reserved_event_ids, and user-defined
  * event ID enumerations.
  *
  * @warning This must be a signed integer type in order to
@@ -134,7 +134,7 @@ typedef int32_t ecu_event_id_t;
 /**
  * @brief Base event class. Custom event data is stored
  * by inheriting this class.
- * 
+ *
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
@@ -143,7 +143,7 @@ struct ecu_event
     /// @brief Identifies the event type.
     ecu_event_id_t id;
 
-    /// @brief Number of bytes of derived event. Allows for easier 
+    /// @brief Number of bytes of derived event. Allows for easier
     /// handling. I.e. reading and writing events to queues.
     size_t size;
 };
@@ -168,7 +168,7 @@ extern "C" {
  * event passed into this function via @ref ECU_EVENT_BASE_CAST().
  * @param id User-defined event ID. This must be greater than or
  * equal to @ref ECU_VALID_EVENT_ID_BEGIN.
- * @param size Number of bytes of derived event. Allows for easier 
+ * @param size Number of bytes of derived event. Allows for easier
  * handling. I.e. reading and writing events to queues. Supply
  * @ref ECU_EVENT_SIZE_UNUSED if unused.
  */
@@ -182,7 +182,7 @@ extern void ecu_event_ctor(struct ecu_event *me, ecu_event_id_t id, size_t size)
 /**
  * @pre @p me constructed via @ref ECU_EVENT_CTOR() or @ref ecu_event_ctor().
  * @brief Returns the event's ID.
- * 
+ *
  * @param me Event to check. This should be a derived
  * event passed into this function via @ref ECU_EVENT_CONST_BASE_CAST().
  */
@@ -191,7 +191,7 @@ extern ecu_event_id_t ecu_event_id(const struct ecu_event *me);
 /**
  * @pre @p me constructed via @ref ECU_EVENT_CTOR() or @ref ecu_event_ctor().
  * @brief Returns the size (number of bytes) of the derived event.
- * 
+ *
  * @param me Event to check. This should be a derived
  * event passed into this function via @ref ECU_EVENT_CONST_BASE_CAST().
  */

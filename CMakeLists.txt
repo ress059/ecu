@@ -119,25 +119,35 @@ if(ECU_INTERNAL)
             ${ecu_sources}
         )
 
-        target_compile_definitions(${dest}
-            PUBLIC # All ECU compile definitions are PUBLIC. Have to change if this ever changes.
-                ${ecu_compile_definitions}
-        )
+        if(NOT ecu_compile_definitions STREQUAL "ecu_compile_definitions-NOTFOUND")
+            target_compile_definitions(${dest}
+                PUBLIC # All ECU compile definitions are PUBLIC. Have to change if this ever changes.
+                    ${ecu_compile_definitions}
+            )
+        endif()
 
-        target_compile_features(${dest}
-            PUBLIC # All ECU compile features are PUBLIC. Have to change if this ever changes.
-                ${ecu_compile_features}
-        )
+        if(NOT ecu_compile_features STREQUAL "ecu_compile_features-NOTFOUND")
+            target_compile_features(${dest}
+                PUBLIC # All ECU compile features are PUBLIC. Have to change if this ever changes.
+                    ${ecu_compile_features}
+            )
+        endif()
 
-        target_compile_options(${dest}
-            PRIVATE # All ECU compile options are PRIVATE. Have to change if this ever changes.
-                ${ecu_compile_options}
-        )
+        if(NOT ecu_compile_options STREQUAL "ecu_compile_options-NOTFOUND")
+            target_compile_options(${dest}
+                PRIVATE # All ECU compile options are PRIVATE. Have to change if this ever changes.
+                    ${ecu_compile_options}
+            )
+        endif()
 
-        target_include_directories(${dest}
-            PUBLIC # All ECU include directories are PUBLIC. Have to change if this ever changes.
-                ${ecu_include_directories}
-        )
+        if(ecu_include_directories STREQUAL "ecu_include_directories-NOTFOUND")
+            message(FATAL_ERROR "INCLUDE_DIRECTORIES property of ecu could not be extracted.")
+        else()
+            target_include_directories(${dest}
+                PUBLIC # All ECU include directories are PUBLIC. Have to change if this ever changes.
+                    ${ecu_include_directories}
+            )
+        endif()
 
         unset(ecu_sources)
         unset(ecu_compile_definitions)
@@ -214,6 +224,56 @@ if(ECU_INTERNAL)
     add_custom_target(sphinx 
         DEPENDS ${SPHINX_INDEX_FILE}
     )
+
+    #------------------------------------------------------------#
+    #------------------- clang format targets -------------------#
+    #------------------------------------------------------------#
+    # Phony target that clang-formats source code.
+    file(GLOB_RECURSE CLANG_FORMAT_FILES 
+        CONFIGURE_DEPENDS # Also run if file added or removed.
+            ${CMAKE_CURRENT_LIST_DIR}/inc/*.h
+    )
+    get_target_property(ecu_sources ecu SOURCES)
+    list(APPEND CLANG_FORMAT_FILES ${ecu_sources})
+    unset(ecu_sources)
+
+    add_custom_target(clang_format
+        COMMENT "Formatting all ECU files: ${CLANG_FORMAT_FILES}"
+        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file -i ${CLANG_FORMAT_FILES}
+    )
+
+    add_custom_target(clang_format_ci # Returns error code if formatting error but does not format any files.
+        COMMENT "Checking for formatting errors in all ECU files: ${CLANG_FORMAT_FILES}"
+        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file --dry-run ${CLANG_FORMAT_FILES}
+    )
+
+    #------------------------------------------------------------#
+    #------------------- static analysis target -----------------#
+    #------------------------------------------------------------#
+    # Target that runs GCC static analyzer on ECU source code.
+    # Therefore only create this target if GCC compiler is being used.
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        copy_ecu_target(static_analysis)
+
+        target_compile_options(static_analysis
+            PRIVATE
+                -fanalyzer
+        )
+
+        if(ECU_DISABLE_ASSERTS)
+            target_compile_options(static_analysis
+                PRIVATE
+                    # Do not check for possible NULL dereference since assertions are disabled. Assertions are 
+                    # the primary mechanism used to trigger errors when NULL dereferences occur.
+                    -Wno-analyzer-null-dereference -Wno-analyzer-possible-null-dereference
+            )
+        endif()
+
+        target_link_libraries(static_analysis
+            PRIVATE
+                common_compiler_flags
+        )
+    endif()
 
     #------------------------------------------------------------#
     #--------------------- UNIT TEST TARGETS --------------------#
