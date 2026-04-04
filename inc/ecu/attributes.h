@@ -17,12 +17,21 @@
 #if defined(ECU_DOXYGEN)
     /**
      * @name Critical Attributes
-     * These attributes effect the functionality of the program. Critical attributes 
-     * not supported by the target compiler are NOT defined in order to create a 
-     * a compilation error (critical attributes used in the program create 
+     * These attributes effect the functionality of the program. Critical attributes
+     * not supported by the target compiler are NOT defined in order to create a
+     * a compilation error (critical attributes used in the program create
      * unresolved symbols).
      */
     /**@{*/
+    /**
+     * @brief Critical attribute. Attached to a function declaration to inform 
+     * the compiler the routine never returns.
+     *
+     * @warning This attribute should be at the start of the function declaration to
+     * be fully portable.
+     */
+    #define ECU_ATTRIBUTE_NORETURN
+
     /**
      * @brief Critical attribute. If attached to a variable, informs compiler it should
      * have the smallest possible alignment. If attached to a type definition, informs
@@ -32,7 +41,7 @@
 
     /**
      * @brief Critical attribute. Places symbol in user-specified program section.
-     * 
+     *
      * @param x_ Name of section. Must be string literal.
      */
     #define ECU_ATTRIBUTE_SECTION(x_)
@@ -52,19 +61,42 @@
     #define ECU_ATTRIBUTE_UNUSED
     /**@}*/
 #else
+    /* ECU_ATTRIBUTE_NORETURN - Critical attribute. */
+    #if defined(__cplusplus) && (__cplusplus >= 201103L) /* Using C++11 and up. */
+        #define ECU_ATTRIBUTE_NORETURN [[noreturn]]
+    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) && (__STDC_VERSION__ < 202311L) /* Using C11 to C17. */
+        #define ECU_ATTRIBUTE_NORETURN _Noreturn
+    #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202311L) /* Using C23 and up. */
+        #define ECU_ATTRIBUTE_NORETURN [[noreturn]]
+    #elif defined(__GNUC__) && !defined(__STRICT_ANSI__) /* Compiling with GCC with extensions enabled (attributes are compiler extensions not supported in ISO C). */
+        #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95 || (__GNUC_MINOR__ == 95 && __GNUC_PATCHLEVEL__ > 2))) /* GCC >= v2.95.3. Oldest version in GCC docs. */
+            #define ECU_ATTRIBUTE_NORETURN __attribute__((noreturn))
+        #endif
+    #endif
+
+    /* ECU_ATTRIBUTE_PACKED - Critical attribute. */
     #if defined(__GNUC__) && !defined(__STRICT_ANSI__) /* Compiling with GCC with extensions enabled (attributes are compiler extensions not supported in ISO C). */
         #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95 || (__GNUC_MINOR__ == 95 && __GNUC_PATCHLEVEL__ > 2))) /* GCC >= v2.95.3. Oldest version in GCC docs. */
-            /// @brief Critical attribute. GCC __attribute__((packed)).
             #define ECU_ATTRIBUTE_PACKED __attribute__((packed))
+        #endif
+    #endif
 
-            /// @brief Critical attribute. GCC __attribute__((section)).
+    /* ECU_ATTRIBUTE_SECTION - Critical attribute. */
+    #if defined(__GNUC__) && !defined(__STRICT_ANSI__) /* Compiling with GCC with extensions enabled (attributes are compiler extensions not supported in ISO C). */
+        #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95 || (__GNUC_MINOR__ == 95 && __GNUC_PATCHLEVEL__ > 2))) /* GCC >= v2.95.3. Oldest version in GCC docs. */
             #define ECU_ATTRIBUTE_SECTION(x_) __attribute__((section(x_)))
+        #endif
+    #endif
 
-            /// @brief Non-critical attribute. GCC __attribute__((unused)).    
+    /* ECU_ATTRIBUTE_SECTION - Non-critical attribute. */
+    #if defined(__GNUC__) && !defined(__STRICT_ANSI__) /* Compiling with GCC with extensions enabled (attributes are compiler extensions not supported in ISO C). */
+        #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95 || (__GNUC_MINOR__ == 95 && __GNUC_PATCHLEVEL__ > 2))) /* GCC >= v2.95.3. Oldest version in GCC docs. */
             #define ECU_ATTRIBUTE_UNUSED __attribute__((unused))
         #endif
-    #else /* Unsupported compilers. Empty-define only for non-critical attributes. */
-        /// @brief Non-critical attribute. Empty definition since using unsupported compiler.   
+    #endif
+
+    /* Non-critical attributes. */
+    #ifndef ECU_ATTRIBUTE_UNUSED
         #define ECU_ATTRIBUTE_UNUSED
     #endif
 #endif /* ECU_DOXYGEN */

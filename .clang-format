@@ -1,8 +1,10 @@
 ---
 AlignConsecutiveMacros:
-  Enabled: true 
+  Enabled: false 
   AcrossEmptyLines: false
   AcrossComments: false
+AlignTrailingComments:
+  Kind: Leave
 AllowShortEnumsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
@@ -62,4 +64,4 @@ SpacesInParensOptions:
     Other: false
 SpacesInSquareBrackets: false
 TabWidth: 4
-WhitespaceSensitiveMacros: [ECU_STATIC_ASSERT, ECU_RUNTIME_ASSERT]
+WhitespaceSensitiveMacros: [ECU_STATIC_ASSERT, ECU_ASSERT]

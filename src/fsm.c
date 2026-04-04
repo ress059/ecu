@@ -1,10 +1,10 @@
 /**
  * @file
- * @brief 
+ * @brief
  * @rst
  * See :ref:`fsm.h section <fsm_h>` in Sphinx documentation.
  * @endrst
- * 
+ *
  * @author Ian Ress
  * @version 0.1
  * @date 2024-03-13
@@ -48,7 +48,7 @@ enum transition_type
 /*------------------------------------------------------------*/
 
 /**
- * @brief Returns true if supplied state has a non-NULL 
+ * @brief Returns true if supplied state has a non-NULL
  * handler function. False otherwise.
  */
 static bool state_is_valid(const struct ecu_fsm_state *state);
@@ -60,7 +60,7 @@ static bool state_is_valid(const struct ecu_fsm_state *state);
 static bool no_transitions_active(const struct ecu_fsm *fsm);
 
 /**
- * @brief Returns true if a specific state transition 
+ * @brief Returns true if a specific state transition
  * type has been signalled. False otherwise.
  *
  * @param t State transition type to check.
@@ -69,8 +69,8 @@ static bool transition_is_active(const struct ecu_fsm *fsm, enum transition_type
 
 /**
  * @brief Signals that a specific state transition type
- * has been requested. 
- * 
+ * has been requested.
+ *
  * @param t State transition type requested.
  */
 static void set_transition(struct ecu_fsm *fsm, enum transition_type t);
@@ -86,7 +86,7 @@ static void clear_all_transitions(struct ecu_fsm *fsm);
 
 #ifndef ECU_DISABLE_ASSERTS
 /**
- * @brief Used to suppress -Werror=type-limits warnings when 
+ * @brief Used to suppress -Werror=type-limits warnings when
  * (enum transition_type val >= 0) comparisons are done. Depending on the
  * platform the enum can be treated as unsigned or signed. The warning
  * occurs on platforms that treat the enum type as unsigned since its

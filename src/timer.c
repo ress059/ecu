@@ -37,7 +37,7 @@ ECU_ASSERT_DEFINE_FILE("ecu/timer.c")
  * @p position. Otherwise returns false. This insertion
  * condition ensures all timer linked lists in @ref ecu_tlist
  * are ordered by the value of @ref ecu_timer.expiration.
- * 
+ *
  * @param node Node that is being inserted.
  * @param position List position to check against.
  * @param obj Unused.
@@ -50,7 +50,7 @@ static bool insert_here(const struct ecu_dnode *node,
  * @brief Helper function that calls timer's callback. Handles
  * timer rearming logic based on type (one-shot, periodic, etc)
  * and what the user does in their callback.
- * 
+ *
  * @param t Timer to expire.
  * @param tlist "Engine" the expired timer was apart of. Required
  * for rearming logic.
@@ -63,7 +63,7 @@ static void expire_timer(struct ecu_timer *t, struct ecu_tlist *tlist);
 
 #ifndef ECU_DISABLE_ASSERTS
 /**
- * @brief Used to suppress -Werror=type-limits warnings when 
+ * @brief Used to suppress -Werror=type-limits warnings when
  * (enum ecu_timer_type_e val >= 0) comparisons are done. Depending on the
  * platform the enum can be treated as unsigned or signed. The warning
  * occurs on platforms that treat the enum type as unsigned since its
@@ -111,7 +111,7 @@ static void expire_timer(struct ecu_timer *timer, struct ecu_tlist *tlist)
 
     if (timer->type == ECU_TIMER_TYPE_ONE_SHOT)
     {
-        /* Disarming here BEFORE callback allows one-shot timer to be rearmed in user callback. Do 
+        /* Disarming here BEFORE callback allows one-shot timer to be rearmed in user callback. Do
         NOT disarm periodic timers so we can check if user disarmed periodic timer in their callback. */
         ecu_timer_disarm(timer);
     }
@@ -119,7 +119,7 @@ static void expire_timer(struct ecu_timer *timer, struct ecu_tlist *tlist)
     if ((*timer->callback)(timer, timer->obj)) /* Execute callback. */
     {
         /* Callback successful. Only rearm if timer is periodic and user did NOT disarm it in their callback. */
-        if (timer->type == ECU_TIMER_TYPE_PERIODIC && 
+        if (timer->type == ECU_TIMER_TYPE_PERIODIC &&
             ecu_timer_active(timer))
         {
             ecu_tlist_timer_rearm(tlist, timer);
@@ -218,7 +218,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
     struct ecu_dlist_iterator iterator;
     struct ecu_timer *t = (struct ecu_timer *)0;
     struct ecu_dnode *tstart = (struct ecu_dnode *)0;
-    
+
     /* Always update timestamp even if lists empty since time is measured in absolute ticks. */
     prev = me->current;
     me->current += elapsed;
@@ -229,15 +229,15 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
         {
             /* Edge case that only runs when me->current tick counter has wrapped around.
             All timers in me->timers list will have expired if counter overflows. Expire
-            all timers in this list. All timers that are rearmed during this operation 
-            (will primarily happen in user callback) are inserted into the me->wraparounds 
-            list. Once complete, the me->timers list should be empty. me->timers and 
-            me->wraparounds are swapped to "reset" the engine. Finally, any timers that were 
-            previously added to the me->wraparounds list before this service have to be 
+            all timers in this list. All timers that are rearmed during this operation
+            (will primarily happen in user callback) are inserted into the me->wraparounds
+            list. Once complete, the me->timers list should be empty. me->timers and
+            me->wraparounds are swapped to "reset" the engine. Finally, any timers that were
+            previously added to the me->wraparounds list before this service have to be
             checked for expiration. */
             me->overflowed = true; /* Timers rearmed are always added to me->wraparounds. */
             tstart = ecu_dlist_front(&me->wraparounds);
-            
+
             ECU_DLIST_FOR_EACH(node, &iterator, &me->timers)
             {
                 /* Everything in me->timers list has expired if me->current counter overflowed. */
@@ -253,7 +253,7 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
 
             if (tstart) /* Any more timers to check? */
             {
-                /* Check if any timers previously in the me->wraparounds list before this service have 
+                /* Check if any timers previously in the me->wraparounds list before this service have
                 expired. List is ordered so function can exit as soon as a non-expired timer is reached. */
                 ECU_DLIST_AT_FOR_EACH(node, &iterator, &me->timers, tstart)
                 {
@@ -293,9 +293,9 @@ void ecu_tlist_service(struct ecu_tlist *me, ecu_tick_t elapsed)
     }
 }
 
-void ecu_tlist_timer_arm(struct ecu_tlist *me, 
-                         struct ecu_timer *timer, 
-                         ecu_tick_t period, 
+void ecu_tlist_timer_arm(struct ecu_tlist *me,
+                         struct ecu_timer *timer,
+                         ecu_tick_t period,
                          enum ecu_timer_type_e type)
 {
     ECU_ASSERT( (me && timer) );
@@ -307,7 +307,7 @@ void ecu_tlist_timer_arm(struct ecu_tlist *me,
     if ((timer->expiration < me->current) || (me->overflowed))
     {
         /* Timer expires after me->current wraparound. Or this timer is being rearmed
-        in the middle of an ecu_tlist_service() call (in user's callback), where the 
+        in the middle of an ecu_tlist_service() call (in user's callback), where the
         me->current counter has already wrapped around. */
         ecu_dlist_insert_before(&me->wraparounds, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
     }
@@ -330,7 +330,7 @@ void ecu_tlist_timer_rearm(struct ecu_tlist *me, struct ecu_timer *timer)
     if ((timer->expiration < me->current) || (me->overflowed))
     {
         /* Timer expires after me->current wraparound. Or this timer is being rearmed
-        in the middle of an ecu_tlist_service() call (in user's callback), where the 
+        in the middle of an ecu_tlist_service() call (in user's callback), where the
         me->current counter has already wrapped around. */
         ecu_dlist_insert_before(&me->wraparounds, &timer->dnode, &insert_here, ECU_DNODE_OBJ_UNUSED);
     }

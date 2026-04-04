@@ -8,7 +8,7 @@ ECU_BASE_DIR = Path(__file__).resolve().parents[1]
 
 # -------------------------- Project information --------------------------
 project = "Embedded C Utilities (ECU)"
-copyright = "2025, Ian Ress"
+copyright = "2026, Ian Ress"
 author = "Ian Ress"
 
 # -------------------------- General configuration --------------------------

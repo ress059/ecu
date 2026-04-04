@@ -4,7 +4,7 @@
  * @rst
  * See :ref:`hsm.h section <hsm_h>` in Sphinx documentation.
  * @endrst
- * 
+ *
  * @author Ian Ress
  * @version 0.1
  * @date 2025-05-01
@@ -32,13 +32,13 @@
 
 /**
  * @brief Converts intrusive @ref ecu_hsm member into the
- * user's hsm type. This should be used inside each state's 
+ * user's hsm type. This should be used inside each state's
  * definition.
  *
  * @param ecu_hsm_ptr_ Pointer to intrusive @ref ecu_hsm.
  * This must be pointer to non-const. I.e. (struct ecu_hsm *).
  * @param type_ User's hsm type containing the intrusive
- * @ref ecu_hsm member. Do not use const specifier. I.e. 
+ * @ref ecu_hsm member. Do not use const specifier. I.e.
  * (struct my_type), never (const struct my_type).
  * @param member_ Name of @ref ecu_hsm member within user's
  * type.
@@ -49,7 +49,7 @@
 /**
  * @brief Helper macro supplied to @ref ECU_HSM_STATE_CTOR()
  * if state's entry handler is unused.
- */ 
+ */
 #define ECU_HSM_STATE_ENTRY_UNUSED \
     ((void (*)(struct ecu_hsm *))0)
 
@@ -63,7 +63,7 @@
 /**
  * @brief Helper macro supplied to @ref ECU_HSM_STATE_CTOR()
  * if state's initial handler is unused.
- * 
+ *
  * @warning This can only be used for leaf states.
  */
 #define ECU_HSM_STATE_INITIAL_UNUSED \
@@ -77,8 +77,8 @@
  *      &entry_handler, ECU_HSM_STATE_EXIT_UNUSED, &state_handler, &initial_handler, &PARENT_STATE
  * );
  * @endcode
- * 
- * @param entry_ Optional function that executes when state is 
+ *
+ * @param entry_ Optional function that executes when state is
  * first entered. This must be of type (void (*)(struct ecu_hsm *)).
  * Supply @ref ECU_FSM_STATE_ENTRY_UNUSED if unused.
  * @param exit_ Optional function that executes when state exits.
@@ -94,13 +94,13 @@
  * @param parent_ This state's parent. Supply pointer to @ref ECU_HSM_TOP_STATE
  * if this state's parent is the default top state.
  */
-#define ECU_HSM_STATE_CTOR(entry_, exit_, initial_, handler_, parent_)  \
-    {                                                                   \
-        .entry = (entry_),                                              \
-        .exit = (exit_),                                                \
-        .initial = (initial_),                                          \
-        .handler = (handler_),                                          \
-        .parent = (parent_)                                             \
+#define ECU_HSM_STATE_CTOR(entry_, exit_, initial_, handler_, parent_) \
+    {                                                                  \
+        .entry = (entry_),                                             \
+        .exit = (exit_),                                               \
+        .initial = (initial_),                                         \
+        .handler = (handler_),                                         \
+        .parent = (parent_)                                            \
     }
 
 /*------------------------------------------------------------*/
@@ -114,14 +114,14 @@ struct ecu_hsm;
  * @brief Single state in hsm, initialized via @ref ECU_HSM_STATE_CTOR().
  * Pointers are const-qualified to only allow states to be
  * created at compile-time.
- * 
+ *
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
 struct ecu_hsm_state
 {
 /* Normally, pointers are const-qualified to only allow states to
-be created at compile-time. Const is stripped only for unit tests 
+be created at compile-time. Const is stripped only for unit tests
 since test code framework requires state creation at run-time. */
 #ifdef ECU_UNIT_TEST
     /// @brief Executes when state first entered. Optional.
@@ -136,7 +136,7 @@ since test code framework requires state creation at run-time. */
     void (*initial)(struct ecu_hsm *me);
 
     /// @brief Processes events dispatched to this state. Mandatory.
-    /// Return true if the dispatched event is handled within this state. 
+    /// Return true if the dispatched event is handled within this state.
     /// Return false if the event should be propagated up the state hierarchy.
     bool (*handler)(struct ecu_hsm *me, const void *event);
 
@@ -155,7 +155,7 @@ since test code framework requires state creation at run-time. */
     void (*const initial)(struct ecu_hsm *me);
 
     /// @brief Processes events dispatched to this state. Mandatory.
-    /// Return true if the dispatched event is processed within this state. 
+    /// Return true if the dispatched event is processed within this state.
     /// Return false if the event should be propagated up the state hierarchy.
     bool (*const handler)(struct ecu_hsm *me, const void *event);
 
@@ -167,7 +167,7 @@ since test code framework requires state creation at run-time. */
 /**
  * @brief Hierarchical state machine. Users create their own
  * HSMs by containing this as an intrusive member.
- * 
+ *
  * @warning PRIVATE. Unless otherwise specified, all
  * members can only be edited via the public API.
  */
@@ -177,7 +177,7 @@ struct ecu_hsm
     const struct ecu_hsm_state *state;
 
     /// @brief Number of levels in the hsm, starting at 0. Used
-    /// as a fail safe to avoid infinite loops when traversing up 
+    /// as a fail safe to avoid infinite loops when traversing up
     /// the state hierarchy.
     uint8_t height;
 
@@ -211,14 +211,14 @@ extern const struct ecu_hsm_state ECU_HSM_TOP_STATE;
  * @pre Memory already allocated for @p me.
  * @pre @p state constructed via @ref ECU_HSM_STATE_CTOR().
  * @brief Hsm constructor.
- * 
+ *
  * @param me Hsm to construct.
  * @param state Hsm's initial state. This cannot be @ref ECU_HSM_TOP_STATE.
  * @param height Number of levels in the hsm, starting at 1. For
- * example if the hsm only consists of a single state, this would 
+ * example if the hsm only consists of a single state, this would
  * be 1 (user's state and @ref ECU_HSM_TOP_STATE).
  */
-extern void ecu_hsm_ctor(struct ecu_hsm *me, 
+extern void ecu_hsm_ctor(struct ecu_hsm *me,
                          const struct ecu_hsm_state *state,
                          uint8_t height);
 /**@}*/
@@ -230,13 +230,13 @@ extern void ecu_hsm_ctor(struct ecu_hsm *me,
 /**
  * @pre @p state constructed via @ref ECU_HSM_STATE_CTOR().
  * @brief Transitions hsm into a new state.
- * 
+ *
  * @warning This can only be called within @ref ecu_hsm_state.handler
- * and @ref ecu_hsm_state.initial. If a transition is signalled 
- * in @ref ecu_hsm_state.handler, it must handle the event by 
- * returning true. The HSM must be in a leaf state after all 
+ * and @ref ecu_hsm_state.initial. If a transition is signalled
+ * in @ref ecu_hsm_state.handler, it must handle the event by
+ * returning true. The HSM must be in a leaf state after all
  * transitions are completed.
- * 
+ *
  * @param me Hsm to transition.
  * @param state State to transition into. This cannot
  * be @ref ECU_HSM_TOP_STATE.
@@ -247,14 +247,14 @@ extern void ecu_hsm_change_state(struct ecu_hsm *me, const struct ecu_hsm_state 
  * @pre @p me constructed via @ref ecu_hsm_ctor() and started
  * via @ref ecu_hsm_start().
  * @brief Relays event to hsm where it is processed by
- * the current state's handler function. The event is propagated 
+ * the current state's handler function. The event is propagated
  * up the state hierarchy until it is handled. All state transitions
  * signalled via @ref ecu_hsm_change_state() are also managed
  * in this function.
- * 
- * @warning This function must run to completion. The HSM 
+ *
+ * @warning This function must run to completion. The HSM
  * must be in a leaf state after this function completes.
- * 
+ *
  * @param me Hsm to run.
  * @param event Event to dispatch. This cannot be NULL.
  */
@@ -266,12 +266,12 @@ extern void ecu_hsm_dispatch(struct ecu_hsm *me, const void *event);
  * to the target state supplied in @ref ecu_hsm_ctor(). If the
  * target is a composite state, initial handlers are ran to
  * fully transition down the state hierarchy.
- * 
+ *
  * @warning This function should only be called once on
- * startup and must run to completion. The HSM must 
+ * startup and must run to completion. The HSM must
  * be in a leaf state after this function completes.
- * 
- * @param me Hsm to start. This should not be an already 
+ *
+ * @param me Hsm to start. This should not be an already
  * running hsm.
  */
 extern void ecu_hsm_start(struct ecu_hsm *me);

@@ -37,5 +37,5 @@
 		}
 	},
     // Avoids CRLF vs LF from showing up in git diff. Also set up certificate for git.
-    "postCreateCommand": "git config core.autocrlf input; git config --unset http.sslCAInfo || true; git config --unset http.sslCAPath || true; git config --unset http.sslCert || true; git config http.sslVerify true; git config http.sslCAInfo /etc/ssl/certs/ca-certificates.crt"
+    "postCreateCommand": "git config --global core.autocrlf input; git config --global --unset http.sslCAInfo || true; git config --global --unset http.sslCAPath || true; git config --global --unset http.sslCert || true; git config --global http.sslVerify true; git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt"
 }

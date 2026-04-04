@@ -81,6 +81,18 @@ API
 Critical Attributes
 -------------------------------------------------
 
+ECU_ATTRIBUTE_NORETURN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Attached to a function declaration to inform the compiler the routine never returns:
+
+    .. code-block:: c
+
+        ECU_ATTRIBUTE_NORETURN void my_assertion(void);
+
+    .. warning::
+
+        This attribute should be at the start of the function declaration to be fully portable. For example C11's ``_Noreturn`` can only be at the start of a function declaration.
+
 ECU_ATTRIBUTE_PACKED
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If attached to a variable, informs compiler it should have the smallest possible alignment. If attached to a type definition, informs compiler the minimum required memory should be used to represent the type:

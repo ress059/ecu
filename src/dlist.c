@@ -141,7 +141,7 @@ void ecu_dnode_destroy(struct ecu_dnode *me)
     /* Destroy object by setting to NULL values. Forces user to reconstruct
     node if they want to use it again, assuming asserts are enabled.
     IMPORTANT: These values are reset before the destroy callback in case
-    the user frees their entire node (including ecu_dnode). Otherwise 
+    the user frees their entire node (including ecu_dnode). Otherwise
     we would be accessing and writing to freed memory. */
     me->next = (struct ecu_dnode *)0;
     me->prev = (struct ecu_dnode *)0;
@@ -174,7 +174,7 @@ bool ecu_dnode_in_list(const struct ecu_dnode *me)
     {
         status = true;
     }
-    
+
     return status;
 }
 
@@ -185,7 +185,7 @@ void ecu_dnode_insert_after(struct ecu_dnode *pos, struct ecu_dnode *node)
     ECU_ASSERT( (ecu_dnode_valid(pos) && ecu_dnode_valid(node)) );
     ECU_ASSERT( (ecu_dnode_in_list(pos) && !ecu_dnode_in_list(node)) );
 
-    /* Do manually. Do not use ecu_dnode_insert_before(pos->next, node). If pos is 
+    /* Do manually. Do not use ecu_dnode_insert_before(pos->next, node). If pos is
     TAIL then pos->next == HEAD. Passing HEAD into function is forbidden. */
     node->next = pos->next;
     node->prev = pos;
@@ -472,7 +472,7 @@ void ecu_dlist_push_back(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_ASSERT( (ecu_dnode_valid(node)) );
     ECU_ASSERT( (!ecu_dnode_in_list(node)) );
 
-    /* Add manually. Do not call ecu_dnode_insert_before(&me->head, node) 
+    /* Add manually. Do not call ecu_dnode_insert_before(&me->head, node)
     since HEAD is not allowed to be passed into dnode functions. */
     node->next = &me->head;
     node->prev = me->head.prev;
@@ -487,7 +487,7 @@ void ecu_dlist_push_front(struct ecu_dlist *me, struct ecu_dnode *node)
     ECU_ASSERT( (ecu_dnode_valid(node)) );
     ECU_ASSERT( (!ecu_dnode_in_list(node)) );
 
-    /* Add manually. Do not call ecu_dnode_insert_after(&me->head, node) 
+    /* Add manually. Do not call ecu_dnode_insert_after(&me->head, node)
     since HEAD is not allowed to be passed into dnode functions. */
     node->next = me->head.next;
     node->prev = &me->head;
@@ -682,16 +682,16 @@ void ecu_dlist_swap(struct ecu_dlist *me, struct ecu_dlist *other)
     {
         struct ecu_dnode *temp = me->head.next;
 
-        me->head.next           = other->head.next;
-        other->head.next        = temp;
-        me->head.next->prev     = &me->head;
-        other->head.next->prev  = &other->head;
+        me->head.next = other->head.next;
+        other->head.next = temp;
+        me->head.next->prev = &me->head;
+        other->head.next->prev = &other->head;
 
-        temp                    = me->head.prev;
-        me->head.prev           = other->head.prev;
-        other->head.prev        = temp;
-        me->head.prev->next     = &me->head;
-        other->head.prev->next  = &other->head;
+        temp = me->head.prev;
+        me->head.prev = other->head.prev;
+        other->head.prev = temp;
+        me->head.prev->next = &me->head;
+        other->head.prev->next = &other->head;
     }
 }
 
@@ -705,8 +705,8 @@ bool ecu_dlist_valid(const struct ecu_dlist *me)
 /*----------- NON-CONST ITERATOR MEMBER FUNCTIONS ------------*/
 /*------------------------------------------------------------*/
 
-struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me, 
-                                        struct ecu_dlist *list, 
+struct ecu_dnode *ecu_dlist_iterator_at(struct ecu_dlist_iterator *me,
+                                        struct ecu_dlist *list,
                                         struct ecu_dnode *start)
 {
     ECU_ASSERT( (me && list && start) );
@@ -756,8 +756,8 @@ struct ecu_dnode *ecu_dlist_iterator_next(struct ecu_dlist_iterator *me)
 /*------------- CONST ITERATOR MEMBER FUNCTIONS --------------*/
 /*------------------------------------------------------------*/
 
-const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me, 
-                                               const struct ecu_dlist *list, 
+const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me,
+                                               const struct ecu_dlist *list,
                                                const struct ecu_dnode *start)
 {
     ECU_ASSERT( (me && list && start) );
@@ -771,7 +771,7 @@ const struct ecu_dnode *ecu_dlist_iterator_cat(struct ecu_dlist_citerator *me,
     return (me->current);
 }
 
-const struct ecu_dnode *ecu_dlist_iterator_cbegin(struct ecu_dlist_citerator *me, 
+const struct ecu_dnode *ecu_dlist_iterator_cbegin(struct ecu_dlist_citerator *me,
                                                   const struct ecu_dlist *list)
 {
     ECU_ASSERT( (me && list) );

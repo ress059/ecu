@@ -13,10 +13,10 @@ jobs:
         assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
     - uses: actions/checkout@v4
-    - name: Build
+    - name: Build and static analysis
       run: |
         cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
-        cmake --build --clean-first --preset ${{matrix.preset}} --target ecu
+        cmake --build --clean-first --preset ${{matrix.preset}} --target static_analysis
 
   documentation:
     name: Documentation
@@ -32,6 +32,16 @@ jobs:
         sudo apt install -y doxygen graphviz
         cmake --preset linux
         cmake --build --preset linux --target sphinx
+
+  format:
+    name: Format
+    runs-on: [ubuntu-24.04]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check formatting errors
+      run: |
+        cmake --preset linux
+        cmake --build --preset linux --target clang_format_ci
 
   unit_test:
     name: Unit Test

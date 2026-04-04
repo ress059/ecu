@@ -39,6 +39,11 @@ target_compile_options(ecu_unit_test_lib
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path> # Additional flags for unit tests.
 )
 
+target_link_libraries(ecu_unit_test_lib
+    PRIVATE
+        common_compiler_flags
+)
+
 #------------------------------------------------------------#
 #--------------- UNIT TEST EXECUTABLE TARGET ----------------#
 #------------------------------------------------------------#

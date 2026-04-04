@@ -1,10 +1,10 @@
 /**
  * @file
- * @brief 
+ * @brief
  * @rst
  * See :ref:`utils.h section <utils_h>` in Sphinx documentation.
  * @endrst
- * 
+ *
  * @author Ian Ress
  * @version 0.1
  * @date 2025-04-13
@@ -28,13 +28,13 @@
 /*------------------------------------------------------------*/
 
 /**
- * @brief Converts an intrusive member back into the data type 
- * that stores it. See @ref ECU_DNODE_GET_ENTRY() for example 
+ * @brief Converts an intrusive member back into the data type
+ * that stores it. See @ref ECU_DNODE_GET_ENTRY() for example
  * usage.
  *
- * @param ptr_ Pointer to intrusive member. This must be pointer 
+ * @param ptr_ Pointer to intrusive member. This must be pointer
  * to non-const.
- * @param type_ Data type containing the intrusive member 
+ * @param type_ Data type containing the intrusive member
  * that parameter @p ptr_ points to. Do not use const specifier.
  * I.e. struct my_type, never const struct my_type.
  * @param member_ Name of intrusive member within @p type_.
@@ -44,13 +44,13 @@
 
 /**
  * @brief Const-qualified version of @ref ECU_CONTAINER_OF().
- * Converts an intrusive member back into the data type 
+ * Converts an intrusive member back into the data type
  * that stores it. See @ref ECU_DNODE_GET_CONST_ENTRY()
  * for example usage.
  *
  * @param ptr_ Pointer to intrusive member. This can be pointer
  * to non-const or const.
- * @param type_ Data type containing the intrusive member 
+ * @param type_ Data type containing the intrusive member
  * that parameter @p ptr_ points to. Do not use const specifier.
  * I.e. struct my_type, never const struct my_type.
  * @param member_ Name of intrusive member within @p type_.
@@ -61,7 +61,7 @@
 /**
  * @brief Returns the size of a member within a struct
  * or union <b>declaration</b> at compile-time.
- * 
+ *
  * @param type_ Struct or union type containing @p member_.
  * @param member_ Name of member within @p type_ to get size of.
  */
@@ -69,35 +69,37 @@
     (sizeof(((type_ *)0)->member_))
 
 /**
- * @brief Verifies, at compile-time, that derived class 
- * correctly inherits base class via C-style inheritance. 
+ * @brief Verifies, at compile-time, that derived class
+ * correctly inherits base class via C-style inheritance.
  * Returns true if this condition is satisfied. False otherwise.
- * 
- * @param base_ Name of base class member within 
+ *
+ * @param base_ Name of base class member within
  * user's @p derived_ type.
  * @param derived_ Derived type to check.
  */
 #define ECU_IS_BASE_OF(base_, derived_) \
     ((bool)(offsetof(derived_, base_) == (size_t)0))
 
+/* clang-format off */
 /**
- * @brief Verifies, at compile-time, that supplied type is 
- * signed. Returns true if this condition is satisfied. 
+ * @brief Verifies, at compile-time, that supplied type is
+ * signed. Returns true if this condition is satisfied.
  * False otherwise.
- * 
+ *
  * @param type_ Type to check. I.e. int8_t, uint8_t, etc.
  */
 #define ECU_IS_SIGNED(type_) \
     ((bool)((type_)-1 < (type_)0))
 
 /**
- * @brief Verifies, at compile-time, that supplied type is 
- * unsigned. Returns true if this condition is satisfied. 
+ * @brief Verifies, at compile-time, that supplied type is
+ * unsigned. Returns true if this condition is satisfied.
  * False otherwise
- * 
+ *
  * @param type_ Type to check. I.e. int8_t, uint8_t, etc.
- */    
+ */
 #define ECU_IS_UNSIGNED(type_) \
     ((bool)((type_)-1 > (type_)0))
+/* clang-format on */
 
 #endif /* ECU_UTILS_H_ */

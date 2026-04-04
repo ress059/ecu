@@ -21,7 +21,10 @@ Completed.
 Settings->Addons->Link previews in admin dashboard.
 
 # FSM and HSM
-1. Do simple examples. Make them short.
+1. Thinking about stripping away const qualifiers in ecu_fsm_state and ecu_hsm_state. The user can
+decide if the states are const or not.
+2. Add support for state machine inheritance in fsm and hsm modules.
+3. Do simple examples in documentation. Make them short.
 
 
 ## Tree
