@@ -10,6 +10,7 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y --no-install-recommends \
     build-essential=12.10ubuntu1 \
+    openssh-client \
     python3=3.12.3-0ubuntu2.1 \
     python3-pip \
     wget

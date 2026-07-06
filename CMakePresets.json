@@ -24,7 +24,7 @@
 			"displayName": "arm_cm4f",
             "binaryDir": "bin/arm_cm4f",
 			"description": "ARM Cortex-M4F build configuration. Toolchain = arm-none-eabi. Host = Linux x86_64. Target = Cortex-M4F CPU.",
-			"toolchainFile": "toolchains/gnu/arm_cm4/generic_gnu_cortex_m4f.cmake",
+			"toolchainFile": "toolchains/gnu/arm_cm4f/generic_gnu_cortex_m4f.cmake",
 			"cacheVariables": 
 			{
 				"PLATFORM": "arm_cm4f"
