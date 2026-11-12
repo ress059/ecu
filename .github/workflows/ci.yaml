@@ -13,7 +13,11 @@ jobs:
         assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
     - uses: actions/checkout@v4
-    - name: Build and static analysis
+    - name: Build
+      run: |
+        cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
+        cmake --build --clean-first --preset ${{matrix.preset}} --target ecu
+    - name: Static analysis
       run: |
         cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
         cmake --build --clean-first --preset ${{matrix.preset}} --target static_analysis

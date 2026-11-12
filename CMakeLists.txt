@@ -1,7 +1,7 @@
 #------------------------------------------------------------#
 #---------------- INITIAL PROJECT INVOKATION ----------------#
 #------------------------------------------------------------#
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.28)
 project(ECU_LIBRARY VERSION 0.1)
 set(ECU_SUPPORTED_COMPILERS "GNU")
 option(ECU_DISABLE_ASSERTS OFF)
@@ -11,30 +11,10 @@ if(NOT CMAKE_C_COMPILER_ID IN_LIST ECU_SUPPORTED_COMPILERS)
 endif()
 
 #------------------------------------------------------------#
-#----------------------- COMMON SETTINGS --------------------#
-#------------------------------------------------------------#
-if(ECU_INTERNAL)
-    add_library(common_compiler_flags INTERFACE)
-    target_compile_options(common_compiler_flags
-        INTERFACE
-            # C and C++ flags
-            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-fdiagnostics-color=always -ffunction-sections -fdata-sections>
-            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wall -Werror -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
-            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-align=strict -Wstrict-overflow=2 -Wwrite-strings>
-            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
-
-            # C-only flags
-            $<$<COMPILE_LANG_AND_ID:C,GNU>:-fno-common -Wstrict-prototypes -Waggregate-return>
-
-            # Debug settings
-            $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
-    )
-endif()
-
-#------------------------------------------------------------#
 #------------------------ ecu target ------------------------#
 #------------------------------------------------------------#
-add_library(ecu STATIC
+# Main target used by the application.
+add_library(ecu STATIC EXCLUDE_FROM_ALL
     ${CMAKE_CURRENT_LIST_DIR}/src/asserter.c
     ${CMAKE_CURRENT_LIST_DIR}/src/dlist.c
     ${CMAKE_CURRENT_LIST_DIR}/src/event.c
@@ -88,79 +68,81 @@ if(ECU_DISABLE_ASSERTS)
     )
 endif()
 
-if(ECU_INTERNAL)
-    target_compile_options(ecu
-        PRIVATE
-            $<$<COMPILE_LANG_AND_ID:C,GNU>:-fstack-usage -Wstack-usage=200>
-    )
-
-    target_link_libraries(ecu 
-        PRIVATE
-            common_compiler_flags
-    )
-
-    # NOTE: If ECU target properties change this has to be revisited. This function copies ECU target
-    # into another target in case the source code needs to be compiled differently (i.e tests with unique
-    # preprocessor defines).
-    function(copy_ecu_target dest)
-        if(TARGET ${dest})
-            message(FATAL_ERROR "dest target already exists! dest = ${dest}")
-        elseif(${dest} STREQUAL "ecu")
-            message(FATAL_ERROR "dest target cannot have name ecu. ecu target already exists and is what is being copied over to dest.")
-        endif()
-
-        get_target_property(ecu_sources ecu SOURCES)
-        get_target_property(ecu_compile_definitions ecu COMPILE_DEFINITIONS)
-        get_target_property(ecu_compile_features ecu COMPILE_FEATURES)
-        get_target_property(ecu_compile_options ecu COMPILE_OPTIONS)
-        get_target_property(ecu_include_directories ecu INCLUDE_DIRECTORIES)
-
-        add_library(${dest} STATIC EXCLUDE_FROM_ALL
-            ${ecu_sources}
-        )
-
-        if(NOT ecu_compile_definitions STREQUAL "ecu_compile_definitions-NOTFOUND")
-            target_compile_definitions(${dest}
-                PUBLIC # All ECU compile definitions are PUBLIC. Have to change if this ever changes.
-                    ${ecu_compile_definitions}
-            )
-        endif()
-
-        if(NOT ecu_compile_features STREQUAL "ecu_compile_features-NOTFOUND")
-            target_compile_features(${dest}
-                PUBLIC # All ECU compile features are PUBLIC. Have to change if this ever changes.
-                    ${ecu_compile_features}
-            )
-        endif()
-
-        if(NOT ecu_compile_options STREQUAL "ecu_compile_options-NOTFOUND")
-            target_compile_options(${dest}
-                PRIVATE # All ECU compile options are PRIVATE. Have to change if this ever changes.
-                    ${ecu_compile_options}
-            )
-        endif()
-
-        if(ecu_include_directories STREQUAL "ecu_include_directories-NOTFOUND")
-            message(FATAL_ERROR "INCLUDE_DIRECTORIES property of ecu could not be extracted.")
-        else()
-            target_include_directories(${dest}
-                PUBLIC # All ECU include directories are PUBLIC. Have to change if this ever changes.
-                    ${ecu_include_directories}
-            )
-        endif()
-
-        unset(ecu_sources)
-        unset(ecu_compile_definitions)
-        unset(ecu_compile_features)
-        unset(ecu_compile_options)
-        unset(ecu_include_directories)
-    endfunction()
-endif()
-
 #------------------------------------------------------------#
 #--------------------- INTERNAL TARGETS ---------------------#
 #------------------------------------------------------------#
 if(ECU_INTERNAL)
+    get_target_property(ECU_SOURCES ecu SOURCES)
+    file(GLOB_RECURSE ECU_INCLUDES 
+        CONFIGURE_DEPENDS # Also run if file added or removed.
+            ${CMAKE_CURRENT_LIST_DIR}/inc/*.h
+    )
+
+    #------------------------------------------------------------#
+    #--------------------- ecu_common target --------------------#
+    #------------------------------------------------------------#
+    # Target containing common compiler flags, settings, etc.
+    # Allows library to be easily rebuilt with different preprocessor defines, compiler options, etc.
+    # Note that sources are not included in this target to allow common compiler flags to be applied to targets
+    # that do not need to recompile ECU. 
+    add_library(ecu_common INTERFACE)
+
+    target_compile_options(ecu_common
+        INTERFACE
+            # C and C++ flags
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-fdiagnostics-color=always -ffunction-sections -fdata-sections>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wall -Werror -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wundef -Wshadow>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-align=strict -Wstrict-overflow=2 -Wwrite-strings>
+            $<$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>:-Wcast-qual -Wswitch-default -Wimplicit-fallthrough -Wnull-dereference -Wdouble-promotion>
+
+            # C-only flags
+            $<$<COMPILE_LANG_AND_ID:C,GNU>:-fno-common -Wstrict-prototypes -Waggregate-return>
+
+            # Debug settings
+            $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-g3>
+    )
+
+    target_include_directories(ecu_common
+        INTERFACE
+            ${CMAKE_CURRENT_LIST_DIR}/inc
+    )
+
+    if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+        target_compile_definitions(ecu_common 
+            INTERFACE 
+                ECU_LITTLE_ENDIAN 
+        )
+    elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+        target_compile_definitions(ecu_common 
+            INTERFACE 
+                ECU_BIG_ENDIAN 
+        )
+    else()
+        message(FATAL_ERROR "Unable to detect target endianness. endian.h cannot be used.")
+    endif() 
+
+    if(ECU_DISABLE_ASSERTS)
+        target_compile_definitions(ecu_common
+            INTERFACE 
+                ECU_DISABLE_ASSERTS 
+        )
+    endif()
+
+    #------------------------------------------------------------#
+    #------------------- clang format targets -------------------#
+    #------------------------------------------------------------#
+    # Phony target that clang-formats ECU source code in place. Meant to be used by developer.
+    add_custom_target(clang_format
+        COMMENT "Formatting all ECU files: ${ECU_INCLUDES} ${ECU_SOURCES}"
+        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file -i ${ECU_INCLUDES} ${ECU_SOURCES}
+    )
+
+    # Phony target that returns an error code if ECU source code is not clang-formatted. This is used by CI to fail a job if
+    # ECU changes were pushed but not formatted. Files are NOT edited to force the developer to look over and format the files.
+    add_custom_target(clang_format_ci # Returns error code if formatting error but does not format any files.
+        COMMENT "Checking for formatting errors in all ECU files: ${ECU_INCLUDES} ${ECU_SOURCES}"
+        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file --dry-run ${ECU_INCLUDES} ${ECU_SOURCES}
+    )
 
     #------------------------------------------------------------#
     #---------------------- doxygen target ----------------------#
@@ -168,17 +150,12 @@ if(ECU_INTERNAL)
     # Target that generates doxygen documentation locally if:
     #   - Any ECU public headers change.
     #   - Doxyfile.in changes.
-    file(GLOB_RECURSE DOXYGEN_FILES 
-        CONFIGURE_DEPENDS # Also run if file added or removed.
-            ${CMAKE_CURRENT_LIST_DIR}/inc/*.h
-    )
     set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen/html/index.html)
-    list(APPEND DOXYGEN_FILES ${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in ${CMAKE_CURRENT_LIST_DIR}/Doxyfile @ONLY)
 
     add_custom_command(
         OUTPUT ${DOXYGEN_INDEX_FILE}
-        DEPENDS ${DOXYGEN_FILES}
+        DEPENDS ${ECU_INCLUDES} ${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_LIST_DIR}/doc/doxygen
         COMMAND doxygen ${CMAKE_CURRENT_LIST_DIR}/Doxyfile
         COMMAND ${CMAKE_COMMAND} -E echo "Generated doxygen documentation in: ${DOXYGEN_INDEX_FILE}"
@@ -226,38 +203,18 @@ if(ECU_INTERNAL)
     )
 
     #------------------------------------------------------------#
-    #------------------- clang format targets -------------------#
-    #------------------------------------------------------------#
-    # Phony target that clang-formats source code.
-    file(GLOB_RECURSE CLANG_FORMAT_FILES 
-        CONFIGURE_DEPENDS # Also run if file added or removed.
-            ${CMAKE_CURRENT_LIST_DIR}/inc/*.h
-    )
-    get_target_property(ecu_sources ecu SOURCES)
-    list(APPEND CLANG_FORMAT_FILES ${ecu_sources})
-    unset(ecu_sources)
-
-    add_custom_target(clang_format
-        COMMENT "Formatting all ECU files: ${CLANG_FORMAT_FILES}"
-        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file -i ${CLANG_FORMAT_FILES}
-    )
-
-    add_custom_target(clang_format_ci # Returns error code if formatting error but does not format any files.
-        COMMENT "Checking for formatting errors in all ECU files: ${CLANG_FORMAT_FILES}"
-        COMMAND clang-format --Werror --fallback-style=none --ferror-limit=0 --style=file --dry-run ${CLANG_FORMAT_FILES}
-    )
-
-    #------------------------------------------------------------#
     #------------------- static analysis target -----------------#
     #------------------------------------------------------------#
-    # Target that runs GCC static analyzer on ECU source code.
+    # Target that compiles ECU with all warnings and runs GCC static analyzer.
     # Therefore only create this target if GCC compiler is being used.
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-        copy_ecu_target(static_analysis)
+        add_library(static_analysis STATIC EXCLUDE_FROM_ALL
+            ${ECU_SOURCES}
+        )
 
         target_compile_options(static_analysis
             PRIVATE
-                -fanalyzer
+                -fanalyzer -fstack-usage -Wstack-usage=200
         )
 
         if(ECU_DISABLE_ASSERTS)
@@ -266,25 +223,27 @@ if(ECU_INTERNAL)
                     # Do not check for possible NULL dereference since assertions are disabled. Assertions are 
                     # the primary mechanism used to trigger errors when NULL dereferences occur.
                     -Wno-analyzer-null-dereference -Wno-analyzer-possible-null-dereference
+
+                    # Some functions and parameters will now be unused because they are 
+                    # only called within assert macros. Suppress these warnings.
+                    -Wno-unused-function -Wno-unused-parameter
             )
         endif()
 
         target_link_libraries(static_analysis
             PRIVATE
-                common_compiler_flags
+                ecu_common
         )
     endif()
 
     #------------------------------------------------------------#
     #--------------------- UNIT TEST TARGETS --------------------#
     #------------------------------------------------------------#
-    if(PLATFORM STREQUAL "linux") # Unit tests are only for running on native host (Linux computer).
+    # Only define unit test targets if running on the native host (Linux computer).
+    # Unit tests also require ECU assertions to be ENABLED. Tests frequency verify NULL dereferences, invalid
+    # function parmaeters, etc. Disabling these checks invalidates the tests (and probably results in seg faults).
+    if(PLATFORM STREQUAL "linux" AND NOT ECU_DISABLE_ASSERTS)
         include(CTest) # Must be in top-level directory for CTest to discover tests.....
         add_subdirectory(tests/unit)
     endif()
-
-    #------------------------------------------------------------#
-    #----------------- INTEGRATION TEST TARGETS -----------------#
-    #------------------------------------------------------------#
-    # add_subdirectory(tests/integration)
 endif() # ECU_INTERNAL
