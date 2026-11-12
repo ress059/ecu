@@ -6,42 +6,38 @@ FetchContent_Declare(
     CppUTest
     GIT_REPOSITORY https://github.com/cpputest/cpputest.git
     GIT_TAG        6f66733f7a1affc05a5ad2126d5c5eecf82f662f # Latest master. Needed for CTest to work...
+    EXCLUDE_FROM_ALL
 )
 # Set this to ON if you want to have the CppUTests in your project as well.
 set(TESTS OFF CACHE BOOL "Switch off CppUTest Test build")
 FetchContent_MakeAvailable(CppUTest)
 
-target_compile_options(CppUTest
-    PRIVATE 
-        # Save debug symbols for CppUTest.
-        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-O0 -g3>
-)
-
-target_compile_options(CppUTestExt
-    PRIVATE 
-        # Save debug symbols for CppUTestExt.
-        $<$<AND:$<CONFIG:Debug>,$<OR:$<COMPILE_LANG_AND_ID:C,GNU>,$<COMPILE_LANG_AND_ID:CXX,GNU>>>:-O0 -g3>
-)
-
 #------------------------------------------------------------#
 #-------------------- ECU UNIT TEST TARGET ------------------#
 #------------------------------------------------------------#
-# Target that compiles ECU for unit tests. Applies unit test-specific compiler options and settings.
-copy_ecu_target(ecu_unit_test_lib)
+# Target that compiles ECU source for unit tests. Applies unit test-specific compiler options and settings.
+add_library(ecu_unit_test STATIC EXCLUDE_FROM_ALL
+    ${ECU_SOURCES}
+)
 
-target_compile_definitions(ecu_unit_test_lib
+target_compile_definitions(ecu_unit_test
     PUBLIC
         ECU_UNIT_TEST # PUBLIC since this may be used in ECU header files.
 )
 
-target_compile_options(ecu_unit_test_lib
+target_compile_options(ecu_unit_test
     PRIVATE
         $<$<COMPILE_LANG_AND_ID:C,GNU>:-O0 --coverage -fprofile-abs-path> # Additional flags for unit tests.
 )
 
-target_link_libraries(ecu_unit_test_lib
-    PRIVATE
-        common_compiler_flags
+target_link_libraries(ecu_unit_test
+    PUBLIC
+        ecu_common # PUBLIC to propagate ECU preprocessor defines.
+)
+
+target_link_options(ecu_unit_test
+    INTERFACE
+        $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
 )
 
 #------------------------------------------------------------#
@@ -88,13 +84,7 @@ target_link_libraries(unit_test_exe
     PRIVATE 
         CppUTest
         CppUTestExt
-        common_compiler_flags
-        ecu_unit_test_lib
-)
-
-target_link_options(unit_test_exe
-    PRIVATE
-        $<$<OR:$<LINK_LANG_AND_ID:C,GNU>,$<LINK_LANG_AND_ID:CXX,GNU>>:--coverage>
+        ecu_unit_test
 )
 
 #------------------------------------------------------------#
