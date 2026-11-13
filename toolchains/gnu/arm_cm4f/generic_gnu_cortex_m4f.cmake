@@ -20,9 +20,9 @@ set(CMAKE_SYSTEM_NAME Generic CACHE INTERNAL "")
 set(CMAKE_CROSSCOMPILING TRUE CACHE INTERNAL "")
 set(CMAKE_SYSTEM_PROCESSOR cortex-m4 CACHE STRING "") # Older versions of CMake use this to append to -mcpu= flag.
 
-# Prevent CMake from performing internal compilation and linking tests since we are cross compiling
-set(CMAKE_C_COMPILER_WORKS TRUE CACHE INTERNAL "")
-set(CMAKE_CXX_COMPILER_WORKS TRUE CACHE INTERNAL "")
+# Build static libraries during compiler/ABI checks instead of executables. This bypasses linker errors that arise 
+# due to cross-compilation while still compiling object files for endianness detection (CMAKE_X_BYTE_ORDER).
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # Find arm-none-eabi. For GNU, the only ones that matter for building are CMAKE_C_COMPILER
 # and CMAKE_CXX_COMPILER since gcc/g++ will automatically invoke the linker, assembler, etc.

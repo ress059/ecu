@@ -1,66 +1,99 @@
 name: CI
+
 on: push
+
 jobs:
+  docker:
+    name: Build and Push Docker Image
+    runs-on: [ubuntu-24.04]
+    outputs: 
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+    - name: Authenticate with Github Container Registry
+    - uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate image tags
+      id: metadata
+      uses: docker/metadata-action@v6
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+    - name: Build and push image
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.metadata.outputs.tags }}
+
   build:
     name: Build
+    needs: docker
     runs-on: [ubuntu-24.04]
+    container: ${{ needs.docker.outputs.image }}
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
       matrix:
-        # TODO: Add stm32l432xc-build-test, and other cross-compilation stuff later.
-        preset: [linux]
+        preset: [linux, arm_cm4f]
         assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
+    - name: Compile
     - uses: actions/checkout@v4
-    - name: Build
       run: |
-        cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
-        cmake --build --clean-first --preset ${{matrix.preset}} --target ecu
+        cmake -D${{ matrix.assert_setting }} --preset ${{ matrix.preset }}
+        cmake --build --clean-first --preset ${{ matrix.preset }} --target ecu
+
     - name: Static analysis
       run: |
-        cmake -D${{matrix.assert_setting}} --preset ${{matrix.preset}}
-        cmake --build --clean-first --preset ${{matrix.preset}} --target static_analysis
+        cmake -D${{ matrix.assert_setting }} --preset ${{ matrix.preset }}
+        cmake --build --clean-first --preset ${{ matrix.preset }} --target static_analysis
 
   documentation:
     name: Documentation
+    needs: docker
     runs-on: [ubuntu-24.04]
+    container: ${{ needs.docker.outputs.image }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: |
-        sudo apt install -y doxygen graphviz
-        pip install -r requirements.txt --break-system-packages
     - name: Generate documentation
+    - uses: actions/checkout@v4
       run: |
-        sudo apt install -y doxygen graphviz
         cmake --preset linux
         cmake --build --preset linux --target sphinx
 
   format:
     name: Format
+    needs: docker
     runs-on: [ubuntu-24.04]
+    container: ${{ needs.docker.outputs.image }}
     steps:
-    - uses: actions/checkout@v4
     - name: Check formatting errors
+    - uses: actions/checkout@v4
       run: |
         cmake --preset linux
         cmake --build --preset linux --target clang_format_ci
 
   unit_test:
     name: Unit Test
-    needs: build
+    needs: [build, docker]
     runs-on: [ubuntu-24.04]
+    container: ${{ needs.docker.outputs.image }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: pip install -r requirements.txt --break-system-packages
     - name: Run tests
+    - uses: actions/checkout@v4
       run: |
         cmake --preset linux
         cmake --build --preset linux --target unit_test
+
     - name: Generate code coverage report
       run: cmake --build --preset linux --target gcovr
+
     - name: Upload code coverage report
       uses: codecov/codecov-action@v5
       with:
