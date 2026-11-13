@@ -40,26 +40,20 @@
 /*------------------------- INCLUDES -------------------------*/
 /*------------------------------------------------------------*/
 
+/* Files under test. */
+#include "ecu/fsm.h"
+
 /* STDLib. */
 #include <cassert>
 #include <type_traits>
 #include <vector>
 
-/* Files under test. */
-#include "ecu/fsm.h"
-
-/* Stubs. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------- NAMESPACES -----------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 /*------------------------------------------------------------*/
 /*----------------------- FILE-SCOPE TYPES -------------------*/
@@ -450,7 +444,6 @@ TEST_GROUP(Fsm)
 {
     void setup() override
     {
-        set_assert_handler(AssertResponse::FAIL);
         state<S1>::get_instance().reset();
         state<S2>::get_instance().reset();
         state<S3>::get_instance().reset();
@@ -497,28 +490,20 @@ TEST_GROUP(Fsm)
  */
 TEST(Fsm, GetContext)
 {
-    try
+    /* Step 1: Arrange. */
+    struct app_fsm_t
     {
-        /* Step 1: Arrange. */
-        struct app_fsm_t
-        {
-            std::uint8_t a;
-            ecu_fsm fsm;
-            int b;
-            std::uint8_t c;
-        } app_fsm;
+        std::uint8_t a;
+        ecu_fsm fsm;
+        int b;
+        std::uint8_t c;
+    } app_fsm;
 
-        /* Step 2: Action. */
-        app_fsm_t *app_fsm_ptr = ECU_FSM_GET_CONTEXT(&app_fsm.fsm, app_fsm_t, fsm);
+    /* Step 2: Action. */
+    app_fsm_t *app_fsm_ptr = ECU_FSM_GET_CONTEXT(&app_fsm.fsm, app_fsm_t, fsm);
 
-        /* Step 3: Assert. */
-        POINTERS_EQUAL(&app_fsm, app_fsm_ptr);
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    POINTERS_EQUAL(&app_fsm, app_fsm_ptr);
 }
 
 /*------------------------------------------------------------*/
@@ -533,12 +518,10 @@ TEST(Fsm, DispatchStateHasNoHandler)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_unused()
-                                .with_entry()
-                                .with_exit();
+        auto& state0 = state<S0>::get_instance().with_handler_unused()
+            .with_entry().with_exit();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -546,7 +529,7 @@ TEST(Fsm, DispatchStateHasNoHandler)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -560,27 +543,17 @@ TEST(Fsm, DispatchStateHasNoHandler)
  */
 TEST(Fsm, DispatchSelfTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_to<S0>()
-                                .with_exit()
-                                .with_entry();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_handler_to<S0>()
+        .with_exit().with_entry();
 
-        EXPECT_STATE_PATH(state0.handled(), state0.exited(), state0.entered());
+    EXPECT_STATE_PATH(state0.handled(), state0.exited(), state0.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_dispatch(&me, &DUMMY_EVENT);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -592,32 +565,20 @@ TEST(Fsm, DispatchSelfTransition)
  */
 TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_to<S0>()
-                                .with_exit()
-                                .with_entry_to<S1>();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_handler_to<S0>()
+        .with_exit().with_entry_to<S1>();
 
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
+    auto& state1 = state<S1>::get_instance().with_entry()
+        .with_exit().with_handler();
 
-        EXPECT_STATE_PATH(state0.handled(), state0.exited(), state0.entered(), state0.exited(), state1.entered());
+    EXPECT_STATE_PATH(state0.handled(), state0.exited(), state0.entered(), state0.exited(), state1.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_dispatch(&me, &DUMMY_EVENT);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -627,32 +588,20 @@ TEST(Fsm, DispatchSelfTransitionThenEntryTransition)
  */
 TEST(Fsm, DispatchSingleStateTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_to<S3>()
-                                .with_exit()
-                                .with_entry();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_handler_to<S3>()
+        .with_exit().with_entry();
 
-        auto& state3 = state<S3>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
+    auto& state3 = state<S3>::get_instance().with_entry()
+        .with_exit().with_handler();
 
-        EXPECT_STATE_PATH(state0.handled(), state0.exited(), state3.entered());
+    EXPECT_STATE_PATH(state0.handled(), state0.exited(), state3.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_dispatch(&me, &DUMMY_EVENT);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -663,43 +612,27 @@ TEST(Fsm, DispatchSingleStateTransition)
  */
 TEST(Fsm, DispatchConsecutiveStateTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_to<S1>()
-                                .with_exit()
-                                .with_entry();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_handler_to<S1>()
+        .with_exit().with_entry();
 
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry_to<S2>()
-                                .with_exit()
-                                .with_handler();
+    auto& state1 = state<S1>::get_instance().with_entry_to<S2>()
+        .with_exit().with_handler();
 
-        auto& state2 = state<S2>::get_instance()
-                                .with_entry_to<S3>()
-                                .with_exit()
-                                .with_handler();
+    auto& state2 = state<S2>::get_instance().with_entry_to<S3>()
+        .with_exit().with_handler();
 
-        auto& state3 = state<S3>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
+    auto& state3 = state<S3>::get_instance().with_entry()
+        .with_exit().with_handler();
 
-        EXPECT_STATE_PATH(state0.handled(), state0.exited(), state1.entered(), state1.exited(),
-                          state2.entered(), state2.exited(), state3.entered());
+    EXPECT_STATE_PATH(state0.handled(), state0.exited(), state1.entered(), state1.exited(),
+                      state2.entered(), state2.exited(), state3.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_dispatch(&me, &DUMMY_EVENT);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_dispatch(&me, &DUMMY_EVENT);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -713,12 +646,10 @@ TEST(Fsm, DispatchSingleStateTransitionThenTransitionOnFirstExit)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_no_mock_to<S1>()
-                                .with_exit_no_mock_to<S2>()
-                                .with_entry();
+        auto& state0 = state<S0>::get_instance().with_handler_no_mock_to<S1>()
+            .with_exit_no_mock_to<S2>().with_entry();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -726,7 +657,7 @@ TEST(Fsm, DispatchSingleStateTransitionThenTransitionOnFirstExit)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -744,17 +675,13 @@ TEST(Fsm, DispatchConsecutiveStateTransitionThenTransitionOnSecondExit)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_entry();
+        auto& state0 = state<S0>::get_instance().with_handler_no_mock_to<S1>()
+            .with_exit_unused().with_entry();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_no_mock_to<S2>()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit_no_mock_to<S2>().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -762,7 +689,7 @@ TEST(Fsm, DispatchConsecutiveStateTransitionThenTransitionOnSecondExit)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -780,12 +707,10 @@ TEST(Fsm, DispatchSelfTransitionThenSelfTransitionOnFirstEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_no_mock_to<S0>()
-                                .with_exit_unused()
-                                .with_entry_no_mock_to<S0>();
+        auto& state0 = state<S0>::get_instance().with_handler_no_mock_to<S0>()
+            .with_exit_unused().with_entry_no_mock_to<S0>();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -793,7 +718,7 @@ TEST(Fsm, DispatchSelfTransitionThenSelfTransitionOnFirstEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -812,17 +737,13 @@ TEST(Fsm, DispatchSingleStateTransitionThenSelfTransitionOnFirstEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_entry();
+        auto& state0 = state<S0>::get_instance().with_handler_no_mock_to<S1>()
+            .with_exit_unused().with_entry();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S1>()
-                        .with_exit()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -830,7 +751,7 @@ TEST(Fsm, DispatchSingleStateTransitionThenSelfTransitionOnFirstEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -849,22 +770,16 @@ TEST(Fsm, DispatchConsecutiveStateTransitionThenSelfTransitionOnSecondEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_entry();
+        auto& state0 = state<S0>::get_instance().with_handler_no_mock_to<S1>()
+            .with_exit_unused().with_entry();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_unused()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S2>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit()
-                        .with_handler();
+        (void)state<S2>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -872,7 +787,7 @@ TEST(Fsm, DispatchConsecutiveStateTransitionThenSelfTransitionOnSecondEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -891,12 +806,10 @@ TEST(Fsm, StartStateHasNoHandler)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_handler_unused()
-                                .with_entry()
-                                .with_exit();
+        auto& state0 = state<S0>::get_instance().with_handler_unused()
+            .with_entry().with_exit();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -904,7 +817,7 @@ TEST(Fsm, StartStateHasNoHandler)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -918,27 +831,17 @@ TEST(Fsm, StartStateHasNoHandler)
  */
 TEST(Fsm, StartNoTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler(); 
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_entry()
+        .with_exit().with_handler(); 
 
-        EXPECT_STATE_PATH(state0.entered());
+    EXPECT_STATE_PATH(state0.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_start(&me);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -948,32 +851,20 @@ TEST(Fsm, StartNoTransition)
  */
 TEST(Fsm, StartSingleStateTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_to<S1>()
-                                .with_exit()
-                                .with_handler();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_entry_to<S1>()
+        .with_exit().with_handler();
 
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
+    auto& state1 = state<S1>::get_instance().with_entry()
+        .with_exit().with_handler();
 
-        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered());
+    EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_start(&me);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -983,37 +874,23 @@ TEST(Fsm, StartSingleStateTransition)
  */
 TEST(Fsm, StartConsecutiveStateTransition)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_to<S1>()
-                                .with_exit()
-                                .with_handler();
+    /* Step 1: Arrange. */
+    auto& state0 = state<S0>::get_instance().with_entry_to<S1>()
+        .with_exit().with_handler();
 
-        auto& state1 = state<S1>::get_instance()
-                                .with_entry_to<S2>()
-                                .with_exit()
-                                .with_handler();
+    auto& state1 = state<S1>::get_instance().with_entry_to<S2>()
+        .with_exit().with_handler();
 
-        auto& state2 = state<S2>::get_instance()
-                                .with_entry()
-                                .with_exit()
-                                .with_handler();
+    auto& state2 = state<S2>::get_instance().with_entry()
+        .with_exit().with_handler();
 
-        EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered(), state1.exited(), state2.entered());
+    EXPECT_STATE_PATH(state0.entered(), state0.exited(), state1.entered(), state1.exited(), state2.entered());
 
-        /* Step 2: Action. */
-        ecu_fsm_ctor(&me, &state0);
-        ecu_fsm_start(&me);
+    /* Step 2: Action. */
+    ecu_fsm_ctor(&me, &state0);
+    ecu_fsm_start(&me);
 
-        /* Step 3: Assert. Fails if State Path was incorrect. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Fails if State Path was incorrect. */
 }
 
 /**
@@ -1027,12 +904,10 @@ TEST(Fsm, StartTransitionOnFirstExit)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_no_mock_to<S2>()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit_no_mock_to<S2>().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1040,7 +915,7 @@ TEST(Fsm, StartTransitionOnFirstExit)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1058,17 +933,13 @@ TEST(Fsm, StartTransitionOnSecondExit)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_no_mock_to<S2>()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit_no_mock_to<S2>().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1076,7 +947,7 @@ TEST(Fsm, StartTransitionOnSecondExit)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1094,22 +965,16 @@ TEST(Fsm, StartTransitionOnThirdExit)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_unused()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S2>::get_instance()
-                        .with_entry_no_mock_to<S3>()
-                        .with_exit_no_mock_to<S3>()
-                        .with_handler();
+        (void)state<S2>::get_instance().with_entry_no_mock_to<S3>()
+            .with_exit_no_mock_to<S3>().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1117,7 +982,7 @@ TEST(Fsm, StartTransitionOnThirdExit)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1135,12 +1000,10 @@ TEST(Fsm, StartSelfTransitionOnFirstEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S0>()
-                                .with_exit()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S0>()
+            .with_exit().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1148,7 +1011,7 @@ TEST(Fsm, StartSelfTransitionOnFirstEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1166,17 +1029,13 @@ TEST(Fsm, StartSelfTransitionOnSecondEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S1>()
-                        .with_exit()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1184,7 +1043,7 @@ TEST(Fsm, StartSelfTransitionOnSecondEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1202,22 +1061,16 @@ TEST(Fsm, StartSelfTransitionOnThirdEntry)
     try
     {
         /* Step 1: Arrange. */
-        auto& state0 = state<S0>::get_instance()
-                                .with_entry_no_mock_to<S1>()
-                                .with_exit_unused()
-                                .with_handler();
+        auto& state0 = state<S0>::get_instance().with_entry_no_mock_to<S1>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S1>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit_unused()
-                        .with_handler();
+        (void)state<S1>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit_unused().with_handler();
 
-        (void)state<S2>::get_instance()
-                        .with_entry_no_mock_to<S2>()
-                        .with_exit()
-                        .with_handler();
+        (void)state<S2>::get_instance().with_entry_no_mock_to<S2>()
+            .with_exit().with_handler();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_fsm_ctor(&me, &state0);
@@ -1225,7 +1078,7 @@ TEST(Fsm, StartSelfTransitionOnThirdEntry)
 
         /* Step 3: Assert. Fails if assertion does not fire or fired in wrong location. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;

@@ -75,26 +75,20 @@
 /*------------------------- INCLUDES -------------------------*/
 /*------------------------------------------------------------*/
 
+/* Files under test. */
+#include "ecu/hsm.h"
+
 /* STDLib. */
 #include <cassert>
 #include <type_traits>
 #include <utility>
 
-/* Files under test. */
-#include "ecu/hsm.h"
-
-/* Stubs. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------- NAMESPACES -----------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 /*------------------------------------------------------------*/
 /*----------------------- FILE-SCOPE TYPES -------------------*/
@@ -963,7 +957,6 @@ TEST_GROUP(Hsm)
 {
     void setup() override
     {
-        set_assert_handler(AssertResponse::FAIL);
         state_S = &hsm_state<S>::get_instance();
         state_S1 = &hsm_state<S1>::get_instance();
         state_S11 = &hsm_state<S11>::get_instance();
@@ -1118,28 +1111,20 @@ TEST_GROUP(Hsm)
  */
 TEST(Hsm, GetContext)
 {
-    try
+    /* Step 1: Arrange. */
+    struct app_hsm_t
     {
-        /* Step 1: Arrange. */
-        struct app_hsm_t
-        {
-            std::uint8_t a;
-            ecu_hsm hsm;
-            int b;
-            std::uint8_t c;
-        } app_hsm;
+        std::uint8_t a;
+        ecu_hsm hsm;
+        int b;
+        std::uint8_t c;
+    } app_hsm;
 
-        /* Step 2: Action. */
-        app_hsm_t *app_hsm_ptr = ECU_HSM_GET_CONTEXT(&app_hsm.hsm, app_hsm_t, hsm);
+    /* Step 2: Action. */
+    app_hsm_t *app_hsm_ptr = ECU_HSM_GET_CONTEXT(&app_hsm.hsm, app_hsm_t, hsm);
 
-        /* Step 3: Assert. */
-        POINTERS_EQUAL(&app_hsm, app_hsm_ptr);
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    POINTERS_EQUAL(&app_hsm, app_hsm_ptr);
 }
 
 /*------------------------------------------------------------*/
@@ -1156,14 +1141,14 @@ TEST(Hsm, CtorInitialStateIsTop)
     {
         /* Step 1: Arrange. */
         ecu_hsm me;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_ctor(&me, &ECU_HSM_TOP_STATE, 1);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1181,21 +1166,17 @@ TEST(Hsm, CtorInitialStateHasNoParent)
         /* Step 1: Arrange. */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_unused();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_no_mock().with_initial_unused().with_parent_unused();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_ctor(&me, state_S, 1);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1217,23 +1198,19 @@ TEST(Hsm, ChangeStateNewStateIsTop)
         /* Step 1: Arrange. */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_no_mock().with_initial_unused().with_parent_top();
 
         ecu_hsm_ctor(&me, state_S, 1);
         ecu_hsm_start(&me);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_change_state(&me, &ECU_HSM_TOP_STATE);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1251,30 +1228,22 @@ TEST(Hsm, ChangeStateNewStateHasNoParent)
         /* Step 1: Arrange. */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_no_mock().with_initial_unused().with_parent_top();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_unused();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_no_mock().with_initial_unused().with_parent_unused();
 
         ecu_hsm_ctor(&me, state_S, 1);
         ecu_hsm_start(&me);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_change_state(&me, state_S1);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1302,36 +1271,24 @@ TEST(Hsm, DispatchEventUnhandledInEntireStateHierarchy)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_no_mock_to<S11>()
-                                .with_parent_unused();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_unhandled_no_mock().with_initial_no_mock_to<S11>().with_parent_unused();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock()
-                                .with_initial_no_mock_to<S11>()
-                                .with_parent<S>();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_unhandled_no_mock().with_initial_no_mock_to<S11>().with_parent<S>();
 
-        state_S11 = &hsm_state<S11>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_handler_unhandled_no_mock()
-                                    .with_initial_unused()
-                                    .with_parent<S1>();
+        state_S11 = &hsm_state<S11>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_unhandled_no_mock().with_initial_unused().with_parent<S1>();
 
         ecu_hsm_ctor(&me, state_S11, 10); /* Set level very high to verify error caught. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1345,35 +1302,23 @@ TEST(Hsm, DispatchEventUnhandledInEntireStateHierarchy)
  */
 TEST(Hsm, DispatchSelfStateTransitionEntryAndExitUnused)
 {
-    try
-    {
-        /* Step 1: Arrange. Transition from S to S.
-        TOP
-        |
-        S 
-        */
-        ecu_hsm me;
+    /* Step 1: Arrange. Transition from S to S.
+    TOP
+    |
+    S 
+    */
+    ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_to<S>()
-                                .with_parent_top();
+    state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+        .with_initial_unused().with_handler_to<S>().with_parent_top();
 
-        EXPECT_STATE_PATH(handled<S>());
-        ecu_hsm_ctor(&me, state_S, 1);
+    EXPECT_STATE_PATH(handled<S>());
+    ecu_hsm_ctor(&me, state_S, 1);
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
-        /* Step 3: Test fails if expected state paths not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Test fails if expected state paths not taken. */
 }
 
 /**
@@ -1390,14 +1335,10 @@ TEST(Hsm, DispatchSelfStateTransitionEntrySignalsTransition)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_no_mock_to<S>()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S>()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_no_mock_to<S>().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S>().with_parent_top();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
         ecu_hsm_ctor(&me, state_S, 1);
 
         /* Step 2: Action. */
@@ -1405,7 +1346,7 @@ TEST(Hsm, DispatchSelfStateTransitionEntrySignalsTransition)
 
         /* Step 3: Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1426,14 +1367,10 @@ TEST(Hsm, DispatchSelfStateTransitionExitSignalsTransition)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_no_mock_to<S>()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S>()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_no_mock_to<S>()
+            .with_initial_unused().with_handler_no_mock_to<S>().with_parent_top();
 
-        EXPECT_ASSERTION();
+        asserter::expect();
         ecu_hsm_ctor(&me, state_S, 1);
 
         /* Step 2: Action. */
@@ -1441,7 +1378,7 @@ TEST(Hsm, DispatchSelfStateTransitionExitSignalsTransition)
 
         /* Step 3: Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1463,29 +1400,21 @@ TEST(Hsm, DispatchStateTransitionDoesNotHandleEvent)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_unhandled_no_mock_to<S1>()
-                                .with_initial_unused()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_unhandled_no_mock_to<S1>().with_initial_unused().with_parent_top();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_handler_no_mock()
-                                .with_initial_unused()
-                                .with_parent_top();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_handler_no_mock().with_initial_unused().with_parent_top();
 
         ecu_hsm_ctor(&me, state_S, 1);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1508,36 +1437,24 @@ TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithHeightGreaterThanMax)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S1>()
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S1>().with_handler_no_mock().with_parent_top();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S2>()
-                                .with_parent<S>();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S2>().with_parent<S>();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent_top();
 
         ecu_hsm_ctor(&me, state_S1, 1); /* Incorrectly set height to 1 instead of 2. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1560,36 +1477,24 @@ TEST(Hsm, DispatchStateTransitionToStateBranchWithHeightGreaterThanMax)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S21>()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S21>().with_parent_top();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S21>()
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S21>().with_handler_no_mock().with_parent_top();
 
-        state_S21 = &hsm_state<S21>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_initial_unused()
-                                    .with_handler_no_mock()
-                                    .with_parent<S2>();
+        state_S21 = &hsm_state<S21>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent<S2>();
 
         ecu_hsm_ctor(&me, state_S, 1); /* Incorrectly set height to 1 instead of 2. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1611,36 +1516,24 @@ TEST(Hsm, DispatchStateTransitionOutOfStateBranchWithNoTop)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S1>()
-                                .with_handler_no_mock()
-                                .with_parent_unused();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S1>().with_handler_no_mock().with_parent_unused();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S2>()
-                                .with_parent<S>();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S2>().with_parent<S>();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent_top();
 
         ecu_hsm_ctor(&me, state_S1, 10); /* Set level very high to verify error is caught. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1662,36 +1555,24 @@ TEST(Hsm, DispatchStateTransitionToStateBranchWithNoTop)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S1>()
-                                .with_handler_no_mock()
-                                .with_parent_unused();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S1>().with_handler_no_mock().with_parent_unused();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock()
-                                .with_parent<S>();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent<S>();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S1>()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S1>().with_parent_top();
 
         ecu_hsm_ctor(&me, state_S2, 10); /* Set level very high to verify error is caught. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1715,36 +1596,25 @@ TEST(Hsm, DispatchStateTransitionToCompositeStateWithNoInitialTransition)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S2>()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S2>().with_parent_top();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock() /* Not allowed. */
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock() /* Not allowed. */
+            .with_handler_no_mock().with_parent_top();
 
-        state_S21 = &hsm_state<S21>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_initial_unused()
-                                    .with_handler_no_mock()
-                                    .with_parent<S2>();
+        state_S21 = &hsm_state<S21>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent<S2>();
 
         ecu_hsm_ctor(&me, state_S, 2);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1770,43 +1640,28 @@ TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToParent)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S21>()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S21>().with_parent_top();
 
-        state_S2 = &hsm_state<S2>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S211>()
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S2 = &hsm_state<S2>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S211>().with_handler_no_mock().with_parent_top();
 
-        state_S21 = &hsm_state<S21>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_initial_no_mock_to<S2>() /* Not allowed. */
-                                    .with_handler_no_mock()
-                                    .with_parent<S2>();
+        state_S21 = &hsm_state<S21>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S2>() /* Not allowed. */
+            .with_handler_no_mock().with_parent<S2>();
 
-        state_S211 = &hsm_state<S211>::get_instance()
-                                    .with_entry_unused()
-                                    .with_exit_unused()
-                                    .with_initial_unused()
-                                    .with_handler_no_mock()
-                                    .with_parent<S21>();
+        state_S211 = &hsm_state<S211>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock().with_parent<S21>();
 
         ecu_hsm_ctor(&me, state_S, 3);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1830,29 +1685,22 @@ TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToSelf)
         */
         ecu_hsm me;
 
-        state_S = &hsm_state<S>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_no_mock_to<S>() /* Not allowed. */
-                                .with_handler_no_mock()
-                                .with_parent_top();
+        state_S = &hsm_state<S>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_no_mock_to<S>() /* Not allowed. */
+            .with_handler_no_mock().with_parent_top();
 
-        state_S1 = &hsm_state<S1>::get_instance()
-                                .with_entry_unused()
-                                .with_exit_unused()
-                                .with_initial_unused()
-                                .with_handler_no_mock_to<S>()
-                                .with_parent<S>();
+        state_S1 = &hsm_state<S1>::get_instance().with_entry_unused().with_exit_unused()
+            .with_initial_unused().with_handler_no_mock_to<S>().with_parent<S>();
 
         ecu_hsm_ctor(&me, state_S1, 2);
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1866,22 +1714,14 @@ TEST(Hsm, DispatchStateTransitionToCompositeStateWithInitialTransitionToSelf)
 /// @brief Verify proper state path.
 TEST(Hsm, HsmVariant1Start)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        EXPECT_STATE_PATH(entered<S>(), entered<S2>(), init<S2>(), entered<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    EXPECT_STATE_PATH(entered<S>(), entered<S2>(), init<S2>(), entered<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_start(&me);
+    /* Step 2: Action. */
+    ecu_hsm_start(&me);
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /*------------------------------------------------------------*/
@@ -1891,251 +1731,163 @@ TEST(Hsm, HsmVariant1Start)
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS211EventA)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), entered<S21>(), init<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), entered<S21>(), init<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventB)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_B));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_B));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventC)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), exited<S211>(), exited<S21>(), exited<S2>(),
-                          entered<S1>(), init<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), exited<S211>(), exited<S21>(), exited<S2>(),
+                      entered<S1>(), init<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventD)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), exited<S211>(), init<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), exited<S211>(), init<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventE)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), exited<S211>(),
-                          exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), exited<S211>(),
+                      exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventF)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), exited<S211>(),
-                          exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), exited<S211>(),
+                      exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_F));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_F));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventG)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(),
-                          exited<S2>(), entered<S1>(), init<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(),
+                      exited<S2>(), entered<S1>(), init<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */     
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventH)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), exited<S211>(), exited<S21>(), exited<S2>(), 
-                          init<S>(), entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), exited<S211>(), exited<S21>(), exited<S2>(), 
+                      init<S>(), entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_H));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_H));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */  
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventIFooFalse)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211EventIFooTrue)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        mock().disable();
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I)); /* Set foo true. */
-        mock().enable();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    mock().disable();
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I)); /* Set foo true. */
+    mock().enable();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1S211DummyEvent)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), handled<S>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /*------------------------------------------------------------*/
@@ -2145,231 +1897,151 @@ TEST(Hsm, HsmVariant1S211DummyEvent)
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventA)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), 
-                          entered<S1>(), init<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), 
+                      entered<S1>(), init<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventB)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_B));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_B));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventC)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
-                          entered<S2>(), init<S2>(), entered<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
+                      entered<S2>(), init<S2>(), entered<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventDFooFalse)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
-                          init<S>(), entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
+                      init<S>(), entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventDFooTrue)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        mock().disable();
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D)); /* Set foo true. */
-        mock().enable();
-        EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), init<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    mock().disable();
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D)); /* Set foo true. */
+    mock().enable();
+    EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), init<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventE)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), handled<S>(), exited<S11>(),
-                          exited<S1>(), entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), handled<S>(), exited<S11>(),
+                      exited<S1>(), entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventF)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
-                          entered<S2>(), entered<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(),
+                      entered<S2>(), entered<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_F));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_F));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventG)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), exited<S1>(), entered<S2>(),
-                          entered<S21>(), entered<S211>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), exited<S1>(), entered<S2>(),
+                      entered<S21>(), entered<S211>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11EventH)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), exited<S1>(), init<S>(),
-                          entered<S1>(), entered<S11>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), exited<S11>(), exited<S1>(), init<S>(),
+                      entered<S1>(), entered<S11>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_H));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_H));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariantS11DummyEvent)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s11_no_mock();
-        EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), handled<S>());
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s11_no_mock();
+    EXPECT_STATE_PATH(handled<S11>(), handled<S1>(), handled<S>());
 
-        /* Step 2: Action. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+    /* Step 2: Action. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */   
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }
 
 /*------------------------------------------------------------*/
@@ -2379,43 +2051,37 @@ TEST(Hsm, HsmVariantS11DummyEvent)
 /// @brief Verify proper event handling and state paths.
 TEST(Hsm, HsmVariant1DispatchMultipleEvents)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        hsm_variant1 me;
-        me.start_s211_no_mock();
-        EXPECT_STATE_PATH(handled<S211>(), handled<S21>(), handled<S2>(), /* In S211. I */
-                          handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), /* In S211. I */
-                          handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), entered<S21>(), init<S21>(), entered<S211>(), /* In S211. A */
-                          handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), exited<S2>(), entered<S1>(), init<S1>(), entered<S11>(), /* In S211. G */
-                          handled<S11>(), exited<S11>(), exited<S1>(), entered<S2>(), entered<S21>(), entered<S211>(), /* In S11. G */
-                          handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), /* In S211. DUMMY_EVENT */
-                          handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), exited<S211>(), exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>(), /* In S211. E */
-                          handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), init<S>(), entered<S1>(), entered<S11>(), /* In S11. D */
-                          handled<S11>(), exited<S11>(), init<S1>(), entered<S11>(), /* In S11. D */
-                          handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), init<S>(), entered<S1>(), entered<S11>(), /* In S11. D */
-                          handled<S11>(), handled<S1>(), handled<S>(), exited<S11>(), exited<S1>(), entered<S1>(), entered<S11>(), /* In S11. E. */
-                          handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), entered<S2>(), init<S2>(), entered<S21>(), entered<S211>() /* In S11. C */);
+    /* Step 1: Arrange. */
+    hsm_variant1 me;
+    me.start_s211_no_mock();
+    EXPECT_STATE_PATH(
+        handled<S211>(), handled<S21>(), handled<S2>(), /* In S211. I */
+        handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), /* In S211. I */
+        handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), entered<S21>(), init<S21>(), entered<S211>(), /* In S211. A */
+        handled<S211>(), handled<S21>(), exited<S211>(), exited<S21>(), exited<S2>(), entered<S1>(), init<S1>(), entered<S11>(), /* In S211. G */
+        handled<S11>(), exited<S11>(), exited<S1>(), entered<S2>(), entered<S21>(), entered<S211>(), /* In S11. G */
+        handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), /* In S211. DUMMY_EVENT */
+        handled<S211>(), handled<S21>(), handled<S2>(), handled<S>(), exited<S211>(), exited<S21>(), exited<S2>(), entered<S1>(), entered<S11>(), /* In S211. E */
+        handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), init<S>(), entered<S1>(), entered<S11>(), /* In S11. D */
+        handled<S11>(), exited<S11>(), init<S1>(), entered<S11>(), /* In S11. D */
+        handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), init<S>(), entered<S1>(), entered<S11>(), /* In S11. D */
+        handled<S11>(), handled<S1>(), handled<S>(), exited<S11>(), exited<S1>(), entered<S1>(), entered<S11>(), /* In S11. E. */
+        handled<S11>(), handled<S1>(), exited<S11>(), exited<S1>(), entered<S2>(), init<S2>(), entered<S21>(), entered<S211>() /* In S11. C */
+    );
 
-        /* Step 2: Action. I, I, A, G, DUMMY_EVENT, E, D, D, D, E, C. */
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
-        ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
+    /* Step 2: Action. I, I, A, G, DUMMY_EVENT, E, D, D, D, E, C. */
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_I));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_A));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_G));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&DUMMY_EVENT));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_D));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_E));
+    ecu_hsm_dispatch(&me, static_cast<const void *>(&EVENT_C));
 
-        /* Step 3: Assert. Test fails if expected state path not taken. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if expected state path not taken. */
 }

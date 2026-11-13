@@ -16,8 +16,7 @@
  * @copyright Copyright (c) 2025
  */
 
-#ifndef CPPUTEST_STDLIB_HPP_
-#define CPPUTEST_STDLIB_HPP_
+#pragma once
  
 /* STDLib headers that may use new. */
 #include <algorithm>
@@ -28,5 +27,3 @@
  
 /* CppUTest. */
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
- 
-#endif /* CPPUTEST_STDLIB_HPP_ */

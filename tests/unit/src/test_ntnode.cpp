@@ -417,18 +417,12 @@
 #include <memory>
 #include <type_traits>
 
-/* Stubs. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------- NAMESPACES -----------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 namespace {
 /*------------------------------------------------------------*/
@@ -872,11 +866,6 @@ const ntnode& convert(const ecu_ntnode *n)
 
 TEST_GROUP(NtNode)
 {
-    void setup() override
-    {
-        set_assert_handler(AssertResponse::FAIL);
-    }
-
     void teardown() override
     {
         mock("node_destroy").checkExpectations();
@@ -1079,28 +1068,20 @@ TEST_GROUP(NtNode)
  */
 TEST(NtNode, DestroyNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-----RW2---RW3
-        |       |   
-        RW4     RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6));
-        EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-----RW2---RW3
+    |       |   
+    RW4     RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6));
+    EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_destroy(&RW.at(0));
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_destroy(&RW.at(0));
 }
 
 /**
@@ -1110,35 +1091,27 @@ TEST(NtNode, DestroyNodeIsNonEmptyRoot)
  */
 TEST(NtNode, DestroyNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange. Destroy RW2.
-        RW0
-        |
-        RW1-----RW2---RW3
-        |       |   
-        RW4     RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6));
-        EXPECT_NODES_DESTROYED(RW.at(2), RW.at(5), RW.at(6));
+    /* Step 1: Arrange. Destroy RW2.
+    RW0
+    |
+    RW1-----RW2---RW3
+    |       |   
+    RW4     RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6));
+    EXPECT_NODES_DESTROYED(RW.at(2), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_destroy(&RW.at(2));
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_destroy(&RW.at(2));
 
-        /* Step 3: Assert. Verify remaining tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. Verify remaining tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1149,31 +1122,23 @@ TEST(NtNode, DestroyNodeIsNonEmptySubroot)
  */
 TEST(NtNode, DestroyNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Destroy RW2.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_DESTROYED(RW.at(2));
+    /* Step 1: Arrange. Destroy RW2.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_DESTROYED(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_destroy(&RW.at(2));
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_destroy(&RW.at(2));
 
-        /* Step 3: Assert. Verify remaining tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. Verify remaining tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1182,20 +1147,12 @@ TEST(NtNode, DestroyNodeIsLeaf)
  */
 TEST(NtNode, DestroyNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
-        EXPECT_NODES_DESTROYED(RW.at(0));
+    /* Step 1: Arrange. */
+    CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
+    EXPECT_NODES_DESTROYED(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_destroy(&RW.at(0));
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_destroy(&RW.at(0));
 }
 
 /**
@@ -1208,12 +1165,12 @@ TEST(NtNode, DestroyUseAPIInCallback)
     {
         /* Step 1: Arrange. */
         rw_ntnode node{&use_api_in_destroy_callback};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ecu_ntnode_destroy(&node);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1229,31 +1186,23 @@ TEST(NtNode, DestroyUseAPIInCallback)
  */
 TEST(NtNode, ClearNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2---RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(4));
-        add_siblings_after(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2---RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(4));
+    add_siblings_after(RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_ntnode_clear(&RW.at(0));
+    /* Step 2: Action. */
+    ecu_ntnode_clear(&RW.at(0));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (not_in_tree(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (not_in_tree(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
 }
 
 /**
@@ -1263,38 +1212,30 @@ TEST(NtNode, ClearNodeIsNonEmptyRoot)
  */
 TEST(NtNode, ClearNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange. Clear RW2.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        |
-        RW4---RW5
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_siblings_after(RW.at(4), RW.at(5));
+    /* Step 1: Arrange. Clear RW2.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    |
+    RW4---RW5
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_siblings_after(RW.at(4), RW.at(5));
 
-        /* Step 2: Action. */
-        ecu_ntnode_clear(&RW.at(2));
+    /* Step 2: Action. */
+    ecu_ntnode_clear(&RW.at(2));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3), RW.at(4), RW.at(5))) );
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. */
+    CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3), RW.at(4), RW.at(5))) );
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1305,34 +1246,26 @@ TEST(NtNode, ClearNodeIsNonEmptySubroot)
  */
 TEST(NtNode, ClearNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Clear RW2.
-        RW0
-        |
-        RW1
-        |
-        RW2---RW3
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
-        add_siblings_after(RW.at(2), RW.at(3));
+    /* Step 1: Arrange. Clear RW2.
+    RW0
+    |
+    RW1
+    |
+    RW2---RW3
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
+    add_siblings_after(RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_ntnode_clear(&RW.at(2));
+    /* Step 2: Action. */
+    ecu_ntnode_clear(&RW.at(2));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (not_in_tree(RW.at(2))) );
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. */
+    CHECK_TRUE( (not_in_tree(RW.at(2))) );
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1341,22 +1274,14 @@ TEST(NtNode, ClearNodeIsLeaf)
  */
 TEST(NtNode, ClearNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Step 2: Action. */
-        ecu_ntnode_clear(&empty_root);
+    /* Step 2: Action. */
+    ecu_ntnode_clear(&empty_root);
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (not_in_tree(empty_root)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (not_in_tree(empty_root)) );
 }
 
 /*------------------------------------------------------------*/
@@ -1368,27 +1293,19 @@ TEST(NtNode, ClearNodeIsEmptyRoot)
  */
 TEST(NtNode, CountNodeWithMultipleChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-        |       |
-        RW4     RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+    |       |
+    RW4     RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(0)) == 3) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(0)) == 3) );
 }
 
 /**
@@ -1396,26 +1313,18 @@ TEST(NtNode, CountNodeWithMultipleChildren)
  */
 TEST(NtNode, CountNodeWithOneChild)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(2)) == 1) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(2)) == 1) );
 }
 
 /**
@@ -1423,23 +1332,15 @@ TEST(NtNode, CountNodeWithOneChild)
  */
 TEST(NtNode, CountNodeWithNoChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 0) );
 }
 
 /**
@@ -1447,31 +1348,23 @@ TEST(NtNode, CountNodeWithNoChildren)
  */
 TEST(NtNode, CountAddAndRemoveChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3---RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3---RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 2) );
-        ecu_ntnode_push_child_back(&RW.at(1), &RW.at(5));
-        ecu_ntnode_push_child_front(&RW.at(1), &RW.at(6));
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 4) );
-        ecu_ntnode_remove(&RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 3) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 2) );
+    ecu_ntnode_push_child_back(&RW.at(1), &RW.at(5));
+    ecu_ntnode_push_child_front(&RW.at(1), &RW.at(6));
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 4) );
+    ecu_ntnode_remove(&RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_count(&RW.at(1)) == 3) );
 }
 
 /*------------------------------------------------------------*/
@@ -1483,36 +1376,28 @@ TEST(NtNode, CountAddAndRemoveChildren)
  */
 TEST(NtNode, FirstChildNodeWithMultipleChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3-----RW4-----RW5
-                |       |       |
-                RW6     RW7     RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8));
-        ecu_ntnode *first;
-        const ecu_ntnode *cfirst;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3-----RW4-----RW5
+            |       |       |
+            RW6     RW7     RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8));
+    ecu_ntnode *first;
+    const ecu_ntnode *cfirst;
 
-        /* Steps 2 and 3: Action and assert. */
-        first = &convert(ecu_ntnode_first_child(&RW.at(2)));
-        cfirst = &convert(ecu_ntnode_first_child(&RW.at(2)));
-        CHECK_TRUE( (first == &RW.at(3)) );
-        CHECK_TRUE( (cfirst == &RW.at(3)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    first = &convert(ecu_ntnode_first_child(&RW.at(2)));
+    cfirst = &convert(ecu_ntnode_first_child(&RW.at(2)));
+    CHECK_TRUE( (first == &RW.at(3)) );
+    CHECK_TRUE( (cfirst == &RW.at(3)) );
 }
 
 /**
@@ -1520,36 +1405,28 @@ TEST(NtNode, FirstChildNodeWithMultipleChildren)
  */
 TEST(NtNode, FirstChildNodeWithOneChild)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3-----RW4-----RW5
-                |       |       |
-                RW6     RW7     RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8));
-        ecu_ntnode *first;
-        const ecu_ntnode *cfirst;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3-----RW4-----RW5
+            |       |       |
+            RW6     RW7     RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8));
+    ecu_ntnode *first;
+    const ecu_ntnode *cfirst;
 
-        /* Steps 2 and 3: Action and assert. */
-        first = &convert(ecu_ntnode_first_child(&RW.at(4)));
-        cfirst = &convert(ecu_ntnode_first_child(&RW.at(4)));
-        CHECK_TRUE( (first == &RW.at(7)) );
-        CHECK_TRUE( (cfirst == &RW.at(7)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    first = &convert(ecu_ntnode_first_child(&RW.at(4)));
+    cfirst = &convert(ecu_ntnode_first_child(&RW.at(4)));
+    CHECK_TRUE( (first == &RW.at(7)) );
+    CHECK_TRUE( (cfirst == &RW.at(7)) );
 }
 
 /**
@@ -1557,36 +1434,28 @@ TEST(NtNode, FirstChildNodeWithOneChild)
  */
 TEST(NtNode, FirstChildNodeWithNoChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3-----RW4-----RW5
-                |       |       |
-                RW6     RW7     RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8));
-        ecu_ntnode *first;
-        const ecu_ntnode *cfirst;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3-----RW4-----RW5
+            |       |       |
+            RW6     RW7     RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8));
+    ecu_ntnode *first;
+    const ecu_ntnode *cfirst;
 
-        /* Steps 2 and 3: Action and assert. */
-        first = ecu_ntnode_first_child(&RW.at(8));
-        cfirst = ecu_ntnode_first_child(&RW.at(8));
-        CHECK_TRUE( (first == nullptr) );
-        CHECK_TRUE( (cfirst == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    first = ecu_ntnode_first_child(&RW.at(8));
+    cfirst = ecu_ntnode_first_child(&RW.at(8));
+    CHECK_TRUE( (first == nullptr) );
+    CHECK_TRUE( (cfirst == nullptr) );
 }
 
 /*------------------------------------------------------------*/
@@ -1598,21 +1467,13 @@ TEST(NtNode, FirstChildNodeWithNoChildren)
  */
 TEST(NtNode, Id)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode n2{2};
-        rw_ntnode n3{3};
+    /* Step 1: Arrange. */
+    rw_ntnode n2{2};
+    rw_ntnode n3{3};
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_id(&n2) == 2) );
-        CHECK_TRUE( (ecu_ntnode_id(&n3) == 3) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_id(&n2) == 2) );
+    CHECK_TRUE( (ecu_ntnode_id(&n3) == 3) );
 }
 
 /*------------------------------------------------------------*/
@@ -1624,19 +1485,11 @@ TEST(NtNode, Id)
  */
 TEST(NtNode, InTreeNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_in_tree(&empty_root)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_in_tree(&empty_root)) );
 }
 
 /**
@@ -1644,23 +1497,15 @@ TEST(NtNode, InTreeNodeIsEmptyRoot)
  */
 TEST(NtNode, InTreeNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(0))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(0))) );
 }
 
 /**
@@ -1668,25 +1513,17 @@ TEST(NtNode, InTreeNodeIsNonEmptyRoot)
  */
 TEST(NtNode, InTreeNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(1))) );
 }
 
 /**
@@ -1694,23 +1531,15 @@ TEST(NtNode, InTreeNodeIsNonEmptySubroot)
  */
 TEST(NtNode, InTreeNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_in_tree(&RW.at(1))) );
 }
 
 /*------------------------------------------------------------*/
@@ -1723,46 +1552,38 @@ TEST(NtNode, InTreeNodeIsLeaf)
  */
 TEST(NtNode, InsertSiblingAfterPosIsLeftMostSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                             RW8
+    |                               |
+    RW1---------RW2-----RW3         RW9---RW10
+    |           |       |
+    RW4---RW5   RW6     RW7
+
+    After:
+    RW0
+    |
+    RW1---------RW8---------RW2-----RW3
+    |           |           |       |
+    RW4---RW5   RW9---RW10  RW6     RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+    add_children(RW.at(8), RW.at(9), RW.at(10));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_after(&RW.at(1), &RW.at(8));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(9), RW.at(10), RW.at(8),
+                            RW.at(6), RW.at(2), RW.at(7), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                             RW8
-        |                               |
-        RW1---------RW2-----RW3         RW9---RW10
-        |           |       |
-        RW4---RW5   RW6     RW7
-
-        After:
-        RW0
-        |
-        RW1---------RW8---------RW2-----RW3
-        |           |           |       |
-        RW4---RW5   RW9---RW10  RW6     RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-        add_children(RW.at(8), RW.at(9), RW.at(10));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_after(&RW.at(1), &RW.at(8));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(9), RW.at(10), RW.at(8),
-                             RW.at(6), RW.at(2), RW.at(7), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1772,46 +1593,38 @@ TEST(NtNode, InsertSiblingAfterPosIsLeftMostSubroot)
  */
 TEST(NtNode, InsertSiblingAfterPosIsMiddleSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                             RW8
+    |                               |
+    RW1---------RW2-----RW3         RW9---RW10
+    |           |       |
+    RW4---RW5   RW6     RW7
+
+    After:
+    RW0
+    |
+    RW1---------RW2-----RW8-------------RW3
+    |           |       |               |
+    RW4---RW5   RW6     RW9---RW10      RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+    add_children(RW.at(8), RW.at(9), RW.at(10));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(8));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(9),
+                            RW.at(10), RW.at(8), RW.at(7), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                             RW8
-        |                               |
-        RW1---------RW2-----RW3         RW9---RW10
-        |           |       |
-        RW4---RW5   RW6     RW7
-
-        After:
-        RW0
-        |
-        RW1---------RW2-----RW8-------------RW3
-        |           |       |               |
-        RW4---RW5   RW6     RW9---RW10      RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-        add_children(RW.at(8), RW.at(9), RW.at(10));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(8));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(9),
-                             RW.at(10), RW.at(8), RW.at(7), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1821,46 +1634,38 @@ TEST(NtNode, InsertSiblingAfterPosIsMiddleSubroot)
  */
 TEST(NtNode, InsertSiblingAfterPosIsRightMostSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                             RW8
+    |                               |
+    RW1---------RW2-----RW3         RW9---RW10
+    |           |       |
+    RW4---RW5   RW6     RW7
+
+    After:
+    RW0
+    |
+    RW1---------RW2-----RW3-----RW8
+    |           |       |       |
+    RW4---RW5   RW6     RW7     RW9---RW10
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+    add_children(RW.at(8), RW.at(9), RW.at(10));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_after(&RW.at(3), &RW.at(8));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(7),
+                            RW.at(3), RW.at(9), RW.at(10), RW.at(8), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                             RW8
-        |                               |
-        RW1---------RW2-----RW3         RW9---RW10
-        |           |       |
-        RW4---RW5   RW6     RW7
-
-        After:
-        RW0
-        |
-        RW1---------RW2-----RW3-----RW8
-        |           |       |       |
-        RW4---RW5   RW6     RW7     RW9---RW10
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-        add_children(RW.at(8), RW.at(9), RW.at(10));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_after(&RW.at(3), &RW.at(8));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(7),
-                             RW.at(3), RW.at(9), RW.at(10), RW.at(8), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1870,45 +1675,37 @@ TEST(NtNode, InsertSiblingAfterPosIsRightMostSubroot)
  */
 TEST(NtNode, InsertSiblingAfterPosIsLeaf)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                         RW6
+    |                           |
+    RW1---RW2---RW3             RW7
+                |
+                RW4---RW5
+
+    After:
+    RW0
+    |
+    RW1---RW2---RW3
+                |
+                RW4---RW5---RW6
+                            |
+                            RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_after(&RW.at(5), &RW.at(6));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(4), RW.at(5), RW.at(7), RW.at(6), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                         RW6
-        |                           |
-        RW1---RW2---RW3             RW7
-                    |
-                    RW4---RW5
-
-        After:
-        RW0
-        |
-        RW1---RW2---RW3
-                    |
-                    RW4---RW5---RW6
-                                |
-                                RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_after(&RW.at(5), &RW.at(6));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(4), RW.at(5), RW.at(7), RW.at(6), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1918,37 +1715,29 @@ TEST(NtNode, InsertSiblingAfterPosIsLeaf)
  */
 TEST(NtNode, InsertSiblingAfterSiblingIsEmptyRoot)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0             RW3
+    |
+    RW1---RW2
+    
+    After:
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(3));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0             RW3
-        |
-        RW1---RW2
-        
-        After:
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(3));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -1962,14 +1751,14 @@ TEST(NtNode, InsertSiblingAfterPosIsEmptyRoot)
         /* Step 1: Arrange. */
         rw_ntnode root;
         rw_ntnode sibling;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_after(&root, &sibling);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1989,14 +1778,14 @@ TEST(NtNode, InsertSiblingAfterPosIsNonEmptyRoot)
         RW1---RW2
         */
         add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_after(&RW.at(0), &RW.at(3));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2016,14 +1805,14 @@ TEST(NtNode, InsertSiblingAfterPosEqualsSibling)
         RW1
         */
         add_children(RW.at(0), RW.at(1));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_after(&RW.at(1), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2044,14 +1833,14 @@ TEST(NtNode, InsertSiblingAfterSiblingIsDescendant)
         */
         add_children(RW.at(0), RW.at(1));
         add_children(RW.at(2), RW.at(3));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_after(&RW.at(1), &RW.at(3));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2068,43 +1857,35 @@ TEST(NtNode, InsertSiblingAfterSiblingIsDescendant)
  */
 TEST(NtNode, InsertSiblingBeforePosIsLeftMostSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0         RW4
+    |           |
+    RW1         RW5---RW6
+    |
+    RW2---RW3
+
+    After:
+    RW0
+    |
+    RW4---------RW1
+    |           |
+    RW5---RW6   RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(4), RW.at(5), RW.at(6));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(4));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(4), RW.at(2), RW.at(3), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0         RW4
-        |           |
-        RW1         RW5---RW6
-        |
-        RW2---RW3
-
-        After:
-        RW0
-        |
-        RW4---------RW1
-        |           |
-        RW5---RW6   RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(4), RW.at(5), RW.at(6));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(4));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(4), RW.at(2), RW.at(3), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -2114,43 +1895,35 @@ TEST(NtNode, InsertSiblingBeforePosIsLeftMostSubroot)
  */
 TEST(NtNode, InsertSiblingBeforePosIsMiddleSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                     RW5
+    |                       |
+    RW1-----RW2---RW3       RW6
+            |
+            RW4
+
+    After:
+    RW0
+    |
+    RW1-----RW5-----RW2---RW3
+            |       |
+            RW6     RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    add_children(RW.at(5), RW.at(6));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_before(&RW.at(2), &RW.at(5));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(6), RW.at(5), RW.at(4), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                     RW5
-        |                       |
-        RW1-----RW2---RW3       RW6
-                |
-                RW4
-
-        After:
-        RW0
-        |
-        RW1-----RW5-----RW2---RW3
-                |       |
-                RW6     RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        add_children(RW.at(5), RW.at(6));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_before(&RW.at(2), &RW.at(5));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(6), RW.at(5), RW.at(4), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -2160,46 +1933,38 @@ TEST(NtNode, InsertSiblingBeforePosIsMiddleSubroot)
  */
 TEST(NtNode, InsertSiblingBeforePosIsRightMostSubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0                 RW5
-        |                   |
-        RW1-----RW2         RW6
-        |       |           |
-        RW3     RW4         RW7
-        
-        After:
-        RW0
-        |
-        RW1-----RW5-----RW2
-        |       |       |
-        RW3     RW6     RW4
-                |
-                RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        add_branch(RW.at(5), RW.at(6), RW.at(7));
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0                 RW5
+    |                   |
+    RW1-----RW2         RW6
+    |       |           |
+    RW3     RW4         RW7
+    
+    After:
+    RW0
+    |
+    RW1-----RW5-----RW2
+    |       |       |
+    RW3     RW6     RW4
+            |
+            RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    add_branch(RW.at(5), RW.at(6), RW.at(7));
 
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_before(&RW.at(2), &RW.at(5));
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_before(&RW.at(2), &RW.at(5));
 
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(1), RW.at(7), RW.at(6), RW.at(5), RW.at(4), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(1), RW.at(7), RW.at(6), RW.at(5), RW.at(4), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -2208,40 +1973,32 @@ TEST(NtNode, InsertSiblingBeforePosIsRightMostSubroot)
  */
 TEST(NtNode, InsertSiblingBeforePosIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0     RW2
-        |       |
-        RW1     RW3
-        
-        After:
-        RW0
-        |
-        RW2---RW1
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0     RW2
+    |       |
+    RW1     RW3
+    
+    After:
+    RW0
+    |
+    RW2---RW1
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(2));
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(2));
 
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -2250,41 +2007,33 @@ TEST(NtNode, InsertSiblingBeforePosIsLeaf)
  */
 TEST(NtNode, InsertSiblingBeforeSiblingIsEmptyRoot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0         RW3
+    |
+    RW1
+    |
+    RW2
+
+    After:
+    RW0
+    |
+    RW3-----RW1
+            |
+            RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
+
+    /* Step 2: Action. */
+    ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(3));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0         RW3
-        |
-        RW1
-        |
-        RW2
-
-        After:
-        RW0
-        |
-        RW3-----RW1
-                |
-                RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
-
-        /* Step 2: Action. */
-        ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(3));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -2298,14 +2047,14 @@ TEST(NtNode, InsertSiblingBeforePosIsEmptyRoot)
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
         rw_ntnode sibling;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_before(&empty_root, &sibling);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2325,14 +2074,14 @@ TEST(NtNode, InsertSiblingBeforePosIsNonEmptyRoot)
         RW1---RW2
         */
         add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_before(&RW.at(0), &RW.at(3));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2352,14 +2101,14 @@ TEST(NtNode, InsertSiblingBeforePosEqualsSibling)
         RW1
         */
         add_children(RW.at(0), RW.at(1));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2380,14 +2129,14 @@ TEST(NtNode, InsertSiblingBeforeSiblingIsDescendant)
         */
         add_children(RW.at(0), RW.at(1));
         add_children(RW.at(2), RW.at(3));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_insert_sibling_before(&RW.at(1), &RW.at(3));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2403,19 +2152,11 @@ TEST(NtNode, InsertSiblingBeforeSiblingIsDescendant)
  */
 TEST(NtNode, IsDescendantNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_descendant(&empty_root)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_descendant(&empty_root)) );
 }
 
 /**
@@ -2423,23 +2164,15 @@ TEST(NtNode, IsDescendantNodeIsEmptyRoot)
  */
 TEST(NtNode, IsDescendantNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_descendant(&RW.at(0))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_descendant(&RW.at(0))) );
 }
 
 /**
@@ -2447,25 +2180,17 @@ TEST(NtNode, IsDescendantNodeIsNonEmptyRoot)
  */
 TEST(NtNode, IsDescendantNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_descendant(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_descendant(&RW.at(1))) );
 }
 
 /**
@@ -2473,25 +2198,17 @@ TEST(NtNode, IsDescendantNodeIsNonEmptySubroot)
  */
 TEST(NtNode, IsDescendantNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_descendant(&RW.at(2))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_descendant(&RW.at(2))) );
 }
 
 /*------------------------------------------------------------*/
@@ -2503,19 +2220,11 @@ TEST(NtNode, IsDescendantNodeIsLeaf)
  */
 TEST(NtNode, IsLeafNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_leaf(&empty_root)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_leaf(&empty_root)) );
 }
 
 /**
@@ -2523,23 +2232,15 @@ TEST(NtNode, IsLeafNodeIsEmptyRoot)
  */
 TEST(NtNode, IsLeafNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_leaf(&RW.at(0))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_leaf(&RW.at(0))) );
 }
 
 /**
@@ -2547,25 +2248,17 @@ TEST(NtNode, IsLeafNodeIsNonEmptyRoot)
  */
 TEST(NtNode, IsLeafNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_leaf(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_leaf(&RW.at(1))) );
 }
 
 /**
@@ -2573,25 +2266,17 @@ TEST(NtNode, IsLeafNodeIsNonEmptySubroot)
  */
 TEST(NtNode, IsLeafNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_leaf(&RW.at(2))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_leaf(&RW.at(2))) );
 }
 
 /*------------------------------------------------------------*/
@@ -2603,19 +2288,11 @@ TEST(NtNode, IsLeafNodeIsLeaf)
  */
 TEST(NtNode, IsRootNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_root(&empty_root)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_root(&empty_root)) );
 }
 
 /**
@@ -2623,23 +2300,15 @@ TEST(NtNode, IsRootNodeIsEmptyRoot)
  */
 TEST(NtNode, IsRootNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_is_root(&RW.at(0))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_is_root(&RW.at(0))) );
 }
 
 /**
@@ -2647,25 +2316,17 @@ TEST(NtNode, IsRootNodeIsNonEmptyRoot)
  */
 TEST(NtNode, IsRootNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_root(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_root(&RW.at(1))) );
 }
 
 /**
@@ -2673,25 +2334,17 @@ TEST(NtNode, IsRootNodeIsNonEmptySubroot)
  */
 TEST(NtNode, IsRootNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        |
-        RW2
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    |
+    RW2
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_is_root(&RW.at(2))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_is_root(&RW.at(2))) );
 }
 
 /*------------------------------------------------------------*/
@@ -2703,34 +2356,26 @@ TEST(NtNode, IsRootNodeIsLeaf)
  */
 TEST(NtNode, LastChildNodeWithMultipleChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-        |       |
-        RW3     RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        ntnode *last;
-        const ntnode *clast;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+    |       |
+    RW3     RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    ntnode *last;
+    const ntnode *clast;
 
-        /* Step 2: Action. */
-        last = &convert(ecu_ntnode_last_child(&RW.at(0)));
-        clast = &convert(ecu_ntnode_last_cchild(&RW.at(0)));
+    /* Step 2: Action. */
+    last = &convert(ecu_ntnode_last_child(&RW.at(0)));
+    clast = &convert(ecu_ntnode_last_cchild(&RW.at(0)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (last == &RW.at(2)) );
-        CHECK_TRUE( (clast == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (last == &RW.at(2)) );
+    CHECK_TRUE( (clast == &RW.at(2)) );
 }
 
 /**
@@ -2738,33 +2383,25 @@ TEST(NtNode, LastChildNodeWithMultipleChildren)
  */
 TEST(NtNode, LastChildNodeWithOneChild)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        ntnode *last;
-        const ntnode *clast;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    ntnode *last;
+    const ntnode *clast;
 
-        /* Step 2: Action. */
-        last = &convert(ecu_ntnode_last_child(&RW.at(1)));
-        clast = &convert(ecu_ntnode_last_cchild(&RW.at(1)));
+    /* Step 2: Action. */
+    last = &convert(ecu_ntnode_last_child(&RW.at(1)));
+    clast = &convert(ecu_ntnode_last_cchild(&RW.at(1)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (last == &RW.at(3)) );
-        CHECK_TRUE( (clast == &RW.at(3)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (last == &RW.at(3)) );
+    CHECK_TRUE( (clast == &RW.at(3)) );
 }
 
 /**
@@ -2772,24 +2409,16 @@ TEST(NtNode, LastChildNodeWithOneChild)
  */
 TEST(NtNode, LastChildNodeWithNoChildren)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_last_child(&RW.at(1)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_last_cchild(&RW.at(1)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_last_child(&RW.at(1)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_last_cchild(&RW.at(1)) == nullptr) );
 }
 
 /*------------------------------------------------------------*/
@@ -2801,36 +2430,28 @@ TEST(NtNode, LastChildNodeWithNoChildren)
  */
 TEST(NtNode, LCANode1LowerLevelThanNode2)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3-----RW4
-                        |
-                        RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(4), RW.at(5), RW.at(6));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3-----RW4
+                    |
+                    RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(4), RW.at(5), RW.at(6));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(6), &RW.at(3)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(6), &RW.at(3)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(6), &RW.at(3)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(6), &RW.at(3)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(2)) );
-        CHECK_TRUE( (clca == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(2)) );
+    CHECK_TRUE( (clca == &RW.at(2)) );
 }
 
 /**
@@ -2838,36 +2459,28 @@ TEST(NtNode, LCANode1LowerLevelThanNode2)
  */
 TEST(NtNode, LCANode2LowerLevelThanNode1)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3-----RW4
-                        |
-                        RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(4), RW.at(5), RW.at(6));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3-----RW4
+                    |
+                    RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(4), RW.at(5), RW.at(6));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(3), &RW.at(6)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(3), &RW.at(6)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(3), &RW.at(6)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(3), &RW.at(6)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(2)) );
-        CHECK_TRUE( (clca == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(2)) );
+    CHECK_TRUE( (clca == &RW.at(2)) );
 }
 
 /**
@@ -2875,34 +2488,26 @@ TEST(NtNode, LCANode2LowerLevelThanNode1)
  */
 TEST(NtNode, LCANode1AndNode2SameLevel)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-----RW3
-                |       |
-                RW4     RW5---RW6---RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-----RW3
+            |       |
+            RW4     RW5---RW6---RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(4), &RW.at(6)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(6), &RW.at(4))); /* Reverse parameters on purpose. */
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(4), &RW.at(6)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(6), &RW.at(4))); /* Reverse parameters on purpose. */
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(0)) );
-        CHECK_TRUE( (clca == &RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(0)) );
+    CHECK_TRUE( (clca == &RW.at(0)) );
 }
 
 /**
@@ -2910,30 +2515,22 @@ TEST(NtNode, LCANode1AndNode2SameLevel)
  */
 TEST(NtNode, LCANode1EqualsNode2AndNotRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(1), &RW.at(1)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(1), &RW.at(1)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(1), &RW.at(1)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(1), &RW.at(1)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(1)) );
-        CHECK_TRUE( (clca == &RW.at(1)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(1)) );
+    CHECK_TRUE( (clca == &RW.at(1)) );
 }
 
 /**
@@ -2941,30 +2538,22 @@ TEST(NtNode, LCANode1EqualsNode2AndNotRoot)
  */
 TEST(NtNode, LCANode1AndNode2EqualRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(0), &RW.at(0)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(0), &RW.at(0)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(0), &RW.at(0)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(0), &RW.at(0)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(0)) );
-        CHECK_TRUE( (clca == &RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(0)) );
+    CHECK_TRUE( (clca == &RW.at(0)) );
 }
 
 /**
@@ -2972,30 +2561,22 @@ TEST(NtNode, LCANode1AndNode2EqualRoot)
  */
 TEST(NtNode, LCANodesInDifferentTrees)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0             RW5
-        |               |
-        RW1-----RW2     RW6
-                |
-                RW3
-                |
-                RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_branch(RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0             RW5
+    |               |
+    RW1-----RW2     RW6
+            |
+            RW3
+            |
+            RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_branch(RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_lca(&RW.at(6), &RW.at(4)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_clca(&RW.at(4), &RW.at(6)) == nullptr) ); /* Reverse parameters on purpose. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_lca(&RW.at(6), &RW.at(4)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_clca(&RW.at(4), &RW.at(6)) == nullptr) ); /* Reverse parameters on purpose. */
 }
 
 /**
@@ -3003,30 +2584,22 @@ TEST(NtNode, LCANodesInDifferentTrees)
  */
 TEST(NtNode, LCANode1DirectParentOfNode2)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(0), &RW.at(1)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(0), &RW.at(1)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(0), &RW.at(1)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(0), &RW.at(1)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(0)) );
-        CHECK_TRUE( (clca == &RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(0)) );
+    CHECK_TRUE( (clca == &RW.at(0)) );
 }
 
 /**
@@ -3034,30 +2607,22 @@ TEST(NtNode, LCANode1DirectParentOfNode2)
  */
 TEST(NtNode, LCANode2DirectParentOfNode1)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        ntnode *lca;
-        const ntnode *clca;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    ntnode *lca;
+    const ntnode *clca;
 
-        /* Step 2: Action. */
-        lca = &convert(ecu_ntnode_lca(&RW.at(1), &RW.at(0)));
-        clca = &convert(ecu_ntnode_clca(&RW.at(1), &RW.at(0)));
+    /* Step 2: Action. */
+    lca = &convert(ecu_ntnode_lca(&RW.at(1), &RW.at(0)));
+    clca = &convert(ecu_ntnode_clca(&RW.at(1), &RW.at(0)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (lca == &RW.at(0)) );
-        CHECK_TRUE( (clca == &RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (lca == &RW.at(0)) );
+    CHECK_TRUE( (clca == &RW.at(0)) );
 }
 
 /*------------------------------------------------------------*/
@@ -3069,19 +2634,11 @@ TEST(NtNode, LCANode2DirectParentOfNode1)
  */
 TEST(NtNode, LevelNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_level(&empty_root) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_level(&empty_root) == 0) );
 }
 
 /**
@@ -3089,23 +2646,15 @@ TEST(NtNode, LevelNodeIsEmptyRoot)
  */
 TEST(NtNode, LevelNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(0)) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(0)) == 0) );
 }
 
 /**
@@ -3113,29 +2662,21 @@ TEST(NtNode, LevelNodeIsNonEmptyRoot)
  */
 TEST(NtNode, LevelNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        |
-        RW4---RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        add_children(RW.at(3), RW.at(4), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    |
+    RW4---RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    add_children(RW.at(3), RW.at(4), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 2) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 2) );
 }
 
 /**
@@ -3143,29 +2684,21 @@ TEST(NtNode, LevelNodeIsNonEmptySubroot)
  */
 TEST(NtNode, LevelNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        |
-        RW4---RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        add_children(RW.at(3), RW.at(4), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    |
+    RW4---RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    add_children(RW.at(3), RW.at(4), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(5)) == 3) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(5)) == 3) );
 }
 
 /**
@@ -3174,35 +2707,27 @@ TEST(NtNode, LevelNodeIsLeaf)
  */
 TEST(NtNode, LevelAddAndRemoveNodeFromTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        |
-        RW4---RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        add_children(RW.at(3), RW.at(4), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    |
+    RW4---RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    add_children(RW.at(3), RW.at(4), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 2) );
-        ecu_ntnode_remove(&RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 0) );
-        ecu_ntnode_push_child_back(&RW.at(0), &RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 1) );
-        ecu_ntnode_remove(&RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 2) );
+    ecu_ntnode_remove(&RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 0) );
+    ecu_ntnode_push_child_back(&RW.at(0), &RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 1) );
+    ecu_ntnode_remove(&RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_level(&RW.at(3)) == 0) );
 }
 
 /*------------------------------------------------------------*/
@@ -3214,20 +2739,12 @@ TEST(NtNode, LevelAddAndRemoveNodeFromTree)
  */
 TEST(NtNode, NextNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_next(&empty_root) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cnext(&empty_root) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_next(&empty_root) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cnext(&empty_root) == nullptr) );
 }
 
 /**
@@ -3235,24 +2752,16 @@ TEST(NtNode, NextNodeIsEmptyRoot)
  */
 TEST(NtNode, NextNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_next(&RW.at(0)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(0)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_next(&RW.at(0)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(0)) == nullptr) );
 }
 
 /**
@@ -3260,35 +2769,27 @@ TEST(NtNode, NextNodeIsNonEmptyRoot)
  */
 TEST(NtNode, NextNodeIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW4     RW5     RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        ntnode *next;
-        const ntnode *cnext;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW4     RW5     RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    ntnode *next;
+    const ntnode *cnext;
 
-        /* Step 2: Action. */
-        next = &convert(ecu_ntnode_next(&RW.at(1)));
-        cnext = &convert(ecu_ntnode_cnext(&RW.at(1)));
+    /* Step 2: Action. */
+    next = &convert(ecu_ntnode_next(&RW.at(1)));
+    cnext = &convert(ecu_ntnode_cnext(&RW.at(1)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (next == &RW.at(2)) );
-        CHECK_TRUE( (cnext == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (next == &RW.at(2)) );
+    CHECK_TRUE( (cnext == &RW.at(2)) );
 }
 
 /**
@@ -3296,35 +2797,27 @@ TEST(NtNode, NextNodeIsFirstSibling)
  */
 TEST(NtNode, NextNodeIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW4     RW5     RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        ntnode *next;
-        const ntnode *cnext;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW4     RW5     RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    ntnode *next;
+    const ntnode *cnext;
 
-        /* Step 2: Action. */
-        next = &convert(ecu_ntnode_next(&RW.at(2)));
-        cnext = &convert(ecu_ntnode_cnext(&RW.at(2)));
+    /* Step 2: Action. */
+    next = &convert(ecu_ntnode_next(&RW.at(2)));
+    cnext = &convert(ecu_ntnode_cnext(&RW.at(2)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (next == &RW.at(3)) );
-        CHECK_TRUE( (cnext == &RW.at(3)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (next == &RW.at(3)) );
+    CHECK_TRUE( (cnext == &RW.at(3)) );
 }
 
 /**
@@ -3332,29 +2825,21 @@ TEST(NtNode, NextNodeIsMiddleSibling)
  */
 TEST(NtNode, NextNodeIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW4     RW5     RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW4     RW5     RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_next(&RW.at(3)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(3)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_next(&RW.at(3)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(3)) == nullptr) );
 }
 
 /**
@@ -3362,27 +2847,19 @@ TEST(NtNode, NextNodeIsLastSibling)
  */
 TEST(NtNode, NextNodeWithNoSiblings)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_next(&RW.at(1)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(1)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_next(&RW.at(1)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cnext(&RW.at(1)) == nullptr) );
 }
 
 /*------------------------------------------------------------*/
@@ -3394,20 +2871,12 @@ TEST(NtNode, NextNodeWithNoSiblings)
  */
 TEST(NtNode, ParentNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_parent(&empty_root) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cparent(&empty_root) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_parent(&empty_root) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cparent(&empty_root) == nullptr) );
 }
 
 /**
@@ -3415,24 +2884,16 @@ TEST(NtNode, ParentNodeIsEmptyRoot)
  */
 TEST(NtNode, ParentNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_parent(&RW.at(0)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cparent(&RW.at(0)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_parent(&RW.at(0)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cparent(&RW.at(0)) == nullptr) );
 }
 
 /**
@@ -3440,36 +2901,28 @@ TEST(NtNode, ParentNodeIsNonEmptyRoot)
  */
 TEST(NtNode, ParentNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW3---RW4
-                |
-                RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(3), RW.at(5));
-        ntnode *parent;
-        const ntnode *cparent;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW3---RW4
+            |
+            RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(3), RW.at(5));
+    ntnode *parent;
+    const ntnode *cparent;
 
-        /* Step 2: Action. */
-        parent = &convert(ecu_ntnode_parent(&RW.at(3)));
-        cparent = &convert(ecu_ntnode_cparent(&RW.at(3)));
+    /* Step 2: Action. */
+    parent = &convert(ecu_ntnode_parent(&RW.at(3)));
+    cparent = &convert(ecu_ntnode_cparent(&RW.at(3)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (parent == &RW.at(2)) );
-        CHECK_TRUE( (cparent == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (parent == &RW.at(2)) );
+    CHECK_TRUE( (cparent == &RW.at(2)) );
 }
 
 /**
@@ -3477,36 +2930,28 @@ TEST(NtNode, ParentNodeIsNonEmptySubroot)
  */
 TEST(NtNode, ParentNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW3---RW4
-                |
-                RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(3), RW.at(5));
-        ntnode *parent;
-        const ntnode *cparent;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW3---RW4
+            |
+            RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(3), RW.at(5));
+    ntnode *parent;
+    const ntnode *cparent;
 
-        /* Step 2: Action. */
-        parent = &convert(ecu_ntnode_parent(&RW.at(5)));
-        cparent = &convert(ecu_ntnode_cparent(&RW.at(5)));
+    /* Step 2: Action. */
+    parent = &convert(ecu_ntnode_parent(&RW.at(5)));
+    cparent = &convert(ecu_ntnode_cparent(&RW.at(5)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (parent == &RW.at(3)) );
-        CHECK_TRUE( (cparent == &RW.at(3)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (parent == &RW.at(3)) );
+    CHECK_TRUE( (cparent == &RW.at(3)) );
 }
 
 /*------------------------------------------------------------*/
@@ -3518,20 +2963,12 @@ TEST(NtNode, ParentNodeIsLeaf)
  */
 TEST(NtNode, PrevNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_prev(&empty_root) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cprev(&empty_root) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_prev(&empty_root) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cprev(&empty_root) == nullptr) );
 }
 
 /**
@@ -3539,24 +2976,16 @@ TEST(NtNode, PrevNodeIsEmptyRoot)
  */
 TEST(NtNode, PrevNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_prev(&RW.at(0)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(0)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_prev(&RW.at(0)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(0)) == nullptr) );
 }
 
 /**
@@ -3564,31 +2993,23 @@ TEST(NtNode, PrevNodeIsNonEmptyRoot)
  */
 TEST(NtNode, PrevNodeIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |               |
-        RW4             RW6
-                        |
-                        RW7---RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |               |
+    RW4             RW6
+                    |
+                    RW7---RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_prev(&RW.at(1)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(1)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_prev(&RW.at(1)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(1)) == nullptr) );
 }
 
 /**
@@ -3596,37 +3017,29 @@ TEST(NtNode, PrevNodeIsFirstSibling)
  */
 TEST(NtNode, PrevNodeIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |               |
-        RW4             RW6
-                        |
-                        RW7---RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(6), RW.at(7), RW.at(8));
-        ntnode *prev;
-        const ntnode *cprev;
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |               |
+    RW4             RW6
+                    |
+                    RW7---RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(6), RW.at(7), RW.at(8));
+    ntnode *prev;
+    const ntnode *cprev;
 
-        /* Step 2: Action. */
-        prev = &convert(ecu_ntnode_prev(&RW.at(2)));
-        cprev = &convert(ecu_ntnode_cprev(&RW.at(2)));
+    /* Step 2: Action. */
+    prev = &convert(ecu_ntnode_prev(&RW.at(2)));
+    cprev = &convert(ecu_ntnode_cprev(&RW.at(2)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (prev == &RW.at(1)) );
-        CHECK_TRUE( (cprev == &RW.at(1)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (prev == &RW.at(1)) );
+    CHECK_TRUE( (cprev == &RW.at(1)) );
 }
 
 /**
@@ -3634,37 +3047,29 @@ TEST(NtNode, PrevNodeIsMiddleSibling)
  */
 TEST(NtNode, PrevNodeIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |               |
-        RW4             RW6
-                        |
-                        RW7---RW8
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(6), RW.at(7), RW.at(8));
-        ntnode *prev;
-        const ntnode *cprev;
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |               |
+    RW4             RW6
+                    |
+                    RW7---RW8
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(6), RW.at(7), RW.at(8));
+    ntnode *prev;
+    const ntnode *cprev;
 
-        /* Step 2: Action. */
-        prev = &convert(ecu_ntnode_prev(&RW.at(3)));
-        cprev = &convert(ecu_ntnode_cprev(&RW.at(3)));
+    /* Step 2: Action. */
+    prev = &convert(ecu_ntnode_prev(&RW.at(3)));
+    cprev = &convert(ecu_ntnode_cprev(&RW.at(3)));
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (prev == &RW.at(2)) );
-        CHECK_TRUE( (cprev == &RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (prev == &RW.at(2)) );
+    CHECK_TRUE( (cprev == &RW.at(2)) );
 }
 
 /**
@@ -3672,27 +3077,19 @@ TEST(NtNode, PrevNodeIsLastSibling)
  */
 TEST(NtNode, PrevNodeWithNoSiblings)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_prev(&RW.at(4)) == nullptr) );
-        CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(4)) == nullptr) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_prev(&RW.at(4)) == nullptr) );
+    CHECK_TRUE( (ecu_ntnode_cprev(&RW.at(4)) == nullptr) );
 }
 
 /*------------------------------------------------------------*/
@@ -3705,55 +3102,47 @@ TEST(NtNode, PrevNodeWithNoSiblings)
  */
 TEST(NtNode, PushChildBackParentWithMultipleChildren)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                                 RW11
+    |                                   |
+    RW1-----RW2---RW3                   RW12---RW13
+            |                           |
+            RW4-----RW5---------RW6     RW14
+            |       |           |
+            RW7     RW8---RW9   RW10
+
+    After:
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW4-----RW5---------RW6-----RW11
+            |       |           |       |
+            RW7     RW8---RW9   RW10    RW12---RW13
+                                        |
+                                        RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8), RW.at(9));
+    add_children(RW.at(6), RW.at(10));
+    add_children(RW.at(11), RW.at(12), RW.at(13));
+    add_children(RW.at(12), RW.at(14));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_back(&RW.at(2), &RW.at(11));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(4), RW.at(8), RW.at(9), RW.at(5),
+                         RW.at(10), RW.at(6), RW.at(14), RW.at(12), RW.at(13), RW.at(11),
+                         RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                                 RW11
-        |                                   |
-        RW1-----RW2---RW3                   RW12---RW13
-                |                           |
-                RW4-----RW5---------RW6     RW14
-                |       |           |
-                RW7     RW8---RW9   RW10
-
-        After:
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW4-----RW5---------RW6-----RW11
-                |       |           |       |
-                RW7     RW8---RW9   RW10    RW12---RW13
-                                            |
-                                            RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8), RW.at(9));
-        add_children(RW.at(6), RW.at(10));
-        add_children(RW.at(11), RW.at(12), RW.at(13));
-        add_children(RW.at(12), RW.at(14));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_back(&RW.at(2), &RW.at(11));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(4), RW.at(8), RW.at(9), RW.at(5),
-                             RW.at(10), RW.at(6), RW.at(14), RW.at(12), RW.at(13), RW.at(11),
-                             RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -3763,54 +3152,46 @@ TEST(NtNode, PushChildBackParentWithMultipleChildren)
  */
 TEST(NtNode, PushChildBackParentWithOneChild)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                     RW9
+    |                       |
+    RW1-----RW2-----RW3     RW10----RW11
+    |       |       |               |
+    RW4     RW5     RW6             RW12
+            |
+            RW7---RW8
+
+    After:
+    RW0
+    |
+    RW1-----RW2-----------------RW3
+    |       |                   |
+    RW4     RW5---------RW9     RW6
+            |           |
+            RW7---RW8   RW10----RW11
+                                |
+                                RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(5), RW.at(7), RW.at(8));
+    add_children(RW.at(9), RW.at(10), RW.at(11));
+    add_children(RW.at(11), RW.at(12));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_back(&RW.at(2), &RW.at(9));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(7), RW.at(8), RW.at(5), RW.at(10), RW.at(12),
+                         RW.at(11), RW.at(9), RW.at(2), RW.at(6), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                     RW9
-        |                       |
-        RW1-----RW2-----RW3     RW10----RW11
-        |       |       |               |
-        RW4     RW5     RW6             RW12
-                |
-                RW7---RW8
-
-        After:
-        RW0
-        |
-        RW1-----RW2-----------------RW3
-        |       |                   |
-        RW4     RW5---------RW9     RW6
-                |           |
-                RW7---RW8   RW10----RW11
-                                    |
-                                    RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(5), RW.at(7), RW.at(8));
-        add_children(RW.at(9), RW.at(10), RW.at(11));
-        add_children(RW.at(11), RW.at(12));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_back(&RW.at(2), &RW.at(9));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(7), RW.at(8), RW.at(5), RW.at(10), RW.at(12),
-                             RW.at(11), RW.at(9), RW.at(2), RW.at(6), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -3820,44 +3201,36 @@ TEST(NtNode, PushChildBackParentWithOneChild)
  */
 TEST(NtNode, PushChildBackParentWithNoChildren)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                         RW6
+    |
+    RW1-----RW2-----RW3
+            |       |
+            RW4     RW5
+
+    After:
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW6     RW4     RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    add_children(RW.at(3), RW.at(5));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_back(&RW.at(1), &RW.at(6));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), RW.at(4), RW.at(2), RW.at(5),
+                         RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                         RW6
-        |
-        RW1-----RW2-----RW3
-                |       |
-                RW4     RW5
-
-        After:
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW6     RW4     RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        add_children(RW.at(3), RW.at(5));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_back(&RW.at(1), &RW.at(6));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), RW.at(4), RW.at(2), RW.at(5),
-                             RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -3871,14 +3244,14 @@ TEST(NtNode, PushChildBackParentEqualsChild)
         /* Step 1: Arrange. 
         RW0
         */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_push_child_back(&RW.at(0), &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -3890,27 +3263,27 @@ TEST(NtNode, PushChildBackParentEqualsChild)
  */
 TEST(NtNode, PushChildBackChildInTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0         RW3
-        |           |
-        RW1---RW2   RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(3), RW.at(4));
-        EXPECT_ASSERTION();
+try
+{
+    /* Step 1: Arrange.
+    RW0         RW3
+    |           |
+    RW1---RW2   RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(3), RW.at(4));
+    asserter::expect();
 
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_back(&RW.at(1), &RW.at(4));
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_back(&RW.at(1), &RW.at(4));
 
-        /* Step 3: Assert. Test fails if assertion does not fire. */
-    }
-    catch (const AssertException& e)
-    {
-        /* OK. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if assertion does not fire. */
+}
+catch (const asserter_exception& e)
+{
+    /* OK. */
+    (void)e;
+}
 }
 
 /*------------------------------------------------------------*/
@@ -3923,55 +3296,47 @@ TEST(NtNode, PushChildBackChildInTree)
  */
 TEST(NtNode, PushChildFrontParentWithMultipleChildren)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                                 RW11
+    |                                   |
+    RW1-----RW2---RW3                   RW12---RW13
+            |                           |
+            RW4-----RW5---------RW6     RW14
+            |       |           |
+            RW7     RW8---RW9   RW10
+
+    After:
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW11------------RW4-----RW5---------RW6
+            |               |       |           |
+            RW12---RW13     RW7     RW8---RW9   RW10
+            |
+            RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8), RW.at(9));
+    add_children(RW.at(6), RW.at(10));
+    add_children(RW.at(11), RW.at(12), RW.at(13));
+    add_children(RW.at(12), RW.at(14));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_front(&RW.at(2), &RW.at(11));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(14), RW.at(12), RW.at(13), RW.at(11), RW.at(7),
+                         RW.at(4), RW.at(8), RW.at(9), RW.at(5), RW.at(10), RW.at(6),
+                         RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                                 RW11
-        |                                   |
-        RW1-----RW2---RW3                   RW12---RW13
-                |                           |
-                RW4-----RW5---------RW6     RW14
-                |       |           |
-                RW7     RW8---RW9   RW10
-
-        After:
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW11------------RW4-----RW5---------RW6
-                |               |       |           |
-                RW12---RW13     RW7     RW8---RW9   RW10
-                |
-                RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8), RW.at(9));
-        add_children(RW.at(6), RW.at(10));
-        add_children(RW.at(11), RW.at(12), RW.at(13));
-        add_children(RW.at(12), RW.at(14));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_front(&RW.at(2), &RW.at(11));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(14), RW.at(12), RW.at(13), RW.at(11), RW.at(7),
-                             RW.at(4), RW.at(8), RW.at(9), RW.at(5), RW.at(10), RW.at(6),
-                             RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -3981,54 +3346,46 @@ TEST(NtNode, PushChildFrontParentWithMultipleChildren)
  */
 TEST(NtNode, PushChildFrontParentWithOneChild)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                     RW9
+    |                       |
+    RW1-----RW2-----RW3     RW10----RW11
+    |       |       |               |
+    RW4     RW5     RW6             RW12
+            |
+            RW7---RW8
+
+    After:
+    RW0
+    |
+    RW1-----RW2-------------------------RW3
+    |       |                           |
+    RW4     RW9-------------RW5         RW6
+            |               |
+            RW10----RW11    RW7---RW8
+                    |
+                    RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    add_children(RW.at(3), RW.at(6));
+    add_children(RW.at(5), RW.at(7), RW.at(8));
+    add_children(RW.at(9), RW.at(10), RW.at(11));
+    add_children(RW.at(11), RW.at(12));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_front(&RW.at(2), &RW.at(9));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(10), RW.at(12), RW.at(11), RW.at(9),
+                         RW.at(7), RW.at(8), RW.at(5), RW.at(2), RW.at(6), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                     RW9
-        |                       |
-        RW1-----RW2-----RW3     RW10----RW11
-        |       |       |               |
-        RW4     RW5     RW6             RW12
-                |
-                RW7---RW8
-
-        After:
-        RW0
-        |
-        RW1-----RW2-------------------------RW3
-        |       |                           |
-        RW4     RW9-------------RW5         RW6
-                |               |
-                RW10----RW11    RW7---RW8
-                        |
-                        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        add_children(RW.at(3), RW.at(6));
-        add_children(RW.at(5), RW.at(7), RW.at(8));
-        add_children(RW.at(9), RW.at(10), RW.at(11));
-        add_children(RW.at(11), RW.at(12));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_front(&RW.at(2), &RW.at(9));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(10), RW.at(12), RW.at(11), RW.at(9),
-                             RW.at(7), RW.at(8), RW.at(5), RW.at(2), RW.at(6), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4038,44 +3395,36 @@ TEST(NtNode, PushChildFrontParentWithOneChild)
  */
 TEST(NtNode, PushChildFrontParentWithNoChildren)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0                         RW6
+    |
+    RW1-----RW2-----RW3
+            |       |
+            RW4     RW5
+
+    After:
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW6     RW4     RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
+    add_children(RW.at(3), RW.at(5));
+
+    /* Step 2: Action. */
+    ecu_ntnode_push_child_front(&RW.at(1), &RW.at(6));
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), RW.at(4), RW.at(2), RW.at(5),
+                         RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0                         RW6
-        |
-        RW1-----RW2-----RW3
-                |       |
-                RW4     RW5
-
-        After:
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW6     RW4     RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
-        add_children(RW.at(3), RW.at(5));
-
-        /* Step 2: Action. */
-        ecu_ntnode_push_child_front(&RW.at(1), &RW.at(6));
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), RW.at(4), RW.at(2), RW.at(5),
-                             RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4089,14 +3438,14 @@ TEST(NtNode, PushChildFrontParentEqualsChild)
         /* Step 1: Arrange. 
         RW0
         */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_push_child_front(&RW.at(0), &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -4117,14 +3466,14 @@ TEST(NtNode, PushChildFrontChildInTree)
         */
         add_children(RW.at(0), RW.at(1), RW.at(2));
         add_children(RW.at(3), RW.at(4));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_push_child_front(&RW.at(1), &RW.at(4));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -4142,51 +3491,43 @@ TEST(NtNode, PushChildFrontChildInTree)
  */
 TEST(NtNode, RemoveNodeIsLeftMostSubroot)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---------RW2-----RW3
+    |           |       |
+    RW4---RW5   RW6     RW7
+
+    After:
+    RW0             RW1
+    |               |
+    RW2-----RW3     RW4---RW5
+    |       |
+    RW6     RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&RW.at(1));
+
+    /* Step 3: Assert. Verify tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(2), RW.at(7), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---------RW2-----RW3
-        |           |       |
-        RW4---RW5   RW6     RW7
-
-        After:
-        RW0             RW1
-        |               |
-        RW2-----RW3     RW4---RW5
-        |       |
-        RW6     RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&RW.at(1));
-
-        /* Step 3: Assert. Verify tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(2), RW.at(7), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert: Verify removed tree still intact. */
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert: Verify removed tree still intact. */
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4197,57 +3538,49 @@ TEST(NtNode, RemoveNodeIsLeftMostSubroot)
  */
 TEST(NtNode, RemoveNodeIsMiddleSubroot)
 {
-    try
+    /* Step 1: Arrange.
+    
+    Before:
+    RW0
+    |
+    RW1---------RW2-----RW3
+    |           |       |
+    RW4---RW5   RW6     RW7
+                |
+                RW8
+                |
+                RW9
+
+    After:
+    RW0                 RW2
+    |                   |
+    RW1---------RW3     RW6
+    |           |       |
+    RW4---RW5   RW7     RW8
+                        |
+                        RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_branch(RW.at(2), RW.at(6), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&RW.at(2));
+
+    /* Step 3: Assert. Verify tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(7), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        
-        Before:
-        RW0
-        |
-        RW1---------RW2-----RW3
-        |           |       |
-        RW4---RW5   RW6     RW7
-                    |
-                    RW8
-                    |
-                    RW9
-
-        After:
-        RW0                 RW2
-        |                   |
-        RW1---------RW3     RW6
-        |           |       |
-        RW4---RW5   RW7     RW8
-                            |
-                            RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_branch(RW.at(2), RW.at(6), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&RW.at(2));
-
-        /* Step 3: Assert. Verify tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(7), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert: Verify removed tree still intact. */
-        EXPECT_NODES_IN_TREE(RW.at(9), RW.at(8), RW.at(6), RW.at(2));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert: Verify removed tree still intact. */
+    EXPECT_NODES_IN_TREE(RW.at(9), RW.at(8), RW.at(6), RW.at(2));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4258,51 +3591,43 @@ TEST(NtNode, RemoveNodeIsMiddleSubroot)
  */
 TEST(NtNode, RemoveNodeIsRightMostSubroot)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---------RW2-----RW3
+    |           |       |
+    RW4---RW5   RW6     RW7
+
+    After:
+    RW0                 RW3
+    |                   |
+    RW1---------RW2     RW7
+    |           |
+    RW4---RW5   RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&RW.at(3));
+
+    /* Step 3: Assert. Verify tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---------RW2-----RW3
-        |           |       |
-        RW4---RW5   RW6     RW7
-
-        After:
-        RW0                 RW3
-        |                   |
-        RW1---------RW2     RW7
-        |           |
-        RW4---RW5   RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&RW.at(3));
-
-        /* Step 3: Assert. Verify tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert: Verify removed tree still intact. */
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(3));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert: Verify removed tree still intact. */
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(3));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4313,46 +3638,38 @@ TEST(NtNode, RemoveNodeIsRightMostSubroot)
  */
 TEST(NtNode, RemoveNodeIsLeaf)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1
+    |
+    RW2
+
+    After:
+    RW0     RW2
+    |
+    RW1
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2));
+
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&RW.at(2));
+
+    /* Step 3: Assert. Verify tree still intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1
-        |
-        RW2
-
-        After:
-        RW0     RW2
-        |
-        RW1
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2));
-
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&RW.at(2));
-
-        /* Step 3: Assert. Verify tree still intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert: Verify removed tree still intact. */
-        EXPECT_NODES_IN_TREE(RW.at(2));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert: Verify removed tree still intact. */
+    EXPECT_NODES_IN_TREE(RW.at(2));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4362,30 +3679,22 @@ TEST(NtNode, RemoveNodeIsLeaf)
  */
 TEST(NtNode, RemoveNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&RW.at(0));
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&RW.at(0));
 
-        /* Step 3: Assert. Verify tree unchanged. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. Verify tree unchanged. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4395,26 +3704,18 @@ TEST(NtNode, RemoveNodeIsNonEmptyRoot)
  */
 TEST(NtNode, RemoveNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        
-        /* Step 2: Action. */
-        ecu_ntnode_remove(&empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    
+    /* Step 2: Action. */
+    ecu_ntnode_remove(&empty_root);
 
-        /* Step 3: Assert. Verify tree unchanged. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(empty_root);
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Step 3: Assert. Verify tree unchanged. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(empty_root);
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4427,19 +3728,11 @@ TEST(NtNode, RemoveNodeIsEmptyRoot)
  */
 TEST(NtNode, SizeNodeIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_size(&empty_root) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_size(&empty_root) == 0) );
 }
 
 /**
@@ -4447,28 +3740,20 @@ TEST(NtNode, SizeNodeIsEmptyRoot)
  */
 TEST(NtNode, SizeNodeIsNonEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2 
-        |
-        RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(3), RW.at(4));
-        add_siblings_after(RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2 
+    |
+    RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(3), RW.at(4));
+    add_siblings_after(RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 4) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 4) );
 }
 
 /**
@@ -4476,26 +3761,18 @@ TEST(NtNode, SizeNodeIsNonEmptyRoot)
  */
 TEST(NtNode, SizeNodeIsNonEmptySubroot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW4---RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW4---RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(2)) == 2) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(2)) == 2) );
 }
 
 /**
@@ -4503,28 +3780,20 @@ TEST(NtNode, SizeNodeIsNonEmptySubroot)
  */
 TEST(NtNode, SizeNodeIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(1)) == 0) );
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(4)) == 0) );
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(3)) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(1)) == 0) );
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(4)) == 0) );
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(3)) == 0) );
 }
 
 /**
@@ -4532,39 +3801,31 @@ TEST(NtNode, SizeNodeIsLeaf)
  */
 TEST(NtNode, SizeAddAndRemoveNodes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-----RW3
-        |       |       |
-        RW4     RW7     RW8
-        |
-        RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(7));
-        add_children(RW.at(3), RW.at(8));
-        add_children(RW.at(4), RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-----RW3
+    |       |       |
+    RW4     RW7     RW8
+    |
+    RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(7));
+    add_children(RW.at(3), RW.at(8));
+    add_children(RW.at(4), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 8) );
-        ecu_ntnode_remove(&RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 6) );
-        ecu_ntnode_remove(&RW.at(1));
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 2) );
-        ecu_ntnode_push_child_back(&RW.at(7), &RW.at(3));
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 4) );
-        ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(10));
-        CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 5) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 8) );
+    ecu_ntnode_remove(&RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 6) );
+    ecu_ntnode_remove(&RW.at(1));
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 2) );
+    ecu_ntnode_push_child_back(&RW.at(7), &RW.at(3));
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 4) );
+    ecu_ntnode_insert_sibling_after(&RW.at(2), &RW.at(10));
+    CHECK_TRUE( (ecu_ntnode_size(&RW.at(0)) == 5) );
 }
 
 /*------------------------------------------------------------*/
@@ -4576,25 +3837,17 @@ TEST(NtNode, SizeAddAndRemoveNodes)
  */
 TEST(NtNode, Valid)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_ntnode node;
+    /* Step 1: Arrange. */
+    ecu_ntnode node;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_ntnode_valid(&node)) );
-        ecu_ntnode_ctor(&node, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        CHECK_TRUE( (ecu_ntnode_valid(&node)) );
-        ecu_ntnode_destroy(&node);
-        CHECK_FALSE( (ecu_ntnode_valid(&node)) );
-        ecu_ntnode_ctor(&node, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        CHECK_TRUE( (ecu_ntnode_valid(&node)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_ntnode_valid(&node)) );
+    ecu_ntnode_ctor(&node, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    CHECK_TRUE( (ecu_ntnode_valid(&node)) );
+    ecu_ntnode_destroy(&node);
+    CHECK_FALSE( (ecu_ntnode_valid(&node)) );
+    ecu_ntnode_ctor(&node, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    CHECK_TRUE( (ecu_ntnode_valid(&node)) );
 }
 
 /*------------------------------------------------------------*/
@@ -4607,30 +3860,22 @@ TEST(NtNode, Valid)
  */
 TEST(NtNode, ChildIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1-----RW2------RW3----RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange. Start iteration at RW0.
+    RW0
+    |
+    RW1-----RW2------RW3----RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4640,30 +3885,22 @@ TEST(NtNode, ChildIterator)
  */
 TEST(NtNode, ConstChildIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1-----RW2------RW3----RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_child_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange. Start iteration at RW0.
+    RW0
+    |
+    RW1-----RW2------RW3----RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_child_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4673,30 +3910,22 @@ TEST(NtNode, ConstChildIterator)
  */
 TEST(NtNode, ChildIteratorParentHasOneChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW2.
-        RW0
-        |
-        RW1-----RW2------RW3----RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_TREE(RW.at(5));
+    /* Step 1: Arrange. Start iteration at RW2.
+    RW0
+    |
+    RW1-----RW2------RW3----RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    EXPECT_NODES_IN_TREE(RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4706,30 +3935,22 @@ TEST(NtNode, ChildIteratorParentHasOneChild)
  */
 TEST(NtNode, ConstChildIteratorParentHasOneChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW2.
-        RW0
-        |
-        RW1-----RW2------RW3----RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_child_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_IN_TREE(RW.at(5));
+    /* Step 1: Arrange. Start iteration at RW2.
+    RW0
+    |
+    RW1-----RW2------RW3----RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_child_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    EXPECT_NODES_IN_TREE(RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4739,26 +3960,18 @@ TEST(NtNode, ConstChildIteratorParentHasOneChild)
  */
 TEST(NtNode, ChildIteratorParentHasNoChildren)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4768,26 +3981,18 @@ TEST(NtNode, ChildIteratorParentHasNoChildren)
  */
 TEST(NtNode, ConstChildIteratorParentHasNoChildren)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_child_citerator citer;
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_child_citerator citer;
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4797,45 +4002,37 @@ TEST(NtNode, ConstChildIteratorParentHasNoChildren)
  */
 TEST(NtNode, ChildIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW0.
+    Remove RW1 and RW2.
+
+    Before:
+    RW0
+    |
+    RW1----RO0----RW2---RO1
+                                    
+    After:
+    RW0             RW1         RW2
+    |
+    RO0-----RO1
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange. Start iteration at RW0.
-        Remove RW1 and RW2.
-
-        Before:
-        RW0
-        |
-        RW1----RO0----RW2---RO1
-                                        
-        After:
-        RW0             RW1         RW2
-        |
-        RO0-----RO1
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(1), RW.at(2))) );
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RO.at(0), RO.at(1), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(1), RW.at(2))) );
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RO.at(0), RO.at(1), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4845,48 +4042,40 @@ TEST(NtNode, ChildIteratorRemoveSome)
  */
 TEST(NtNode, ChildIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW2.
+    Remove all children.
+
+    Before:
+    RW0
+    |
+    RW1-----RW2---RW3---RW4
+            |
+            RW5---RW6---RW7
+                                    
+    After:
+    RW0                         RW5  RW6  RW7
+    |
+    RW1-----RW2---RW3---RW4
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* Step 1: Arrange. Start iteration at RW2.
-        Remove all children.
-
-        Before:
-        RW0
-        |
-        RW1-----RW2---RW3---RW4
-                |
-                RW5---RW6---RW7
-                                        
-        After:
-        RW0                         RW5  RW6  RW7
-        |
-        RW1-----RW2---RW3---RW4
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(5), RW.at(6), RW.at(7))) );
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(5), RW.at(6), RW.at(7))) );
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4896,43 +4085,35 @@ TEST(NtNode, ChildIteratorRemoveAll)
  */
 TEST(NtNode, ChildIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW0.
+    Destroy DN nodes.
+
+    Before:
+    RW0
+    |
+    RW1---DN0---RW2---DN1
+                                    
+    After:
+    RW0
+    |
+    RW1---RW2
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
+    EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange. Start iteration at RW0.
-        Destroy DN nodes.
-
-        Before:
-        RW0
-        |
-        RW1---DN0---RW2---DN1
-                                        
-        After:
-        RW0
-        |
-        RW1---RW2
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
-        EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4942,46 +4123,38 @@ TEST(NtNode, ChildIteratorDestroySome)
  */
 TEST(NtNode, ChildIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW2.
+    Destroy DN nodes.
+
+    Before:
+    RW0
+    |
+    RW1-----RW2---RW3
+            |
+            DN0---DN1---DN2
+                                    
+    After:
+    RW0
+    |
+    RW1-----RW2----RW3
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(2), DN.at(0), DN.at(1), DN.at(2));
+    EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1), DN.at(2));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* Step 1: Arrange. Start iteration at RW2.
-        Destroy DN nodes.
-
-        Before:
-        RW0
-        |
-        RW1-----RW2---RW3
-                |
-                DN0---DN1---DN2
-                                        
-        After:
-        RW0
-        |
-        RW1-----RW2----RW3
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(2), DN.at(0), DN.at(1), DN.at(2));
-        EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1), DN.at(2));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -4995,7 +4168,7 @@ TEST(NtNode, ChildIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_child_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
@@ -5004,7 +4177,7 @@ TEST(NtNode, ChildIteratorNextAfterDone)
         }
         (void)ecu_ntnode_child_iterator_next(&iter);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -5021,7 +4194,7 @@ TEST(NtNode, ConstChildIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_child_citerator citer;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
@@ -5030,7 +4203,7 @@ TEST(NtNode, ConstChildIteratorNextAfterDone)
         }
         (void)ecu_ntnode_child_iterator_cnext(&citer);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -5042,35 +4215,27 @@ TEST(NtNode, ConstChildIteratorNextAfterDone)
  */
 TEST(NtNode, ChildIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        ecu_ntnode_child_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    ecu_ntnode_child_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CHILD_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5079,35 +4244,27 @@ TEST(NtNode, ChildIteratorMultipleTimes)
  */
 TEST(NtNode, ConstChildIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        ecu_ntnode_child_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    ecu_ntnode_child_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_CHILD_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5120,36 +4277,28 @@ TEST(NtNode, ConstChildIteratorMultipleTimes)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5158,36 +4307,28 @@ TEST(NtNode, NextSiblingAtIteratorStartIsFirstSibling)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5196,30 +4337,22 @@ TEST(NtNode, ConstNextSiblingAtIteratorStartIsFirstSibling)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5228,30 +4361,22 @@ TEST(NtNode, NextSiblingAtIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5260,30 +4385,22 @@ TEST(NtNode, ConstNextSiblingAtIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5292,30 +4409,22 @@ TEST(NtNode, NextSiblingAtIteratorStartIsLastSibling)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5324,23 +4433,15 @@ TEST(NtNode, ConstNextSiblingAtIteratorStartIsLastSibling)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5349,23 +4450,15 @@ TEST(NtNode, NextSiblingAtIteratorStartIsRoot)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5374,30 +4467,22 @@ TEST(NtNode, ConstNextSiblingAtIteratorStartIsRoot)
  */
 TEST(NtNode, NextSiblingAtIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5406,30 +4491,22 @@ TEST(NtNode, NextSiblingAtIteratorStartHasOneSibling)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5440,57 +4517,49 @@ TEST(NtNode, ConstNextSiblingAtIteratorStartHasOneSibling)
  */
 TEST(NtNode, NextSiblingAtIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RO0-----RO1
+    |           |       |
+    RW3---RW4   RW5     RW6---RW7
+    
+    After:
+    RW0                 RW1         RW2
+    |                   |
+    RO0-----RO1         RW3---RW4
+    |       |
+    RW5     RW6---RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
+    add_children(RO.at(0), RW.at(5));
+    add_children(RO.at(1), RW.at(6), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RO0-----RO1
-        |           |       |
-        RW3---RW4   RW5     RW6---RW7
-        
-        After:
-        RW0                 RW1         RW2
-        |                   |
-        RO0-----RO1         RW3---RW4
-        |       |
-        RW5     RW6---RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
-        add_children(RO.at(0), RW.at(5));
-        add_children(RO.at(1), RW.at(6), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RO.at(0), RW.at(6), RW.at(7), RO.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        CHECK_TRUE( (not_in_tree(RW.at(2))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RO.at(0), RW.at(6), RW.at(7), RO.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    CHECK_TRUE( (not_in_tree(RW.at(2))) );
 }
 
 /**
@@ -5500,55 +4569,47 @@ TEST(NtNode, NextSiblingAtIteratorRemoveSome)
  */
 TEST(NtNode, NextSiblingAtIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3-----RW4
+    |                   |
+    RW5---RW6           RW8---RW9
+    
+    After:
+    RW0     RW1         RW2     RW3     RW4
+            |                           |
+            RW5---RW6                   RW8---RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(8), RW.at(9));
+
+    /* Step 2: Action. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3-----RW4
-        |                   |
-        RW5---RW6           RW8---RW9
-        
-        After:
-        RW0     RW1         RW2     RW3     RW4
-                |                           |
-                RW5---RW6                   RW8---RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(8), RW.at(9));
-
-        /* Step 2: Action. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        CHECK_TRUE( (not_in_tree(RW.at(0))) );
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    CHECK_TRUE( (not_in_tree(RW.at(0))) );
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
 }
 
 /**
@@ -5557,34 +4618,26 @@ TEST(NtNode, NextSiblingAtIteratorRemoveAll)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsRootRemoveRoot)
 {
-    try
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+
+    /* Step 2: Action. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-
-        /* Step 2: Action. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5595,55 +4648,47 @@ TEST(NtNode, NextSiblingAtIteratorStartIsRootRemoveRoot)
  */
 TEST(NtNode, NextSiblingAtIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW1     RW2---RW3   RW4     RW5
+    |
+    RW6 
+    
+    After:
+    RW0
+    |
+    DN0-----DN1
+    |       |
+    RW1     RW2---RW3
+    |
+    RW6
+    */
+    add_children(RW.at(0), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(1));
+    add_children(DN.at(1), RW.at(2), RW.at(3));
+    add_children(DN.at(2), RW.at(4));
+    add_children(DN.at(3), RW.at(5));
+    add_children(RW.at(1), RW.at(6));
+    EXPECT_NODES_DESTROYED(DN.at(2), RW.at(4), DN.at(3), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(2))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW1     RW2---RW3   RW4     RW5
-        |
-        RW6 
-        
-        After:
-        RW0
-        |
-        DN0-----DN1
-        |       |
-        RW1     RW2---RW3
-        |
-        RW6
-        */
-        add_children(RW.at(0), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(1));
-        add_children(DN.at(1), RW.at(2), RW.at(3));
-        add_children(DN.at(2), RW.at(4));
-        add_children(DN.at(3), RW.at(5));
-        add_children(RW.at(1), RW.at(6));
-        EXPECT_NODES_DESTROYED(DN.at(2), RW.at(4), DN.at(3), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(2))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), DN.at(0), RW.at(2), RW.at(3), DN.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), DN.at(0), RW.at(2), RW.at(3), DN.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5654,55 +4699,47 @@ TEST(NtNode, NextSiblingAtIteratorDestroySome)
  */
 TEST(NtNode, NextSiblingAtIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW2     RW3---RW4   RW5     RW6
+    |
+    RW7 
+    
+    After:
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(2));
+    add_children(DN.at(1), RW.at(3), RW.at(4));
+    add_children(DN.at(2), RW.at(5));
+    add_children(DN.at(3), RW.at(6));
+    add_children(RW.at(2), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2),
+                           RW.at(5), DN.at(3), RW.at(6));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW2     RW3---RW4   RW5     RW6
-        |
-        RW7 
-        
-        After:
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(2));
-        add_children(DN.at(1), RW.at(3), RW.at(4));
-        add_children(DN.at(2), RW.at(5));
-        add_children(DN.at(3), RW.at(6));
-        add_children(RW.at(2), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2),
-                               RW.at(5), DN.at(3), RW.at(6));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5711,27 +4748,19 @@ TEST(NtNode, NextSiblingAtIteratorDestroyAll)
  */
 TEST(NtNode, NextSiblingAtIteratorStartIsRootDestroyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            ecu_ntnode_destroy(n);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        ecu_ntnode_destroy(n);
     }
 }
 
@@ -5745,7 +4774,7 @@ TEST(NtNode, NextSiblingAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_next_sibling_iterator iter;
@@ -5757,7 +4786,7 @@ TEST(NtNode, NextSiblingAtIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -5774,7 +4803,7 @@ TEST(NtNode, ConstNextSiblingAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_next_sibling_citerator citer;
@@ -5786,7 +4815,7 @@ TEST(NtNode, ConstNextSiblingAtIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -5798,35 +4827,27 @@ TEST(NtNode, ConstNextSiblingAtIteratorNextAfterDone)
  */
 TEST(NtNode, NextSiblingAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(2), RW.at(3), RW.at(3));
-        ecu_ntnode_next_sibling_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(2), RW.at(3), RW.at(3));
+    ecu_ntnode_next_sibling_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_NEXT_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5835,35 +4856,27 @@ TEST(NtNode, NextSiblingAtIteratorMultipleTimes)
  */
 TEST(NtNode, ConstNextSiblingAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(2), RW.at(3), RW.at(3));
-        ecu_ntnode_next_sibling_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(3), RW.at(2), RW.at(3), RW.at(3));
+    ecu_ntnode_next_sibling_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_NEXT_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5876,36 +4889,28 @@ TEST(NtNode, ConstNextSiblingAtIteratorMultipleTimes)
  */
 TEST(NtNode, NextSiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5914,36 +4919,28 @@ TEST(NtNode, NextSiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, ConstNextSiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5952,30 +4949,22 @@ TEST(NtNode, ConstNextSiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, NextSiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -5984,30 +4973,22 @@ TEST(NtNode, NextSiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, ConstNextSiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6016,29 +4997,21 @@ TEST(NtNode, ConstNextSiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, NextSiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6047,29 +5020,21 @@ TEST(NtNode, NextSiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, ConstNextSiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6078,22 +5043,14 @@ TEST(NtNode, ConstNextSiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, NextSiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6102,22 +5059,14 @@ TEST(NtNode, NextSiblingIteratorStartIsRoot)
  */
 TEST(NtNode, ConstNextSiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6126,30 +5075,22 @@ TEST(NtNode, ConstNextSiblingIteratorStartIsRoot)
  */
 TEST(NtNode, NextSiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6158,30 +5099,22 @@ TEST(NtNode, NextSiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, ConstNextSiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_citerator citer;
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_citerator citer;
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6192,56 +5125,48 @@ TEST(NtNode, ConstNextSiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, NextSiblingIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RO0-----RW3
+    |           |       |
+    RW4---RW5   RW6     RW7---RW8
+    
+    After:
+    RW0                 RW2     RW3
+    |                           |
+    RW1---------RO0             RW7---RW8
+    |           |
+    RW4---RW5   RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RO.at(0), RW.at(6));
+    add_children(RW.at(3), RW.at(7), RW.at(8));
+
+    /* Step 2: Action. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RO0-----RW3
-        |           |       |
-        RW4---RW5   RW6     RW7---RW8
-        
-        After:
-        RW0                 RW2     RW3
-        |                           |
-        RW1---------RO0             RW7---RW8
-        |           |
-        RW4---RW5   RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RO.at(0), RW.at(6));
-        add_children(RW.at(3), RW.at(7), RW.at(8));
-
-        /* Step 2: Action. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RO.at(0), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        CHECK_TRUE( (not_in_tree(RW.at(2))) );
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(8), RW.at(3));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(1), RW.at(6), RO.at(0), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    CHECK_TRUE( (not_in_tree(RW.at(2))) );
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(8), RW.at(3));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6252,61 +5177,53 @@ TEST(NtNode, NextSiblingIteratorRemoveSome)
  */
 TEST(NtNode, NextSiblingIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3-----RW4
+    |           |       |
+    RW5---RW6   RW7     RW8---RW9
+    
+    After:
+    RW0         RW2     RW3     RW4
+    |                   |       |
+    RW1                 RW7     RW8---RW9
+    |
+    RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+    add_children(RW.at(4), RW.at(8), RW.at(9));
+
+    /* Step 2: Action. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3-----RW4
-        |           |       |
-        RW5---RW6   RW7     RW8---RW9
-        
-        After:
-        RW0         RW2     RW3     RW4
-        |                   |       |
-        RW1                 RW7     RW8---RW9
-        |
-        RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-        add_children(RW.at(4), RW.at(8), RW.at(9));
-
-        /* Step 2: Action. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        CHECK_TRUE( (not_in_tree(RW.at(2))) );
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(3));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    CHECK_TRUE( (not_in_tree(RW.at(2))) );
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(3));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6317,55 +5234,47 @@ TEST(NtNode, NextSiblingIteratorRemoveAll)
  */
 TEST(NtNode, NextSiblingIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW1     RW2---RW3   RW4     RW5
+    |
+    RW6 
+    
+    After:
+    RW0
+    |
+    DN0-----DN1
+    |       |
+    RW1     RW2---RW3
+    |
+    RW6
+    */
+    add_children(RW.at(0), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(1));
+    add_children(DN.at(1), RW.at(2), RW.at(3));
+    add_children(DN.at(2), RW.at(4));
+    add_children(DN.at(3), RW.at(5));
+    add_children(RW.at(1), RW.at(6));
+    EXPECT_NODES_DESTROYED(DN.at(2), RW.at(4), DN.at(3), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &DN.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW1     RW2---RW3   RW4     RW5
-        |
-        RW6 
-        
-        After:
-        RW0
-        |
-        DN0-----DN1
-        |       |
-        RW1     RW2---RW3
-        |
-        RW6
-        */
-        add_children(RW.at(0), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(1));
-        add_children(DN.at(1), RW.at(2), RW.at(3));
-        add_children(DN.at(2), RW.at(4));
-        add_children(DN.at(3), RW.at(5));
-        add_children(RW.at(1), RW.at(6));
-        EXPECT_NODES_DESTROYED(DN.at(2), RW.at(4), DN.at(3), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &DN.at(1))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), DN.at(0), RW.at(2), RW.at(3), DN.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(1), DN.at(0), RW.at(2), RW.at(3), DN.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6376,60 +5285,52 @@ TEST(NtNode, NextSiblingIteratorDestroySome)
  */
 TEST(NtNode, NextSiblingIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW2     RW3---RW4   RW5     RW6
+    |
+    RW7 
+    
+    After:
+    RW0
+    |
+    RW1
+    |
+    DN0
+    |
+    RW2
+    |
+    RW7
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(2));
+    add_children(DN.at(1), RW.at(3), RW.at(4));
+    add_children(DN.at(2), RW.at(5));
+    add_children(DN.at(3), RW.at(6));
+    add_children(RW.at(2), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(1), RW.at(3), RW.at(4), DN.at(2), RW.at(5), DN.at(3), RW.at(6));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_next_sibling_iterator iter;
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &DN.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW2     RW3---RW4   RW5     RW6
-        |
-        RW7 
-        
-        After:
-        RW0
-        |
-        RW1
-        |
-        DN0
-        |
-        RW2
-        |
-        RW7
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(2));
-        add_children(DN.at(1), RW.at(3), RW.at(4));
-        add_children(DN.at(2), RW.at(5));
-        add_children(DN.at(3), RW.at(6));
-        add_children(RW.at(2), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(1), RW.at(3), RW.at(4), DN.at(2), RW.at(5), DN.at(3), RW.at(6));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_next_sibling_iterator iter;
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &DN.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(2), DN.at(0), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(2), DN.at(0), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6443,7 +5344,7 @@ TEST(NtNode, NextSiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_next_sibling_iterator iter;
@@ -6455,7 +5356,7 @@ TEST(NtNode, NextSiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -6472,7 +5373,7 @@ TEST(NtNode, ConstNextSiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_next_sibling_citerator citer;
@@ -6484,7 +5385,7 @@ TEST(NtNode, ConstNextSiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -6496,35 +5397,27 @@ TEST(NtNode, ConstNextSiblingIteratorNextAfterDone)
  */
 TEST(NtNode, NextSiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3---RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4), RW.at(3), RW.at(4), RW.at(4));
-        ecu_ntnode_next_sibling_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3---RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4), RW.at(3), RW.at(4), RW.at(4));
+    ecu_ntnode_next_sibling_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_NEXT_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6533,35 +5426,27 @@ TEST(NtNode, NextSiblingIteratorMultipleTimes)
  */
 TEST(NtNode, ConstNextSiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3---RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4), RW.at(3), RW.at(4), RW.at(4));
-        ecu_ntnode_next_sibling_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3---RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4), RW.at(3), RW.at(4), RW.at(4));
+    ecu_ntnode_next_sibling_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_NEXT_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6575,35 +5460,27 @@ TEST(NtNode, ConstNextSiblingIteratorMultipleTimes)
  */
 TEST(NtNode, ParentAtIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW5.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW5.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6613,35 +5490,27 @@ TEST(NtNode, ParentAtIteratorStartIsLeaf)
  */
 TEST(NtNode, ConstParentAtIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW5.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW5.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6651,35 +5520,27 @@ TEST(NtNode, ConstParentAtIteratorStartIsLeaf)
  */
 TEST(NtNode, ParentAtIteratorStartIsMiddleChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6689,35 +5550,27 @@ TEST(NtNode, ParentAtIteratorStartIsMiddleChild)
  */
 TEST(NtNode, ConstParentAtIteratorStartIsMiddleChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6727,35 +5580,27 @@ TEST(NtNode, ConstParentAtIteratorStartIsMiddleChild)
  */
 TEST(NtNode, ParentAtIteratorStartsParentIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6765,35 +5610,27 @@ TEST(NtNode, ParentAtIteratorStartsParentIsRoot)
  */
 TEST(NtNode, ConstParentAtIteratorStartsParentIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6803,27 +5640,19 @@ TEST(NtNode, ConstParentAtIteratorStartsParentIsRoot)
  */
 TEST(NtNode, ParentAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrrange. Start iteration at RW0.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrrange. Start iteration at RW0.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6833,27 +5662,19 @@ TEST(NtNode, ParentAtIteratorStartIsRoot)
  */
 TEST(NtNode, ConstParentAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrrange. Start iteration at RW0.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrrange. Start iteration at RW0.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -6863,56 +5684,48 @@ TEST(NtNode, ConstParentAtIteratorStartIsRoot)
  */
 TEST(NtNode, ParentAtIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW3.
+    Remove read-write nodes.
+
+    Before:
+    RO0
+    |
+    RW0-----RW1-----RW4
+            |       |
+            RO1     RW5
+            |
+            RW2
+            |
+            RW3 
+            
+    After:
+    RO0             RW3     RW2     RW1
+    |                               |
+    RW0-----RW4                     RO1
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RO.at(0), RW.at(0), RW.at(1), RW.at(4));
+    add_branch(RW.at(1), RO.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(4), RW.at(5));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* Step 1: Arrange. Start iteration at RW3.
-        Remove read-write nodes.
-
-        Before:
-        RO0
-        |
-        RW0-----RW1-----RW4
-                |       |
-                RO1     RW5
-                |
-                RW2
-                |
-                RW3 
-                
-        After:
-        RO0             RW3     RW2     RW1
-        |                               |
-        RW0-----RW4                     RO1
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RO.at(0), RW.at(0), RW.at(1), RW.at(4));
-        add_branch(RW.at(1), RO.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(4), RW.at(5));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(5), RW.at(4), RO.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RO.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        CHECK_TRUE( (is_root(RW.at(3), RW.at(2), RW.at(1))) );
-        CHECK_TRUE( (is_descendant(RO.at(1))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(5), RW.at(4), RO.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RO.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    CHECK_TRUE( (is_root(RW.at(3), RW.at(2), RW.at(1))) );
+    CHECK_TRUE( (is_descendant(RO.at(1))) );
 }
 
 /**
@@ -6921,55 +5734,47 @@ TEST(NtNode, ParentAtIteratorRemoveSome)
  */
 TEST(NtNode, ParentAtIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW5.
+    Remove all nodes.
+
+    Before:
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+            
+    After:
+    RW0             RW5    RW4     RW3     RW2
+    |               
+    RW1-----RW6
+            |
+            RW7    
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    
+    /* Step 2: Action. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* Step 1: Arrange. Start iteration at RW5.
-        Remove all nodes.
-
-        Before:
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-                
-        After:
-        RW0             RW5    RW4     RW3     RW2
-        |               
-        RW1-----RW6
-                |
-                RW7    
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        
-        /* Step 2: Action. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(6), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        CHECK_TRUE( (is_root(RW.at(5), RW.at(4), RW.at(3), RW.at(2))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(6), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    CHECK_TRUE( (is_root(RW.at(5), RW.at(4), RW.at(3), RW.at(2))) );
 }
 
 /**
@@ -6978,38 +5783,30 @@ TEST(NtNode, ParentAtIteratorRemoveAll)
  */
 TEST(NtNode, ParentAtIteratorStartIsRootRemoveRoot)
 {
-    try
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+    |       |
+    RW4     RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+
+    /* Step 2: Action. */
+    ecu_ntnode_parent_iterator iter;
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-        |       |
-        RW4     RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-
-        /* Step 2: Action. */
-        ecu_ntnode_parent_iterator iter;
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            ecu_ntnode_remove(n);
-        }
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(5), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        ecu_ntnode_remove(n);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(5), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7019,52 +5816,44 @@ TEST(NtNode, ParentAtIteratorStartIsRootRemoveRoot)
  */
 TEST(NtNode, ParentAtIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at DN2.
+    Destroy DN nodes.
+
+    Before:
+    RW0
+    |
+    DN0---RW1---RW2
+    |
+    RW3---RW4
+    |
+    DN1---RW5
+    |
+    DN2
+
+    After:
+    RW0
+    |
+    RW1---RW2
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), DN.at(0), RW.at(1), RW.at(2));
+    add_children(DN.at(0), RW.at(3), RW.at(4));
+    add_children(RW.at(3), DN.at(1), RW.at(5));
+    add_children(DN.at(1), DN.at(2));
+    EXPECT_NODES_DESTROYED(DN.at(2), DN.at(1), DN.at(0), RW.at(3), RW.at(4), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &DN.at(2))
     {
-        /* Step 1: Arrange. Start iteration at DN2.
-        Destroy DN nodes.
-
-        Before:
-        RW0
-        |
-        DN0---RW1---RW2
-        |
-        RW3---RW4
-        |
-        DN1---RW5
-        |
-        DN2
-
-        After:
-        RW0
-        |
-        RW1---RW2
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), DN.at(0), RW.at(1), RW.at(2));
-        add_children(DN.at(0), RW.at(3), RW.at(4));
-        add_children(RW.at(3), DN.at(1), RW.at(5));
-        add_children(DN.at(1), DN.at(2));
-        EXPECT_NODES_DESTROYED(DN.at(2), DN.at(1), DN.at(0), RW.at(3), RW.at(4), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &DN.at(2))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7073,41 +5862,33 @@ TEST(NtNode, ParentAtIteratorDestroySome)
  */
 TEST(NtNode, ParentAtIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at DN4.
+    Destroy DN nodes.
+
+    Before:
+    DN0
+    |
+    DN1---RW0---RW1
+    |
+    DN2---RW2
+    |
+    DN3---RW3
+    |
+    DN4
+
+    After:
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(DN.at(0), DN.at(1), RW.at(0), RW.at(1));
+    add_children(DN.at(1), DN.at(2), RW.at(2));
+    add_children(DN.at(2), DN.at(3), RW.at(3));
+    add_children(DN.at(3), DN.at(4));
+    EXPECT_NODES_DESTROYED(DN.at(4), DN.at(3), DN.at(2), RW.at(3), DN.at(1), RW.at(2), DN.at(0), RW.at(0), RW.at(1));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &DN.at(4))
     {
-        /* Step 1: Arrange. Start iteration at DN4.
-        Destroy DN nodes.
-
-        Before:
-        DN0
-        |
-        DN1---RW0---RW1
-        |
-        DN2---RW2
-        |
-        DN3---RW3
-        |
-        DN4
-
-        After:
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(DN.at(0), DN.at(1), RW.at(0), RW.at(1));
-        add_children(DN.at(1), DN.at(2), RW.at(2));
-        add_children(DN.at(2), DN.at(3), RW.at(3));
-        add_children(DN.at(3), DN.at(4));
-        EXPECT_NODES_DESTROYED(DN.at(4), DN.at(3), DN.at(2), RW.at(3), DN.at(1), RW.at(2), DN.at(0), RW.at(0), RW.at(1));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &DN.at(4))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_destroy_visitor);
     }
 }
 
@@ -7117,31 +5898,23 @@ TEST(NtNode, ParentAtIteratorDestroyAll)
  */
 TEST(NtNode, ParentAtIteratorStartIsRootDestroyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3
-        |       |
-        RW4     RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5));
-        EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3
+    |       |
+    RW4     RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5));
+    EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_parent_iterator iter;
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            ecu_ntnode_destroy(n);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_parent_iterator iter;
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        ecu_ntnode_destroy(n);
     }
 }
 
@@ -7155,7 +5928,7 @@ TEST(NtNode, ParentAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_parent_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
@@ -7164,7 +5937,7 @@ TEST(NtNode, ParentAtIteratorNextAfterDone)
         }
         (void)ecu_ntnode_parent_iterator_next(&iter);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -7181,7 +5954,7 @@ TEST(NtNode, ConstParentAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_parent_citerator citer;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
@@ -7190,7 +5963,7 @@ TEST(NtNode, ConstParentAtIteratorNextAfterDone)
         }
         (void)ecu_ntnode_parent_iterator_cnext(&citer);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -7202,31 +5975,23 @@ TEST(NtNode, ConstParentAtIteratorNextAfterDone)
  */
 TEST(NtNode, ParentAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_ntnode_parent_iterator iter;
-        CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    /* Step 1: Arrange. */
+    ecu_ntnode_parent_iterator iter;
+    CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PARENT_AT_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7235,31 +6000,23 @@ TEST(NtNode, ParentAtIteratorMultipleTimes)
  */
 TEST(NtNode, ConstParentAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_ntnode_parent_citerator citer;
-        CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    /* Step 1: Arrange. */
+    ecu_ntnode_parent_citerator citer;
+    CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PARENT_AT_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7273,35 +6030,27 @@ TEST(NtNode, ConstParentAtIteratorMultipleTimes)
  */
 TEST(NtNode, ParentIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW5.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW5.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7311,35 +6060,27 @@ TEST(NtNode, ParentIteratorStartIsLeaf)
  */
 TEST(NtNode, ConstParentIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW5.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW5.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3), RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7349,35 +6090,27 @@ TEST(NtNode, ConstParentIteratorStartIsLeaf)
  */
 TEST(NtNode, ParentIteratorStartIsMiddleChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7387,35 +6120,27 @@ TEST(NtNode, ParentIteratorStartIsMiddleChild)
  */
 TEST(NtNode, ConstParentIteratorStartIsMiddleChild)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7425,35 +6150,27 @@ TEST(NtNode, ConstParentIteratorStartIsMiddleChild)
  */
 TEST(NtNode, ParentIteratorStartsParentIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7463,35 +6180,27 @@ TEST(NtNode, ParentIteratorStartsParentIsRoot)
  */
 TEST(NtNode, ConstParentIteratorStartsParentIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7501,26 +6210,18 @@ TEST(NtNode, ConstParentIteratorStartsParentIsRoot)
  */
 TEST(NtNode, ParentIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrrange. Start iteration at RW0.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrrange. Start iteration at RW0.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7530,26 +6231,18 @@ TEST(NtNode, ParentIteratorStartIsRoot)
  */
 TEST(NtNode, ConstParentIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrrange. Start iteration at RW0.
-        RW0
-        |
-        RW1 
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1));
+    /* Step 1: Arrrange. Start iteration at RW0.
+    RW0
+    |
+    RW1 
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7559,56 +6252,48 @@ TEST(NtNode, ConstParentIteratorStartIsRoot)
  */
 TEST(NtNode, ParentIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW3.
+    Remove read-write nodes.
+
+    Before:
+    RO0
+    |
+    RW0-----RW1-----RW4
+            |       |
+            RO1     RW5
+            |
+            RW2
+            |
+            RW3 
+            
+    After:
+    RO0                 RW2         RW1
+    |                   |           |
+    RW0-----RW4         RW3         RO1
+            |
+            RW5 
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RO.at(0), RW.at(0), RW.at(1), RW.at(4));
+    add_branch(RW.at(1), RO.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(4), RW.at(5));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* Step 1: Arrange. Start iteration at RW3.
-        Remove read-write nodes.
-
-        Before:
-        RO0
-        |
-        RW0-----RW1-----RW4
-                |       |
-                RO1     RW5
-                |
-                RW2
-                |
-                RW3 
-                
-        After:
-        RO0                 RW2         RW1
-        |                   |           |
-        RW0-----RW4         RW3         RO1
-                |
-                RW5 
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RO.at(0), RW.at(0), RW.at(1), RW.at(4));
-        add_branch(RW.at(1), RO.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(4), RW.at(5));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(5), RW.at(4), RO.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RO.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        CHECK_TRUE( (is_root(RW.at(2), RW.at(1))) );
-        CHECK_TRUE( (is_descendant(RW.at(3), RO.at(1))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(5), RW.at(4), RO.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RO.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    CHECK_TRUE( (is_root(RW.at(2), RW.at(1))) );
+    CHECK_TRUE( (is_descendant(RW.at(3), RO.at(1))) );
 }
 
 /**
@@ -7617,56 +6302,48 @@ TEST(NtNode, ParentIteratorRemoveSome)
  */
 TEST(NtNode, ParentIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW5.
+    Remove all nodes.
+
+    Before:
+    RW0
+    |
+    RW1-----RW2-----RW6
+            |       |
+            RW3     RW7
+            |
+            RW4
+            |
+            RW5 
+            
+    After:
+    RW0             RW4     RW3     RW2
+    |               |
+    RW1-----RW6     RW5
+            |
+            RW7
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
+    add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(6), RW.at(7));
+    
+    /* Step 2: Action. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* Step 1: Arrange. Start iteration at RW5.
-        Remove all nodes.
-
-        Before:
-        RW0
-        |
-        RW1-----RW2-----RW6
-                |       |
-                RW3     RW7
-                |
-                RW4
-                |
-                RW5 
-                
-        After:
-        RW0             RW4     RW3     RW2
-        |               |
-        RW1-----RW6     RW5
-                |
-                RW7
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(6));
-        add_branch(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(6), RW.at(7));
-        
-        /* Step 2: Action. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(6), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        CHECK_TRUE( (is_root(RW.at(4), RW.at(3), RW.at(2))) );
-        CHECK_TRUE( (is_descendant(RW.at(5))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(7), RW.at(6), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    CHECK_TRUE( (is_root(RW.at(4), RW.at(3), RW.at(2))) );
+    CHECK_TRUE( (is_descendant(RW.at(5))) );
 }
 
 /**
@@ -7675,51 +6352,43 @@ TEST(NtNode, ParentIteratorRemoveAll)
  */
 TEST(NtNode, ParentIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW5.
+    Destroy DN nodes.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    DN0---RW4
+    |
+    RW5
+
+    After:
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    RW4
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), DN.at(0), RW.at(4));
+    add_children(DN.at(0), RW.at(5));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* Step 1: Arrange. Start iteration at RW5.
-        Destroy DN nodes.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        DN0---RW4
-        |
-        RW5
-
-        After:
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        RW4
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), DN.at(0), RW.at(4));
-        add_children(DN.at(0), RW.at(5));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator postorder_iter;
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator postorder_iter;
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &postorder_iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7728,41 +6397,33 @@ TEST(NtNode, ParentIteratorDestroySome)
  */
 TEST(NtNode, ParentIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange. Start iteration at DN4.
+    Destroy DN nodes.
+
+    Before:
+    DN0
+    |
+    DN1---RW0---RW1
+    |
+    DN2---RW2
+    |
+    DN3---RW3
+    |
+    DN4
+
+    After:
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(DN.at(0), DN.at(1), RW.at(0), RW.at(1));
+    add_children(DN.at(1), DN.at(2), RW.at(2));
+    add_children(DN.at(2), DN.at(3), RW.at(3));
+    add_children(DN.at(3), DN.at(4));
+    EXPECT_NODES_DESTROYED(DN.at(4), DN.at(3), DN.at(2), RW.at(3), DN.at(1), RW.at(2), DN.at(0), RW.at(0), RW.at(1));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &DN.at(4))
     {
-        /* Step 1: Arrange. Start iteration at DN4.
-        Destroy DN nodes.
-
-        Before:
-        DN0
-        |
-        DN1---RW0---RW1
-        |
-        DN2---RW2
-        |
-        DN3---RW3
-        |
-        DN4
-
-        After:
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(DN.at(0), DN.at(1), RW.at(0), RW.at(1));
-        add_children(DN.at(1), DN.at(2), RW.at(2));
-        add_children(DN.at(2), DN.at(3), RW.at(3));
-        add_children(DN.at(3), DN.at(4));
-        EXPECT_NODES_DESTROYED(DN.at(4), DN.at(3), DN.at(2), RW.at(3), DN.at(1), RW.at(2), DN.at(0), RW.at(0), RW.at(1));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &DN.at(4))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_destroy_visitor);
     }
 }
 
@@ -7776,7 +6437,7 @@ TEST(NtNode, ParentIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_parent_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(0))
@@ -7785,7 +6446,7 @@ TEST(NtNode, ParentIteratorNextAfterDone)
         }
         (void)ecu_ntnode_parent_iterator_next(&iter);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -7802,7 +6463,7 @@ TEST(NtNode, ConstParentIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_parent_citerator citer;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(0))
@@ -7811,7 +6472,7 @@ TEST(NtNode, ConstParentIteratorNextAfterDone)
         }
         (void)ecu_ntnode_parent_iterator_cnext(&citer);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -7823,35 +6484,27 @@ TEST(NtNode, ConstParentIteratorNextAfterDone)
  */
 TEST(NtNode, ParentIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        */
-        ecu_ntnode_parent_iterator iter;
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    */
+    ecu_ntnode_parent_iterator iter;
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PARENT_FOR_EACH(n, &iter, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7860,35 +6513,27 @@ TEST(NtNode, ParentIteratorMultipleTimes)
  */
 TEST(NtNode, ConstParentIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1
-        */
-        ecu_ntnode_parent_citerator citer;
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1
+    */
+    ecu_ntnode_parent_citerator citer;
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PARENT_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7902,43 +6547,35 @@ TEST(NtNode, ConstParentIteratorMultipleTimes)
  */
 TEST(NtNode, PostorderIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-------------------------RW2---------------------RW3
-        |                           |                       |
-        RW4---RW5---RW6---RW7       RW8---RW9---RW10        RW11
-                    |               |                       |
-                    RW12            RW13                    RW14
-                    |                                       |
-                    RW15                                    RW16
-                                                            |
-                                                            RW17
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(2), RW.at(8), RW.at(9), RW.at(10));
-        add_branch(RW.at(3), RW.at(11), RW.at(14), RW.at(16), RW.at(17));
-        add_branch(RW.at(6), RW.at(12), RW.at(15));
-        add_children(RW.at(8), RW.at(13));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(15), RW.at(12), RW.at(6), 
-                             RW.at(7), RW.at(1), RW.at(13), RW.at(8), RW.at(9), 
-                             RW.at(10), RW.at(2), RW.at(17), RW.at(16), RW.at(14), 
-                             RW.at(11), RW.at(3), RW.at(0));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-------------------------RW2---------------------RW3
+    |                           |                       |
+    RW4---RW5---RW6---RW7       RW8---RW9---RW10        RW11
+                |               |                       |
+                RW12            RW13                    RW14
+                |                                       |
+                RW15                                    RW16
+                                                        |
+                                                        RW17
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(2), RW.at(8), RW.at(9), RW.at(10));
+    add_branch(RW.at(3), RW.at(11), RW.at(14), RW.at(16), RW.at(17));
+    add_branch(RW.at(6), RW.at(12), RW.at(15));
+    add_children(RW.at(8), RW.at(13));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(15), RW.at(12), RW.at(6), 
+                         RW.at(7), RW.at(1), RW.at(13), RW.at(8), RW.at(9), 
+                         RW.at(10), RW.at(2), RW.at(17), RW.at(16), RW.at(14), 
+                         RW.at(11), RW.at(3), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7948,43 +6585,35 @@ TEST(NtNode, PostorderIterator)
  */
 TEST(NtNode, ConstPostorderIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. 
-        RW0
-        |
-        RW1-------------------------RW2---------------------RW3
-        |                           |                       |
-        RW4---RW5---RW6---RW7       RW8---RW9---RW10        RW11
-                    |               |                       |
-                    RW12            RW13                    RW14
-                    |                                       |
-                    RW15                                    RW16
-                                                            |
-                                                            RW17
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(2), RW.at(8), RW.at(9), RW.at(10));
-        add_branch(RW.at(3), RW.at(11), RW.at(14), RW.at(16), RW.at(17));
-        add_branch(RW.at(6), RW.at(12), RW.at(15));
-        add_children(RW.at(8), RW.at(13));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(15), RW.at(12), RW.at(6), 
-                             RW.at(7), RW.at(1), RW.at(13), RW.at(8), RW.at(9), 
-                             RW.at(10), RW.at(2), RW.at(17), RW.at(16), RW.at(14), 
-                             RW.at(11), RW.at(3), RW.at(0));
+    /* Step 1: Arrange. 
+    RW0
+    |
+    RW1-------------------------RW2---------------------RW3
+    |                           |                       |
+    RW4---RW5---RW6---RW7       RW8---RW9---RW10        RW11
+                |               |                       |
+                RW12            RW13                    RW14
+                |                                       |
+                RW15                                    RW16
+                                                        |
+                                                        RW17
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(2), RW.at(8), RW.at(9), RW.at(10));
+    add_branch(RW.at(3), RW.at(11), RW.at(14), RW.at(16), RW.at(17));
+    add_branch(RW.at(6), RW.at(12), RW.at(15));
+    add_children(RW.at(8), RW.at(13));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(5), RW.at(15), RW.at(12), RW.at(6), 
+                         RW.at(7), RW.at(1), RW.at(13), RW.at(8), RW.at(9), 
+                         RW.at(10), RW.at(2), RW.at(17), RW.at(16), RW.at(14), 
+                         RW.at(11), RW.at(3), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -7993,35 +6622,27 @@ TEST(NtNode, ConstPostorderIterator)
  */
 TEST(NtNode, PostorderIteratorStartIsLeftMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        RW4
-        |
-        RW5---RW6
-        |
-        RW7
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_branch(RW.at(1), RW.at(4), RW.at(5), RW.at(7));
-        add_siblings_after(RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(5), RW.at(6), RW.at(4), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    RW4
+    |
+    RW5---RW6
+    |
+    RW7
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_branch(RW.at(1), RW.at(4), RW.at(5), RW.at(7));
+    add_siblings_after(RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(5), RW.at(6), RW.at(4), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8030,35 +6651,27 @@ TEST(NtNode, PostorderIteratorStartIsLeftMostSubtree)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsLeftMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        RW4
-        |
-        RW5---RW6
-        |
-        RW7
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_branch(RW.at(1), RW.at(4), RW.at(5), RW.at(7));
-        add_siblings_after(RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(5), RW.at(6), RW.at(4), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    RW4
+    |
+    RW5---RW6
+    |
+    RW7
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_branch(RW.at(1), RW.at(4), RW.at(5), RW.at(7));
+    add_siblings_after(RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(5), RW.at(6), RW.at(4), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8067,36 +6680,28 @@ TEST(NtNode, ConstPostorderIteratorStartIsLeftMostSubtree)
  */
 TEST(NtNode, PostorderIteratorStartIsMiddleSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW3-----------------RW4
-                |       |                   |
-                RW5     RW6---RW7---RW8     RW9
-                |                   |       |
-                RW10                RW11    RW12
-        
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_branch(RW.at(2), RW.at(5), RW.at(10));
-        add_children(RW.at(3), RW.at(6), RW.at(7), RW.at(8));
-        add_branch(RW.at(4), RW.at(9), RW.at(12));
-        add_children(RW.at(8), RW.at(11));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(11), RW.at(8), RW.at(3));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW3-----------------RW4
+            |       |                   |
+            RW5     RW6---RW7---RW8     RW9
+            |                   |       |
+            RW10                RW11    RW12
+    
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_branch(RW.at(2), RW.at(5), RW.at(10));
+    add_children(RW.at(3), RW.at(6), RW.at(7), RW.at(8));
+    add_branch(RW.at(4), RW.at(9), RW.at(12));
+    add_children(RW.at(8), RW.at(11));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(11), RW.at(8), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8105,36 +6710,28 @@ TEST(NtNode, PostorderIteratorStartIsMiddleSubtree)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsMiddleSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW3.
-        RW0
-        |
-        RW1-----RW2-----RW3-----------------RW4
-                |       |                   |
-                RW5     RW6---RW7---RW8     RW9
-                |                   |       |
-                RW10                RW11    RW12
-        
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_branch(RW.at(2), RW.at(5), RW.at(10));
-        add_children(RW.at(3), RW.at(6), RW.at(7), RW.at(8));
-        add_branch(RW.at(4), RW.at(9), RW.at(12));
-        add_children(RW.at(8), RW.at(11));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(11), RW.at(8), RW.at(3));
+    /* Step 1: Arrange. Start iteration at RW3.
+    RW0
+    |
+    RW1-----RW2-----RW3-----------------RW4
+            |       |                   |
+            RW5     RW6---RW7---RW8     RW9
+            |                   |       |
+            RW10                RW11    RW12
+    
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_branch(RW.at(2), RW.at(5), RW.at(10));
+    add_children(RW.at(3), RW.at(6), RW.at(7), RW.at(8));
+    add_branch(RW.at(4), RW.at(9), RW.at(12));
+    add_children(RW.at(8), RW.at(11));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(11), RW.at(8), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8143,34 +6740,26 @@ TEST(NtNode, ConstPostorderIteratorStartIsMiddleSubtree)
  */
 TEST(NtNode, PostorderIteratorStartIsRightMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW4.
-        RW0
-        |
-        RW1-----RW2
-        |       |
-        RW3     RW4
-        |       |
-        RW5     RW6---RW7---RW8
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_branch(RW.at(1), RW.at(3), RW.at(5));
-        add_branch(RW.at(2), RW.at(4), RW.at(6));
-        add_siblings_after(RW.at(6), RW.at(7), RW.at(8));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8), RW.at(4));
+    /* Step 1: Arrange. Start iteration at RW4.
+    RW0
+    |
+    RW1-----RW2
+    |       |
+    RW3     RW4
+    |       |
+    RW5     RW6---RW7---RW8
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_branch(RW.at(1), RW.at(3), RW.at(5));
+    add_branch(RW.at(2), RW.at(4), RW.at(6));
+    add_siblings_after(RW.at(6), RW.at(7), RW.at(8));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8179,34 +6768,26 @@ TEST(NtNode, PostorderIteratorStartIsRightMostSubtree)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsRightMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW4.
-        RW0
-        |
-        RW1-----RW2
-        |       |
-        RW3     RW4
-        |       |
-        RW5     RW6---RW7---RW8
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_branch(RW.at(1), RW.at(3), RW.at(5));
-        add_branch(RW.at(2), RW.at(4), RW.at(6));
-        add_siblings_after(RW.at(6), RW.at(7), RW.at(8));
-        EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8), RW.at(4));
+    /* Step 1: Arrange. Start iteration at RW4.
+    RW0
+    |
+    RW1-----RW2
+    |       |
+    RW3     RW4
+    |       |
+    RW5     RW6---RW7---RW8
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_branch(RW.at(1), RW.at(3), RW.at(5));
+    add_branch(RW.at(2), RW.at(4), RW.at(6));
+    add_siblings_after(RW.at(6), RW.at(7), RW.at(8));
+    EXPECT_NODES_IN_TREE(RW.at(6), RW.at(7), RW.at(8), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8216,30 +6797,22 @@ TEST(NtNode, ConstPostorderIteratorStartIsRightMostSubtree)
  */
 TEST(NtNode, PostorderIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8249,30 +6822,22 @@ TEST(NtNode, PostorderIteratorStartIsLeaf)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8282,24 +6847,16 @@ TEST(NtNode, ConstPostorderIteratorStartIsLeaf)
  */
 TEST(NtNode, PostorderIteratorStartIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        */
-        ecu_ntnode_postorder_iterator iter;
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrange.
+    RW0
+    */
+    ecu_ntnode_postorder_iterator iter;
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8309,24 +6866,16 @@ TEST(NtNode, PostorderIteratorStartIsEmptyRoot)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(0));
+    /* Step 1: Arrange.
+    RW0
+    */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8335,31 +6884,23 @@ TEST(NtNode, ConstPostorderIteratorStartIsEmptyRoot)
  */
 TEST(NtNode, PostorderIteratorStartIsMiddleChildInDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8368,31 +6909,23 @@ TEST(NtNode, PostorderIteratorStartIsMiddleChildInDegenerateTree)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsMiddleChildInDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW1.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1));
+    /* Step 1: Arrange. Start iteration at RW1.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8401,31 +6934,23 @@ TEST(NtNode, ConstPostorderIteratorStartIsMiddleChildInDegenerateTree)
  */
 TEST(NtNode, PostorderIteratorStartIsRootOfDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW0.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8434,31 +6959,23 @@ TEST(NtNode, PostorderIteratorStartIsRootOfDegenerateTree)
  */
 TEST(NtNode, ConstPostorderIteratorStartIsRootOfDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        */
-        ecu_ntnode_postorder_citerator citer;
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
+    /* Step 1: Arrange. Start iteration at RW0.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    */
+    ecu_ntnode_postorder_citerator citer;
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8467,56 +6984,48 @@ TEST(NtNode, ConstPostorderIteratorStartIsRootOfDegenerateTree)
  */
 TEST(NtNode, PostorderIteratorRemoveSomeStartIsRoot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RO0.
+
+    Before:
+    RO0
+    |
+    RW0-----RO1-----------------RO2
+            |                   |
+            RW1---RO3           RO4
+            |                   |
+            RO5---RW2---RW3     RW4
+                                |
+                                RO6
+    
+    After:
+    RO0             RW0     RW1     RW2     RW3     RW4
+    |                       |                       |
+    RO1-----RO2             RO5                     RO6
+    |       |
+    RO3     RO4
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RO.at(0), RW.at(0), RO.at(1), RO.at(2));
+    add_children(RO.at(1), RW.at(1), RO.at(3));
+    add_children(RW.at(1), RO.at(5), RW.at(2), RW.at(3));
+    add_branch(RO.at(2), RO.at(4), RW.at(4), RO.at(6));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RO.at(0))
     {
-        /* Step 1: Arrange. Start iteration at RO0.
-
-        Before:
-        RO0
-        |
-        RW0-----RO1-----------------RO2
-                |                   |
-                RW1---RO3           RO4
-                |                   |
-                RO5---RW2---RW3     RW4
-                                    |
-                                    RO6
-        
-        After:
-        RO0             RW0     RW1     RW2     RW3     RW4
-        |                       |                       |
-        RO1-----RO2             RO5                     RO6
-        |       |
-        RO3     RO4
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RO.at(0), RW.at(0), RO.at(1), RO.at(2));
-        add_children(RO.at(1), RW.at(1), RO.at(3));
-        add_children(RW.at(1), RO.at(5), RW.at(2), RW.at(3));
-        add_branch(RO.at(2), RO.at(4), RW.at(4), RO.at(6));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RO.at(0))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
-        CHECK_TRUE( (is_descendant(RO.at(5), RO.at(6))) );
-
-        /* Step 3: Assert. Verify tree intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(RO.at(3), RO.at(1), RO.at(4), RO.at(2), RO.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RO.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4))) );
+    CHECK_TRUE( (is_descendant(RO.at(5), RO.at(6))) );
+
+    /* Step 3: Assert. Verify tree intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(RO.at(3), RO.at(1), RO.at(4), RO.at(2), RO.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RO.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8525,60 +7034,52 @@ TEST(NtNode, PostorderIteratorRemoveSomeStartIsRoot)
  */
 TEST(NtNode, PostorderIteratorRemoveSomeStartIsSubroot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW1.
+
+    Before:
+    RO0
+    |
+    RW0-----RO1-----------------RO2
+            |                   |
+            RW1---RO3           RO4
+            |                   |
+            RO5---RW2---RW3     RW4
+                                |
+                                RO6
+    
+    After:
+    RO0                     RW1     RW2     RW3
+    |                       |
+    RW0-----RO1-----RO2     RO5
+            |       |
+            RO3     RO4
+                    |
+                    RW4
+                    |
+                    RO6
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RO.at(0), RW.at(0), RO.at(1), RO.at(2));
+    add_children(RO.at(1), RW.at(1), RO.at(3));
+    add_children(RW.at(1), RO.at(5), RW.at(2), RW.at(3));
+    add_branch(RO.at(2), RO.at(4), RW.at(4), RO.at(6));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* Step 1: Arrange. Start iteration at RW1.
-
-        Before:
-        RO0
-        |
-        RW0-----RO1-----------------RO2
-                |                   |
-                RW1---RO3           RO4
-                |                   |
-                RO5---RW2---RW3     RW4
-                                    |
-                                    RO6
-        
-        After:
-        RO0                     RW1     RW2     RW3
-        |                       |
-        RW0-----RO1-----RO2     RO5
-                |       |
-                RO3     RO4
-                        |
-                        RW4
-                        |
-                        RO6
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RO.at(0), RW.at(0), RO.at(1), RO.at(2));
-        add_children(RO.at(1), RW.at(1), RO.at(3));
-        add_children(RW.at(1), RO.at(5), RW.at(2), RW.at(3));
-        add_branch(RO.at(2), RO.at(4), RW.at(4), RO.at(6));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(1), RW.at(2), RW.at(3))) );
-        CHECK_TRUE( (is_descendant(RO.at(5))) );
-
-        /* Step 3: Assert. Verify tree intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(RW.at(0), RO.at(3), RO.at(1), RO.at(6), RW.at(4), RO.at(4), RO.at(2), RO.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RO.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(1), RW.at(2), RW.at(3))) );
+    CHECK_TRUE( (is_descendant(RO.at(5))) );
+
+    /* Step 3: Assert. Verify tree intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(RW.at(0), RO.at(3), RO.at(1), RO.at(6), RW.at(4), RO.at(4), RO.at(2), RO.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RO.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8587,49 +7088,41 @@ TEST(NtNode, PostorderIteratorRemoveSomeStartIsSubroot)
  */
 TEST(NtNode, PostorderIteratorRemoveAllStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at RW0.
-        
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3
-        |           |
-        RW4         RW5-----RW6---RW7
-                            |
-                            RW8
-                            |
-                            RW9-----RW10
-                                    |
-                                    RW11
-        
-        After:
-        All nodes roots.
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(6), RW.at(8));
-        add_children(RW.at(8), RW.at(9), RW.at(10));
-        add_children(RW.at(10), RW.at(11));
+    /* Step 1: Arrange. Start iteration at RW0.
+    
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3
+    |           |
+    RW4         RW5-----RW6---RW7
+                        |
+                        RW8
+                        |
+                        RW9-----RW10
+                                |
+                                RW11
+    
+    After:
+    All nodes roots.
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(6), RW.at(8));
+    add_children(RW.at(8), RW.at(9), RW.at(10));
+    add_children(RW.at(10), RW.at(11));
 
-        /* Step 2: Action. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5),
-                             RW.at(6), RW.at(7), RW.at(8), RW.at(9), RW.at(10), RW.at(11))) );
-    }
-    catch (const AssertException& e)
+    /* Step 2: Action. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_remove_visitor);
     }
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4), RW.at(5),
+                         RW.at(6), RW.at(7), RW.at(8), RW.at(9), RW.at(10), RW.at(11))) );
 }
 
 /**
@@ -8637,59 +7130,51 @@ TEST(NtNode, PostorderIteratorRemoveAllStartIsRoot)
  */
 TEST(NtNode, PostorderIteratorRemoveAllStartIsSubroot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW6.
+    
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3
+    |           |
+    RW4         RW5-----RW6---RW7
+                        |
+                        RW8
+                        |
+                        RW9-----RW10
+                                |
+                                RW11
+    
+    After:
+    RW0                     RW6  RW8  RW9  RW10  RW11
+    |
+    RW1---RW2---RW3
+    |           |
+    RW4         RW5---RW7
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(6), RW.at(8));
+    add_children(RW.at(8), RW.at(9), RW.at(10));
+    add_children(RW.at(10), RW.at(11));
+
+    /* Step 2: Action. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(6))
     {
-        /* Step 1: Arrange. Start iteration at RW6.
-        
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3
-        |           |
-        RW4         RW5-----RW6---RW7
-                            |
-                            RW8
-                            |
-                            RW9-----RW10
-                                    |
-                                    RW11
-        
-        After:
-        RW0                     RW6  RW8  RW9  RW10  RW11
-        |
-        RW1---RW2---RW3
-        |           |
-        RW4         RW5---RW7
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(3), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(6), RW.at(8));
-        add_children(RW.at(8), RW.at(9), RW.at(10));
-        add_children(RW.at(10), RW.at(11));
-
-        /* Step 2: Action. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(6))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        CHECK_TRUE( (is_root(RW.at(6), RW.at(8), RW.at(9), RW.at(10), RW.at(11))) );
-
-        /* Step 3: Assert. Verify tree intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(2), RW.at(5), RW.at(7), RW.at(3), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    CHECK_TRUE( (is_root(RW.at(6), RW.at(8), RW.at(9), RW.at(10), RW.at(11))) );
+
+    /* Step 3: Assert. Verify tree intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(1), RW.at(2), RW.at(5), RW.at(7), RW.at(3), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8698,57 +7183,49 @@ TEST(NtNode, PostorderIteratorRemoveAllStartIsSubroot)
  */
 TEST(NtNode, PostorderIteratorDestroySomeStartIsRoot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW0.
+    
+    Before:
+    RW0
+    |
+    RW1---DN0---RW2
+    |           |
+    DN1         RW3-----RW4---RW5
+                        |
+                        DN2
+                        |
+                        RW6-----RW7
+                                |
+                                RW8
+    
+    After:
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2));
+    add_children(RW.at(1), DN.at(1));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
+    add_children(RW.at(4), DN.at(2));
+    add_children(DN.at(2), RW.at(6), RW.at(7));
+    add_children(RW.at(7), RW.at(8));
+    EXPECT_NODES_DESTROYED(DN.at(1), DN.at(0), DN.at(2), RW.at(6), RW.at(7), RW.at(8));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange. Start iteration at RW0.
-        
-        Before:
-        RW0
-        |
-        RW1---DN0---RW2
-        |           |
-        DN1         RW3-----RW4---RW5
-                            |
-                            DN2
-                            |
-                            RW6-----RW7
-                                    |
-                                    RW8
-        
-        After:
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2));
-        add_children(RW.at(1), DN.at(1));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5));
-        add_children(RW.at(4), DN.at(2));
-        add_children(DN.at(2), RW.at(6), RW.at(7));
-        add_children(RW.at(7), RW.at(8));
-        EXPECT_NODES_DESTROYED(DN.at(1), DN.at(0), DN.at(2), RW.at(6), RW.at(7), RW.at(8));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree still intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(3), RW.at(4), RW.at(5), RW.at(2), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree still intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(3), RW.at(4), RW.at(5), RW.at(2), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8757,59 +7234,51 @@ TEST(NtNode, PostorderIteratorDestroySomeStartIsRoot)
  */
 TEST(NtNode, PostorderIteratorDestroySomeStartIsSubroot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at RW2.
+    
+    Before:
+    RW0
+    |
+    RW1---DN0---RW2
+    |           |
+    DN1         DN2-----RW3---DN3
+                        |
+                        DN4-----RW4
+                        |
+                        RW5-----RW6
+                                |
+                                RW7
+    
+    After:
+    RW0
+    |
+    RW1---DN0---RW2
+    |           |
+    DN1         RW3
+                |
+                RW4
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2));
+    add_children(RW.at(1), DN.at(1));
+    add_children(RW.at(2), DN.at(2), RW.at(3), DN.at(3));
+    add_children(RW.at(3), DN.at(4), RW.at(4));
+    add_children(DN.at(4), RW.at(5), RW.at(6));
+    add_children(RW.at(6), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(2), DN.at(3), DN.at(4), RW.at(5), RW.at(6), RW.at(7));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* Step 1: Arrange. Start iteration at RW2.
-        
-        Before:
-        RW0
-        |
-        RW1---DN0---RW2
-        |           |
-        DN1         DN2-----RW3---DN3
-                            |
-                            DN4-----RW4
-                            |
-                            RW5-----RW6
-                                    |
-                                    RW7
-        
-        After:
-        RW0
-        |
-        RW1---DN0---RW2
-        |           |
-        DN1         RW3
-                    |
-                    RW4
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2));
-        add_children(RW.at(1), DN.at(1));
-        add_children(RW.at(2), DN.at(2), RW.at(3), DN.at(3));
-        add_children(RW.at(3), DN.at(4), RW.at(4));
-        add_children(DN.at(4), RW.at(5), RW.at(6));
-        add_children(RW.at(6), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(2), DN.at(3), DN.at(4), RW.at(5), RW.at(6), RW.at(7));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree still intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(DN.at(1), RW.at(1), DN.at(0), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree still intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(DN.at(1), RW.at(1), DN.at(0), RW.at(4), RW.at(3), RW.at(2), RW.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8818,46 +7287,38 @@ TEST(NtNode, PostorderIteratorDestroySomeStartIsSubroot)
  */
 TEST(NtNode, PostorderIteratorDestroyAllStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. Start iteration at DN0.
-        
-        Before:
-        DN0
-        |
-        DN1---DN2---DN3
-        |           |
-        DN4         DN5-----DN6---DN7
-                            |
-                            DN8
-                            |
-                            DN9-----DN10
-                                    |
-                                    DN11
-        
-        After:
-        All nodes destroyed.
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(1), DN.at(4));
-        add_children(DN.at(3), DN.at(5), DN.at(6), DN.at(7));
-        add_children(DN.at(6), DN.at(8));
-        add_children(DN.at(8), DN.at(9), DN.at(10));
-        add_children(DN.at(10), DN.at(11));
-        EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1), DN.at(2), DN.at(3), DN.at(4), DN.at(5), DN.at(6),
-                               DN.at(7), DN.at(8), DN.at(9), DN.at(10), DN.at(11));
+    /* Step 1: Arrange. Start iteration at DN0.
+    
+    Before:
+    DN0
+    |
+    DN1---DN2---DN3
+    |           |
+    DN4         DN5-----DN6---DN7
+                        |
+                        DN8
+                        |
+                        DN9-----DN10
+                                |
+                                DN11
+    
+    After:
+    All nodes destroyed.
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(1), DN.at(4));
+    add_children(DN.at(3), DN.at(5), DN.at(6), DN.at(7));
+    add_children(DN.at(6), DN.at(8));
+    add_children(DN.at(8), DN.at(9), DN.at(10));
+    add_children(DN.at(10), DN.at(11));
+    EXPECT_NODES_DESTROYED(DN.at(0), DN.at(1), DN.at(2), DN.at(3), DN.at(4), DN.at(5), DN.at(6),
+                           DN.at(7), DN.at(8), DN.at(9), DN.at(10), DN.at(11));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &DN.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &DN.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_destroy_visitor);
     }
 }
 
@@ -8866,57 +7327,49 @@ TEST(NtNode, PostorderIteratorDestroyAllStartIsRoot)
  */
 TEST(NtNode, PostorderIteratorDestroyAllStartIsSubroot)
 {
-    try
+    /* Step 1: Arrange. Start iteration at DN6.
+    
+    Before:
+    DN0
+    |
+    DN1---DN2---DN3
+    |           |
+    DN4         DN5-----DN6---DN7
+                        |
+                        DN8
+                        |
+                        DN9-----DN10
+                                |
+                                DN11
+    
+    After:
+    DN0
+    |
+    DN1---DN2---DN3
+    |           |
+    DN4         DN5---DN7
+    */
+    ecu_ntnode_postorder_iterator iter;
+    add_children(DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(1), DN.at(4));
+    add_children(DN.at(3), DN.at(5), DN.at(6), DN.at(7));
+    add_children(DN.at(6), DN.at(8));
+    add_children(DN.at(8), DN.at(9), DN.at(10));
+    add_children(DN.at(10), DN.at(11));
+    EXPECT_NODES_DESTROYED(DN.at(6), DN.at(8), DN.at(9), DN.at(10), DN.at(11));
+
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &DN.at(6))
     {
-        /* Step 1: Arrange. Start iteration at DN6.
-        
-        Before:
-        DN0
-        |
-        DN1---DN2---DN3
-        |           |
-        DN4         DN5-----DN6---DN7
-                            |
-                            DN8
-                            |
-                            DN9-----DN10
-                                    |
-                                    DN11
-        
-        After:
-        DN0
-        |
-        DN1---DN2---DN3
-        |           |
-        DN4         DN5---DN7
-        */
-        ecu_ntnode_postorder_iterator iter;
-        add_children(DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(1), DN.at(4));
-        add_children(DN.at(3), DN.at(5), DN.at(6), DN.at(7));
-        add_children(DN.at(6), DN.at(8));
-        add_children(DN.at(8), DN.at(9), DN.at(10));
-        add_children(DN.at(10), DN.at(11));
-        EXPECT_NODES_DESTROYED(DN.at(6), DN.at(8), DN.at(9), DN.at(10), DN.at(11));
-
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &DN.at(6))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
-        EXPECT_NODES_IN_TREE(DN.at(4), DN.at(1), DN.at(2), DN.at(5), DN.at(7), DN.at(3), DN.at(0));
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &DN.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_iterator iter2; /* Do not reuse old iterator. That functionality is tested elsewhere. */
+    EXPECT_NODES_IN_TREE(DN.at(4), DN.at(1), DN.at(2), DN.at(5), DN.at(7), DN.at(3), DN.at(0));
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter2, &DN.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -8930,7 +7383,7 @@ TEST(NtNode, PostorderIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_postorder_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
@@ -8939,7 +7392,7 @@ TEST(NtNode, PostorderIteratorNextAfterDone)
         }
         (void)ecu_ntnode_postorder_iterator_next(&iter);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -8956,7 +7409,7 @@ TEST(NtNode, ConstPostorderIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         ecu_ntnode_postorder_citerator citer;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 and 3: Action and assert. */
         ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
@@ -8965,7 +7418,7 @@ TEST(NtNode, ConstPostorderIteratorNextAfterDone)
         }
         (void)ecu_ntnode_postorder_iterator_cnext(&citer);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -8977,31 +7430,23 @@ TEST(NtNode, ConstPostorderIteratorNextAfterDone)
  */
 TEST(NtNode, PostorderIteratorMultipleTimes)
 {
-    try
+    /* Step 1: Arrange. */
+    ecu_ntnode_postorder_iterator iter;
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
+    
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange. */
-        ecu_ntnode_postorder_iterator iter;
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
-        CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
-        
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_POSTORDER_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9010,31 +7455,23 @@ TEST(NtNode, PostorderIteratorMultipleTimes)
  */
 TEST(NtNode, ConstPostorderIteratorMultipleTimes)
 {
-    try
+    /* Step 1: Arrange. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
+    CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
+    
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* Step 1: Arrange. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(0), RW.at(0));
-        CHECK_TRUE( (is_root(RW.at(0))) ); /* Precondition. */
-        
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_obj_in_tree_visitor);
     }
-    catch (const AssertException& e)
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9048,42 +7485,34 @@ TEST(NtNode, ConstPostorderIteratorMultipleTimes)
  */
 TEST(NtNode, PreorderIterator)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3-------RW4
-        |       |               |
-        RW5     RW6-----RW7     RW8
-        |               |
-        RW9             RW10---RW11
-        |               |
-        RW12            RW13
-        |
-        RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_branch(RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14));
-        add_children(RW.at(2), RW.at(6), RW.at(7));
-        add_children(RW.at(4), RW.at(8));
-        add_children(RW.at(7), RW.at(10), RW.at(11));
-        add_children(RW.at(10), RW.at(13));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14),
-                             RW.at(2), RW.at(6), RW.at(7), RW.at(10), RW.at(13),
-                             RW.at(11), RW.at(3), RW.at(4), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3-------RW4
+    |       |               |
+    RW5     RW6-----RW7     RW8
+    |               |
+    RW9             RW10---RW11
+    |               |
+    RW12            RW13
+    |
+    RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_branch(RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14));
+    add_children(RW.at(2), RW.at(6), RW.at(7));
+    add_children(RW.at(4), RW.at(8));
+    add_children(RW.at(7), RW.at(10), RW.at(11));
+    add_children(RW.at(10), RW.at(13));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14),
+                         RW.at(2), RW.at(6), RW.at(7), RW.at(10), RW.at(13),
+                         RW.at(11), RW.at(3), RW.at(4), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9093,42 +7522,34 @@ TEST(NtNode, PreorderIterator)
  */
 TEST(NtNode, ConstPreorderIterator)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---RW3-------RW4
-        |       |               |
-        RW5     RW6-----RW7     RW8
-        |               |
-        RW9             RW10---RW11
-        |               |
-        RW12            RW13
-        |
-        RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_branch(RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14));
-        add_children(RW.at(2), RW.at(6), RW.at(7));
-        add_children(RW.at(4), RW.at(8));
-        add_children(RW.at(7), RW.at(10), RW.at(11));
-        add_children(RW.at(10), RW.at(13));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14),
-                             RW.at(2), RW.at(6), RW.at(7), RW.at(10), RW.at(13),
-                             RW.at(11), RW.at(3), RW.at(4), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---RW3-------RW4
+    |       |               |
+    RW5     RW6-----RW7     RW8
+    |               |
+    RW9             RW10---RW11
+    |               |
+    RW12            RW13
+    |
+    RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_branch(RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14));
+    add_children(RW.at(2), RW.at(6), RW.at(7));
+    add_children(RW.at(4), RW.at(8));
+    add_children(RW.at(7), RW.at(10), RW.at(11));
+    add_children(RW.at(10), RW.at(13));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(5), RW.at(9), RW.at(12), RW.at(14),
+                         RW.at(2), RW.at(6), RW.at(7), RW.at(10), RW.at(13),
+                         RW.at(11), RW.at(3), RW.at(4), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9138,45 +7559,37 @@ TEST(NtNode, ConstPreorderIterator)
  */
 TEST(NtNode, PreorderIterator2)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10----RW11
-        |       |                           |
-        RW12    RW13                        RW14----RW15
-                                                    |
-                                                    RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        add_children(RW.at(8), RW.at(13));
-        add_children(RW.at(11), RW.at(14), RW.at(15));
-        add_children(RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(4), RW.at(7), RW.at(12), RW.at(8), RW.at(13),
-                             RW.at(9), RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16),
-                             RW.at(2), RW.at(6), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10----RW11
+    |       |                           |
+    RW12    RW13                        RW14----RW15
+                                                |
+                                                RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    add_children(RW.at(8), RW.at(13));
+    add_children(RW.at(11), RW.at(14), RW.at(15));
+    add_children(RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(4), RW.at(7), RW.at(12), RW.at(8), RW.at(13),
+                         RW.at(9), RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16),
+                         RW.at(2), RW.at(6), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9186,45 +7599,37 @@ TEST(NtNode, PreorderIterator2)
  */
 TEST(NtNode, ConstPreorderIterator2)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10----RW11
-        |       |                           |
-        RW12    RW13                        RW14----RW15
-                                                    |
-                                                    RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        add_children(RW.at(8), RW.at(13));
-        add_children(RW.at(11), RW.at(14), RW.at(15));
-        add_children(RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(4), RW.at(7), RW.at(12), RW.at(8), RW.at(13),
-                             RW.at(9), RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16),
-                             RW.at(2), RW.at(6), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10----RW11
+    |       |                           |
+    RW12    RW13                        RW14----RW15
+                                                |
+                                                RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    add_children(RW.at(8), RW.at(13));
+    add_children(RW.at(11), RW.at(14), RW.at(15));
+    add_children(RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(4), RW.at(7), RW.at(12), RW.at(8), RW.at(13),
+                         RW.at(9), RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16),
+                         RW.at(2), RW.at(6), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9233,39 +7638,31 @@ TEST(NtNode, ConstPreorderIterator2)
  */
 TEST(NtNode, PreorderIteratorStartIsLeftMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10
-        |       |
-        RW11    RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10));
-        add_children(RW.at(7), RW.at(11));
-        add_children(RW.at(8), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(7), RW.at(11), RW.at(8), RW.at(12), RW.at(9));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10
+    |       |
+    RW11    RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10));
+    add_children(RW.at(7), RW.at(11));
+    add_children(RW.at(8), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(7), RW.at(11), RW.at(8), RW.at(12), RW.at(9));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9274,39 +7671,31 @@ TEST(NtNode, PreorderIteratorStartIsLeftMostSubtree)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsLeftMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10
-        |       |
-        RW11    RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10));
-        add_children(RW.at(7), RW.at(11));
-        add_children(RW.at(8), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(7), RW.at(11), RW.at(8), RW.at(12), RW.at(9));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10
+    |       |
+    RW11    RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10));
+    add_children(RW.at(7), RW.at(11));
+    add_children(RW.at(8), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(7), RW.at(11), RW.at(8), RW.at(12), RW.at(9));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9315,43 +7704,35 @@ TEST(NtNode, ConstPreorderIteratorStartIsLeftMostSubtree)
  */
 TEST(NtNode, PreorderIteratorStartIsMiddleSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10----RW11
-        |       |                           |
-        RW12    RW13                        RW14----RW15
-                                                    |
-                                                    RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        add_children(RW.at(8), RW.at(13));
-        add_children(RW.at(11), RW.at(14), RW.at(15));
-        add_children(RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10----RW11
+    |       |                           |
+    RW12    RW13                        RW14----RW15
+                                                |
+                                                RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    add_children(RW.at(8), RW.at(13));
+    add_children(RW.at(11), RW.at(14), RW.at(15));
+    add_children(RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9360,43 +7741,35 @@ TEST(NtNode, PreorderIteratorStartIsMiddleSubtree)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsMiddleSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---------------------------------RW2---RW3
-        |                                   |
-        RW4-------------------------RW5     RW6
-        |                           |
-        RW7-----RW8---RW9           RW10----RW11
-        |       |                           |
-        RW12    RW13                        RW14----RW15
-                                                    |
-                                                    RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(5), RW.at(10), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        add_children(RW.at(8), RW.at(13));
-        add_children(RW.at(11), RW.at(14), RW.at(15));
-        add_children(RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---------------------------------RW2---RW3
+    |                                   |
+    RW4-------------------------RW5     RW6
+    |                           |
+    RW7-----RW8---RW9           RW10----RW11
+    |       |                           |
+    RW12    RW13                        RW14----RW15
+                                                |
+                                                RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(RW.at(4), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(5), RW.at(10), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    add_children(RW.at(8), RW.at(13));
+    add_children(RW.at(11), RW.at(14), RW.at(15));
+    add_children(RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(10), RW.at(11), RW.at(14), RW.at(15), RW.at(16));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9405,45 +7778,37 @@ TEST(NtNode, ConstPreorderIteratorStartIsMiddleSubtree)
  */
 TEST(NtNode, PreorderIteratorStartIsRightMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-------------RW2
-        |               |
-        RW3-----RW4     RW5---RW6
-                |       |
-                RW7     RW8---RW9
-                        |
-                        RW10----RW11
-                        |       |
-                        RW12    RW13
-                                |
-                                RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8), RW.at(9));
-        add_children(RW.at(8), RW.at(10), RW.at(11));
-        add_children(RW.at(10), RW.at(12));
-        add_branch(RW.at(11), RW.at(13), RW.at(14));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(5), RW.at(8), RW.at(10), RW.at(12), RW.at(11),
-                             RW.at(13), RW.at(14), RW.at(9), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-------------RW2
+    |               |
+    RW3-----RW4     RW5---RW6
+            |       |
+            RW7     RW8---RW9
+                    |
+                    RW10----RW11
+                    |       |
+                    RW12    RW13
+                            |
+                            RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8), RW.at(9));
+    add_children(RW.at(8), RW.at(10), RW.at(11));
+    add_children(RW.at(10), RW.at(12));
+    add_branch(RW.at(11), RW.at(13), RW.at(14));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(5), RW.at(8), RW.at(10), RW.at(12), RW.at(11),
+                         RW.at(13), RW.at(14), RW.at(9), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9452,45 +7817,37 @@ TEST(NtNode, PreorderIteratorStartIsRightMostSubtree)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsRightMostSubtree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-------------RW2
-        |               |
-        RW3-----RW4     RW5---RW6
-                |       |
-                RW7     RW8---RW9
-                        |
-                        RW10----RW11
-                        |       |
-                        RW12    RW13
-                                |
-                                RW14
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(7));
-        add_children(RW.at(5), RW.at(8), RW.at(9));
-        add_children(RW.at(8), RW.at(10), RW.at(11));
-        add_children(RW.at(10), RW.at(12));
-        add_branch(RW.at(11), RW.at(13), RW.at(14));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(5), RW.at(8), RW.at(10), RW.at(12), RW.at(11),
-                             RW.at(13), RW.at(14), RW.at(9), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-------------RW2
+    |               |
+    RW3-----RW4     RW5---RW6
+            |       |
+            RW7     RW8---RW9
+                    |
+                    RW10----RW11
+                    |       |
+                    RW12    RW13
+                            |
+                            RW14
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(7));
+    add_children(RW.at(5), RW.at(8), RW.at(9));
+    add_children(RW.at(8), RW.at(10), RW.at(11));
+    add_children(RW.at(10), RW.at(12));
+    add_branch(RW.at(11), RW.at(13), RW.at(14));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(5), RW.at(8), RW.at(10), RW.at(12), RW.at(11),
+                         RW.at(13), RW.at(14), RW.at(9), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9500,27 +7857,19 @@ TEST(NtNode, ConstPreorderIteratorStartIsRightMostSubtree)
  */
 TEST(NtNode, PreorderIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9530,27 +7879,19 @@ TEST(NtNode, PreorderIteratorStartIsLeaf)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsLeaf)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9560,23 +7901,15 @@ TEST(NtNode, ConstPreorderIteratorStartIsLeaf)
  */
 TEST(NtNode, PreorderIteratorStartIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9586,23 +7919,15 @@ TEST(NtNode, PreorderIteratorStartIsEmptyRoot)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsEmptyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9611,33 +7936,25 @@ TEST(NtNode, ConstPreorderIteratorStartIsEmptyRoot)
  */
 TEST(NtNode, PreorderIteratorStartIsMiddleChildInDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9646,33 +7963,25 @@ TEST(NtNode, PreorderIteratorStartIsMiddleChildInDegenerateTree)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsMiddleChildInDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9681,33 +7990,25 @@ TEST(NtNode, ConstPreorderIteratorStartIsMiddleChildInDegenerateTree)
  */
 TEST(NtNode, PreorderIteratorStartIsRootOfDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_iterator iter;
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_iterator iter;
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9716,33 +8017,25 @@ TEST(NtNode, PreorderIteratorStartIsRootOfDegenerateTree)
  */
 TEST(NtNode, ConstPreorderIteratorStartIsRootOfDegenerateTree)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        |
-        RW2
-        |
-        RW3
-        |
-        RW4
-        */
-        add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    |
+    RW2
+    |
+    RW3
+    |
+    RW4
+    */
+    add_branch(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_preorder_citerator citer;
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_preorder_citerator citer;
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9760,7 +8053,7 @@ TEST(NtNode, PreorderIteratorRemoveNodeInNonEmptyTree)
         RW1---RW2
         */
         add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_preorder_iterator iter;
@@ -9775,7 +8068,7 @@ TEST(NtNode, PreorderIteratorRemoveNodeInNonEmptyTree)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -9797,7 +8090,7 @@ TEST(NtNode, PreorderIteratorDestroyNodeInNonEmptyTree)
         */
         rw_ntnode N{ECU_NTNODE_DESTROY_UNUSED};
         add_children(RW.at(0), N, RW.at(2));
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_preorder_iterator iter;
@@ -9812,7 +8105,7 @@ TEST(NtNode, PreorderIteratorDestroyNodeInNonEmptyTree)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -9838,14 +8131,14 @@ TEST(NtNode, PreorderIteratorNextAfterDone)
         {
             (void)n;
         }
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_preorder_iterator_next(&iter);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -9871,14 +8164,14 @@ TEST(NtNode, ConstPreorderIteratorNextAfterDone)
         {
             (void)n;
         }
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_preorder_iterator_cnext(&citer);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -9890,35 +8183,27 @@ TEST(NtNode, ConstPreorderIteratorNextAfterDone)
  */
 TEST(NtNode, PreorderIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(0), RW.at(1), RW.at(0), RW.at(1));
-        ecu_ntnode_preorder_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(0), RW.at(1), RW.at(0), RW.at(1));
+    ecu_ntnode_preorder_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREORDER_FOR_EACH(n, &iter, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9927,35 +8212,27 @@ TEST(NtNode, PreorderIteratorMultipleTimes)
  */
 TEST(NtNode, ConstPreorderIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(0), RW.at(1), RW.at(0), RW.at(1));
-        ecu_ntnode_preorder_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    EXPECT_NODES_IN_TREE(RW.at(0), RW.at(1), RW.at(0), RW.at(1), RW.at(0), RW.at(1));
+    ecu_ntnode_preorder_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREORDER_FOR_EACH(n, &citer, &RW.at(0))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -9968,30 +8245,22 @@ TEST(NtNode, ConstPreorderIteratorMultipleTimes)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10000,30 +8269,22 @@ TEST(NtNode, PrevSiblingAtIteratorStartIsFirstSibling)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10032,30 +8293,22 @@ TEST(NtNode, ConstPrevSiblingAtIteratorStartIsFirstSibling)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10064,30 +8317,22 @@ TEST(NtNode, PrevSiblingAtIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(4), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10096,36 +8341,28 @@ TEST(NtNode, ConstPrevSiblingAtIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(8))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(8))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10134,36 +8371,28 @@ TEST(NtNode, PrevSiblingAtIteratorStartIsLastSibling)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(7), RW.at(6), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(8))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(8))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10172,23 +8401,15 @@ TEST(NtNode, ConstPrevSiblingAtIteratorStartIsLastSibling)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10197,23 +8418,15 @@ TEST(NtNode, PrevSiblingAtIteratorStartIsRoot)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
-        EXPECT_NODES_IN_TREE(empty_root);
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
+    EXPECT_NODES_IN_TREE(empty_root);
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10222,30 +8435,22 @@ TEST(NtNode, ConstPrevSiblingAtIteratorStartIsRoot)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10254,30 +8459,22 @@ TEST(NtNode, PrevSiblingAtIteratorStartHasOneSibling)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10288,57 +8485,49 @@ TEST(NtNode, ConstPrevSiblingAtIteratorStartHasOneSibling)
  */
 TEST(NtNode, PrevSiblingAtIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RO0-----RO1
+    |           |       |
+    RW3---RW4   RW5     RW6---RW7
+    
+    After:
+    RW0                 RW1         RW2
+    |                   |
+    RO0-----RO1         RW3---RW4
+    |       |
+    RW5     RW6---RW7
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
+    add_children(RO.at(0), RW.at(5));
+    add_children(RO.at(1), RW.at(6), RW.at(7));
+
+    /* Step 2: Action. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RO.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RO0-----RO1
-        |           |       |
-        RW3---RW4   RW5     RW6---RW7
-        
-        After:
-        RW0                 RW1         RW2
-        |                   |
-        RO0-----RO1         RW3---RW4
-        |       |
-        RW5     RW6---RW7
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
-        add_children(RO.at(0), RW.at(5));
-        add_children(RO.at(1), RW.at(6), RW.at(7));
-
-        /* Step 2: Action. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RO.at(1))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RO.at(0), RW.at(6), RW.at(7), RO.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        CHECK_TRUE( (not_in_tree(RW.at(2))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException &e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RO.at(0), RW.at(6), RW.at(7), RO.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    CHECK_TRUE( (not_in_tree(RW.at(2))) );
 }
 
 /**
@@ -10348,55 +8537,47 @@ TEST(NtNode, PrevSiblingAtIteratorRemoveSome)
  */
 TEST(NtNode, PrevSiblingAtIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3-----RW4
+    |                   |
+    RW5---RW6           RW8---RW9
+    
+    After:
+    RW0     RW1         RW2     RW3     RW4
+            |                           |
+            RW5---RW6                   RW8---RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(8), RW.at(9));
+
+    /* Step 2: Action. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3-----RW4
-        |                   |
-        RW5---RW6           RW8---RW9
-        
-        After:
-        RW0     RW1         RW2     RW3     RW4
-                |                           |
-                RW5---RW6                   RW8---RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(8), RW.at(9));
-
-        /* Step 2: Action. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        CHECK_TRUE( (not_in_tree(RW.at(0))) );
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException &e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    CHECK_TRUE( (not_in_tree(RW.at(0))) );
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
 }
 
 /**
@@ -10405,34 +8586,26 @@ TEST(NtNode, PrevSiblingAtIteratorRemoveAll)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsRootRemoveRoot)
 {
-    try
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+
+    /* Step 2: Action. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-
-        /* Step 2: Action. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException &e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10443,55 +8616,47 @@ TEST(NtNode, PrevSiblingAtIteratorStartIsRootRemoveRoot)
  */
 TEST(NtNode, PrevSiblingAtIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1-----DN0---------RW2-----DN1
+    |       |           |       |
+    RW3     RW4---RW5   RW6     RW7
+    |
+    RW8
+    
+    After:
+    RW0
+    |
+    RW1-----RW2
+    |       |
+    RW3     RW6
+    |
+    RW8
+    */
+    add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
+    add_children(RW.at(1), RW.at(3));
+    add_children(DN.at(0), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(DN.at(1), RW.at(7));
+    add_children(RW.at(3), RW.at(8));
+    EXPECT_NODES_DESTROYED(DN.at(1), RW.at(7), DN.at(0), RW.at(4), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1-----DN0---------RW2-----DN1
-        |       |           |       |
-        RW3     RW4---RW5   RW6     RW7
-        |
-        RW8
-        
-        After:
-        RW0
-        |
-        RW1-----RW2
-        |       |
-        RW3     RW6
-        |
-        RW8
-        */
-        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
-        add_children(RW.at(1), RW.at(3));
-        add_children(DN.at(0), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(DN.at(1), RW.at(7));
-        add_children(RW.at(3), RW.at(8));
-        EXPECT_NODES_DESTROYED(DN.at(1), RW.at(7), DN.at(0), RW.at(4), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(1))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException &e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10502,55 +8667,47 @@ TEST(NtNode, PrevSiblingAtIteratorDestroySome)
  */
 TEST(NtNode, PrevSiblingAtIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW2     RW3---RW4   RW5     RW6
+    |
+    RW7 
+    
+    After:
+    RW0
+    |
+    RW1
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(2));
+    add_children(DN.at(1), RW.at(3), RW.at(4));
+    add_children(DN.at(2), RW.at(5));
+    add_children(DN.at(3), RW.at(6));
+    add_children(RW.at(2), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2),
+                           RW.at(5), DN.at(3), RW.at(6));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(3))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW2     RW3---RW4   RW5     RW6
-        |
-        RW7 
-        
-        After:
-        RW0
-        |
-        RW1
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(2));
-        add_children(DN.at(1), RW.at(3), RW.at(4));
-        add_children(DN.at(2), RW.at(5));
-        add_children(DN.at(3), RW.at(6));
-        add_children(RW.at(2), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2),
-                               RW.at(5), DN.at(3), RW.at(6));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &DN.at(3))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException &e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10559,27 +8716,19 @@ TEST(NtNode, PrevSiblingAtIteratorDestroyAll)
  */
 TEST(NtNode, PrevSiblingAtIteratorStartIsRootDestroyRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    EXPECT_NODES_DESTROYED(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            ecu_ntnode_destroy(n);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        ecu_ntnode_destroy(n);
     }
 }
 
@@ -10593,7 +8742,7 @@ TEST(NtNode, PrevSiblingAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_prev_sibling_iterator iter;
@@ -10605,7 +8754,7 @@ TEST(NtNode, PrevSiblingAtIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException &e)
+    catch (const asserter_exception &e)
     {
         /* OK. */
         (void)e;
@@ -10622,7 +8771,7 @@ TEST(NtNode, ConstPrevSiblingAtIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_prev_sibling_citerator citer;
@@ -10634,7 +8783,7 @@ TEST(NtNode, ConstPrevSiblingAtIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException &e)
+    catch (const asserter_exception &e)
     {
         /* OK. */
         (void)e;
@@ -10646,35 +8795,27 @@ TEST(NtNode, ConstPrevSiblingAtIteratorNextAfterDone)
  */
 TEST(NtNode, PrevSiblingAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
-        ecu_ntnode_prev_sibling_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
+    ecu_ntnode_prev_sibling_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREV_SIBLING_AT_FOR_EACH(n, &iter, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10683,35 +8824,27 @@ TEST(NtNode, PrevSiblingAtIteratorMultipleTimes)
  */
 TEST(NtNode, ConstPrevSiblingAtIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
-        ecu_ntnode_prev_sibling_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(2), RW.at(1), RW.at(2), RW.at(1), RW.at(1));
+    ecu_ntnode_prev_sibling_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException &e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREV_SIBLING_AT_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10724,29 +8857,21 @@ TEST(NtNode, ConstPrevSiblingAtIteratorMultipleTimes)
  */
 TEST(NtNode, PrevSiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10755,29 +8880,21 @@ TEST(NtNode, PrevSiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, ConstPrevSiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10786,30 +8903,22 @@ TEST(NtNode, ConstPrevSiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, PrevSiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10818,30 +8927,22 @@ TEST(NtNode, PrevSiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, ConstPrevSiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2
-                |
-                RW3---RW4---RW5---RW6
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
-        EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2
+            |
+            RW3---RW4---RW5---RW6
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(2), RW.at(3), RW.at(4), RW.at(5), RW.at(6));
+    EXPECT_NODES_IN_TREE(RW.at(4), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(5))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10850,36 +8951,28 @@ TEST(NtNode, ConstPrevSiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, PrevSiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(8))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(8))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10888,36 +8981,28 @@ TEST(NtNode, PrevSiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, ConstPrevSiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------RW3
-        |       |                       |
-        RW4     RW5---RW6---RW7---RW8   RW9---RW10
-                |           |
-                RW11        RW12
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
-        add_children(RW.at(3), RW.at(9), RW.at(10));
-        add_children(RW.at(5), RW.at(11));
-        add_children(RW.at(7), RW.at(12));
-        EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------RW3
+    |       |                       |
+    RW4     RW5---RW6---RW7---RW8   RW9---RW10
+            |           |
+            RW11        RW12
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    add_children(RW.at(3), RW.at(9), RW.at(10));
+    add_children(RW.at(5), RW.at(11));
+    add_children(RW.at(7), RW.at(12));
+    EXPECT_NODES_IN_TREE(RW.at(7), RW.at(6), RW.at(5));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(8))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(8))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10926,22 +9011,14 @@ TEST(NtNode, ConstPrevSiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, PrevSiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10950,22 +9027,14 @@ TEST(NtNode, PrevSiblingIteratorStartIsRoot)
  */
 TEST(NtNode, ConstPrevSiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        rw_ntnode empty_root;
+    /* Step 1: Arrange. */
+    rw_ntnode empty_root;
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &empty_root)
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &empty_root)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -10974,30 +9043,22 @@ TEST(NtNode, ConstPrevSiblingIteratorStartIsRoot)
  */
 TEST(NtNode, PrevSiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11006,30 +9067,22 @@ TEST(NtNode, PrevSiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, ConstPrevSiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2
-        |
-        RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2));
-        add_children(RW.at(1), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(1));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2
+    |
+    RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2));
+    add_children(RW.at(1), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_citerator citer;
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_citerator citer;
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11040,55 +9093,47 @@ TEST(NtNode, ConstPrevSiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, PrevSiblingIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3-----RW4
+    |           |       |
+    RW5---RW6   RW7     RW8---RW9
+    
+    After:
+    RW0                         RW1
+    |                           |
+    RW2-----RW3-----RW4         RW5---RW6
+            |       |
+            RW7     RW8---RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5), RW.at(6));
+    add_children(RW.at(3), RW.at(7));
+    add_children(RW.at(4), RW.at(8), RW.at(9));
+
+    /* Step 2: Action. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3-----RW4
-        |           |       |
-        RW5---RW6   RW7     RW8---RW9
-        
-        After:
-        RW0                         RW1
-        |                           |
-        RW2-----RW3-----RW4         RW5---RW6
-                |       |
-                RW7     RW8---RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5), RW.at(6));
-        add_children(RW.at(3), RW.at(7));
-        add_children(RW.at(4), RW.at(8), RW.at(9));
-
-        /* Step 2: Action. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(7), RW.at(3), RW.at(8), RW.at(9), RW.at(4), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(7), RW.at(3), RW.at(8), RW.at(9), RW.at(4), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11099,56 +9144,48 @@ TEST(NtNode, PrevSiblingIteratorRemoveSome)
  */
 TEST(NtNode, PrevSiblingIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3-----RW4
+    |                   |
+    RW5---RW6           RW8---RW9
+    
+    After:
+    RW0         RW1         RW2     RW3
+    |           |
+    RW4         RW5---RW6
+    |
+    RW8---RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5), RW.at(6));
+    add_children(RW.at(4), RW.at(8), RW.at(9));
+
+    /* Step 2: Action. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3-----RW4
-        |                   |
-        RW5---RW6           RW8---RW9
-        
-        After:
-        RW0         RW1         RW2     RW3
-        |           |
-        RW4         RW5---RW6
-        |
-        RW8---RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5), RW.at(6));
-        add_children(RW.at(4), RW.at(8), RW.at(9));
-
-        /* Step 2: Action. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(4), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    CHECK_TRUE( (not_in_tree(RW.at(2), RW.at(3))) );
 }
 
 /**
@@ -11158,55 +9195,47 @@ TEST(NtNode, PrevSiblingIteratorRemoveAll)
  */
 TEST(NtNode, PrevSiblingIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1-----DN0---------RW2-----DN1
+    |       |           |       |
+    RW3     RW4---RW5   RW6     RW7
+    |
+    RW8
+    
+    After:
+    RW0
+    |
+    RW1-----RW2-----DN1
+    |       |       |
+    RW3     RW6     RW7
+    |
+    RW8
+    */
+    add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
+    add_children(RW.at(1), RW.at(3));
+    add_children(DN.at(0), RW.at(4), RW.at(5));
+    add_children(RW.at(2), RW.at(6));
+    add_children(DN.at(1), RW.at(7));
+    add_children(RW.at(3), RW.at(8));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(4), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(1))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1-----DN0---------RW2-----DN1
-        |       |           |       |
-        RW3     RW4---RW5   RW6     RW7
-        |
-        RW8
-        
-        After:
-        RW0
-        |
-        RW1-----RW2-----DN1
-        |       |       |
-        RW3     RW6     RW7
-        |
-        RW8
-        */
-        add_children(RW.at(0), RW.at(1), DN.at(0), RW.at(2), DN.at(1));
-        add_children(RW.at(1), RW.at(3));
-        add_children(DN.at(0), RW.at(4), RW.at(5));
-        add_children(RW.at(2), RW.at(6));
-        add_children(DN.at(1), RW.at(7));
-        add_children(RW.at(3), RW.at(8));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(4), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(1))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(7), DN.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(3), RW.at(1), RW.at(6), RW.at(2), RW.at(7), DN.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11217,58 +9246,50 @@ TEST(NtNode, PrevSiblingIteratorDestroySome)
  */
 TEST(NtNode, PrevSiblingIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1
+    |
+    DN0-----DN1---------DN2-----DN3
+    |       |           |       |
+    RW2     RW3---RW4   RW5     RW6
+    |
+    RW7 
+    
+    After:
+    RW0
+    |
+    RW1
+    |
+    DN3
+    |
+    RW6
+    */
+    add_children(RW.at(0), RW.at(1));
+    add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(2));
+    add_children(DN.at(1), RW.at(3), RW.at(4));
+    add_children(DN.at(2), RW.at(5));
+    add_children(DN.at(3), RW.at(6));
+    add_children(RW.at(2), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_prev_sibling_iterator iter;
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(3))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1
-        |
-        DN0-----DN1---------DN2-----DN3
-        |       |           |       |
-        RW2     RW3---RW4   RW5     RW6
-        |
-        RW7 
-        
-        After:
-        RW0
-        |
-        RW1
-        |
-        DN3
-        |
-        RW6
-        */
-        add_children(RW.at(0), RW.at(1));
-        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(2));
-        add_children(DN.at(1), RW.at(3), RW.at(4));
-        add_children(DN.at(2), RW.at(5));
-        add_children(DN.at(3), RW.at(6));
-        add_children(RW.at(2), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(3), RW.at(4), DN.at(2), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_prev_sibling_iterator iter;
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &DN.at(3))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(6), DN.at(3), RW.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(6), DN.at(3), RW.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11282,7 +9303,7 @@ TEST(NtNode, PrevSiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_prev_sibling_iterator iter;
@@ -11294,7 +9315,7 @@ TEST(NtNode, PrevSiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -11311,7 +9332,7 @@ TEST(NtNode, ConstPrevSiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_prev_sibling_citerator citer;
@@ -11323,7 +9344,7 @@ TEST(NtNode, ConstPrevSiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -11335,35 +9356,27 @@ TEST(NtNode, ConstPrevSiblingIteratorNextAfterDone)
  */
 TEST(NtNode, PrevSiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
-        ecu_ntnode_prev_sibling_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
+    ecu_ntnode_prev_sibling_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_PREV_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11372,35 +9385,27 @@ TEST(NtNode, PrevSiblingIteratorMultipleTimes)
  */
 TEST(NtNode, ConstPrevSiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
-        ecu_ntnode_prev_sibling_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(1), RW.at(1));
+    ecu_ntnode_prev_sibling_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_PREV_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11413,38 +9418,30 @@ TEST(NtNode, ConstPrevSiblingIteratorMultipleTimes)
  */
 TEST(NtNode, SiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----------------------------------------RW2---------RW3
-        |                                           |           |
-        RW4-----RW5-------------RW6-----RW7         RW8--RW9    RW10
-        |       |               |       |
-        RW11    RW12---RW13     RW14    RW15
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(2), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(4), RW.at(11));
-        add_children(RW.at(5), RW.at(12), RW.at(13));
-        add_children(RW.at(6), RW.at(14));
-        add_children(RW.at(7), RW.at(15));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----------------------------------------RW2---------RW3
+    |                                           |           |
+    RW4-----RW5-------------RW6-----RW7         RW8--RW9    RW10
+    |       |               |       |
+    RW11    RW12---RW13     RW14    RW15
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(2), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(4), RW.at(11));
+    add_children(RW.at(5), RW.at(12), RW.at(13));
+    add_children(RW.at(6), RW.at(14));
+    add_children(RW.at(7), RW.at(15));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11453,38 +9450,30 @@ TEST(NtNode, SiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, ConstSiblingIteratorStartIsFirstSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----------------------------------------RW2---------RW3
-        |                                           |           |
-        RW4-----RW5-------------RW6-----RW7         RW8--RW9    RW10
-        |       |               |       |
-        RW11    RW12---RW13     RW14    RW15
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(2), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(4), RW.at(11));
-        add_children(RW.at(5), RW.at(12), RW.at(13));
-        add_children(RW.at(6), RW.at(14));
-        add_children(RW.at(7), RW.at(15));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----------------------------------------RW2---------RW3
+    |                                           |           |
+    RW4-----RW5-------------RW6-----RW7         RW8--RW9    RW10
+    |       |               |       |
+    RW11    RW12---RW13     RW14    RW15
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(2), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(4), RW.at(11));
+    add_children(RW.at(5), RW.at(12), RW.at(13));
+    add_children(RW.at(6), RW.at(14));
+    add_children(RW.at(7), RW.at(15));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_citerator citer;
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_citerator citer;
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(4))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11493,38 +9482,30 @@ TEST(NtNode, ConstSiblingIteratorStartIsFirstSibling)
  */
 TEST(NtNode, SiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------------------RW3
-        |       |                                   |
-        RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
-                |           |       |       |
-                RW11--RW12  RW13    RW14    RW15---RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(5), RW.at(11), RW.at(12));
-        add_children(RW.at(7), RW.at(13));
-        add_children(RW.at(8), RW.at(14));
-        add_children(RW.at(9), RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------------------RW3
+    |       |                                   |
+    RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
+            |           |       |       |
+            RW11--RW12  RW13    RW14    RW15---RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(5), RW.at(11), RW.at(12));
+    add_children(RW.at(7), RW.at(13));
+    add_children(RW.at(8), RW.at(14));
+    add_children(RW.at(9), RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(7))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(7))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11533,38 +9514,30 @@ TEST(NtNode, SiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, ConstSiblingIteratorStartIsMiddleSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------------------RW3
-        |       |                                   |
-        RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
-                |           |       |       |
-                RW11--RW12  RW13    RW14    RW15---RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(5), RW.at(11), RW.at(12));
-        add_children(RW.at(7), RW.at(13));
-        add_children(RW.at(8), RW.at(14));
-        add_children(RW.at(9), RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(5), RW.at(6));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------------------RW3
+    |       |                                   |
+    RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
+            |           |       |       |
+            RW11--RW12  RW13    RW14    RW15---RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(5), RW.at(11), RW.at(12));
+    add_children(RW.at(7), RW.at(13));
+    add_children(RW.at(8), RW.at(14));
+    add_children(RW.at(9), RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(9), RW.at(5), RW.at(6));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_citerator citer;
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(7))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_citerator citer;
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(7))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11573,38 +9546,30 @@ TEST(NtNode, ConstSiblingIteratorStartIsMiddleSibling)
  */
 TEST(NtNode, SiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------------------RW3
-        |       |                                   |
-        RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
-                |           |       |       |
-                RW11--RW12  RW13    RW14    RW15---RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(5), RW.at(11), RW.at(12));
-        add_children(RW.at(7), RW.at(13));
-        add_children(RW.at(8), RW.at(14));
-        add_children(RW.at(9), RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------------------RW3
+    |       |                                   |
+    RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
+            |           |       |       |
+            RW11--RW12  RW13    RW14    RW15---RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(5), RW.at(11), RW.at(12));
+    add_children(RW.at(7), RW.at(13));
+    add_children(RW.at(8), RW.at(14));
+    add_children(RW.at(9), RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(9))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(9))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11613,38 +9578,30 @@ TEST(NtNode, SiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, ConstSiblingIteratorStartIsLastSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2---------------------------------RW3
-        |       |                                   |
-        RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
-                |           |       |       |
-                RW11--RW12  RW13    RW14    RW15---RW16
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
-        add_children(RW.at(3), RW.at(10));
-        add_children(RW.at(5), RW.at(11), RW.at(12));
-        add_children(RW.at(7), RW.at(13));
-        add_children(RW.at(8), RW.at(14));
-        add_children(RW.at(9), RW.at(15), RW.at(16));
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2---------------------------------RW3
+    |       |                                   |
+    RW4     RW5---RW6---RW7-----RW8-----RW9     RW10
+            |           |       |       |
+            RW11--RW12  RW13    RW14    RW15---RW16
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6), RW.at(7), RW.at(8), RW.at(9));
+    add_children(RW.at(3), RW.at(10));
+    add_children(RW.at(5), RW.at(11), RW.at(12));
+    add_children(RW.at(7), RW.at(13));
+    add_children(RW.at(8), RW.at(14));
+    add_children(RW.at(9), RW.at(15), RW.at(16));
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(7), RW.at(8));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_citerator citer;
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(9))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_citerator citer;
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(9))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11653,26 +9610,18 @@ TEST(NtNode, ConstSiblingIteratorStartIsLastSibling)
  */
 TEST(NtNode, SiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11681,26 +9630,18 @@ TEST(NtNode, SiblingIteratorStartIsRoot)
  */
 TEST(NtNode, ConstSiblingIteratorStartIsRoot)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_citerator citer;
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_citerator citer;
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11709,35 +9650,27 @@ TEST(NtNode, ConstSiblingIteratorStartIsRoot)
  */
 TEST(NtNode, SiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-------------RW3---RW4
-        |       |               |
-        RW5     RW6-----RW7     RW8
-                        |
-                        RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5));
-        add_children(RW.at(2), RW.at(6), RW.at(7));
-        add_children(RW.at(3), RW.at(8));
-        add_children(RW.at(7), RW.at(9));
-        EXPECT_NODES_IN_TREE(RW.at(7));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-------------RW3---RW4
+    |       |               |
+    RW5     RW6-----RW7     RW8
+                    |
+                    RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5));
+    add_children(RW.at(2), RW.at(6), RW.at(7));
+    add_children(RW.at(3), RW.at(8));
+    add_children(RW.at(7), RW.at(9));
+    EXPECT_NODES_IN_TREE(RW.at(7));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(6))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(6))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11746,35 +9679,27 @@ TEST(NtNode, SiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, ConstSiblingIteratorStartHasOneSibling)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1-----RW2-------------RW3---RW4
-        |       |               |
-        RW5     RW6-----RW7     RW8
-                        |
-                        RW9
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
-        add_children(RW.at(1), RW.at(5));
-        add_children(RW.at(2), RW.at(6), RW.at(7));
-        add_children(RW.at(3), RW.at(8));
-        add_children(RW.at(7), RW.at(9));
-        EXPECT_NODES_IN_TREE(RW.at(7));
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1-----RW2-------------RW3---RW4
+    |       |               |
+    RW5     RW6-----RW7     RW8
+                    |
+                    RW9
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    add_children(RW.at(1), RW.at(5));
+    add_children(RW.at(2), RW.at(6), RW.at(7));
+    add_children(RW.at(3), RW.at(8));
+    add_children(RW.at(7), RW.at(9));
+    EXPECT_NODES_IN_TREE(RW.at(7));
 
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_citerator citer;
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(6))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_citerator citer;
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(6))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11785,64 +9710,56 @@ TEST(NtNode, ConstSiblingIteratorStartHasOneSibling)
  */
 TEST(NtNode, SiblingIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1-----RW2---------RO0-----RO1-----RW3
+    |       |           |       |
+    RW4     RW5---RW6   RW7     RW8
+    |
+    RW11
+
+    After:
+    RW0                         RW1     RW3
+    |                           |
+    RW2---------RO0-----RO1     RW4
+    |           |       |       |
+    RW5---RW6   RW7     RW8     RW11
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1), RW.at(3));
+    add_children(RW.at(1), RW.at(4));
+    add_children(RW.at(2), RW.at(5), RW.at(6));
+    add_children(RO.at(0), RW.at(7));
+    add_children(RO.at(1), RW.at(8));
+    add_children(RW.at(4), RW.at(11));
+
+    /* Step 2: Action. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1-----RW2---------RO0-----RO1-----RW3
-        |       |           |       |
-        RW4     RW5---RW6   RW7     RW8
-        |
-        RW11
-
-        After:
-        RW0                         RW1     RW3
-        |                           |
-        RW2---------RO0-----RO1     RW4
-        |           |       |       |
-        RW5---RW6   RW7     RW8     RW11
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RO.at(0), RO.at(1), RW.at(3));
-        add_children(RW.at(1), RW.at(4));
-        add_children(RW.at(2), RW.at(5), RW.at(6));
-        add_children(RO.at(0), RW.at(7));
-        add_children(RO.at(1), RW.at(8));
-        add_children(RW.at(4), RW.at(11));
-
-        /* Step 2: Action. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(2), RW.at(7), RO.at(0), RW.at(8), RO.at(1), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(11), RW.at(4), RW.at(1));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(3));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(6), RW.at(2), RW.at(7), RO.at(0), RW.at(8), RO.at(1), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(11), RW.at(4), RW.at(1));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(1))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    EXPECT_NODES_IN_TREE(RW.at(3));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11853,73 +9770,65 @@ TEST(NtNode, SiblingIteratorRemoveSome)
  */
 TEST(NtNode, SiblingIteratorRemoveAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    RW4---RW5---RW6-----RW7
+    |           |       |
+    RW8         RW9     RW10---RW11
+
+    After:
+    RW0                 RW4     RW6     RW7
+    |                   |       |       |
+    RW1---RW2---RW3     RW8     RW9     RW10---RW11
+    |
+    RW5
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
+    add_children(RW.at(4), RW.at(8));
+    add_children(RW.at(6), RW.at(9));
+    add_children(RW.at(7), RW.at(10), RW.at(11));
+
+    /* Step 2: Action. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        RW4---RW5---RW6-----RW7
-        |           |       |
-        RW8         RW9     RW10---RW11
-
-        After:
-        RW0                 RW4     RW6     RW7
-        |                   |       |       |
-        RW1---RW2---RW3     RW8     RW9     RW10---RW11
-        |
-        RW5
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), RW.at(4), RW.at(5), RW.at(6), RW.at(7));
-        add_children(RW.at(4), RW.at(8));
-        add_children(RW.at(6), RW.at(9));
-        add_children(RW.at(7), RW.at(10), RW.at(11));
-
-        /* Step 2: Action. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(5))
-        {
-            convert(n).accept(node_remove_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(5), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-
-        /* Step 3: Assert. Verify removed trees intact. */
-        EXPECT_NODES_IN_TREE(RW.at(8), RW.at(4));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(5));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(5))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(9), RW.at(6));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(6))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        EXPECT_NODES_IN_TREE(RW.at(10), RW.at(11), RW.at(7));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(7))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(5), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+
+    /* Step 3: Assert. Verify removed trees intact. */
+    EXPECT_NODES_IN_TREE(RW.at(8), RW.at(4));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(4))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    EXPECT_NODES_IN_TREE(RW.at(5));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(5))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    EXPECT_NODES_IN_TREE(RW.at(9), RW.at(6));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(6))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    EXPECT_NODES_IN_TREE(RW.at(10), RW.at(11), RW.at(7));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(7))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11930,53 +9839,45 @@ TEST(NtNode, SiblingIteratorRemoveAll)
  */
 TEST(NtNode, SiblingIteratorDestroySome)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    DN0-----RW1---------DN1-----DN2
+    |       |           |       |
+    RW2     RW3---RW4   RW5     RW6
+    |
+    RW7
+
+    After:
+    RW0
+    |
+    RW1---------DN2
+    |           |
+    RW3---RW4   RW6
+    */
+    add_children(RW.at(0), DN.at(0), RW.at(1), DN.at(1), DN.at(2));
+    add_children(DN.at(0), RW.at(2));
+    add_children(RW.at(1), RW.at(3), RW.at(4));
+    add_children(DN.at(1), RW.at(5));
+    add_children(DN.at(2), RW.at(6));
+    add_children(RW.at(2), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(5));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &DN.at(2))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        DN0-----RW1---------DN1-----DN2
-        |       |           |       |
-        RW2     RW3---RW4   RW5     RW6
-        |
-        RW7
-
-        After:
-        RW0
-        |
-        RW1---------DN2
-        |           |
-        RW3---RW4   RW6
-        */
-        add_children(RW.at(0), DN.at(0), RW.at(1), DN.at(1), DN.at(2));
-        add_children(DN.at(0), RW.at(2));
-        add_children(RW.at(1), RW.at(3), RW.at(4));
-        add_children(DN.at(1), RW.at(5));
-        add_children(DN.at(2), RW.at(6));
-        add_children(RW.at(2), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(0), RW.at(2), RW.at(7), DN.at(1), RW.at(5));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &DN.at(2))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1), RW.at(6), DN.at(2), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(3), RW.at(4), RW.at(1), RW.at(6), DN.at(2), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -11987,54 +9888,46 @@ TEST(NtNode, SiblingIteratorDestroySome)
  */
 TEST(NtNode, SiblingIteratorDestroyAll)
 {
-    try
+    /* Step 1: Arrange.
+
+    Before:
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    DN0---DN1---DN2-----DN3
+    |           |       |
+    RW4         RW5     RW6---RW7
+
+    After:
+    RW0
+    |
+    RW1---RW2---RW3
+    |
+    DN0
+    |
+    RW4
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
+    add_children(DN.at(0), RW.at(4));
+    add_children(DN.at(2), RW.at(5));
+    add_children(DN.at(3), RW.at(6), RW.at(7));
+    EXPECT_NODES_DESTROYED(DN.at(1), DN.at(2), RW.at(5), DN.at(3), RW.at(6), RW.at(7));
+
+    /* Steps 2 and 3: Action and assert. */
+    ecu_ntnode_sibling_iterator iter;
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &DN.at(0))
     {
-        /* Step 1: Arrange.
-
-        Before:
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        DN0---DN1---DN2-----DN3
-        |           |       |
-        RW4         RW5     RW6---RW7
-
-        After:
-        RW0
-        |
-        RW1---RW2---RW3
-        |
-        DN0
-        |
-        RW4
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        add_children(RW.at(1), DN.at(0), DN.at(1), DN.at(2), DN.at(3));
-        add_children(DN.at(0), RW.at(4));
-        add_children(DN.at(2), RW.at(5));
-        add_children(DN.at(3), RW.at(6), RW.at(7));
-        EXPECT_NODES_DESTROYED(DN.at(1), DN.at(2), RW.at(5), DN.at(3), RW.at(6), RW.at(7));
-
-        /* Steps 2 and 3: Action and assert. */
-        ecu_ntnode_sibling_iterator iter;
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &DN.at(0))
-        {
-            convert(n).accept(node_destroy_visitor);
-        }
-
-        /* Step 3: Assert. Verify remaining tree intact. */
-        ecu_ntnode_postorder_citerator citer;
-        EXPECT_NODES_IN_TREE(RW.at(4), DN.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
-        ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
+        convert(n).accept(node_destroy_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. Verify remaining tree intact. */
+    ecu_ntnode_postorder_citerator citer;
+    EXPECT_NODES_IN_TREE(RW.at(4), DN.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(0));
+    ECU_NTNODE_CONST_POSTORDER_FOR_EACH(n, &citer, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -12048,7 +9941,7 @@ TEST(NtNode, SiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_sibling_iterator iter;
@@ -12060,7 +9953,7 @@ TEST(NtNode, SiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -12077,7 +9970,7 @@ TEST(NtNode, ConstSiblingIteratorNextAfterDone)
     {
         /* Step 1: Arrange. */
         rw_ntnode empty_root;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_ntnode_sibling_citerator citer;
@@ -12089,7 +9982,7 @@ TEST(NtNode, ConstSiblingIteratorNextAfterDone)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -12101,35 +9994,27 @@ TEST(NtNode, ConstSiblingIteratorNextAfterDone)
  */
 TEST(NtNode, SiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(3), RW.at(1), RW.at(1), RW.at(2));
-        ecu_ntnode_sibling_iterator iter;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(3), RW.at(1), RW.at(1), RW.at(2));
+    ecu_ntnode_sibling_iterator iter;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_SIBLING_FOR_EACH(n, &iter, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }
 
@@ -12138,34 +10023,26 @@ TEST(NtNode, SiblingIteratorMultipleTimes)
  */
 TEST(NtNode, ConstSiblingIteratorMultipleTimes)
 {
-    try
-    {
-        /* Step 1: Arrange.
-        RW0
-        |
-        RW1---RW2---RW3
-        */
-        add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
-        EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(3), RW.at(1), RW.at(1), RW.at(2));
-        ecu_ntnode_sibling_citerator citer;
+    /* Step 1: Arrange.
+    RW0
+    |
+    RW1---RW2---RW3
+    */
+    add_children(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    EXPECT_NODES_IN_TREE(RW.at(2), RW.at(3), RW.at(3), RW.at(1), RW.at(1), RW.at(2));
+    ecu_ntnode_sibling_citerator citer;
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-        ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
-        {
-            convert(n).accept(node_obj_in_tree_visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(2))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
+    }
+    ECU_NTNODE_CONST_SIBLING_FOR_EACH(n, &citer, &RW.at(3))
+    {
+        convert(n).accept(node_obj_in_tree_visitor);
     }
 }

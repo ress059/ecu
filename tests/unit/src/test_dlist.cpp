@@ -173,18 +173,12 @@
 #include <type_traits>
 #include <vector>
 
-/* Stubs and helpers. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------- NAMESPACES -----------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 namespace
 {
@@ -754,11 +748,6 @@ const dnode& convert(const ecu_dnode *n)
 
 TEST_GROUP(DList)
 {
-    void setup() override
-    {
-        set_assert_handler(AssertResponse::FAIL);
-    }
-
     void teardown() override
     {
         mock().checkExpectations();
@@ -950,24 +939,16 @@ TEST(DList, DNodeGetEntry)
  */
 TEST(DList, DNodeDestroy)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), rw_dnode(&node_destroy_actual_call), RW.at(1)};
-        EXPECT_NODES_DESTROYED(list.at(1));
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1)); /* Expect these nodes to remain after test node destroyed. */
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), rw_dnode(&node_destroy_actual_call), RW.at(1)};
+    EXPECT_NODES_DESTROYED(list.at(1));
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1)); /* Expect these nodes to remain after test node destroyed. */
 
-        /* Step 2: Action. */
-        ecu_dnode_destroy(&list.at(1));
+    /* Step 2: Action. */
+    ecu_dnode_destroy(&list.at(1));
 
-        /* Step 3: Assert. Test fails if node destroy callback not called or list not intact. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if node destroy callback not called or list not intact. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /*------------------------------------------------------------*/
@@ -979,21 +960,13 @@ TEST(DList, DNodeDestroy)
  */
 TEST(DList, DNodeID)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{rw_dnode(0), rw_dnode(1), rw_dnode(2)};
+    /* Step 1: Arrange. */
+    dlist list{rw_dnode(0), rw_dnode(1), rw_dnode(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        LONGS_EQUAL(0, ecu_dnode_id(&list.at(0)));
-        LONGS_EQUAL(1, ecu_dnode_id(&list.at(1)));
-        LONGS_EQUAL(2, ecu_dnode_id(&list.at(2)));
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    LONGS_EQUAL(0, ecu_dnode_id(&list.at(0)));
+    LONGS_EQUAL(1, ecu_dnode_id(&list.at(1)));
+    LONGS_EQUAL(2, ecu_dnode_id(&list.at(2)));
 }
 
 /*------------------------------------------------------------*/
@@ -1006,23 +979,15 @@ TEST(DList, DNodeID)
  */
 TEST(DList, DNodeInList)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0)};
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_dnode_in_list(&RW.at(0))) );
-        ecu_dnode_remove(&RW.at(0));
-        CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) );
-        ecu_dlist_push_back(&list, &RW.at(0));
-        CHECK_TRUE( (ecu_dnode_in_list(&RW.at(0))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_dnode_in_list(&RW.at(0))) );
+    ecu_dnode_remove(&RW.at(0));
+    CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) );
+    ecu_dlist_push_back(&list, &RW.at(0));
+    CHECK_TRUE( (ecu_dnode_in_list(&RW.at(0))) );
 }
 
 /**
@@ -1034,14 +999,14 @@ TEST(DList, DNodeInListNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Steps 2 Action. */
         (void)ecu_dnode_in_list(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1058,23 +1023,15 @@ TEST(DList, DNodeInListNodeIsHead)
  */
 TEST(DList, DNodeInsertAfterPosIsFront)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_after(&RW.at(0), &RW.at(1));
+    /* Step 2: Action. */
+    ecu_dnode_insert_after(&RW.at(0), &RW.at(1));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1082,23 +1039,15 @@ TEST(DList, DNodeInsertAfterPosIsFront)
  */
 TEST(DList, DNodeInsertAfterPosIsMiddle)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(3), RW.at(4)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(3), RW.at(4)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_after(&RW.at(1), &RW.at(2));
+    /* Step 2: Action. */
+    ecu_dnode_insert_after(&RW.at(1), &RW.at(2));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1107,23 +1056,15 @@ TEST(DList, DNodeInsertAfterPosIsMiddle)
  */
 TEST(DList, DNodeInsertAfterPosIsTail)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_after(&RW.at(2), &RW.at(3));
+    /* Step 2: Action. */
+    ecu_dnode_insert_after(&RW.at(2), &RW.at(3));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1134,14 +1075,14 @@ TEST(DList, DNodeInsertAfterPosNotInList)
     try
     {
         /* Step 1: Arrange. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_after(&RW.at(0), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1158,14 +1099,14 @@ TEST(DList, DNodeInsertAfterNodeInList)
         /* Step 1: Arrange. */
         dlist list1{RW.at(0)};
         dlist list2{RW.at(1)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_after(&RW.at(0), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1181,14 +1122,14 @@ TEST(DList, DNodeInsertAfterPosIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_after(&list.head, &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1205,14 +1146,14 @@ TEST(DList, DNodeInsertAfterNodeIsHead)
         /* Step 1: Arrange. */
         dlist list1{RW.at(0)};
         dlist list2;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_after(&RW.at(0), &list2.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1229,14 +1170,14 @@ TEST(DList, DNodeInsertAfterPosEqualsNode)
     {
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_after(&RW.at(0), &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1253,23 +1194,15 @@ TEST(DList, DNodeInsertAfterPosEqualsNode)
  */
 TEST(DList, DNodeInsertBeforePosIsFront)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_before(&RW.at(1), &RW.at(0));
+    /* Step 2: Action. */
+    ecu_dnode_insert_before(&RW.at(1), &RW.at(0));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1277,23 +1210,15 @@ TEST(DList, DNodeInsertBeforePosIsFront)
  */
 TEST(DList, DNodeInsertBeforePosIsMiddle)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(3), RW.at(4)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(3), RW.at(4)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3), RW.at(4));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
+    /* Step 2: Action. */
+    ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1302,23 +1227,15 @@ TEST(DList, DNodeInsertBeforePosIsMiddle)
  */
 TEST(DList, DNodeInsertBeforePosIsTail)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(3)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(3)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
+    /* Step 2: Action. */
+    ecu_dnode_insert_before(&RW.at(3), &RW.at(2));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1329,14 +1246,14 @@ TEST(DList, DNodeInsertBeforePosNotInList)
     try
     {
         /* Step 1: Arrange. */
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_before(&RW.at(0), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1353,14 +1270,14 @@ TEST(DList, DNodeInsertBeforeNodeInList)
         /* Step 1: Arrange. */
         dlist list1{RW.at(0)};
         dlist list2{RW.at(1)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_before(&RW.at(0), &RW.at(1));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1376,14 +1293,14 @@ TEST(DList, DNodeInsertBeforePosIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_before(&list.head, &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1400,14 +1317,14 @@ TEST(DList, DNodeInsertBeforeNodeIsHead)
         /* Step 1: Arrange. */
         dlist list1{RW.at(0)};
         dlist list2;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_before(&RW.at(0), &list2.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1424,14 +1341,14 @@ TEST(DList, DNodeInsertBeforePosEqualsNode)
     {
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_insert_before(&RW.at(0), &RW.at(0));
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1447,20 +1364,12 @@ TEST(DList, DNodeInsertBeforePosEqualsNode)
  */
 TEST(DList, DNodeNext)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dnode_next(&RW.at(1))) );
-        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dnode_cnext(&RW.at(1))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(2), &convert(ecu_dnode_next(&RW.at(1))) );
+    POINTERS_EQUAL( &RW.at(2), &convert(ecu_dnode_cnext(&RW.at(1))) );
 }
 
 /**
@@ -1472,14 +1381,14 @@ TEST(DList, DNodeNextNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         (void)ecu_dnode_next(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does nto fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1495,14 +1404,14 @@ TEST(DList, DNodeCNextNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         (void)ecu_dnode_cnext(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does nto fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1515,20 +1424,12 @@ TEST(DList, DNodeCNextNodeIsHead)
  */
 TEST(DList, DNodeNextNodeIsTail)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dnode_next(&RW.at(2)) );
-        POINTERS_EQUAL( nullptr, ecu_dnode_cnext(&RW.at(2)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dnode_next(&RW.at(2)) );
+    POINTERS_EQUAL( nullptr, ecu_dnode_cnext(&RW.at(2)) );
 }
 
 /**
@@ -1537,20 +1438,12 @@ TEST(DList, DNodeNextNodeIsTail)
  */
 TEST(DList, DNodeNextNodeNotInList)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
+    /* Step 1: Arrange. */
+    CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dnode_next(&RW.at(0)) );
-        POINTERS_EQUAL( nullptr, ecu_dnode_cnext(&RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dnode_next(&RW.at(0)) );
+    POINTERS_EQUAL( nullptr, ecu_dnode_cnext(&RW.at(0)) );
 }
 
 /*------------------------------------------------------------*/
@@ -1562,20 +1455,12 @@ TEST(DList, DNodeNextNodeNotInList)
  */
 TEST(DList, DNodePrev)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(1), &convert(ecu_dnode_prev(&RW.at(2))) );
-        POINTERS_EQUAL( &RW.at(1), &convert(ecu_dnode_cprev(&RW.at(2))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(1), &convert(ecu_dnode_prev(&RW.at(2))) );
+    POINTERS_EQUAL( &RW.at(1), &convert(ecu_dnode_cprev(&RW.at(2))) );
 }
 
 /**
@@ -1587,14 +1472,14 @@ TEST(DList, DNodePrevNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         (void)ecu_dnode_prev(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does nto fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1610,14 +1495,14 @@ TEST(DList, DNodeCPrevNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         (void)ecu_dnode_cprev(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does nto fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1630,20 +1515,12 @@ TEST(DList, DNodeCPrevNodeIsHead)
  */
 TEST(DList, DNodePrevNodeIsFirst)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dnode_prev(&RW.at(0)) );
-        POINTERS_EQUAL( nullptr, ecu_dnode_cprev(&RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dnode_prev(&RW.at(0)) );
+    POINTERS_EQUAL( nullptr, ecu_dnode_cprev(&RW.at(0)) );
 }
 
 /**
@@ -1652,20 +1529,12 @@ TEST(DList, DNodePrevNodeIsFirst)
  */
 TEST(DList, DNodePrevNodeNotInList)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
+    /* Step 1: Arrange. */
+    CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dnode_prev(&RW.at(0)) );
-        POINTERS_EQUAL( nullptr, ecu_dnode_cprev(&RW.at(0)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dnode_prev(&RW.at(0)) );
+    POINTERS_EQUAL( nullptr, ecu_dnode_cprev(&RW.at(0)) );
 }
 
 /*------------------------------------------------------------*/
@@ -1677,23 +1546,15 @@ TEST(DList, DNodePrevNodeNotInList)
  */
 TEST(DList, DNodeRemove)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(2));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(2));
 
-        /* Step 2: Action. */
-        ecu_dnode_remove(&RW.at(1));
+    /* Step 2: Action. */
+    ecu_dnode_remove(&RW.at(1));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1701,24 +1562,16 @@ TEST(DList, DNodeRemove)
  */
 TEST(DList, DNodeRemoveAndReAddNodes)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(2), RW.at(1));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(2), RW.at(1));
 
-        /* Step 2: Action. */
-        ecu_dnode_remove(&RW.at(1));
-        ecu_dnode_insert_after(&RW.at(2), &RW.at(1));
+    /* Step 2: Action. */
+    ecu_dnode_remove(&RW.at(1));
+    ecu_dnode_insert_after(&RW.at(2), &RW.at(1));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1727,21 +1580,13 @@ TEST(DList, DNodeRemoveAndReAddNodes)
  */
 TEST(DList, DNodeRemoveNodeNotInList)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
+    /* Step 1: Arrange. */
+    CHECK_FALSE( (ecu_dnode_in_list(&RW.at(0))) ); /* Precondition. */
 
-        /* Step 2: Action. */
-        ecu_dnode_remove(&RW.at(0));
+    /* Step 2: Action. */
+    ecu_dnode_remove(&RW.at(0));
 
-        /* Step 3: Assert. Test fails if assertion fires. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if assertion fires. */
 }
 
 /**
@@ -1753,14 +1598,14 @@ TEST(DList, DNodeRemoveNodeIsHead)
     {
         /* Step 1: Arrange. */
         dlist list;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dnode_remove(&list.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -1778,24 +1623,16 @@ TEST(DList, DNodeRemoveNodeIsHead)
  */
 TEST(DList, DNodeValid)
 {
-    try
-    {
-        /* Step 1: Arrange. Create C object, NOT C++ object since 
-        default constructor of C++ object calls C constructor. */
-        ecu_dnode node;
+    /* Step 1: Arrange. Create C object, NOT C++ object since 
+    default constructor of C++ object calls C constructor. */
+    ecu_dnode node;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_dnode_valid(&node)) );
-        ecu_dnode_ctor(&node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
-        CHECK_TRUE( (ecu_dnode_valid(&node)) );
-        ecu_dnode_destroy(&node);
-        CHECK_FALSE( (ecu_dnode_valid(&node)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_dnode_valid(&node)) );
+    ecu_dnode_ctor(&node, ECU_DNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
+    CHECK_TRUE( (ecu_dnode_valid(&node)) );
+    ecu_dnode_destroy(&node);
+    CHECK_FALSE( (ecu_dnode_valid(&node)) );
 }
 
 /*------------------------------------------------------------*/
@@ -1807,23 +1644,15 @@ TEST(DList, DNodeValid)
  */
 TEST(DList, DListDestroy)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{rw_dnode(&node_destroy_actual_call), rw_dnode(&node_destroy_actual_call),
-                   rw_dnode(&node_destroy_actual_call), rw_dnode(&node_destroy_actual_call)};
-        EXPECT_NODES_DESTROYED(list.at(0), list.at(1), list.at(2), list.at(3));
+    /* Step 1: Arrange. */
+    dlist list{rw_dnode(&node_destroy_actual_call), rw_dnode(&node_destroy_actual_call),
+               rw_dnode(&node_destroy_actual_call), rw_dnode(&node_destroy_actual_call)};
+    EXPECT_NODES_DESTROYED(list.at(0), list.at(1), list.at(2), list.at(3));
 
-        /* Step 2: Action. */
-        ecu_dlist_destroy(&list);
+    /* Step 2: Action. */
+    ecu_dlist_destroy(&list);
 
-        /* Step 3: Assert. Test fails if all node destroy callbacks not called. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if all node destroy callbacks not called. */
 }
 
 /*------------------------------------------------------------*/
@@ -1836,21 +1665,13 @@ TEST(DList, DListDestroy)
  */
 TEST(DList, DListBack)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_back(&list)) );
-        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_cback(&list)) );
-        CHECK_TRUE( (ecu_dnode_in_list(&RW.at(2))) ); /* Tail node not popped. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_back(&list)) );
+    POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_cback(&list)) );
+    CHECK_TRUE( (ecu_dnode_in_list(&RW.at(2))) ); /* Tail node not popped. */
 }
 
 /**
@@ -1858,20 +1679,12 @@ TEST(DList, DListBack)
  */
 TEST(DList, DListBackListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dlist_back(&list) );
-        POINTERS_EQUAL( nullptr, ecu_dlist_cback(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dlist_back(&list) );
+    POINTERS_EQUAL( nullptr, ecu_dlist_cback(&list) );
 }
 
 /*------------------------------------------------------------*/
@@ -1884,25 +1697,17 @@ TEST(DList, DListBackListIsEmpty)
  */
 TEST(DList, DListClear)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        std::array<rw_dnode, 3> nodes{&node_destroy_actual_call, &node_destroy_actual_call, &node_destroy_actual_call};
-        dlist list{nodes};
+    /* Step 1: Arrange. */
+    std::array<rw_dnode, 3> nodes{&node_destroy_actual_call, &node_destroy_actual_call, &node_destroy_actual_call};
+    dlist list{nodes};
 
-        /* Step 2: Action. */
-        ecu_dlist_clear(&list);
+    /* Step 2: Action. */
+    ecu_dlist_clear(&list);
 
-        /* Step 3: Assert. */
-        CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(0))) );
-        CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(1))) );
-        CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(2))) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(0))) );
+    CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(1))) );
+    CHECK_FALSE( (ecu_dnode_in_list(&nodes.at(2))) );
 }
 
 /**
@@ -1911,24 +1716,16 @@ TEST(DList, DListClear)
  */
 TEST(DList, DListClearAndReAdd)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1)};
-        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(0));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1)};
+    EXPECT_NODES_IN_LIST(RW.at(1), RW.at(0));
 
-        /* Step 2: Action. */
-        ecu_dlist_clear(&list);
-        list.add(RW.at(1), RW.at(0));
+    /* Step 2: Action. */
+    ecu_dlist_clear(&list);
+    list.add(RW.at(1), RW.at(0));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -1937,21 +1734,13 @@ TEST(DList, DListClearAndReAdd)
  */
 TEST(DList, DListClearListIsEmpty)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Step 2: Action. */
-        ecu_dlist_clear(&list);
+    /* Step 2: Action. */
+    ecu_dlist_clear(&list);
 
-        /* Step 3: Assert. Test fails if assertion fires. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if assertion fires. */
 }
 
 /*------------------------------------------------------------*/
@@ -1964,23 +1753,15 @@ TEST(DList, DListClearListIsEmpty)
  */
 TEST(DList, DListEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ecu_dlist_empty(&list)) );
-        list.add(RW.at(0));
-        CHECK_FALSE( (ecu_dlist_empty(&list)) );
-        ecu_dnode_remove(&RW.at(0));
-        CHECK_TRUE( (ecu_dlist_empty(&list)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ecu_dlist_empty(&list)) );
+    list.add(RW.at(0));
+    CHECK_FALSE( (ecu_dlist_empty(&list)) );
+    ecu_dnode_remove(&RW.at(0));
+    CHECK_TRUE( (ecu_dlist_empty(&list)) );
 }
 
 /*------------------------------------------------------------*/
@@ -1993,20 +1774,12 @@ TEST(DList, DListEmpty)
  */
 TEST(DList, DListFront)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_front(&list)) );
-        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_cfront(&list)) ); /* If front was popped this would fail. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_front(&list)) );
+    POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_cfront(&list)) ); /* If front was popped this would fail. */
 }
 
 /**
@@ -2014,20 +1787,12 @@ TEST(DList, DListFront)
  */
 TEST(DList, DListFrontListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dlist_front(&list) );
-        POINTERS_EQUAL( nullptr, ecu_dlist_cfront(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dlist_front(&list) );
+    POINTERS_EQUAL( nullptr, ecu_dlist_cfront(&list) );
 }
 
 /*------------------------------------------------------------*/
@@ -2040,24 +1805,16 @@ TEST(DList, DListFrontListIsEmpty)
  */
 TEST(DList, DListInsertBeforeMiddleConditionPasses)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}}; /* Assign unique ID to each node. */
-        rw_dnode node{2};
-        EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
+    /* Step 1: Arrange. */
+    dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}}; /* Assign unique ID to each node. */
+    rw_dnode node{2};
+    EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
 
-        /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2065,24 +1822,16 @@ TEST(DList, DListInsertBeforeMiddleConditionPasses)
  */
 TEST(DList, DListInsertBeforeFirstConditionPasses)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        dlist list{rw_dnode{1}, rw_dnode{2}};
-        rw_dnode node{0};
-        EXPECT_NODES_IN_LIST(0, 1, 2);
+    /* Step 1: Arrange. */
+    dlist list{rw_dnode{1}, rw_dnode{2}};
+    rw_dnode node{0};
+    EXPECT_NODES_IN_LIST(0, 1, 2);
 
-        /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2091,24 +1840,16 @@ TEST(DList, DListInsertBeforeFirstConditionPasses)
  */
 TEST(DList, DListInsertBeforeAllConditionsFalse)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{2}};
-        rw_dnode node{10};
-        EXPECT_NODES_IN_LIST(0, 1, 2, 10);
+    /* Step 1: Arrange. */
+    dlist list{rw_dnode{0}, rw_dnode{1}, rw_dnode{2}};
+    rw_dnode node{10};
+    EXPECT_NODES_IN_LIST(0, 1, 2, 10);
 
-        /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_insert_before(&list, &node, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2116,23 +1857,15 @@ TEST(DList, DListInsertBeforeAllConditionsFalse)
  */
 TEST(DList, DListInsertBeforeListIsEmpty)
 {
-    try 
-    {
-        /* Step 1: Arrange. */
-        dlist list;
-        EXPECT_NODES_IN_LIST(RW.at(0));
+    /* Step 1: Arrange. */
+    dlist list;
+    EXPECT_NODES_IN_LIST(RW.at(0));
 
-        /* Step 2: Action. */
-        ecu_dlist_insert_before(&list, &RW.at(0), &insert_before, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_insert_before(&list, &RW.at(0), &insert_before, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2145,14 +1878,14 @@ TEST(DList, DListInsertBeforeNodeInList)
     {
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_insert_before(&list, &RW.at(0), &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2169,14 +1902,14 @@ TEST(DList, DListInsertBeforeNodeIsHead)
         /* Step 1: Arrange. */
         dlist list1;
         dlist list2;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_insert_before(&list1, &list2.head, &insert_before, ECU_DNODE_OBJ_UNUSED);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2193,23 +1926,15 @@ TEST(DList, DListInsertBeforeNodeIsHead)
  */
 TEST(DList, DListPushBack)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Step 2: Action. */
-        ecu_dlist_push_back(&list, &RW.at(3));
+    /* Step 2: Action. */
+    ecu_dlist_push_back(&list, &RW.at(3));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2217,23 +1942,15 @@ TEST(DList, DListPushBack)
  */
 TEST(DList, DListPushBackListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
-        EXPECT_NODES_IN_LIST(RW.at(0));
+    /* Step 1: Arrange. */
+    dlist list;
+    EXPECT_NODES_IN_LIST(RW.at(0));
 
-        /* Step 2: Action. */
-        ecu_dlist_push_back(&list, &RW.at(0));
+    /* Step 2: Action. */
+    ecu_dlist_push_back(&list, &RW.at(0));
 
-        /* Step 3: Asssert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Asssert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2246,14 +1963,14 @@ TEST(DList, DListPushBackNodeInList)
     {
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_push_back(&list, &RW.at(0));
         
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2270,14 +1987,14 @@ TEST(DList, DListPushBackNodeIsHead)
         /* Step 1: Arrange. */
         dlist list1;
         dlist list2;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_push_back(&list1, &list2.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2294,23 +2011,15 @@ TEST(DList, DListPushBackNodeIsHead)
  */
 TEST(DList, DListPushFront)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2));
 
-        /* Step 2: Action. */
-        ecu_dlist_push_front(&list, &RW.at(0));
+    /* Step 2: Action. */
+    ecu_dlist_push_front(&list, &RW.at(0));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2318,23 +2027,15 @@ TEST(DList, DListPushFront)
  */
 TEST(DList, DListPushFrontListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
-        EXPECT_NODES_IN_LIST(RW.at(0));
+    /* Step 1: Arrange. */
+    dlist list;
+    EXPECT_NODES_IN_LIST(RW.at(0));
 
-        /* Step 2: Action. */
-        ecu_dlist_push_front(&list, &RW.at(0));
+    /* Step 2: Action. */
+    ecu_dlist_push_front(&list, &RW.at(0));
 
-        /* Step 3: Assert. */
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2347,14 +2048,14 @@ TEST(DList, DListPushFrontNodeInList)
     {
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_push_front(&list, &RW.at(0));
         
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2371,14 +2072,14 @@ TEST(DList, DListPushFrontNodeIsHead)
         /* Step 1: Arrange. */
         dlist list1;
         dlist list2;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_push_front(&list1, &list2.head);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2395,21 +2096,13 @@ TEST(DList, DListPushFrontNodeIsHead)
  */
 TEST(DList, DListPopBack)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_pop_back(&list)) );
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(2), &convert(ecu_dlist_pop_back(&list)) );
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2417,19 +2110,11 @@ TEST(DList, DListPopBack)
  */
 TEST(DList, DListPopBackListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dlist_pop_back(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dlist_pop_back(&list) );
 }
 
 /**
@@ -2437,20 +2122,12 @@ TEST(DList, DListPopBackListIsEmpty)
  */
 TEST(DList, DListPopBackListWithOneNode)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_back(&list)) );
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_back(&list)) );
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /*------------------------------------------------------------*/
@@ -2463,21 +2140,13 @@ TEST(DList, DListPopBackListWithOneNode)
  */
 TEST(DList, DListPopFront)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2));
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /**
@@ -2485,19 +2154,11 @@ TEST(DList, DListPopFront)
  */
 TEST(DList, DListPopFrontListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( nullptr, ecu_dlist_pop_front(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( nullptr, ecu_dlist_pop_front(&list) );
 }
 
 /**
@@ -2505,20 +2166,12 @@ TEST(DList, DListPopFrontListIsEmpty)
  */
 TEST(DList, DListPopFrontListWithOneNode)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0)};
 
-        /* Steps 2 and 3: Action and assert. */
-        POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
-        list.accept(node_obj_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    POINTERS_EQUAL( &RW.at(0), &convert(ecu_dlist_pop_front(&list)) );
+    list.accept(node_obj_in_list_actual_call());
 }
 
 /*------------------------------------------------------------*/
@@ -2531,28 +2184,20 @@ TEST(DList, DListPopFrontListWithOneNode)
  */
 TEST(DList, DListSize)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    /* Step 1: Arrange. */
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
 
-        /* Steps 2 and 3: Action and assert. */
-        LONGLONGS_EQUAL( 3, ecu_dlist_size(&list) );
-        ecu_dnode_remove(&RW.at(1));
-        LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
-        ecu_dnode_remove(&RW.at(2));
-        LONGLONGS_EQUAL( 1, ecu_dlist_size(&list) );
-        ecu_dnode_remove(&RW.at(0));
-        LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
-        ecu_dlist_push_back(&list, &RW.at(0));
-        ecu_dlist_push_back(&list, &RW.at(1));
-        LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    LONGLONGS_EQUAL( 3, ecu_dlist_size(&list) );
+    ecu_dnode_remove(&RW.at(1));
+    LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
+    ecu_dnode_remove(&RW.at(2));
+    LONGLONGS_EQUAL( 1, ecu_dlist_size(&list) );
+    ecu_dnode_remove(&RW.at(0));
+    LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
+    ecu_dlist_push_back(&list, &RW.at(0));
+    ecu_dlist_push_back(&list, &RW.at(1));
+    LONGLONGS_EQUAL( 2, ecu_dlist_size(&list) );
 }
 
 /**
@@ -2560,19 +2205,11 @@ TEST(DList, DListSize)
  */
 TEST(DList, DListSizeListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist list;
+    /* Step 1: Arrange. */
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    LONGLONGS_EQUAL( 0, ecu_dlist_size(&list) );
 }
 
 /*------------------------------------------------------------*/
@@ -2586,23 +2223,15 @@ TEST(DList, DListSizeListIsEmpty)
  */
 TEST(DList, DListSortUniqueSortEven)
 {
-    try 
-    {
-        /* Step 1: Arrange. List = 5, 1, 3, 0, 2, 4 */
-        dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{3}, rw_dnode{0}, rw_dnode{2}, rw_dnode{4}};
-        EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
+    /* Step 1: Arrange. List = 5, 1, 3, 0, 2, 4 */
+    dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{3}, rw_dnode{0}, rw_dnode{2}, rw_dnode{4}};
+    EXPECT_NODES_IN_LIST(0, 1, 2, 3, 4, 5);
 
-        /* Step 2: Action. */
-        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2612,23 +2241,15 @@ TEST(DList, DListSortUniqueSortEven)
  */
 TEST(DList, DListSortUniqueSortOdd)
 {
-    try 
-    {
-        /* Step 1: Arrange. List = 1, 3, 4, 0, 5 */
-        dlist list{rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{0}, rw_dnode{5}};
-        EXPECT_NODES_IN_LIST(0, 1, 3, 4, 5);
+    /* Step 1: Arrange. List = 1, 3, 4, 0, 5 */
+    dlist list{rw_dnode{1}, rw_dnode{3}, rw_dnode{4}, rw_dnode{0}, rw_dnode{5}};
+    EXPECT_NODES_IN_LIST(0, 1, 3, 4, 5);
 
-        /* Step 2: Action. */
-        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2638,24 +2259,16 @@ TEST(DList, DListSortUniqueSortOdd)
  */
 TEST(DList, DListSortNonUniqueSortEven)
 {
-    try 
-    {
-        /* Step 1: Arrange. List = 5, 1, 2, 3, 6, 5, 1, 4, 2, 6 */
-        dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{2}, rw_dnode{3}, rw_dnode{6}, rw_dnode{5},
-                   rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
-        EXPECT_NODES_IN_LIST(1, 1, 2, 2, 3, 4, 5, 5, 6, 6);
+    /* Step 1: Arrange. List = 5, 1, 2, 3, 6, 5, 1, 4, 2, 6 */
+    dlist list{rw_dnode{5}, rw_dnode{1}, rw_dnode{2}, rw_dnode{3}, rw_dnode{6}, rw_dnode{5},
+               rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
+    EXPECT_NODES_IN_LIST(1, 1, 2, 2, 3, 4, 5, 5, 6, 6);
 
-        /* Step 2: Action. */
-        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /**
@@ -2665,24 +2278,16 @@ TEST(DList, DListSortNonUniqueSortEven)
  */
 TEST(DList, DListSortNonUniqueSortOdd)
 {
-    try 
-    {
-        /* Step 1: Arrange. List = 1, 5, 3, 4, 5, 5, 6, 1, 4, 2, 6 */
-        dlist list{rw_dnode{1}, rw_dnode{5}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}, rw_dnode{5},
-                   rw_dnode{6}, rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
-        EXPECT_NODES_IN_LIST(1, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6);
+    /* Step 1: Arrange. List = 1, 5, 3, 4, 5, 5, 6, 1, 4, 2, 6 */
+    dlist list{rw_dnode{1}, rw_dnode{5}, rw_dnode{3}, rw_dnode{4}, rw_dnode{5}, rw_dnode{5},
+               rw_dnode{6}, rw_dnode{1}, rw_dnode{4}, rw_dnode{2}, rw_dnode{6}};
+    EXPECT_NODES_IN_LIST(1, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6);
 
-        /* Step 2: Action. */
-        ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
+    /* Step 2: Action. */
+    ecu_dlist_sort(&list, &sort, ECU_DNODE_OBJ_UNUSED);
 
-        /* Step 3: Assert. */
-        list.accept(node_id_in_list_actual_call());
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    list.accept(node_id_in_list_actual_call());
 }
 
 /*------------------------------------------------------------*/
@@ -2694,28 +2299,20 @@ TEST(DList, DListSortNonUniqueSortOdd)
  */
 TEST(DList, DListSwapBothListsNotEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. list1 = [0, 1, 2]. list2 = [3, 4]. */
-        dlist me{RW.at(0), RW.at(1), RW.at(2)};
-        dlist other{RW.at(3), RW.at(4)};
-        EXPECT_NODES_IN_LIST(RW.at(3), RW.at(4), /* me list. */
-                             RW.at(0), RW.at(1), RW.at(2) /* other list. */ );
+    /* Step 1: Arrange. list1 = [0, 1, 2]. list2 = [3, 4]. */
+    dlist me{RW.at(0), RW.at(1), RW.at(2)};
+    dlist other{RW.at(3), RW.at(4)};
+    EXPECT_NODES_IN_LIST(RW.at(3), RW.at(4), /* me list. */
+                         RW.at(0), RW.at(1), RW.at(2) /* other list. */ );
 
-        /* Step 2: Action. */
-        ecu_dlist_swap(&me, &other);
+    /* Step 2: Action. */
+    ecu_dlist_swap(&me, &other);
 
-        /* Step 3: Assert. */
-        me.accept(node_obj_in_list_actual_call()); /* MUST be first. */
-        other.accept(node_obj_in_list_actual_call());
-        CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
-        CHECK_TRUE( (ecu_dlist_size(&other) == 3) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    me.accept(node_obj_in_list_actual_call()); /* MUST be first. */
+    other.accept(node_obj_in_list_actual_call());
+    CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
+    CHECK_TRUE( (ecu_dlist_size(&other) == 3) );
 }
 
 /**
@@ -2724,27 +2321,19 @@ TEST(DList, DListSwapBothListsNotEmpty)
  */
 TEST(DList, DListSwapMeListEmptyOtherListNotEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. me = []. other = [0, 1]. */
-        dlist me;
-        dlist other{RW.at(0), RW.at(1)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. me = []. other = [0, 1]. */
+    dlist me;
+    dlist other{RW.at(0), RW.at(1)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        ecu_dlist_swap(&me, &other);
+    /* Step 2: Action. */
+    ecu_dlist_swap(&me, &other);
 
-        /* Step 3: Assert. */
-        me.accept(node_obj_in_list_actual_call());
-        other.accept(node_obj_in_list_actual_call());
-        CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
-        CHECK_TRUE( (ecu_dlist_size(&other) == 0) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    me.accept(node_obj_in_list_actual_call());
+    other.accept(node_obj_in_list_actual_call());
+    CHECK_TRUE( (ecu_dlist_size(&me) == 2) );
+    CHECK_TRUE( (ecu_dlist_size(&other) == 0) );
 }
 
 /**
@@ -2753,27 +2342,19 @@ TEST(DList, DListSwapMeListEmptyOtherListNotEmpty)
  */
 TEST(DList, DListSwapMeListNotEmptyOtherListEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. me = [1, 2]. other = []. */
-        dlist me{RW.at(0), RW.at(1)};
-        dlist other;
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
+    /* Step 1: Arrange. me = [1, 2]. other = []. */
+    dlist me{RW.at(0), RW.at(1)};
+    dlist other;
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1));
 
-        /* Step 2: Action. */
-        ecu_dlist_swap(&me, &other);
+    /* Step 2: Action. */
+    ecu_dlist_swap(&me, &other);
 
-        /* Step 3: Assert. */
-        me.accept(node_obj_in_list_actual_call());
-        other.accept(node_obj_in_list_actual_call());
-        CHECK_TRUE( (ecu_dlist_size(&me) == 0) );
-        CHECK_TRUE( (ecu_dlist_size(&other) == 2) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    me.accept(node_obj_in_list_actual_call());
+    other.accept(node_obj_in_list_actual_call());
+    CHECK_TRUE( (ecu_dlist_size(&me) == 0) );
+    CHECK_TRUE( (ecu_dlist_size(&other) == 2) );
 }
 
 /**
@@ -2781,22 +2362,14 @@ TEST(DList, DListSwapMeListNotEmptyOtherListEmpty)
  */
 TEST(DList, DListSwapBothListsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        dlist me;
-        dlist other;
+    /* Step 1: Arrange. */
+    dlist me;
+    dlist other;
 
-        /* Step 2: Action. */
-        ecu_dlist_swap(&me, &other);
+    /* Step 2: Action. */
+    ecu_dlist_swap(&me, &other);
 
-        /* Step 3: Assert. Test fails if assertion fires. */
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. Test fails if assertion fires. */
 }
 
 /**
@@ -2808,14 +2381,14 @@ TEST(DList, DListSwapSameListsSupplied)
     {
         /* Step 1: Arrange. */
         dlist me;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ecu_dlist_swap(&me, &me);
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -2832,24 +2405,16 @@ TEST(DList, DListSwapSameListsSupplied)
  */
 TEST(DList, DListValid)
 {
-    try
-    {
-        /* Step 1: Arrange. Create C object, NOT C++ object since 
-        default constructor of C++ object calls C constructor. */
-        ecu_dlist list;
+    /* Step 1: Arrange. Create C object, NOT C++ object since 
+    default constructor of C++ object calls C constructor. */
+    ecu_dlist list;
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ecu_dlist_valid(&list)) );
-        ecu_dlist_ctor(&list);
-        CHECK_TRUE( (ecu_dlist_valid(&list)) );
-        ecu_dlist_destroy(&list);
-        CHECK_FALSE( (ecu_dlist_valid(&list)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ecu_dlist_valid(&list)) );
+    ecu_dlist_ctor(&list);
+    CHECK_TRUE( (ecu_dlist_valid(&list)) );
+    ecu_dlist_destroy(&list);
+    CHECK_FALSE( (ecu_dlist_valid(&list)) );
 }
 
 /*------------------------------------------------------------*/
@@ -2861,24 +2426,16 @@ TEST(DList, DListValid)
  */
 TEST(DList, Iterator)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_FOR_EACH(n, &iter, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -2887,24 +2444,16 @@ TEST(DList, Iterator)
  */
 TEST(DList, ConstIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_citerator citer;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    ecu_dlist_citerator citer;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -2913,23 +2462,15 @@ TEST(DList, ConstIterator)
  */
 TEST(DList, IteratorListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call visitor;
-        dlist list;
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call visitor;
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
+    ECU_DLIST_FOR_EACH(n, &iter, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -2938,23 +2479,15 @@ TEST(DList, IteratorListIsEmpty)
  */
 TEST(DList, ConstIteratorListIsEmpty)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_citerator citer;
-        node_obj_in_list_actual_call visitor;
-        dlist list;
+    /* Step 1: Arrange. */
+    ecu_dlist_citerator citer;
+    node_obj_in_list_actual_call visitor;
+    dlist list;
 
-        /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
-        ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. Test fails if any nodes iterated over. */
+    ECU_DLIST_CONST_FOR_EACH(n, &citer, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -2964,31 +2497,23 @@ TEST(DList, ConstIteratorListIsEmpty)
  */
 TEST(DList, IteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call in_list_visitor;
+    node_remove remove_visitor;
+    dlist list{RW.at(0), RO.at(0), RW.at(1), RO.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RO.at(0), RO.at(1));
+
+    /* Step 2: Action. */
+    ECU_DLIST_FOR_EACH(n, &iter, &list)
     {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call in_list_visitor;
-        node_remove remove_visitor;
-        dlist list{RW.at(0), RO.at(0), RW.at(1), RO.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RO.at(0), RO.at(1));
-
-        /* Step 2: Action. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(in_list_visitor);
-        }
+        convert(n).accept(remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ECU_DLIST_FOR_EACH(n, &iter, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(in_list_visitor);
     }
 }
 
@@ -2997,27 +2522,19 @@ TEST(DList, IteratorRemoveSome)
  */
 TEST(DList, IteratorRemoveAll)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_remove remove_visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_remove remove_visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
 
-        /* Step 2: Action. */
-        ECU_DLIST_FOR_EACH(n, &iter, &list)
-        {
-            convert(n).accept(remove_visitor);
-        }
-
-        /* Step 3: Assert. Test fails if any nodes still in list. */
-        CHECK_TRUE( (ecu_dlist_empty(&list)) );
-    }
-    catch (const AssertException& e)
+    /* Step 2: Action. */
+    ECU_DLIST_FOR_EACH(n, &iter, &list)
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(remove_visitor);
     }
+
+    /* Step 3: Assert. Test fails if any nodes still in list. */
+    CHECK_TRUE( (ecu_dlist_empty(&list)) );
 }
 
 /*------------------------------------------------------------*/
@@ -3029,24 +2546,16 @@ TEST(DList, IteratorRemoveAll)
  */
 TEST(DList, AtIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
-        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3055,24 +2564,16 @@ TEST(DList, AtIterator)
  */
 TEST(DList, ConstAtIterator)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_citerator citer;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
-        EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
+    /* Step 1: Arrange. */
+    ecu_dlist_citerator citer;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    EXPECT_NODES_IN_LIST(RW.at(1), RW.at(2), RW.at(3));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(1))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(1))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3085,7 +2586,7 @@ TEST(DList, AtIteartorStartNodeNotInList)
     {
         /* Step 1: Arrange. */
         ecu_dlist_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
         dlist list{RW.at(0)};
 
         /* Step 2: Action. */
@@ -3096,7 +2597,7 @@ TEST(DList, AtIteartorStartNodeNotInList)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -3113,7 +2614,7 @@ TEST(DList, ConstAtIteratorStartNodeNotInList)
         /* Step 1: Arrange. */
         ecu_dlist_citerator citer;
         dlist list{RW.at(0)};
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(1))
@@ -3123,7 +2624,7 @@ TEST(DList, ConstAtIteratorStartNodeNotInList)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -3140,7 +2641,7 @@ TEST(DList, AtIteratorStartNodeIsHead)
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
         ecu_dlist_iterator iter;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &list.head)
@@ -3150,7 +2651,7 @@ TEST(DList, AtIteratorStartNodeIsHead)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -3167,7 +2668,7 @@ TEST(DList, ConstAtIteratorStartNodeIsHead)
         /* Step 1: Arrange. */
         dlist list{RW.at(0)};
         ecu_dlist_citerator citer;
-        EXPECT_ASSERTION();
+        asserter::expect();
 
         /* Step 2: Action. */
         ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &list.head)
@@ -3177,7 +2678,7 @@ TEST(DList, ConstAtIteratorStartNodeIsHead)
 
         /* Step 3: Assert. Test fails if assertion does not fire. */
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         /* OK. */
         (void)e;
@@ -3189,24 +2690,16 @@ TEST(DList, ConstAtIteratorStartNodeIsHead)
  */
 TEST(DList, AtIteratorListWithOneNode)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0)};
-        EXPECT_NODES_IN_LIST(RW.at(0));
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0)};
+    EXPECT_NODES_IN_LIST(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3215,24 +2708,16 @@ TEST(DList, AtIteratorListWithOneNode)
  */
 TEST(DList, ConstAtIteratorListWithOneNode)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_citerator citer;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0)};
-        EXPECT_NODES_IN_LIST(RW.at(0));
+    /* Step 1: Arrange. */
+    ecu_dlist_citerator citer;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0)};
+    EXPECT_NODES_IN_LIST(RW.at(0));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(0))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3241,24 +2726,16 @@ TEST(DList, ConstAtIteratorListWithOneNode)
  */
 TEST(DList, AtIteratorStartNodeIsTail)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(2));
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(2))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3267,24 +2744,16 @@ TEST(DList, AtIteratorStartNodeIsTail)
  */
 TEST(DList, ConstAtIteratorStartNodeIsTail)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_citerator citer;
-        node_obj_in_list_actual_call visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(2));
+    /* Step 1: Arrange. */
+    ecu_dlist_citerator citer;
+    node_obj_in_list_actual_call visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(2));
 
-        /* Steps 2 and 3: Action and assert. */
-        ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(2))
-        {
-            convert(n).accept(visitor);
-        }
-    }
-    catch (const AssertException& e)
+    /* Steps 2 and 3: Action and assert. */
+    ECU_DLIST_CONST_AT_FOR_EACH(n, &citer, &list, &RW.at(2))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(visitor);
     }
 }
 
@@ -3294,31 +2763,23 @@ TEST(DList, ConstAtIteratorStartNodeIsTail)
  */
 TEST(DList, AtIteratorRemoveSome)
 {
-    try
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_obj_in_list_actual_call in_list_visitor;
+    node_remove remove_visitor;
+    dlist list{RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1), RO.at(2)};
+    EXPECT_NODES_IN_LIST(RW.at(0), RO.at(0), RO.at(1), RO.at(2));
+
+    /* Step 2: Action. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
     {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_obj_in_list_actual_call in_list_visitor;
-        node_remove remove_visitor;
-        dlist list{RW.at(0), RW.at(1), RO.at(0), RW.at(2), RO.at(1), RO.at(2)};
-        EXPECT_NODES_IN_LIST(RW.at(0), RO.at(0), RO.at(1), RO.at(2));
-
-        /* Step 2: Action. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(1))
-        {
-            convert(n).accept(remove_visitor);
-        }
-
-        /* Step 3: Assert. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
-        {
-            convert(n).accept(in_list_visitor);
-        }
+        convert(n).accept(remove_visitor);
     }
-    catch (const AssertException& e)
+
+    /* Step 3: Assert. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(in_list_visitor);
     }
 }
 
@@ -3327,25 +2788,17 @@ TEST(DList, AtIteratorRemoveSome)
  */
 TEST(DList, AtIteratorRemoveAll)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        ecu_dlist_iterator iter;
-        node_remove remove_visitor;
-        dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
+    /* Step 1: Arrange. */
+    ecu_dlist_iterator iter;
+    node_remove remove_visitor;
+    dlist list{RW.at(0), RW.at(1), RW.at(2), RW.at(3)};
 
-        /* Step 2: Action. */
-        ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
-        {
-            convert(n).accept(remove_visitor);
-        }
-
-        /* Step 3: Assert. Test fails if any nodes still in list. */
-        CHECK_TRUE( (ecu_dlist_empty(&list)) );
-    }
-    catch (const AssertException& e)
+    /* Step 2: Action. */
+    ECU_DLIST_AT_FOR_EACH(n, &iter, &list, &RW.at(0))
     {
-        /* FAIL. */
-        (void)e;
+        convert(n).accept(remove_visitor);
     }
+
+    /* Step 3: Assert. Test fails if any nodes still in list. */
+    CHECK_TRUE( (ecu_dlist_empty(&list)) );
 }
