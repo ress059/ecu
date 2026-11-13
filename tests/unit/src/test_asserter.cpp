@@ -32,18 +32,12 @@
 #include "ecu/timer.h"
 #include "ecu/ntnode.h"
 
-/* Stubs. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------ NAMESPACES ------------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 /*------------------------------------------------------------*/
 /*--------------- DEFINE FILE NAME FOR ASSERTS ---------------*/
@@ -52,36 +46,13 @@ using namespace stubs;
 ECU_ASSERT_DEFINE_FILE("test_asserter.cpp")
 
 /*------------------------------------------------------------*/
-/*--------------- STATIC FUNCTION DECLARATIONS ---------------*/
-/*------------------------------------------------------------*/
-
-static void assert_handler(const char *file, int line);
-
-/*------------------------------------------------------------*/
-/*---------------- STATIC FUNCTION DEFINITIONS ---------------*/
-/*------------------------------------------------------------*/
-
-static void assert_handler(const char *file, int line)
-{
-    (void)line;
-    mock().actualCall(__func__).withParameter("p1", file);
-    throw AssertException();
-}
-
-/*------------------------------------------------------------*/
 /*----------------------- TEST GROUPS ------------------------*/
 /*------------------------------------------------------------*/
 
 TEST_GROUP(Asserter)
 {
-    void setup() override
-    {
-        set_assert_handler(&assert_handler);
-    }
-
     void teardown() override
     {
-        set_assert_handler(AssertResponse::FAIL);
         mock().checkExpectations();
         mock().clear();
     }
@@ -100,12 +71,12 @@ TEST(Asserter, DefineFile)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "test_asserter.cpp");
+        asserter::expect("test_asserter.cpp");
 
         /* Steps 2 and 3: Action and assert. */
         ECU_ASSERT( (false) );
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -120,12 +91,12 @@ TEST(Asserter, DList)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/dlist.c");
+        asserter::expect("ecu/dlist.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_dlist_ctor(nullptr);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -140,12 +111,12 @@ TEST(Asserter, Event)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/event.c");
+        asserter::expect("ecu/event.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_event_ctor(nullptr, 0, 0);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -160,12 +131,12 @@ TEST(Asserter, Fsm)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/fsm.c");
+        asserter::expect("ecu/fsm.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_fsm_ctor(nullptr, nullptr);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -180,12 +151,12 @@ TEST(Asserter, Hsm)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/hsm.c");
+        asserter::expect("ecu/hsm.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_hsm_ctor(nullptr, nullptr, 0);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -200,12 +171,12 @@ TEST(Asserter, NtNode)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/ntnode.c");
+        asserter::expect("ecu/ntnode.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_ntnode_ctor(nullptr, ECU_NTNODE_DESTROY_UNUSED, ECU_OBJECT_ID_UNUSED);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }
@@ -220,12 +191,12 @@ TEST(Asserter, Timer)
     try 
     {
         /* Step 1: Arrange. */
-        mock().expectOneCall("assert_handler").withParameter("p1", "ecu/timer.c");
+        asserter::expect("ecu/timer.c");
 
         /* Steps 2 and 3: Action and assert. */
         ecu_timer_ctor(nullptr, nullptr, nullptr);
     }
-    catch (const AssertException& e)
+    catch (const asserter_exception& e)
     {
         (void)e;
     }

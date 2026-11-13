@@ -46,7 +46,10 @@ target_link_options(ecu_unit_test
 # Target that builds unit test executable.
 add_executable(unit_test_exe EXCLUDE_FROM_ALL
     # Main
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp 
+    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+
+    # Helpers
+    ${CMAKE_CURRENT_LIST_DIR}/src/asserter.cpp
 
     # Tests
     ${CMAKE_CURRENT_LIST_DIR}/src/test_asserter.cpp
@@ -58,9 +61,6 @@ add_executable(unit_test_exe EXCLUDE_FROM_ALL
     ${CMAKE_CURRENT_LIST_DIR}/src/test_ntnode.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_timer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/test_utils.cpp
-
-    # Stubs
-    ${CMAKE_CURRENT_LIST_DIR}/stubs/stub_asserter.cpp
 )
 
 target_compile_features(unit_test_exe

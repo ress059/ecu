@@ -45,18 +45,12 @@
 /* STDLib. */
 #include <cstdint>
 
-/* Stubs and helpers. */
-#include "stubs/stub_asserter.hpp"
+/* Helpers. */
+#include "inc/asserter.hpp"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
 #include "CppUTest/TestHarness.h"
-
-/*------------------------------------------------------------*/
-/*------------------------- NAMESPACES -----------------------*/
-/*------------------------------------------------------------*/
-
-using namespace stubs;
 
 /*------------------------------------------------------------*/
 /*------------------------ TEST GROUPS -----------------------*/
@@ -64,11 +58,6 @@ using namespace stubs;
 
 TEST_GROUP(Utils)
 {
-    void setup() override
-    {
-        set_assert_handler(AssertResponse::FAIL);
-    }
-
     void teardown() override
     {
         mock().checkExpectations();
@@ -132,23 +121,15 @@ TEST_GROUP(Utils)
  */
 TEST(Utils, ContainerOfPointerValue)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        container_of_type me;
+    /* Step 1: Arrange. */
+    container_of_type me;
 
-        /* Step 2: Action. */
-        void *intrusive_member = static_cast<void *>(&me.b);
-        container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
+    /* Step 2: Action. */
+    void *intrusive_member = static_cast<void *>(&me.b);
+    container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
 
-        /* Step 3: Assert. */
-        POINTERS_EQUAL(&me, ptr);
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    POINTERS_EQUAL(&me, ptr);
 }
 
 /**
@@ -157,26 +138,18 @@ TEST(Utils, ContainerOfPointerValue)
  */
 TEST(Utils, ContainerOfRead)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        container_of_type me;
-        me.b = 5;
-        me.c = 10;
+    /* Step 1: Arrange. */
+    container_of_type me;
+    me.b = 5;
+    me.c = 10;
 
-        /* Step 2: Action. */
-        void *intrusive_member = static_cast<void *>(&me.b);
-        container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
+    /* Step 2: Action. */
+    void *intrusive_member = static_cast<void *>(&me.b);
+    container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (ptr->b == me.b) );
-        CHECK_TRUE( (ptr->c == me.c) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (ptr->b == me.b) );
+    CHECK_TRUE( (ptr->c == me.c) );
 }
 
 /**
@@ -185,26 +158,18 @@ TEST(Utils, ContainerOfRead)
  */
 TEST(Utils, ContainerOfWrite)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        container_of_type me;
+    /* Step 1: Arrange. */
+    container_of_type me;
 
-        /* Step 2: Action. */
-        void *intrusive_member = static_cast<void *>(&me.b);
-        container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
-        ptr->b = 5;
-        ptr->c = 10;
+    /* Step 2: Action. */
+    void *intrusive_member = static_cast<void *>(&me.b);
+    container_of_type *ptr = ECU_CONTAINER_OF(intrusive_member, container_of_type, b);
+    ptr->b = 5;
+    ptr->c = 10;
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (me.b == 5) );
-        CHECK_TRUE( (me.c == 10) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (me.b == 5) );
+    CHECK_TRUE( (me.c == 10) );
 }
 
 /**
@@ -213,23 +178,15 @@ TEST(Utils, ContainerOfWrite)
  */
 TEST(Utils, ConstContainerOfPointerValue)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        container_of_type me;
+    /* Step 1: Arrange. */
+    container_of_type me;
 
-        /* Step 2: Action. */
-        const void *intrusive_member = static_cast<const void *>(&me.c);
-        const container_of_type *ptr = ECU_CONST_CONTAINER_OF(intrusive_member, container_of_type, c);
+    /* Step 2: Action. */
+    const void *intrusive_member = static_cast<const void *>(&me.c);
+    const container_of_type *ptr = ECU_CONST_CONTAINER_OF(intrusive_member, container_of_type, c);
 
-        /* Step 3: Assert. */
-        POINTERS_EQUAL(&me, ptr);
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    POINTERS_EQUAL(&me, ptr);
 }
 
 /**
@@ -238,26 +195,18 @@ TEST(Utils, ConstContainerOfPointerValue)
  */
 TEST(Utils, ConstContainerOf)
 {
-    try
-    {
-        /* Step 1: Arrange. */
-        container_of_type me;
-        me.a = 5;
-        me.d = 10;
+    /* Step 1: Arrange. */
+    container_of_type me;
+    me.a = 5;
+    me.d = 10;
 
-        /* Step 2: Action. */
-        const void *intrusive_member = static_cast<const void *>(&me.d);
-        const container_of_type *ptr = ECU_CONST_CONTAINER_OF(intrusive_member, container_of_type, d);
+    /* Step 2: Action. */
+    const void *intrusive_member = static_cast<const void *>(&me.d);
+    const container_of_type *ptr = ECU_CONST_CONTAINER_OF(intrusive_member, container_of_type, d);
 
-        /* Step 3: Assert. */
-        CHECK_TRUE( (ptr->a == me.a) );
-        CHECK_TRUE( (ptr->d == me.d) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Step 3: Assert. */
+    CHECK_TRUE( (ptr->a == me.a) );
+    CHECK_TRUE( (ptr->d == me.d) );
 }
 
 /*------------------------------------------------------------*/
@@ -269,24 +218,16 @@ TEST(Utils, ConstContainerOf)
  */
 TEST(Utils, FieldSizeOf)
 {
-    try
+    /* Step 1: Arrange. */
+    struct field_sizeof_type
     {
-        /* Step 1: Arrange. */
-        struct field_sizeof_type
-        {
-            std::uint8_t a;
-            std::uint32_t b;
-        };
+        std::uint8_t a;
+        std::uint32_t b;
+    };
 
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, a) == sizeof(std::uint8_t)) );
-        CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, b) == sizeof(std::uint32_t)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, a) == sizeof(std::uint8_t)) );
+    CHECK_TRUE( (ECU_FIELD_SIZEOF(field_sizeof_type, b) == sizeof(std::uint32_t)) );
 }
 
 /*------------------------------------------------------------*/
@@ -298,16 +239,8 @@ TEST(Utils, FieldSizeOf)
  */
 TEST(Utils, IsBaseOfCorrectCInheritance)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_IS_BASE_OF(super, correct_derived)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_IS_BASE_OF(super, correct_derived)) );
 }
 
 /**
@@ -315,16 +248,8 @@ TEST(Utils, IsBaseOfCorrectCInheritance)
  */
 TEST(Utils, IsBaseOfIncorrectCInheritance)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ECU_IS_BASE_OF(super, incorrect_derived)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ECU_IS_BASE_OF(super, incorrect_derived)) );
 }
 
 /*------------------------------------------------------------*/
@@ -336,16 +261,8 @@ TEST(Utils, IsBaseOfIncorrectCInheritance)
  */
 TEST(Utils, IsSignedTypeIsSignedInteger)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_IS_SIGNED(signed int)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_IS_SIGNED(signed int)) );
 }
 
 /**
@@ -353,16 +270,8 @@ TEST(Utils, IsSignedTypeIsSignedInteger)
  */
 TEST(Utils, IsSignedTypeIsUnsignedInteger)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ECU_IS_SIGNED(unsigned int)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ECU_IS_SIGNED(unsigned int)) );
 }
 
 /**
@@ -370,16 +279,8 @@ TEST(Utils, IsSignedTypeIsUnsignedInteger)
  */
 TEST(Utils, IsSignedTypeIsFloat)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_IS_SIGNED(float)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_IS_SIGNED(float)) );
 }
 
 /**
@@ -387,16 +288,8 @@ TEST(Utils, IsSignedTypeIsFloat)
  */
 TEST(Utils, IsSignedTypeIsDouble)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_IS_SIGNED(double)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_IS_SIGNED(double)) );
 }
 
 /*------------------------------------------------------------*/
@@ -408,16 +301,8 @@ TEST(Utils, IsSignedTypeIsDouble)
  */
 TEST(Utils, IsUnsignedTypeIsSignedInteger)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ECU_IS_UNSIGNED(signed int)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ECU_IS_UNSIGNED(signed int)) );
 }
 
 /**
@@ -425,16 +310,8 @@ TEST(Utils, IsUnsignedTypeIsSignedInteger)
  */
 TEST(Utils, IsUnsignedTypeIsUnsignedInteger)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_TRUE( (ECU_IS_UNSIGNED(unsigned int)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_TRUE( (ECU_IS_UNSIGNED(unsigned int)) );
 }
 
 /**
@@ -442,16 +319,8 @@ TEST(Utils, IsUnsignedTypeIsUnsignedInteger)
  */
 TEST(Utils, IsUnsignedTypeIsFloat)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ECU_IS_UNSIGNED(float)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ECU_IS_UNSIGNED(float)) );
 }
 
 /**
@@ -459,14 +328,6 @@ TEST(Utils, IsUnsignedTypeIsFloat)
  */
 TEST(Utils, IsUnsignedTypeIsDouble)
 {
-    try
-    {
-        /* Steps 2 and 3: Action and assert. */
-        CHECK_FALSE( (ECU_IS_UNSIGNED(double)) );
-    }
-    catch (const AssertException& e)
-    {
-        /* FAIL. */
-        (void)e;
-    }
+    /* Steps 2 and 3: Action and assert. */
+    CHECK_FALSE( (ECU_IS_UNSIGNED(double)) );
 }

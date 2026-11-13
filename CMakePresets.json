@@ -57,23 +57,5 @@
 			"description": "Linux build configuration. Toolchain = GNU. Host = Linux x86_64. Target = Linux x86_64.",
 			"configurePreset": "linux"
 		}
-	],
-    "testPresets": 
-	[
-        {
-            "name": "unit_test",
-            "displayName": "unit_test",
-            "description": "Run unit tests with CTest.",
-            "configurePreset": "linux",
-            "output": 
-            {
-                "outputOnFailure": true
-            },
-            "execution": 
-            {
-                "noTestsAction": "error", 
-                "stopOnFailure": true
-            }
-        }
-    ]
+	]
 }

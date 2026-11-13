@@ -55,13 +55,13 @@
 /*------------------------- INCLUDES -------------------------*/
 /*------------------------------------------------------------*/
 
+/* Files under test. */
+#include "ecu/endian.h"
+
 /* STDLib. */
 #include <cassert>
 #include <cstdint>
 #include <type_traits>
-
-/* Files under test. */
-#include "ecu/endian.h"
 
 /* CppUTest. */
 #include "CppUTestExt/MockSupport.h"
