@@ -39,7 +39,9 @@ RUN apt-get update && \
     gdb=15.0.50.20240403-0ubuntu1 \
     graphviz=2.42.2-9build1 \
     git \
-    usbutils
+    usbutils \
+    curl \
+    gpg
 
 # Layer 6: Install project-specific python packages.
 # No need to create python virtual environment

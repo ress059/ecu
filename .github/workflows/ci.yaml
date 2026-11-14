@@ -33,6 +33,8 @@ jobs:
       with:
         push: true
         tags: ${{ steps.metadata.outputs.tags }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   build:
     name: Build
