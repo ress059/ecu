@@ -44,8 +44,10 @@ jobs:
         preset: [linux, arm_cm4f]
         assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
-    - name: Compile
+    - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Compile
       run: |
         cmake -D${{ matrix.assert_setting }} --preset ${{ matrix.preset }}
         cmake --build --clean-first --preset ${{ matrix.preset }} --target ecu
@@ -61,8 +63,10 @@ jobs:
     runs-on: [ubuntu-24.04]
     container: ${{ needs.docker.outputs.image }}
     steps:
-    - name: Generate documentation
+    - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Generate documentation
       run: |
         cmake --preset linux
         cmake --build --preset linux --target sphinx
@@ -73,8 +77,10 @@ jobs:
     runs-on: [ubuntu-24.04]
     container: ${{ needs.docker.outputs.image }}
     steps:
-    - name: Check formatting errors
+    - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Check formatting errors
       run: |
         cmake --preset linux
         cmake --build --preset linux --target clang_format_ci
@@ -85,8 +91,10 @@ jobs:
     runs-on: [ubuntu-24.04]
     container: ${{ needs.docker.outputs.image }}
     steps:
-    - name: Run tests
+    - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Run tests
       run: |
         cmake --preset linux
         cmake --build --preset linux --target unit_test
