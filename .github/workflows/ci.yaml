@@ -10,7 +10,7 @@ jobs:
       image: ${{ steps.meta.outputs.tags }}
     steps:
     - name: Authenticate with Github Container Registry
-    - uses: docker/login-action@v4
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -45,7 +45,7 @@ jobs:
         assert_setting: [ECU_DISABLE_ASSERTS=OFF, ECU_DISABLE_ASSERTS=ON]
     steps:
     - name: Compile
-    - uses: actions/checkout@v4
+      uses: actions/checkout@v4
       run: |
         cmake -D${{ matrix.assert_setting }} --preset ${{ matrix.preset }}
         cmake --build --clean-first --preset ${{ matrix.preset }} --target ecu
@@ -62,7 +62,7 @@ jobs:
     container: ${{ needs.docker.outputs.image }}
     steps:
     - name: Generate documentation
-    - uses: actions/checkout@v4
+      uses: actions/checkout@v4
       run: |
         cmake --preset linux
         cmake --build --preset linux --target sphinx
@@ -74,7 +74,7 @@ jobs:
     container: ${{ needs.docker.outputs.image }}
     steps:
     - name: Check formatting errors
-    - uses: actions/checkout@v4
+      uses: actions/checkout@v4
       run: |
         cmake --preset linux
         cmake --build --preset linux --target clang_format_ci
@@ -86,7 +86,7 @@ jobs:
     container: ${{ needs.docker.outputs.image }}
     steps:
     - name: Run tests
-    - uses: actions/checkout@v4
+      uses: actions/checkout@v4
       run: |
         cmake --preset linux
         cmake --build --preset linux --target unit_test
