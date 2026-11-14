@@ -10,7 +10,7 @@ jobs:
       contents: read
       packages: write
     outputs: 
-      image: ${{ steps.meta.outputs.tags }}
+      image: ${{ steps.metadata.outputs.tags }}
     steps:
     - name: Authenticate with Github Container Registry
       uses: docker/login-action@v4
