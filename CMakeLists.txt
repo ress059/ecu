@@ -118,6 +118,7 @@ if(ECU_INTERNAL)
                 ECU_BIG_ENDIAN 
         )
     else()
+        # Notice this is a fatal error instead of a warning since this target is only used internally.
         message(FATAL_ERROR "Unable to detect target endianness. endian.h cannot be used.")
     endif() 
 
